@@ -1,0 +1,4042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skyframe — elevated stunt driving</title>
+<style>
+:root{
+  --void:#bcdff2; --void-2:#0e1630; --horizon:#38597f;
+  --deck:#aab7c8; --ember:#f2733f; --aqua:#3ddbb8; --signal:#ffcf5c;
+  --ink:#eaf0f8; --dim:#8798b5; --dimmer:#5b6a86;
+  --rule:rgba(234,240,248,.13); --rule-2:rgba(234,240,248,.07);
+  --sans:"Helvetica Neue",Helvetica,Inter,"Segoe UI",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--void)}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0}
+#view{display:block;width:100%;height:100%}
+.vignette{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(122% 92% at 50% 40%,transparent 58%,rgba(12,32,54,.3) 100%)}
+.layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.layer[hidden]{display:none}
+#hud{pointer-events:none}
+
+/* ---------- HUD ---------- */
+.hud{position:absolute;inset:0;padding:20px 24px;
+  text-shadow:0 1px 12px rgba(8,20,38,.9),0 0 3px rgba(8,20,38,.6)}
+.hud-tl{position:absolute;top:20px;left:24px;line-height:1.2}
+.hud-tl .n{font-family:var(--mono);font-size:11px;color:var(--ember);letter-spacing:.16em}
+.hud-tl .t{font-size:18px;font-weight:600;letter-spacing:-.015em}
+.hud-tc{position:absolute;top:16px;left:50%;transform:translateX(-50%);text-align:center}
+.clock{font-family:var(--mono);font-size:32px;font-weight:500;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;text-shadow:0 2px 16px rgba(7,11,24,.9)}
+.clock.stop{color:var(--signal)}
+.split{font-family:var(--mono);font-size:12px;color:var(--dim);height:1.2em}
+.split.up{color:var(--ember)} .split.down{color:var(--aqua)}
+.hud-tr{position:absolute;top:18px;right:24px;text-align:right}
+.spd{font-family:var(--mono);font-size:30px;font-variant-numeric:tabular-nums;line-height:1}
+.spd small{font-size:11px;color:var(--dim);letter-spacing:.12em;display:block;margin-top:2px}
+.gear{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:6px}
+.hud-bl{position:absolute;bottom:20px;left:24px;font-size:12px;color:var(--dim)}
+.hud-bl b{font-family:var(--mono);color:var(--ink);font-weight:500}
+.hud-br{position:absolute;bottom:20px;right:24px;font-family:var(--mono);font-size:12px;
+  color:var(--dim);text-align:right}
+.hud-br .air{color:var(--signal)}
+.boost{width:132px;height:4px;background:rgba(8,20,38,.45);margin:7px 0 0 auto;
+  border:1px solid rgba(234,240,248,.18)}
+.boost i{display:block;height:100%;width:100%;background:var(--aqua);transition:width .1s linear}
+.boost.spent i{background:var(--dimmer)}
+.tele{position:absolute;left:24px;bottom:54px;display:flex;gap:18px;align-items:flex-end;
+  font-family:var(--mono);text-shadow:0 1px 12px rgba(8,20,38,.9)}
+.tele[hidden]{display:none}
+.tele .cell{min-width:74px}
+.tele .cell span{display:block;font-size:9.5px;letter-spacing:.16em;color:var(--dim);margin-bottom:1px}
+.tele .cell b{display:block;font-size:25px;font-weight:500;line-height:1;color:var(--ink);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tele .rpmbar{height:3px;width:100%;background:rgba(234,240,248,.16);margin-top:5px}
+.tele .rpmbar i{display:block;height:100%;width:0;background:var(--aqua)}
+.tele .rpmbar i.red{background:var(--ember)}
+.prompt{position:absolute;top:44%;left:50%;transform:translateX(-50%);text-align:center;
+  font-size:16px;opacity:0;transition:opacity .3s}
+.prompt.on{opacity:1}
+.toast{position:absolute;top:23%;left:50%;transform:translate(-50%,-6px);font-size:14px;
+  padding:8px 15px;border:1px solid var(--rule);background:rgba(7,11,24,.72);
+  opacity:0;transition:opacity .22s,transform .22s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+#flash{position:absolute;inset:0;background:#070b18;opacity:0;pointer-events:none;
+  transition:opacity .3s ease}
+.bar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:220px;height:3px;
+  background:var(--rule-2)}
+.bar i{display:block;height:100%;width:0;background:var(--ember);transition:width .25s linear}
+
+/* ---------- panels ---------- */
+.scrim{position:absolute;inset:0;background:
+  radial-gradient(130% 100% at 50% 0%,rgba(7,11,24,.5),rgba(7,11,24,.94))}
+.panel{position:relative;width:min(960px,94vw);max-height:92vh;overflow-y:auto;
+  padding:42px 46px 38px;background:rgba(10,17,36,.86);border:1px solid var(--rule);
+  backdrop-filter:blur(7px)}
+.panel::-webkit-scrollbar{width:8px}
+.panel::-webkit-scrollbar-thumb{background:var(--rule)}
+.brand{display:flex;align-items:flex-end;gap:18px;margin-bottom:8px}
+.brand h1{font-size:clamp(46px,8.4vw,98px);font-weight:700;letter-spacing:-.055em;line-height:.84}
+.brand h1 span{color:var(--ember)}
+.brand svg{width:36px;height:36px;margin-bottom:12px;flex:0 0 auto}
+.lede{color:var(--dim);font-size:15px;max-width:52ch;line-height:1.55;margin-bottom:30px}
+.rule{height:1px;background:var(--rule);margin:26px 0}
+h2.big{font-size:32px;letter-spacing:-.03em;margin-bottom:6px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+button{font-family:inherit;font-size:14px;color:var(--ink);background:transparent;
+  border:1px solid var(--rule);padding:12px 20px;cursor:pointer;
+  transition:background .14s,border-color .14s,color .14s}
+button:hover{background:rgba(234,240,248,.07);border-color:rgba(234,240,248,.35)}
+button:focus-visible{outline:2px solid var(--aqua);outline-offset:2px}
+button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;font-weight:600}
+button.primary:hover{background:#ff8a58;border-color:#ff8a58}
+button.ghost{border-color:transparent;color:var(--dim);padding-left:0}
+button.ghost:hover{color:var(--ink);background:transparent}
+input[type=text]{font-family:inherit;font-size:14px;color:var(--ink);background:rgba(0,0,0,.25);
+  border:1px solid var(--rule);padding:11px 13px;width:190px}
+input[type=text]:focus{outline:none;border-color:var(--aqua)}
+label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
+.cols{display:grid;grid-template-columns:1.15fr .85fr;gap:40px}
+@media(max-width:760px){.cols{grid-template-columns:1fr;gap:24px}.panel{padding:28px 22px}}
+.help h3{font-size:13px;font-weight:600;margin-bottom:12px}
+.help dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:13px;color:var(--dim)}
+.help dt{font-family:var(--mono);color:var(--ink);font-size:12px;white-space:nowrap}
+.help p{font-size:12.5px;color:var(--dim);line-height:1.6;margin-top:15px}
+
+/* ---------- course grid ---------- */
+.courses{display:grid;grid-template-columns:repeat(auto-fill,minmax(222px,1fr));gap:11px}
+.card{position:relative;text-align:left;padding:15px 17px 14px;width:100%;
+  border:1px solid var(--rule);background:rgba(255,255,255,.022)}
+.card .idx{font-family:var(--mono);font-size:10.5px;color:var(--ember);letter-spacing:.16em}
+.card .ttl{font-size:16.5px;font-weight:600;margin:3px 0 5px;letter-spacing:-.012em}
+.card .desc{font-size:12px;color:var(--dim);line-height:1.45;min-height:3.4em}
+.card .foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:11px;
+  font-family:var(--mono);font-size:11px;color:var(--dimmer)}
+.card .best{color:var(--aqua)}
+.card[disabled]{opacity:.38;cursor:not-allowed}
+.card[disabled]:hover{background:rgba(255,255,255,.022);border-color:var(--rule)}
+.card .done{position:absolute;top:13px;right:15px;width:8px;height:8px;background:var(--aqua)}
+.bars{display:inline-flex;gap:3px;vertical-align:middle}
+.bars i{width:4px;height:9px;background:rgba(234,240,248,.18)}
+.bars i.on{background:var(--ember)}
+
+/* ---------- leaderboard ---------- */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.tab{font-family:var(--mono);font-size:11.5px;padding:7px 11px;border:1px solid var(--rule-2);
+  color:var(--dim);cursor:pointer;background:transparent}
+.tab:hover{color:var(--ink)}
+.tab.on{border-color:var(--ember);color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;color:var(--dimmer);font-weight:500;padding:0 10px 9px 0;
+  border-bottom:1px solid var(--rule)}
+td{padding:10px 10px 10px 0;border-bottom:1px solid var(--rule-2);font-variant-numeric:tabular-nums}
+td.r{font-family:var(--mono);color:var(--dim);width:38px}
+td.t{font-family:var(--mono);color:var(--aqua);text-align:right}
+td.d{font-family:var(--mono);color:var(--dimmer);text-align:right;font-size:12px}
+tr.me td{color:var(--ink)} tr.me td.r{color:var(--ember)}
+.empty{color:var(--dim);font-size:13.5px;padding:22px 0;line-height:1.6}
+
+/* ---------- result ---------- */
+.result{width:min(520px,94vw);padding:36px 38px 32px}
+.kick{font-size:13px;color:var(--aqua);margin-bottom:5px}
+.result h2{font-size:33px;font-weight:700;letter-spacing:-.03em;margin-bottom:18px}
+.bigtime{font-family:var(--mono);font-size:54px;font-variant-numeric:tabular-nums;
+  letter-spacing:-.035em;line-height:1}
+.sub{font-size:13px;color:var(--dim);margin-top:9px;line-height:1.5;min-height:2.6em}
+.sub em{color:var(--signal);font-style:normal}
+.mini{margin-top:22px;font-size:12.5px}
+.mini .hd{font-size:11px;color:var(--dimmer);margin-bottom:8px}
+.mini ol{list-style:none;display:grid;gap:6px}
+.mini li{display:flex;justify-content:space-between;font-family:var(--mono);color:var(--dim)}
+.mini li.me{color:var(--ink)}
+.result .row{margin-top:26px}
+#fatal .panel{max-width:580px} #fatal h2{font-size:25px;margin-bottom:12px;letter-spacing:-.02em}
+#fatal p{color:var(--dim);font-size:14px;line-height:1.65}
+.gate{width:min(430px,94vw);padding:34px 34px 30px}
+.gate h2{font-size:27px;letter-spacing:-.03em;margin-bottom:6px}
+.gate p.note{font-size:13px;color:var(--dim);line-height:1.55;margin-bottom:22px}
+.gate label.fld{margin-top:14px}
+.gate input[type=text],.gate input[type=password],.gate input[type=email]{width:100%}
+.gate .err{font-size:12.5px;color:var(--ember);min-height:1.4em;margin-top:12px;line-height:1.45}
+.gate .row{margin-top:20px}
+.gate .switch{font-size:12.5px;color:var(--dim);margin-top:16px}
+.gate .switch b{color:var(--aqua);cursor:pointer;font-weight:500}
+.who{display:flex;gap:14px;align-items:baseline;font-family:var(--mono);font-size:12px;
+  color:var(--dim);margin-bottom:18px}
+.who b{color:var(--ink);font-weight:500}
+.who .cr{color:var(--signal)}
+.boot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;
+  color:#2b4364;text-shadow:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="view"></canvas>
+  <div class="vignette"></div>
+  <div class="boot" id="boot">Building the frame…</div>
+
+  <div class="layer" id="hud" hidden>
+    <div class="hud">
+      <div class="hud-tl"><div class="n" id="hNum">Course 1</div><div class="t" id="hName">—</div></div>
+      <div class="hud-tc"><div class="clock" id="hClock">0:00.00</div><div class="split" id="hSplit"></div></div>
+      <div class="hud-tr">
+        <div class="spd" id="hSpd">0<small>km/h</small></div>
+        <div class="gear" id="hGrip"></div>
+        <div class="boost" id="hBoostBar"><i id="hBoost"></i></div>
+        <div class="gear" id="hBoostTxt">boost</div>
+      </div>
+      <div class="tele" id="tele">
+        <div class="cell">
+          <span>GEAR</span><b id="tGear">1</b>
+          <div class="rpmbar"><i id="tRpmBar"></i></div>
+        </div>
+        <div class="cell"><span>RPM</span><b id="tRpm">850</b></div>
+        <div class="cell"><span>LATERAL G</span><b id="tGLat">0.00</b></div>
+        <div class="cell"><span>TYRE SLIP</span><b id="tSlip">0%</b></div>
+      </div>
+      </div>
+      <div class="hud-bl" id="hKeys"></div>
+      <div class="hud-br" id="hProg">no time yet</div>
+      <div class="prompt" id="hPrompt">Hold W to launch</div>
+      <div class="bar"><i id="hBar"></i></div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div id="flash"></div>
+  </div>
+
+  <div class="layer" id="gate" hidden>
+    <div class="scrim"></div>
+    <div class="panel gate">
+      <h2 id="gateTitle">Sign in</h2>
+      <p class="note" id="gateNote">Skyframe is invite-only. Sign in to load your times.</p>
+      <label class="fld" for="gEmail">Email</label>
+      <input type="email" id="gEmail" autocomplete="email">
+      <label class="fld" for="gPass">Password</label>
+      <input type="password" id="gPass" autocomplete="current-password">
+      <div id="gNewFields" hidden>
+        <label class="fld" for="gName">Driver name — shown on the leaderboards</label>
+        <input type="text" id="gName" maxlength="14">
+        <label class="fld" for="gCode">Invite code</label>
+        <input type="text" id="gCode" autocomplete="off">
+      </div>
+      <div class="err" id="gErr"></div>
+      <div class="row">
+        <button class="primary" id="gGo">Sign in</button>
+        <button class="ghost" id="gOffline">Play offline</button>
+      </div>
+      <div class="switch" id="gSwitch">Have an invite code? <b id="gToggle">Create an account</b></div>
+    </div>
+  </div>
+
+  <div class="layer" id="banned" hidden>
+    <div class="scrim"></div>
+    <div class="panel gate">
+      <h2>This account is suspended</h2>
+      <p class="note">Your access to Skyframe has been withdrawn, so times and credits are
+        locked. If you think that is a mistake, speak to whoever runs this server.</p>
+      <div class="row"><button id="bnOut">Sign out</button></div>
+    </div>
+  </div>
+
+  <div class="layer" id="menu" hidden>
+    <div class="scrim"></div>
+    <div class="panel">
+      <div class="brand">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M1 25 L12 25 L21 7 L31 7" fill="none" stroke="#f2733f" stroke-width="3"/>
+          <rect x="7.5" y="18.5" width="9" height="4.5" fill="#3ddbb8"/>
+          <circle cx="10" cy="24" r="1.8" fill="#eaf0f8"/><circle cx="15.5" cy="24" r="1.8" fill="#eaf0f8"/>
+        </svg>
+        <h1>Sky<span>frame</span></h1>
+      </div>
+      <div class="who" id="who" hidden>
+        <span>driver <b id="whoName">—</b></span>
+        <span>credits <b class="cr" id="whoCredits">0</b></span>
+        <button class="ghost" id="whoOut" style="padding:0;font-size:12px">Sign out</button>
+      </div>
+      <p class="lede">Ten courses cut into the hills, a coupe with real springs, dampers and
+        tyres, and no luck anywhere in it. Start line to finish line, no checkpoints: brake for
+        the corners, lean on the banking, land nose-up, and chase the ghost of your own best run.</p>
+      <div class="cols">
+        <div>
+          <div class="row">
+            <button class="primary" id="bDrive">Start driving</button>
+            <button id="bCourses">Courses</button>
+            <button id="bBoards">Leaderboards</button>
+          </div>
+          <div class="rule"></div>
+          <div id="driverRow">
+            <label class="fld" for="driver">Driver name — used on the leaderboards</label>
+            <input type="text" id="driver" maxlength="14" placeholder="Driver">
+          </div>
+          <div class="row"><button class="ghost" id="bSound">Sound: on</button></div>
+        </div>
+        <div class="help">
+          <h3>Controls</h3>
+          <dl>
+            <dt>W / ↑</dt><dd>Throttle</dd>
+            <dt>S / ↓</dt><dd>Brake, then reverse</dd>
+            <dt>A D / ← →</dt><dd>Steer</dd>
+            <dt>Space</dt><dd>Boost — three seconds per run, spend it where it pays</dd>
+            <dt>Shift</dt><dd>Handbrake — locks the rear axle</dd>
+            <dt>R</dt><dd>Restart the run</dd>
+            <dt>T</dt><dd>Telemetry panel</dd>
+            <dt>Esc</dt><dd>Back to this screen</dd>
+          </dl>
+          <p>Airborne, W and S pitch the nose down and up while A and D yaw it. Nothing
+            auto-levels you: a kicker taken flat-out will put you into a real backflip, and
+            it is your job to bring it round before the deck arrives.</p>
+          <p>Once you have set a time, a translucent ghost of that run replays alongside the
+            next attempt and the HUD shows your live gap to it, measured at the point of the
+            course you are actually on. There are no checkpoints and nothing random: identical
+            inputs give an identical run, so every tenth is yours.</p>
+          <p>The courses are cut into the terrain, so running wide puts you on grass and down an
+            embankment rather than into thin air. You can climb back on, but four seconds off
+            the decking ends the run and returns you to the line.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="select" hidden>
+    <div class="scrim"></div>
+    <div class="panel">
+      <h2 class="big">Courses</h2>
+      <p class="lede" style="margin-bottom:22px">Clear one to open the next.</p>
+      <div class="courses" id="courseList"></div>
+      <div class="rule"></div>
+      <div class="row"><button class="ghost" id="bSelBack">Back to title</button></div>
+    </div>
+  </div>
+
+  <div class="layer" id="boards" hidden>
+    <div class="scrim"></div>
+    <div class="panel">
+      <h2 class="big">Leaderboards</h2>
+      <p class="lede" style="margin-bottom:20px" id="boardNote">Times are kept on this device.</p>
+      <div class="tabs" id="boardTabs"></div>
+      <div id="boardBody"></div>
+      <div class="rule"></div>
+      <div class="row">
+        <button class="ghost" id="bBoardBack">Back to title</button>
+        <button class="ghost" id="bBoardWipe">Clear all times</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="result" hidden>
+    <div class="scrim"></div>
+    <div class="panel result">
+      <div class="kick" id="rKick">Course clear</div>
+      <h2 id="rName">—</h2>
+      <div class="bigtime" id="rTime">0:00.00</div>
+      <div class="sub" id="rSub"></div>
+      <div class="mini"><div class="hd" id="rBoardHd">Course leaderboard</div><ol id="rBoard"></ol></div>
+      <div class="row">
+        <button class="primary" id="bNext">Next course</button>
+        <button id="bRetry">Drive it again</button>
+        <button class="ghost" id="bResCourses">Courses</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="fatal" hidden>
+    <div class="scrim"></div>
+    <div class="panel">
+      <h2 id="fTitle">This browser can't run Skyframe</h2>
+      <p id="fBody"></p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ==========================================================================
+   SKYFRAME — elevated stunt driving
+   Original work. Every mesh, material, course layout, UI element and sound is
+   generated at runtime from primitives; the only dependency is Three.js.
+
+   Sections:
+     0 utils   1 storage/leaderboard   2 input   3 audio   4 physics world
+     5 rigid body + vehicle   6 materials/meshes   7 track builder
+     8 course data   9 camera   10 scene   11 ui   12 game
+   ========================================================================== */
+(function () {
+'use strict';
+
+/* ---------------------------------------------------------------- 0. utils */
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const approach = (rate, dt) => 1 - Math.exp(-rate * dt);
+const deg = (d) => (d * Math.PI) / 180;
+const AXES = ['x', 'y', 'z'];
+const sign = (v) => (v < 0 ? -1 : 1);
+
+function formatTime(t) {
+  if (!isFinite(t) || t < 0) t = 0;
+  const m = Math.floor(t / 60);
+  const s = Math.floor(t % 60);
+  const c = Math.floor((t % 1) * 100);
+  return m + ':' + String(s).padStart(2, '0') + '.' + String(c).padStart(2, '0');
+}
+function formatDelta(d) {
+  return (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(2);
+}
+
+function fatal(title, body) {
+  const el = $('fatal');
+  if (!el) return;
+  $('fTitle').textContent = title;
+  $('fBody').textContent = body;
+  ['menu', 'select', 'boards', 'hud', 'result', 'boot'].forEach((i) => {
+    const n = $(i); if (n) n.hidden = true;
+  });
+  el.hidden = false;
+}
+
+if (typeof THREE === 'undefined') {
+  fatal('Three.js did not load',
+    'Skyframe needs the Three.js library. Check your connection, or put a local copy of ' +
+    'three.min.js beside index.html and point the script tag at it.');
+  return;
+}
+try {
+  const probe = document.createElement('canvas');
+  if (!(probe.getContext('webgl') || probe.getContext('experimental-webgl'))) throw 0;
+} catch (e) {
+  fatal("This browser can't run Skyframe",
+    'WebGL is unavailable or switched off. Turn on hardware acceleration, or try another ' +
+    'desktop browser.');
+  return;
+}
+
+/* ------------------------------------------------- 1. storage + leaderboard
+   Works in three tiers so the same file runs as an embedded artifact or as a
+   local page: the host key/value store if present, otherwise localStorage,
+   otherwise memory for the session only.                                    */
+const KEY = 'skyframe.records.v1';
+const Records = {
+  mode: 'memory',
+  data: { driver: '', boards: {}, cleared: {}, ghosts: {} },
+  MAX: 10,
+
+  async load() {
+    let raw = null;
+    try {
+      if (window.storage && window.storage.get) {
+        this.mode = 'device';
+        const r = await window.storage.get(KEY);
+        if (r && r.value) raw = r.value;
+      }
+    } catch (e) { /* key absent or store unavailable */ }
+    if (raw === null) {
+      try {
+        const ls = window.localStorage;
+        if (ls) {
+          const v = ls.getItem(KEY);
+          if (this.mode !== 'device') this.mode = 'device';
+          if (v) raw = v;
+        }
+      } catch (e) { /* blocked in sandboxes */ }
+    }
+    if (raw) {
+      try {
+        const p = JSON.parse(raw);
+        if (p && typeof p === 'object') {
+          this.data.driver = typeof p.driver === 'string' ? p.driver.slice(0, 14) : '';
+          this.data.boards = (p.boards && typeof p.boards === 'object') ? p.boards : {};
+          this.data.cleared = (p.cleared && typeof p.cleared === 'object') ? p.cleared : {};
+          this.data.ghosts = (p.ghosts && typeof p.ghosts === 'object') ? p.ghosts : {};
+        }
+      } catch (e) { console.warn('Skyframe: stored records were unreadable, starting fresh'); }
+    }
+  },
+
+  save() {
+    if (Cloud.on) return;          // the server is the record of truth
+    const s = JSON.stringify(this.data);
+    try { if (window.storage && window.storage.set) { window.storage.set(KEY, s); return; } } catch (e) {}
+    try { if (window.localStorage) window.localStorage.setItem(KEY, s); } catch (e) {}
+  },
+
+  driver() {
+    if (Cloud.on && Cloud.profile) return Cloud.name();
+    return (this.data.driver || 'Driver').slice(0, 14);
+  },
+  /** replace the cache with what the server holds */
+  hydrate(remote) {
+    this.data.boards = remote.boards || {};
+    this.data.cleared = remote.cleared || {};
+    this.credits = remote.credits || 0;
+  },
+  credits: 0,
+  setDriver(n) {
+    this.data.driver = (n || '').trim().slice(0, 14);
+    this.save();
+  },
+
+  /** best-run replay: a flat array of 7 numbers (position + quaternion) per sample */
+  ghost(id) {
+    const g = this.data.ghosts && this.data.ghosts[id];
+    return (g && Array.isArray(g.s) && g.s.length >= 14) ? g : null;
+  },
+  setGhost(id, time, samples) {
+    if (!this.data.ghosts) this.data.ghosts = {};
+    this.data.ghosts[id] = { t: time, s: samples };
+    this.save();
+  },
+
+  board(id) {
+    const b = this.data.boards[id];
+    return Array.isArray(b) ? b : [];
+  },
+  best(id) {
+    const b = this.board(id);
+    return b.length ? b[0].t : 0;
+  },
+  cleared(id) { return !!this.data.cleared[id]; },
+
+  /** returns {rank, best, previousBest} — rank is 1-based, 0 if it missed the table */
+  submit(id, time, laps) {
+    const prevBest = this.best(id);
+    this.data.cleared[id] = true;
+    const list = this.board(id).slice();
+    list.push({ n: this.driver(), t: time, d: Date.now() });
+    list.sort((a, b) => a.t - b.t);
+    const trimmed = list.slice(0, this.MAX);
+    this.data.boards[id] = trimmed;
+    this.save();
+    let rank = 0;
+    for (let i = 0; i < trimmed.length; i++) {
+      if (trimmed[i].t === time && trimmed[i].n === this.driver()) { rank = i + 1; break; }
+    }
+    return { rank, best: this.best(id), prevBest };
+  },
+
+  /** aggregate standings: courses cleared desc, then total of bests asc */
+  overall(courseIds) {
+    const per = {};
+    for (const id of courseIds) {
+      for (const e of this.board(id)) {
+        const k = e.n;
+        if (!per[k]) per[k] = { n: k, count: 0, total: 0, seen: {} };
+        if (per[k].seen[id] === undefined || e.t < per[k].seen[id]) per[k].seen[id] = e.t;
+      }
+    }
+    const rows = [];
+    for (const k in per) {
+      const r = per[k];
+      let count = 0, total = 0;
+      for (const id in r.seen) { count++; total += r.seen[id]; }
+      rows.push({ n: r.n, count, total });
+    }
+    rows.sort((a, b) => (b.count - a.count) || (a.total - b.total));
+    return rows;
+  },
+
+  wipe() {
+    this.data.boards = {};
+    this.data.cleared = {};
+    this.data.ghosts = {};
+    this.save();
+  }
+};
+
+/* --------------------------------------------------------------- 2. input */
+const Input = {
+  down: new Set(), taps: new Set(),
+  throttle: 0, brake: 0, steer: 0, handbrake: 0, boost: 0, anyDrive: false,
+  init() {
+    const track = (e, isDown) => {
+      const c = e.code;
+      if (c === 'Tab' || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(c)) e.preventDefault();
+      if (isDown) { if (!this.down.has(c)) this.taps.add(c); this.down.add(c); }
+      else this.down.delete(c);
+    };
+    addEventListener('keydown', (e) => track(e, true));
+    addEventListener('keyup', (e) => track(e, false));
+    addEventListener('blur', () => this.clear());
+  },
+  sample() {
+    const d = this.down;
+    const tgt = document.activeElement;
+    if (tgt && tgt.tagName === 'INPUT') {
+      this.throttle = this.brake = this.steer = this.handbrake = this.boost = 0;
+      return;
+    }
+    const up = d.has('KeyW') || d.has('ArrowUp');
+    const dn = d.has('KeyS') || d.has('ArrowDown');
+    const lf = d.has('KeyA') || d.has('ArrowLeft');
+    const rt = d.has('KeyD') || d.has('ArrowRight');
+    this.throttle = up ? 1 : 0;
+    this.brake = dn ? 1 : 0;
+    this.steer = (rt ? 1 : 0) - (lf ? 1 : 0);
+    this.boost = d.has('Space') ? 1 : 0;
+    this.handbrake = (d.has('ShiftLeft') || d.has('ShiftRight')) ? 1 : 0;
+    this.anyDrive = up || dn;
+  },
+  tapped(code) { if (this.taps.has(code)) { this.taps.delete(code); return true; } return false; },
+  endFrame() { this.taps.clear(); },
+  clear() {
+    this.down.clear(); this.taps.clear();
+    this.throttle = this.brake = this.steer = this.handbrake = this.boost = 0;
+    this.anyDrive = false;
+  }
+};
+
+/* --------------------------------------------------------------- 3. audio
+   Synthesised, no sample files. The engine is a mellow triangle stack (raw
+   saw/square at engine frequencies is a buzzsaw), and most of the sense of
+   speed comes from a pink-noise tyre bed gated on speed. A separate screech
+   layer opens up when the tyres actually exceed their friction budget, so
+   the audio is driven by the physics rather than faked.                    */
+/** deterministic pseudo-random source: nothing in Skyframe is left to chance,
+    so even the noise textures are reproducible run to run */
+let _seed = 20260912;
+function rand() {
+  _seed = (_seed * 1664525 + 1013904223) >>> 0;
+  return _seed / 4294967296;
+}
+
+const Sound = {
+  ctx: null, bus: null, noiseBuf: null,
+  on: true, ready: false, running: false, eng: null,
+  VOL: 0.5,
+
+  init() {
+    if (this.ready) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { this.on = false; return; }
+    try {
+      const c = this.ctx = new AC();
+      this.bus = c.createGain();
+      this.bus.gain.value = this.on ? this.VOL : 0;
+      const tame = c.createBiquadFilter();
+      tame.type = 'lowpass'; tame.frequency.value = 5400; tame.Q.value = 0.4;
+      const comp = c.createDynamicsCompressor();
+      comp.threshold.value = -15; comp.knee.value = 14; comp.ratio.value = 3.2;
+      comp.attack.value = 0.006; comp.release.value = 0.15;
+      this.bus.connect(tame); tame.connect(comp); comp.connect(c.destination);
+      this.noiseBuf = this.makeNoise(2.4);
+      this.ready = true;
+    } catch (e) { this.on = false; }
+  },
+
+  makeNoise(seconds) {
+    const c = this.ctx, n = Math.floor(c.sampleRate * seconds);
+    const buf = c.createBuffer(1, n, c.sampleRate);
+    const d = buf.getChannelData(0);
+    let a = 0, b = 0, e = 0;
+    for (let k = 0; k < n; k++) {
+      const w = rand() * 2 - 1;
+      a = 0.995 * a + w * 0.035;
+      b = 0.960 * b + w * 0.110;
+      e = 0.800 * e + w * 0.240;
+      d[k] = clamp((a + b + e + w * 0.05) * 0.85, -1, 1);
+    }
+    return buf;
+  },
+
+  resume() { if (this.ready && this.ctx.state === 'suspended') this.ctx.resume(); },
+  setEnabled(on) {
+    this.on = on;
+    if (this.ready) this.bus.gain.setTargetAtTime(on ? this.VOL : 0, this.ctx.currentTime, 0.04);
+  },
+
+  startEngine() {
+    if (!this.ready || this.running) return;
+    const c = this.ctx;
+    // Engine: a harmonic stack on the firing frequency, which for a four
+    // cylinder four stroke is rpm/30 — so the note now tracks the gearbox
+    // rather than road speed, and you hear every shift.
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 1.1;
+    const gain = c.createGain(); gain.gain.value = 0;
+    const part = (type, mul, lvl, detune) => {
+      const o = c.createOscillator();
+      o.type = type;
+      o.frequency.value = 40 * mul;
+      if (detune) o.detune.value = detune;
+      const g = c.createGain(); g.gain.value = lvl;
+      o.connect(g); g.connect(lp); o.start();
+      return { o: o, mul: mul };
+    };
+    const parts = [
+      part('triangle', 1, 1.00),
+      part('triangle', 2, 0.42, 6),
+      part('sawtooth', 2, 0.16),
+      part('triangle', 3, 0.20, -8),
+      part('triangle', 4, 0.10),
+      part('sawtooth', 0.5, 0.22)          // half order: the off-beat lumpiness
+    ];
+    lp.connect(gain); gain.connect(this.bus);
+
+    const road = this.loopNoise(420, 0.8, 'bandpass');     // tyres on decking
+    const rumble = this.loopNoise(150, 0.7, 'lowpass');    // terrain rumble
+    const skid = this.loopNoise(1600, 3.6, 'bandpass');    // rubber scrubbing
+    const wind = this.loopNoise(900, 0.5, 'highpass');     // airflow
+    const boost = this.loopNoise(1200, 1.2, 'bandpass');   // boost roar
+    this.eng = { parts, lp, gain, road, rumble, skid, wind, boost };
+    this.running = true;
+  },
+
+  loopNoise(freq, q, type) {
+    const c = this.ctx;
+    const src = c.createBufferSource();
+    src.buffer = this.noiseBuf; src.loop = true;
+    const f = c.createBiquadFilter();
+    f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = c.createGain(); g.gain.value = 0;
+    src.connect(f); f.connect(g); g.connect(this.bus); src.start();
+    return { src, f, g };
+  },
+
+  stopEngine() {
+    if (!this.running) return;
+    const e = this.eng, t = this.ctx.currentTime;
+    const beds = [e.road, e.rumble, e.skid, e.wind, e.boost];
+    try {
+      e.gain.gain.setTargetAtTime(0, t, 0.05);
+      for (const b of beds) b.g.gain.setTargetAtTime(0, t, 0.05);
+      for (const p of e.parts) p.o.stop(t + 0.35);
+      for (const b of beds) b.src.stop(t + 0.35);
+      setTimeout(function () {
+        try {
+          e.gain.disconnect(); e.lp.disconnect();
+          for (const b of beds) { b.g.disconnect(); b.f.disconnect(); }
+        } catch (x) {}
+      }, 700);
+    } catch (x) {}
+    this.eng = null; this.running = false;
+  },
+
+  /**
+   * Driven directly from the vehicle state: firing frequency from rpm, filter
+   * brightness from throttle, a cut during shifts, rolling noise that changes
+   * character on terrain, wind with speed, and scrub keyed to real tyre slip.
+   */
+  engine(car, throttle, onGrass) {
+    if (!this.ready || !this.running) return;
+    const t = this.ctx.currentTime, e = this.eng;
+    const rpmN = clamp((car.rpm - CAR.idleRpm) / (CAR.redline - CAR.idleRpm), 0, 1);
+    const spdN = clamp(car.speed / CAR.vTop, 0, 1);
+    const fire = Math.max(car.rpm, CAR.idleRpm) / 30;      // Hz
+    const shifting = car.shiftTimer > 0;
+    const air = !car.grounded;
+
+    for (const p of e.parts) p.o.frequency.setTargetAtTime(fire * p.mul, t, 0.035);
+    e.lp.frequency.setTargetAtTime(
+      360 + rpmN * 2400 + (throttle ? 700 : 0) + (car.boosting ? 900 : 0), t, 0.06);
+    const load = throttle ? 1 : 0.45;
+    e.gain.gain.setTargetAtTime(
+      (0.012 + rpmN * 0.030 + load * 0.014 + (car.boosting ? 0.016 : 0)) * (shifting ? 0.3 : 1),
+      t, shifting ? 0.02 : 0.05);
+
+    e.road.f.frequency.setTargetAtTime(380 + spdN * 950, t, 0.1);
+    e.road.g.gain.setTargetAtTime(air ? 0.002 : spdN * spdN * (onGrass ? 0.030 : 0.048), t, 0.08);
+    e.rumble.f.frequency.setTargetAtTime(120 + spdN * 220, t, 0.1);
+    e.rumble.g.gain.setTargetAtTime(air ? 0 : (onGrass ? spdN * 0.085 : spdN * 0.012), t, 0.08);
+
+    e.wind.f.frequency.setTargetAtTime(700 + spdN * 1500, t, 0.12);
+    e.wind.g.gain.setTargetAtTime(spdN * spdN * 0.042, t, 0.1);
+
+    const slip = clamp(car.slipMax, 0, 1.4);
+    e.skid.f.frequency.setTargetAtTime(1250 + slip * 950, t, 0.05);
+    e.skid.g.gain.setTargetAtTime(air ? 0 : clamp(slip - 0.10, 0, 1) * 0.10, t, 0.04);
+
+    e.boost.f.frequency.setTargetAtTime(900 + rpmN * 1400, t, 0.06);
+    e.boost.g.gain.setTargetAtTime(car.boosting ? 0.075 : 0, t, 0.05);
+  },
+
+  tone(freq, at, dur, peak, type, glideTo) {
+    if (!this.ready || !this.on) return;
+    const c = this.ctx, t0 = c.currentTime + (at || 0);
+    const o = c.createOscillator();
+    o.type = type || 'triangle';
+    o.frequency.setValueAtTime(freq, t0);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(Math.max(glideTo, 20), t0 + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + Math.min(0.022, dur * 0.25));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.bus);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  },
+
+  noiseHit(at, dur, peak, f0, f1, type) {
+    if (!this.ready || !this.on) return;
+    const c = this.ctx, t0 = c.currentTime + (at || 0);
+    const src = c.createBufferSource();
+    src.buffer = this.noiseBuf;
+    src.playbackRate.value = 0.8 + rand() * 0.4;
+    const f = c.createBiquadFilter();
+    f.type = type || 'bandpass'; f.Q.value = 0.9;
+    f.frequency.setValueAtTime(f0, t0);
+    f.frequency.exponentialRampToValueAtTime(Math.max(f1, 30), t0 + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(this.bus);
+    src.start(t0, rand() * 1.6); src.stop(t0 + dur + 0.05);
+  },
+
+  land(strength) {
+    const s = clamp(strength, 0.12, 1);
+    this.tone(112, 0, 0.17, 0.14 * s, 'sine', 48);
+    this.noiseHit(0, 0.14, 0.09 * s, 760, 170, 'lowpass');
+  },
+  scrape(strength) {
+    const s = clamp(strength, 0.1, 1);
+    this.noiseHit(0, 0.2, 0.075 * s, 2400, 700, 'bandpass');
+  },
+  shift(up) {
+    this.noiseHit(0, 0.05, 0.035, up ? 2600 : 1900, 700, 'bandpass');
+    this.tone(up ? 150 : 120, 0, 0.05, 0.028, 'square');
+  },
+  bottomOut(strength) {
+    const s = clamp(strength, 0.1, 1);
+    this.tone(74, 0, 0.10, 0.10 * s, 'square', 42);
+    this.noiseHit(0, 0.09, 0.07 * s, 520, 130, 'lowpass');
+  },
+  boostFire() {
+    this.noiseHit(0, 0.30, 0.09, 480, 2600, 'bandpass');
+    this.tone(150, 0, 0.22, 0.05, 'sawtooth', 420);
+  },
+  respawn() {
+    this.noiseHit(0, 0.26, 0.06, 1100, 220);
+    this.tone(196, 0, 0.22, 0.042, 'sine', 120);
+  },
+  finish(record) {
+    const notes = record ? [523.25, 659.25, 783.99, 1046.5, 1318.5] : [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((n, k) => this.tone(n, k * 0.095, 0.52, 0.075, 'triangle'));
+    this.tone(130.81, 0, 0.85, 0.055, 'sine');
+  }
+};
+
+/* ------------------------------------------------- 1b. accounts and cloud
+   Optional Firebase layer. With FIREBASE.enabled false the game runs exactly
+   as before: no login, records on this device only. With it enabled the game
+   is invite-only and every leaderboard is shared.
+
+   Design note: the rest of the game reads records synchronously (Records.best,
+   Records.board). Rather than making all of that async, the cloud is mirrored
+   into the same in-memory cache on sign-in, writes are optimistic, and the
+   call sites never change.                                                  */
+const FIREBASE = {
+  enabled: false,          // flip to true once you have pasted a config below
+  sdk: 'https://www.gstatic.com/firebasejs/10.12.2/',
+  config: {
+    apiKey: '',
+    authDomain: '',
+    projectId: '',
+    appId: ''
+  }
+};
+
+const Cloud = {
+  ready: false, on: false, user: null, profile: null, credits: 0,
+  fb: null, auth: null, db: null, error: '',
+
+  courseIds() { return LEVELS.map((l, i) => 'c' + (i + 1)); },
+
+  async init() {
+    if (!FIREBASE.enabled || !FIREBASE.config.projectId) return false;
+    try {
+      const [app, authMod, fsMod] = await Promise.all([
+        import(FIREBASE.sdk + 'firebase-app.js'),
+        import(FIREBASE.sdk + 'firebase-auth.js'),
+        import(FIREBASE.sdk + 'firebase-firestore.js')
+      ]);
+      this.fb = { app, authMod, fsMod };
+      const a = app.initializeApp(FIREBASE.config);
+      this.auth = authMod.getAuth(a);
+      this.db = fsMod.getFirestore(a);
+      this.on = true;
+      this.ready = true;
+      return true;
+    } catch (e) {
+      this.error = 'Could not load Firebase: ' + (e && e.message ? e.message : e);
+      console.warn('Skyframe:', this.error);
+      return false;
+    }
+  },
+
+  /** resolves with the signed-in user, or null, once auth state is known */
+  watch(onChange) {
+    if (!this.on) return;
+    this.fb.authMod.onAuthStateChanged(this.auth, async (user) => {
+      this.user = user || null;
+      this.profile = null;
+      if (user) {
+        try { await this.loadProfile(); } catch (e) { this.error = e.message; }
+      }
+      onChange(this.user, this.profile);
+    });
+  },
+
+  async signIn(email, pass) {
+    await this.fb.authMod.signInWithEmailAndPassword(this.auth, email, pass);
+  },
+  async signOut() {
+    await this.fb.authMod.signOut(this.auth);
+  },
+
+  /**
+   * Invite-gated sign-up. The code is checked by writing claims/{uid}: the
+   * security rule compares it against a document no client is allowed to read,
+   * so a wrong code is rejected server-side and the real code never leaves the
+   * database. Only then can the profile be created.
+   */
+  async signUp(email, pass, code, displayName) {
+    const { authMod, fsMod } = this.fb;
+    const cred = await authMod.createUserWithEmailAndPassword(this.auth, email, pass);
+    const uid = cred.user.uid;
+    // adopt the user straight away: the auth-state watcher fires asynchronously
+    // and loadProfile below would otherwise read a null user
+    this.user = cred.user;
+    const name = (displayName || '').trim().slice(0, 14) || 'Driver';
+    try {
+      await fsMod.setDoc(fsMod.doc(this.db, 'claims', uid), { code: (code || '').trim() });
+    } catch (e) {
+      // the rule rejected the code: remove the useless auth account again
+      try { await cred.user.delete(); } catch (x) {}
+      throw new Error('That invite code is not valid.');
+    }
+    await fsMod.setDoc(fsMod.doc(this.db, 'profiles', uid), {
+      displayName: name, banned: false, createdAt: fsMod.serverTimestamp()
+    });
+    await this.loadProfile();
+  },
+
+  async loadProfile() {
+    const { fsMod } = this.fb;
+    const snap = await fsMod.getDoc(fsMod.doc(this.db, 'profiles', this.user.uid));
+    if (!snap.exists()) {
+      this.profile = null;
+      throw new Error('This account has no profile yet — it needs a valid invite code.');
+    }
+    this.profile = snap.data();
+    return this.profile;
+  },
+
+  banned() { return !!(this.profile && this.profile.banned); },
+  name() { return (this.profile && this.profile.displayName) || 'Driver'; },
+
+  /** every player's best per course, plus my credits, into the local cache */
+  async pull() {
+    const { fsMod } = this.fb;
+    const { collection, getDocs, query, where } = fsMod;
+    const boards = {};
+    const cleared = {};
+    const snap = await getDocs(query(collection(this.db, 'bests'), where('banned', '==', false)));
+    snap.forEach((d) => {
+      const r = d.data();
+      if (!r || typeof r.timeMs !== 'number' || !r.courseId) return;
+      (boards[r.courseId] = boards[r.courseId] || []).push({
+        n: r.displayName || 'Driver', t: r.timeMs / 1000, d: r.updatedMs || 0
+      });
+      if (r.uid === this.user.uid) cleared[r.courseId] = true;
+    });
+    for (const k in boards) {
+      boards[k].sort((a, b) => a.t - b.t);
+      boards[k] = boards[k].slice(0, 10);
+    }
+    let credits = 0;
+    const ce = await getDocs(query(collection(this.db, 'creditEvents'),
+      where('uid', '==', this.user.uid)));
+    ce.forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') credits += v.delta; });
+    this.credits = credits;
+    return { boards, cleared, credits };
+  },
+
+  /**
+   * Push a personal best. The bests document id is the player's own uid and the
+   * course, so nobody can write into anyone else's row, and the award event id
+   * is derived the same way, which makes the credit idempotent — claiming it
+   * twice is impossible rather than merely discouraged.
+   */
+  async pushBest(courseId, timeSec, ghostSamples, firstClear) {
+    if (!this.on || !this.user || this.banned()) return;
+    const { fsMod } = this.fb;
+    const uid = this.user.uid;
+    const id = uid + '_' + courseId;
+    await fsMod.setDoc(fsMod.doc(this.db, 'bests', id), {
+      uid, courseId, displayName: this.name(), banned: false,
+      timeMs: Math.round(timeSec * 1000), updatedMs: Date.now()
+    });
+    if (firstClear) {
+      await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id + '_clear'), {
+        uid, courseId, delta: CREDITS_PER_CLEAR
+      });
+    }
+    if (ghostSamples && ghostSamples.length) {
+      try {
+        await fsMod.setDoc(fsMod.doc(this.db, 'ghosts', id), {
+          uid, courseId, timeMs: Math.round(timeSec * 1000),
+          samples: ghostSamples.join(',')
+        });
+      } catch (e) { console.warn('Skyframe: ghost upload skipped', e && e.message); }
+    }
+  },
+
+  /** the fastest stored ghost on a course, for chasing someone else's run */
+  async fetchGhost(courseId, uid) {
+    if (!this.on) return null;
+    const { fsMod } = this.fb;
+    try {
+      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'ghosts', (uid || this.user.uid) + '_' + courseId));
+      if (!snap.exists()) return null;
+      const d = snap.data();
+      const s = String(d.samples || '').split(',').map(Number);
+      if (s.length < 14 || s.some((v) => !isFinite(v))) return null;
+      return { t: d.timeMs / 1000, s };
+    } catch (e) { return null; }
+  }
+};
+const CREDITS_PER_CLEAR = 100;
+
+/* --------------------------------------------- 4. physics world (triangles)
+   The track is a swept ribbon, so collision is ray/triangle and
+   point/triangle rather than boxes. This matters: a banked curve built from
+   discrete boxes leaves a lateral step at every joint (a 10 m deck rolled
+   through 19 degrees steps ~0.29 m per segment), which a real suspension
+   slams into. Consecutive ribbon quads share their edge vertices, so the
+   driving surface is exactly continuous however it twists.
+   Two queries: a ray cast for suspension and camera, and a surface
+   penetration test for hull corners. Triangles are bucketed in a flat XZ
+   hash grid. The _w* scratch vectors belong to this section alone — sharing
+   them with callers would let a query trash vectors the caller still holds. */
+// Ground level. The course is built on terrain rather than floating in a
+// void, so there is nowhere to fall: run wide and you end up on grass, which
+// costs time instead of ending the run. That is what lets the checkpoints go.
+const GROUND_Y = -0.7;
+const CELL = 8;
+const _w1 = new THREE.Vector3(), _w2 = new THREE.Vector3(), _w3 = new THREE.Vector3();
+const _w4 = new THREE.Vector3(), _w5 = new THREE.Vector3();
+
+class Tri {
+  constructor(a, b, c, grip, depth, na, nb, nc, track) {
+    this.a = a; this.b = b; this.c = c;
+    // Optional per-vertex normals. A ribbon is faceted, and using the flat
+    // facet normal makes the suspension force direction jump at every quad
+    // boundary, which the driver feels as a rhythmic thumping. Interpolating
+    // the normal across the triangle makes the surface behave like the smooth
+    // curve it is meant to represent.
+    this.na = na || null; this.nb = nb || null; this.nc = nc || null;
+    this.stamp = 0;                      // visit marker for de-duplicated queries
+    this.e1 = new THREE.Vector3().subVectors(b, a);
+    this.e2 = new THREE.Vector3().subVectors(c, a);
+    this.n = new THREE.Vector3().crossVectors(this.e1, this.e2);
+    this.area2 = this.n.length();
+    this.n.multiplyScalar(this.area2 > 1e-12 ? 1 / this.area2 : 0);
+    this.grip = grip === undefined ? 1 : grip;
+    this.depth = depth === undefined ? 0.7 : depth;
+    // Whether this surface is decking. Terrain and embankments are drivable
+    // but are not the track, and that distinction cannot be inferred from grip
+    // — the dusty decking on one course is deliberately low-grip.
+    this.track = track !== false;
+    // cached dot products for the barycentric test
+    this.d00 = this.e1.dot(this.e1);
+    this.d01 = this.e1.dot(this.e2);
+    this.d11 = this.e2.dot(this.e2);
+    const den = this.d00 * this.d11 - this.d01 * this.d01;
+    this.invDen = Math.abs(den) > 1e-12 ? 1 / den : 0;
+  }
+}
+
+class PhysicsWorld {
+  constructor() {
+    this.tris = [];
+    this.grid = new Map();
+    this.stamp = 0;
+    this.groundY = GROUND_Y;
+    this.groundGrip = 0.55;      // grass: drivable, but you will not set a time on it
+  }
+  clear() { this.tris.length = 0; this.grid.clear(); }
+
+  addTri(a, b, c, grip, depth, na, nb, nc, track) {
+    const t = new Tri(a, b, c, grip, depth, na, nb, nc, track);
+    if (t.area2 > 1e-9) this.tris.push(t);
+  }
+  /** a quad as two triangles, wound a-b-c / a-c-d; N holds optional vertex normals */
+  addQuad(a, b, c, d, grip, depth, doubleSided, N, track) {
+    if (N) {
+      this.addTri(a, b, c, grip, depth, N.a, N.b, N.c, track);
+      this.addTri(a, c, d, grip, depth, N.a, N.c, N.d, track);
+    } else {
+      this.addTri(a, b, c, grip, depth, null, null, null, track);
+      this.addTri(a, c, d, grip, depth, null, null, null, track);
+    }
+    if (doubleSided) {
+      this.addTri(a, c, b, grip, depth, null, null, null, track);
+      this.addTri(a, d, c, grip, depth, null, null, null, track);
+    }
+  }
+
+  /** barycentric blend of vertex normals, falling back to the facet normal */
+  smoothNormal(t, u, v, out) {
+    if (!t.na) return out.copy(t.n);
+    const w = 1 - u - v;
+    out.set(t.na.x * w + t.nb.x * u + t.nc.x * v,
+            t.na.y * w + t.nb.y * u + t.nc.y * v,
+            t.na.z * w + t.nb.z * u + t.nc.z * v);
+    return out.lengthSq() > 1e-9 ? out.normalize() : out.copy(t.n);
+  }
+
+  index() {
+    this.grid.clear();
+    for (const t of this.tris) {
+      const x0 = Math.floor(Math.min(t.a.x, t.b.x, t.c.x) / CELL);
+      const x1 = Math.floor(Math.max(t.a.x, t.b.x, t.c.x) / CELL);
+      const z0 = Math.floor(Math.min(t.a.z, t.b.z, t.c.z) / CELL);
+      const z1 = Math.floor(Math.max(t.a.z, t.b.z, t.c.z) / CELL);
+      for (let x = x0; x <= x1; x++) {
+        for (let z = z0; z <= z1; z++) {
+          const k = x + ':' + z;
+          let arr = this.grid.get(k);
+          if (!arr) { arr = []; this.grid.set(k, arr); }
+          arr.push(t);
+        }
+      }
+    }
+  }
+
+  /**
+   * Visits the cells overlapping an XZ box. Queries used to sweep a fixed 3x3
+   * block of 12 m cells — 1296 square metres of candidates for a 0.8 m
+   * suspension ray. Every triangle is indexed into all cells its bounds
+   * overlap, so covering just the query's own bounds is both correct and far
+   * cheaper.
+   */
+  cellsInRange(minX, minZ, maxX, maxZ, fn) {
+    const x0 = Math.floor(minX / CELL), x1 = Math.floor(maxX / CELL);
+    const z0 = Math.floor(minZ / CELL), z1 = Math.floor(maxZ / CELL);
+    for (let ix = x0; ix <= x1; ix++) {
+      for (let iz = z0; iz <= z1; iz++) {
+        const arr = this.grid.get(ix + ':' + iz);
+        if (arr) fn(arr);
+      }
+    }
+  }
+
+  /**
+   * Möller–Trumbore. Front faces only by default, which is what suspension
+   * rays want. twoSided also accepts faces hit from behind and flips the
+   * reported normal to oppose the ray, which is what a swept hull test needs:
+   * a corner riding up an embankment crosses the deck's underside, and that
+   * face is back-facing to its motion.
+   */
+  raycast(origin, dir, maxDist, hit, twoSided) {
+    let bestT = maxDist, best = null, bestU = 0, bestV = 0;
+    const mark = ++this.stamp;
+    const ex = origin.x + dir.x * maxDist, ez = origin.z + dir.z * maxDist;
+    this.cellsInRange(Math.min(origin.x, ex), Math.min(origin.z, ez),
+                      Math.max(origin.x, ex), Math.max(origin.z, ez), function (arr) {
+      for (let i = 0; i < arr.length; i++) {
+        const t = arr[i];
+        if (t.stamp === mark) continue;          // already tested via another cell
+        t.stamp = mark;
+        _w1.crossVectors(dir, t.e2);
+        const det = t.e1.dot(_w1);
+        if (twoSided ? Math.abs(det) < 1e-9 : det < 1e-9) continue;
+        const inv = 1 / det;
+        _w2.subVectors(origin, t.a);
+        const u = _w2.dot(_w1) * inv;
+        if (u < 0 || u > 1) continue;
+        _w3.crossVectors(_w2, t.e1);
+        const v = dir.dot(_w3) * inv;
+        if (v < 0 || u + v > 1) continue;
+        const d = t.e2.dot(_w3) * inv;
+        if (d < 0 || d >= bestT) continue;
+        bestT = d; best = t; bestU = u; bestV = v;
+      }
+    });
+    // the ground plane, tested analytically so it needs no grid cells
+    if (this.groundY !== null && dir.y < -1e-6) {
+      const tg = (this.groundY - origin.y) / dir.y;
+      if (tg >= 0 && tg < bestT) {
+        hit.t = tg;
+        hit.grip = this.groundGrip;
+        hit.track = false;
+        hit.normal.set(0, 1, 0);
+        hit.point.copy(origin).addScaledVector(dir, tg);
+        return true;
+      }
+    }
+    if (!best) return false;
+    hit.t = bestT;
+    hit.grip = best.grip;
+    hit.track = best.track;
+    this.smoothNormal(best, bestU, bestV, hit.normal);
+    if (twoSided && hit.normal.dot(dir) > 0) hit.normal.multiplyScalar(-1);
+    hit.point.copy(origin).addScaledVector(dir, bestT);
+    return true;
+  }
+
+  /**
+   * How far a point sits behind the nearest surface it is inside of.
+   * The ribbon is a surface, not a solid, so a point counts as penetrating
+   * when it is within the triangle's own thickness behind the face and its
+   * projection lands inside the triangle.
+   *
+   * Critically this returns the SHALLOWEST such face, not the deepest. Taking
+   * the deepest meant a car nosing into the side of a deck was measured
+   * against the top face — several centimetres "below" it — and got pushed
+   * vertically, phasing up onto the track through its own edge. The shallowest
+   * face is the side skirt, which pushes it back out sideways where it came
+   * from. This is the same reasoning as picking the minimum-penetration
+   * separating axis for a box.
+   */
+  probeSurface(p, out) {
+    let bestDepth = Infinity, best = null, bestS = 0, bestW = 0;
+    const mark = ++this.stamp;
+    this.cellsInRange(p.x, p.z, p.x, p.z, function (arr) {
+      for (let i = 0; i < arr.length; i++) {
+        const t = arr[i];
+        if (t.stamp === mark) continue;
+        t.stamp = mark;
+        _w1.subVectors(p, t.a);
+        const sd = _w1.dot(t.n);
+        if (sd > 0.02 || sd < -t.depth) continue;
+        const depth = -sd;
+        if (depth >= bestDepth) continue;          // keep the shallowest
+        // project onto the plane, then barycentric
+        _w2.copy(_w1).addScaledVector(t.n, -sd);
+        const u = _w2.dot(t.e1), v = _w2.dot(t.e2);
+        const s = (t.d11 * u - t.d01 * v) * t.invDen;
+        const w = (t.d00 * v - t.d01 * u) * t.invDen;
+        if (s < -0.002 || w < -0.002 || s + w > 1.002) continue;
+        bestDepth = depth; best = t; bestS = s; bestW = w;
+      }
+    });
+    if (this.groundY !== null && p.y < this.groundY) {
+      const gd = Math.min(this.groundY - p.y, 0.8);
+      if (gd < bestDepth) {
+        out.depth = gd;
+        out.grip = this.groundGrip;
+        out.normal.set(0, 1, 0);
+        return true;
+      }
+    }
+    if (!best) return false;
+    out.depth = bestDepth;
+    out.grip = best.grip;
+    this.smoothNormal(best, bestS, bestW, out.normal);
+    return true;
+  }
+}
+
+/* ------------------------------------------------ 5. materials and meshes */
+const MAT = {};
+const GEO = {};
+function buildMaterials() {
+  const std = (c, o) => new THREE.MeshStandardMaterial(Object.assign(
+    { color: c, roughness: 0.72, metalness: 0.04, flatShading: true }, o || {}));
+  // Bright, flat, saturated: a clear-daylight low-poly look rather than the
+  // moody night of the earlier build. Flat shading everywhere keeps facets
+  // reading as facets.
+  MAT.deck = std(0xd9e0e6, { roughness: 0.94, metalness: 0 });
+  MAT.deckAlt = std(0xe6d9b8, { roughness: 0.96, metalness: 0 });
+  MAT.curb = std(0xe8544c, { roughness: 0.78 });
+  MAT.curbAlt = std(0xf6f7f9, { roughness: 0.82 });
+  MAT.rail = std(0xf1f4f7, { roughness: 0.8, side: THREE.DoubleSide });
+  MAT.truss = std(0x8492a1, { roughness: 0.95 });
+  MAT.pier = std(0xa7b3bf, { roughness: 0.97 });
+  MAT.bank = std(0x7fb968, { roughness: 1 });          // grass embankment
+  MAT.side = std(0x9aa7b3, { roughness: 0.95 });
+  MAT.pad = std(0xc3ccd4, { roughness: 0.95 });
+  MAT.dash = std(0xffffff, { roughness: 0.7 });
+  MAT.chev = std(0xffc628, { roughness: 0.7 });
+  MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
+  MAT.finish = std(0xffc628, { emissive: 0xc9930d, emissiveIntensity: 0.45 });
+  MAT.body = std(0x2f7dff, { roughness: 0.42, metalness: 0.1 });
+  MAT.bodyDark = std(0x1b4fb8, { roughness: 0.5, metalness: 0.08 });
+  MAT.trim = std(0x2b3442, { roughness: 0.6, metalness: 0.12 });
+  MAT.glass = std(0x9fd4f2, { roughness: 0.24, metalness: 0.2 });
+  MAT.tyre = std(0x12161d, { roughness: 0.96, flatShading: false });
+  MAT.rim = std(0xf2f5f8, { roughness: 0.42, metalness: 0.3, flatShading: false });
+  MAT.lamp = std(0xfff0c6, { emissive: 0xffd77a, emissiveIntensity: 1.0 });
+  MAT.brake = std(0x50121a, { emissive: 0xff2d2d, emissiveIntensity: 0.15 });
+  MAT.scenery = std(0x74b45c, { roughness: 1 });
+  MAT.sceneryFar = std(0x9cc48c, { roughness: 1 });
+  MAT.floor = new THREE.MeshBasicMaterial({ color: 0x8fc177 });
+  MAT.tree = std(0x4f8f46, { roughness: 1 });
+  MAT.rock = std(0x9aa0a6, { roughness: 1 });
+  // laid-down rubber: unlit, translucent, and pushed a fraction toward the
+  // camera so it cannot z-fight with the decking it sits on
+  MAT.flame = new THREE.MeshBasicMaterial({
+    color: 0xff8a26, transparent: true, opacity: 0.85, depthWrite: false,
+    blending: THREE.AdditiveBlending });
+  MAT.flameCore = new THREE.MeshBasicMaterial({
+    color: 0xfff0c0, transparent: true, opacity: 0.95, depthWrite: false,
+    blending: THREE.AdditiveBlending });
+  // Laid rubber, with per-vertex strength so a mark darkens and widens with
+  // speed, slip and steering angle. A plain material can only carry one
+  // opacity for the whole mesh, hence the tiny shader.
+  MAT.skid = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3,
+    uniforms: {
+      uColor: { value: new THREE.Color(0x191a1f) },
+      uOpacity: { value: 0.80 },
+      uHead: { value: 0 },
+      uMax: { value: 1 }
+    },
+    vertexShader: [
+      'attribute float aStrength;',
+      'attribute float aIdx;',
+      'uniform float uHead; uniform float uMax;',
+      'varying float vA;',
+      'void main(){',
+      // distance back through the ring buffer gives each mark an age, so a
+      // trail fades out behind the car instead of ending in a hard edge
+      '  float age = mod(uHead - aIdx + uMax, uMax) / uMax;',
+      '  vA = aStrength * pow(1.0 - age, 1.3);',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform vec3 uColor; uniform float uOpacity;',
+      'varying float vA;',
+      'void main(){ gl_FragColor = vec4(uColor, uOpacity * clamp(vA, 0.0, 1.0)); }'
+    ].join('\n')
+  });
+  // flat translucent stand-in for the best-run replay
+  MAT.ghost = new THREE.MeshBasicMaterial({
+    color: 0x35c2f0, transparent: true, opacity: 0.3, depthWrite: false });
+  MAT.ghostDark = new THREE.MeshBasicMaterial({
+    color: 0x1e6f92, transparent: true, opacity: 0.3, depthWrite: false });
+}
+function buildGeometry() {
+  GEO.box = new THREE.BoxGeometry(1, 1, 1);
+  GEO.tyre = new THREE.CylinderGeometry(1, 1, 1, 16);
+  GEO.tyre.rotateZ(Math.PI / 2);
+  GEO.rim = new THREE.CylinderGeometry(1, 1, 1, 12);
+  GEO.rim.rotateZ(Math.PI / 2);
+  GEO.peak = new THREE.ConeGeometry(1, 1, 5, 1);
+  GEO.tree = new THREE.ConeGeometry(1, 1, 6, 1);
+  GEO.rock = new THREE.DodecahedronGeometry(1, 0);
+}
+/**
+ * Bakes a list of primitive placements into one BufferGeometry. The car was
+ * 48 separate meshes, which is 48 draw calls plus another 48 in the shadow
+ * pass for a vehicle that fits in a 4 m box. Merging by material takes it to
+ * 14 and costs nothing at runtime, since none of these parts move relative
+ * to each other.
+ * Each part: {g: source geometry, s: [x,y,z] scale, p: [x,y,z] offset,
+ *             rx/ry/rz: optional rotation}
+ */
+function mergeParts(list) {
+  let total = 0;
+  for (const b of list) total += (b.g.index ? b.g.index.count : b.g.attributes.position.count);
+  const pos = new Float32Array(total * 3);
+  const nrm = new Float32Array(total * 3);
+  const m = new THREE.Matrix4(), nmat = new THREE.Matrix3();
+  const q = new THREE.Quaternion(), e = new THREE.Euler();
+  const sc = new THREE.Vector3(), tr = new THREE.Vector3(), v = new THREE.Vector3();
+  let o = 0;
+  for (const b of list) {
+    const sp = b.g.attributes.position.array, sn = b.g.attributes.normal.array;
+    const idx = b.g.index ? b.g.index.array : null;
+    const count = idx ? idx.length : b.g.attributes.position.count;
+    e.set(b.rx || 0, b.ry || 0, b.rz || 0);
+    q.setFromEuler(e);
+    tr.set(b.p[0], b.p[1], b.p[2]);
+    sc.set(b.s[0], b.s[1], b.s[2]);
+    m.compose(tr, q, sc);
+    nmat.getNormalMatrix(m);
+    for (let i = 0; i < count; i++) {
+      const k = (idx ? idx[i] : i) * 3;
+      v.set(sp[k], sp[k + 1], sp[k + 2]).applyMatrix4(m);
+      pos[o] = v.x; pos[o + 1] = v.y; pos[o + 2] = v.z;
+      v.set(sn[k], sn[k + 1], sn[k + 2]).applyMatrix3(nmat).normalize();
+      nrm[o] = v.x; nrm[o + 1] = v.y; nrm[o + 2] = v.z;
+      o += 3;
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+/** collects box placements per material, then bakes one mesh per material */
+class PartSet {
+  constructor() { this.byMat = new Map(); }
+  add(mat, s, p, rot) {
+    let arr = this.byMat.get(mat);
+    if (!arr) { arr = []; this.byMat.set(mat, arr); }
+    const part = { g: GEO.box, s: s, p: p };
+    if (rot) { part.rx = rot[0]; part.ry = rot[1]; part.rz = rot[2]; }
+    arr.push(part);
+    return this;
+  }
+  addGeo(mat, geo, s, p, rot) {
+    let arr = this.byMat.get(mat);
+    if (!arr) { arr = []; this.byMat.set(mat, arr); }
+    const part = { g: geo, s: s, p: p };
+    if (rot) { part.rx = rot[0]; part.ry = rot[1]; part.rz = rot[2]; }
+    arr.push(part);
+    return this;
+  }
+  build(parent, shadowMats) {
+    for (const [mat, arr] of this.byMat) {
+      const mesh = new THREE.Mesh(mergeParts(arr), mat);
+      mesh.castShadow = !shadowMats || shadowMats.indexOf(mat) >= 0;
+      parent.add(mesh);
+    }
+    return parent;
+  }
+}
+
+function addBox(parent, mat, sx, sy, sz, px, py, pz, shadow) {
+  const m = new THREE.Mesh(GEO.box, mat);
+  m.scale.set(sx, sy, sz);
+  m.position.set(px, py, pz);
+  m.castShadow = !!shadow;
+  parent.add(m);
+  return m;
+}
+
+/* --------------------------------------------------------- 6. the vehicle */
+const CAR = {
+  // Arcade tuning of the same rigid body: grip, flat body control and quick
+  // steering, in the spirit of a low-poly time-attack game. Nothing is
+  // scripted — flips and slides still come out of the integrator — but the
+  // numbers are chosen for feel rather than for a road car.
+  mass: 1050,
+  dims: { w: 1.98, h: 1.15, l: 3.90 },
+  // collision hull, relative to the centre of mass
+  hull: { hw: 0.92, hh: 0.30, hl: 1.86, cy: 0.26 },
+  // Wider track and a lower centre of mass so the extra grip below cannot tip
+  // the car: rollover threshold (wheelX / CoM height) must stay above mu.
+  wheelR: 0.33, wheelX: 0.92, wheelZ: 1.25, mountY: 0.14,
+  // More travel and a higher hull: the previous geometry left only 4 cm of
+  // clearance at full compression, so the chassis corners slammed into the
+  // deck and every one of those hits put 20-40 g through the body.
+  susRest: 0.26, susDroop: 0.15, susMaxComp: 0.26,
+  // stiffer and better damped: the body stays flat through direction changes
+  // instead of rolling onto its outside springs
+  kSpring: 54000, cComp: 3800, cReb: 4900, loadMax: 85000,
+  // Progressive bump stop instead of a hard force clamp. This is what a real
+  // rubber stop does, and it absorbs a hard landing rather than ending it.
+  // A bump stop that is purely elastic returns all the landing energy and
+  // trampolines the car back into the air. Real stops are damped rubber, so
+  // this one has a velocity term that dissipates instead of rebounding.
+  bumpStart: 0.18, kBump: 4.5e6, cBump: 140000,
+  downforce: 2.2,        // 3520 N at 40 m/s, about 25% of weight
+  antiRollFront: 12000, antiRollRear: 9000,
+  gravity: 13.5,          // heavier than Earth: jumps arc quickly, no float
+  mu: 2.05,
+  // Real tyres lose a little grip as load rises, which is why weight transfer
+  // costs total grip. loadRef is the static load on one wheel.
+  muLoadSens: 0.11, loadRef: 3020,
+  // Six-speed gearbox with a real torque curve rather than a flat force. Top
+  // speed comes out of the balance between drive and drag, not a cap.
+  gears: [3.6, 2.4, 1.75, 1.35, 1.10, 0.92],
+  finalDrive: 4.1, driveEff: 0.92,
+  idleRpm: 850, redline: 7200, shiftUp: 6700, shiftDown: 3100, shiftTime: 0.14,
+  torquePeak: 270, torqueRpm: 4200, torqueSpread: 3000, engineBrake: 900,
+  vTop: 46, revForce: 5200, vTopRev: 13,
+  boostForce: 11000, boostTotal: 3.0,
+  brakeFront: 5400, brakeRear: 3300, handbrake: 9500,
+  rollResist: 0.015,        // fraction of wheel load, as in a real tyre
+  drag: 0.62,
+  maxSteer: 0.58, minSteer: 0.26, steerRef: 40, steerRate: 7.5,
+  airPitch: 3600, airYaw: 3000,
+  angDamp: 0.35, omegaMax: 13, velMax: 95,
+  restitution: 0.02, hullFriction: 0.62,
+  // A hull impact that cancels velocity inside one substep is a 400 g spike
+  // that flings the car. Real structure crushes over a few milliseconds, so
+  // the impulse is capped per substep and the impact resolves over several.
+  hullMaxG: 12          // per contact corner, so four corners cap near 48 g
+};
+// CoM height at zero suspension compression: the mount sits ABOVE the CoM,
+// so its offset subtracts. At rest the springs settle ~6cm lower, putting the
+// CoM near 0.44 m and the rollover threshold (wheelX/comH) at ~1.75 g — safely
+// above mu, so the car slides before it trips over itself.
+CAR.comHeight = CAR.susRest + CAR.wheelR - CAR.mountY;
+
+/** original low-poly coupe: authored as primitives, baked per material */
+function buildCarMesh() {
+  const g = new THREE.Group();
+  const P = new PartSet();
+  const B = MAT.body, D = MAT.bodyDark, T = MAT.trim, G = MAT.glass;
+  P.add(T, [1.74, 0.14, 3.46], [0, -0.18, 0]);                      // floor pan
+  P.add(B, [1.98, 0.34, 3.62], [0, 0.02, 0]);                       // main hull
+  P.add(B, [1.82, 0.22, 1.00], [0, 0.06, 1.48], [deg(-5), 0, 0]);    // nose
+  P.add(B, [1.90, 0.22, 0.95], [0, 0.13, -1.40]);                   // rear deck
+  P.add(D, [1.90, 0.10, 0.34], [0, -0.20, 1.86]);                   // splitter
+  P.add(D, [1.82, 0.12, 0.30], [0, -0.17, -1.88]);                  // diffuser
+  P.add(D, [2.00, 0.10, 1.90], [0, -0.06, 0]);                      // sill line
+  P.add(T, [1.30, 0.42, 1.46], [0, 0.34, -0.20]);                   // cabin shell
+  P.add(G, [1.22, 0.42, 0.17], [0, 0.32, 0.58], [deg(34), 0, 0]);
+  P.add(G, [1.20, 0.38, 0.15], [0, 0.32, -0.96], [deg(-38), 0, 0]);
+  P.add(G, [0.06, 0.26, 1.16], [-0.66, 0.36, -0.18]);
+  P.add(G, [0.06, 0.26, 1.16], [0.66, 0.36, -0.18]);
+  P.add(B, [1.18, 0.09, 1.20], [0, 0.53, -0.30]);                   // roof
+  P.add(T, [0.09, 0.10, 0.20], [-0.99, 0.30, 0.46]);                // mirrors
+  P.add(T, [0.09, 0.10, 0.20], [0.99, 0.30, 0.46]);
+  P.add(D, [1.70, 0.07, 0.34], [0, 0.47, -1.82]);                   // wing
+  P.add(T, [0.10, 0.22, 0.10], [-0.56, 0.37, -1.80]);
+  P.add(T, [0.10, 0.22, 0.10], [0.56, 0.37, -1.80]);
+  P.add(MAT.lamp, [0.42, 0.13, 0.07], [-0.64, 0.08, 1.95]);         // lights
+  P.add(MAT.lamp, [0.42, 0.13, 0.07], [0.64, 0.08, 1.95]);
+  P.add(MAT.brake, [0.46, 0.11, 0.07], [-0.62, 0.16, -1.90]);
+  P.add(MAT.brake, [0.46, 0.11, 0.07], [0.62, 0.16, -1.90]);
+  P.add(T, [0.14, 0.10, 0.12], [-0.30, -0.12, -1.93]);              // exhausts
+  P.add(T, [0.14, 0.10, 0.12], [0.30, -0.12, -1.93]);
+  P.build(g, [B, D, T, G]);
+
+  // boost plumes: two emissive cones behind the exhausts, hidden unless lit
+  // boost plumes: an additive outer flame with a hot inner core at each pipe
+  const flame = new THREE.Group();
+  for (const sx of [-0.30, 0.30]) {
+    const outer = new THREE.Mesh(GEO.tree, MAT.flame);
+    outer.scale.set(0.22, 1.1, 0.22);
+    outer.position.set(sx, -0.12, -2.45);
+    outer.rotation.x = Math.PI / 2;
+    outer.userData.k = 1;
+    flame.add(outer);
+    const core = new THREE.Mesh(GEO.tree, MAT.flameCore);
+    core.scale.set(0.11, 0.6, 0.11);
+    core.position.set(sx, -0.12, -2.25);
+    core.rotation.x = Math.PI / 2;
+    core.userData.k = 0.55;
+    flame.add(core);
+  }
+  flame.visible = false;
+  g.add(flame);
+
+  const wheels = [];
+  const R = CAR.wheelR;
+  for (let i = 0; i < 4; i++) {
+    const front = i < 2;
+    const sx = (i % 2 === 0) ? -1 : 1;
+    const mount = new THREE.Vector3(sx * CAR.wheelX, CAR.mountY, front ? CAR.wheelZ : -CAR.wheelZ);
+    const pivot = new THREE.Group();
+    pivot.position.set(mount.x, mount.y - CAR.susRest, mount.z);
+    // one spinning node holding two baked meshes: tyre, and rim with spokes
+    const spin = new THREE.Group();
+    const tyre = new THREE.Mesh(GEO.tyre, MAT.tyre);
+    tyre.scale.set(R, 0.28, R);
+    tyre.castShadow = true;
+    spin.add(tyre);
+    const rimParts = new PartSet();
+    rimParts.addGeo(MAT.rim, GEO.rim, [R * 0.62, 0.30, R * 0.62], [0, 0, 0]);
+    for (let k = 0; k < 4; k++) {
+      rimParts.addGeo(MAT.rim, GEO.box, [0.075, R * 1.28, 0.09], [0, 0, 0],
+        [(k * Math.PI) / 4, 0, 0]);
+    }
+    rimParts.build(spin, []);
+    pivot.add(spin);
+    g.add(pivot);
+    wheels.push({
+      pivot, tyre: spin, front, mount,
+      steerAngle: 0, comp: 0, load: 0, hitDist: CAR.susRest + R,
+      contact: false, slip: 0, spin: 0, spinVel: 0, drop: CAR.susRest, onTrack: true,
+      normal: new THREE.Vector3(0, 1, 0), point: new THREE.Vector3(), grip: 1,
+      mu: CAR.mu, side: new THREE.Vector3(1, 0, 0)
+    });
+  }
+  return { group: g, wheels, flame };
+}
+
+/** simplified translucent car used to replay the player's best run */
+function buildGhostMesh() {
+  const g = new THREE.Group();
+  const P = new PartSet();
+  P.add(MAT.ghost, [1.98, 0.40, 3.62], [0, 0.02, 0]);
+  P.add(MAT.ghost, [1.30, 0.44, 1.46], [0, 0.34, -0.20]);
+  P.add(MAT.ghost, [1.18, 0.10, 1.20], [0, 0.53, -0.30]);
+  for (const sx of [-1, 1]) {
+    for (const sz of [1, -1]) {
+      P.add(MAT.ghostDark, [0.28, 0.62, 0.62],
+        [sx * CAR.wheelX, CAR.mountY - CAR.susRest, sz * CAR.wheelZ]);
+    }
+  }
+  P.build(g, []);
+  g.visible = false;
+  return g;
+}
+
+/** engine torque in Nm — a peaky curve, flattening off either side */
+function engineTorque(rpm) {
+  const r = clamp(rpm, CAR.idleRpm, CAR.redline);
+  const x = (r - CAR.torqueRpm) / CAR.torqueSpread;
+  return CAR.torquePeak * clamp(1 - 0.55 * x * x, 0.25, 1);
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+
+/**
+ * A real rigid body: inertia tensor, accumulated forces and torques, and
+ * sequential impulses for tyre and hull contacts. Nothing about the car's
+ * attitude is scripted — it is whatever the integrator says it is, so a
+ * kicker taken flat out produces an actual backflip and a bad landing
+ * produces an actual tumble.
+ */
+class Vehicle {
+  constructor(scene) {
+    const built = buildCarMesh();
+    this.mesh = built.group;
+    this.wheels = built.wheels;
+    this.flame = built.flame;
+    if (scene) scene.add(this.mesh);
+
+    const d = CAR.dims, m = CAR.mass;
+    this.mass = m;
+    this.invMass = 1 / m;
+    this.Ib = new THREE.Vector3(
+      (m / 12) * (d.h * d.h + d.l * d.l),
+      (m / 12) * (d.w * d.w + d.l * d.l),
+      (m / 12) * (d.w * d.w + d.h * d.h));
+    this.invIb = new THREE.Vector3(1 / this.Ib.x, 1 / this.Ib.y, 1 / this.Ib.z);
+
+    this.pos = new THREE.Vector3();
+    this.vel = new THREE.Vector3();
+    this.quat = new THREE.Quaternion();
+    this.invQuat = new THREE.Quaternion();
+    this.omega = new THREE.Vector3();
+    this.force = new THREE.Vector3();
+    this.torque = new THREE.Vector3();
+
+    this.up = new THREE.Vector3(0, 1, 0);
+    this.fwd = new THREE.Vector3(0, 0, 1);
+    this.left = new THREE.Vector3(1, 0, 0);
+
+    this.steer = 0;
+    this.gear = 0;
+    this.rpm = CAR.idleRpm;
+    this.shiftTimer = 0;
+    this.driveForce = 0;
+    this.boostLeft = CAR.boostTotal;
+    this.boosting = false;
+    this.flamePhase = 0;
+    this.downforceN = 0;
+    this.gLong = 0;
+    this.gLat = 0;
+    this.gVert = 0;
+    this._prevVel = new THREE.Vector3();
+    this._accel = new THREE.Vector3();
+    this.grounded = false;
+    this.contacts = 0;
+    this.speedFwd = 0;
+    this.slipMax = 0;
+    this.wheelspin = 0;
+    this.landImpact = 0;
+    this.scrapeImpact = 0;
+    this.airTime = 0;
+    this.stuckTime = 0;
+    this.hullContact = false;
+    this.hullDepth = 0;
+    this.heading = 0;
+    this.brakeLight = 0;
+
+    // hull contact points: 8 corners of the collision box
+    this.corners = [];
+    const h = CAR.hull;
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+      this.corners.push(new THREE.Vector3(sx * h.hw, h.cy + sy * h.hh, sz * h.hl));
+    }
+
+    this._hit = { t: 0, point: new THREE.Vector3(), normal: new THREE.Vector3(), grip: 1, track: true };
+    this._sweep = { t: 0, point: new THREE.Vector3(), normal: new THREE.Vector3(), grip: 1, track: true };
+    this._prevCorners = this.corners.map(() => new THREE.Vector3());
+
+    this._pen = { depth: 0, normal: new THREE.Vector3(), grip: 1 };
+    this._e1 = new THREE.Vector3(); this._e2 = new THREE.Vector3();
+    this._e3 = new THREE.Vector3(); this._e4 = new THREE.Vector3();
+    this._v1 = new THREE.Vector3(); this._v2 = new THREE.Vector3();
+    this._v3 = new THREE.Vector3(); this._v4 = new THREE.Vector3();
+    this._v5 = new THREE.Vector3(); this._v6 = new THREE.Vector3();
+    this._corr = new THREE.Vector3();
+    this._m = new THREE.Matrix4();
+    this._q = new THREE.Quaternion();
+  }
+
+  /* ---- rigid body helpers ---- */
+  applyInvInertia(v, out) {
+    out.copy(v).applyQuaternion(this.invQuat);
+    out.set(out.x * this.invIb.x, out.y * this.invIb.y, out.z * this.invIb.z);
+    return out.applyQuaternion(this.quat);
+  }
+  /** 1 / (1/m + (I⁻¹(r×n))·(r×n)) — the mass a contact actually feels */
+  effMass(rel, dir) {
+    const rn = this._e1.crossVectors(rel, dir);
+    this.applyInvInertia(rn, this._e2);
+    const denom = this.invMass + rn.dot(this._e2);
+    return denom > 1e-9 ? 1 / denom : 0;
+  }
+  pointVel(rel, out) {
+    return out.crossVectors(this.omega, rel).add(this.vel);
+  }
+  addImpulseAt(J, rel) {
+    this.vel.addScaledVector(J, this.invMass);
+    const t = this._e3.crossVectors(rel, J);
+    this.applyInvInertia(t, this._e4);
+    this.omega.add(this._e4);
+  }
+  addForceAt(F, rel) {
+    this.force.add(F);
+    this.torque.add(this._e3.crossVectors(rel, F));
+  }
+
+  place(pos, heading) {
+    this.pos.copy(pos);
+    this.vel.set(0, 0, 0);
+    this.omega.set(0, 0, 0);
+    this.fwd.set(Math.sin(heading), 0, Math.cos(heading));
+    this.left.crossVectors(UP, this.fwd).normalize();
+    this._m.makeBasis(this.left, UP, this.fwd);
+    this.quat.setFromRotationMatrix(this._m);
+    this.invQuat.copy(this.quat).conjugate();
+    this.up.set(0, 1, 0);
+    this.steer = 0;
+    this.gear = 0;
+    this.rpm = CAR.idleRpm;
+    this.shiftTimer = 0;
+    this.driveForce = 0;
+    this.boostLeft = CAR.boostTotal;
+    this.boosting = false;
+    this.gLong = this.gLat = this.gVert = 0;
+    this._prevVel.set(0, 0, 0);
+    this.grounded = true;
+    this.speedFwd = 0;
+    this.slipMax = 0;
+    this.wheelspin = 0;
+    this.landImpact = 0;
+    this.scrapeImpact = 0;
+    this.airTime = 0;
+    this.stuckTime = 0;
+    this.heading = heading;
+    for (const w of this.wheels) {
+      w.comp = 0; w.load = 0; w.contact = false; w.slip = 0; w.onTrack = true;
+      w.spin = 0; w.spinVel = 0; w.steerAngle = 0;
+      w.hitDist = CAR.susRest + CAR.wheelR;
+      w.drop = CAR.susRest;
+      w.pivot.position.set(w.mount.x, w.mount.y - CAR.susRest, w.mount.z);
+      w.pivot.rotation.y = 0;
+    }
+    for (let i = 0; i < this.corners.length; i++) {
+      this._prevCorners[i].copy(this.corners[i]).applyQuaternion(this.quat).add(this.pos);
+    }
+    this.syncMesh(0);
+  }
+
+  get speed() { return this.vel.length(); }
+
+  /** one fixed physics substep */
+  step(dt, world, input) {
+    const g = CAR.gravity;
+    this.invQuat.copy(this.quat).conjugate();
+    this.up.set(0, 1, 0).applyQuaternion(this.quat);
+    this.fwd.set(0, 0, 1).applyQuaternion(this.quat);
+    this.left.set(1, 0, 0).applyQuaternion(this.quat);
+
+    const vFwd = this.vel.dot(this.fwd);
+    this.speedFwd = vFwd;
+    const spd = this.vel.length();
+
+    /* --- steering: rate limited, less angle the faster you go ---------- */
+    const maxS = lerp(CAR.maxSteer, CAR.minSteer, clamp(spd / CAR.steerRef, 0, 1));
+    const want = -input.steer * maxS;                 // local +X is the car's left
+    const rate = CAR.steerRate * dt;
+    this.steer += clamp(want - this.steer, -rate, rate);
+
+    /* --- wheel probes -------------------------------------------------- */
+    const rayLen = CAR.susRest + CAR.wheelR + CAR.susDroop;
+    const down = this._v1.copy(this.up).multiplyScalar(-1);
+    let contacts = 0;
+    for (const w of this.wheels) {
+      const origin = this._v2.copy(w.mount).applyQuaternion(this.quat).add(this.pos);
+      if (world.raycast(origin, down, rayLen, this._hit) && this._hit.normal.dot(this.up) > 0.15) {
+        w.contact = true;
+        w.hitDist = this._hit.t;
+        w.comp = clamp(CAR.susRest + CAR.wheelR - this._hit.t, -CAR.susDroop, CAR.susMaxComp);
+        w.normal.copy(this._hit.normal);
+        w.point.copy(this._hit.point);
+        w.grip = this._hit.grip;
+        w.onTrack = this._hit.track !== false;
+        if (w.comp > 0) contacts++;
+      } else {
+        w.contact = false;
+        w.onTrack = false;
+        w.comp = -CAR.susDroop;
+        w.hitDist = rayLen;
+        w.load = 0;
+      }
+    }
+    this.contacts = contacts;
+    const wasGrounded = this.grounded;
+    this.grounded = contacts > 0;
+
+    /* --- force accumulators -------------------------------------------- */
+    this.force.set(0, -g * this.mass, 0);
+    this.torque.set(0, 0, 0);
+    if (spd > 0.2) this.force.addScaledVector(this.vel, -CAR.drag * spd);
+    // aerodynamic downforce, along the body's own vertical
+    this.downforceN = spd > 4 ? CAR.downforce * spd * spd : 0;
+    if (this.downforceN) this.force.addScaledVector(this.up, -this.downforceN);
+
+    // air attitude control — real torques on the body, not a scripted pose
+    if (!this.grounded) {
+      this.airTime += dt;
+      const pitch = input.throttle - input.brake;
+      if (pitch) this.torque.addScaledVector(this.left, pitch * CAR.airPitch);
+      if (input.steer) this.torque.addScaledVector(this.up, -input.steer * CAR.airYaw);
+    } else {
+      if (!wasGrounded && this.airTime > 0.12) {
+        this.landImpact = Math.max(this.landImpact, clamp(-this.vel.y / 13, 0, 1.3));
+      }
+      this.airTime = 0;
+    }
+
+    /* --- suspension: springs, dampers and an anti-roll bar ------------- */
+    for (let i = 0; i < 4; i += 2) {
+      const a = this.wheels[i], b = this.wheels[i + 1];
+      const bar = (i === 0 ? CAR.antiRollFront : CAR.antiRollRear) * (a.comp - b.comp);
+      this._springForce(a, dt, -bar);
+      this._springForce(b, dt, bar);
+    }
+
+    /* --- integrate velocities ------------------------------------------ */
+    this.vel.addScaledVector(this.force, this.invMass * dt);
+    this.applyInvInertia(this._v3.copy(this.torque).multiplyScalar(dt), this._v4);
+    this.omega.add(this._v4);
+
+    /* --- tyre friction impulses ---------------------------------------- */
+    this.slipMax = 0;
+    this.wheelspin = 0;
+    this._tyreForces(dt, input, vFwd);
+
+    /* --- accelerometer readings for the telemetry panel ----------------- */
+    this._accel.subVectors(this.vel, this._prevVel).multiplyScalar(1 / dt);
+    this._prevVel.copy(this.vel);
+    const aEMA = approach(6, dt);
+    this.gLong = lerp(this.gLong, this._accel.dot(this.fwd) / 9.81, aEMA);
+    this.gLat = lerp(this.gLat, this._accel.dot(this.left) / 9.81, aEMA);
+    this.gVert = lerp(this.gVert, (this._accel.dot(this.up) + CAR.gravity) / 9.81, aEMA);
+
+    /* --- integrate pose ------------------------------------------------- */
+    const om = this.omega.length();
+    if (om > CAR.omegaMax) this.omega.multiplyScalar(CAR.omegaMax / om);
+    this.omega.multiplyScalar(Math.exp(-CAR.angDamp * dt));
+    const sp = this.vel.length();
+    if (sp > CAR.velMax) this.vel.multiplyScalar(CAR.velMax / sp);
+
+    // where each hull corner sits before the move, for the swept test below
+    for (let i = 0; i < this.corners.length; i++) {
+      this._prevCorners[i].copy(this.corners[i]).applyQuaternion(this.quat).add(this.pos);
+    }
+
+    this.pos.addScaledVector(this.vel, dt);
+
+    this._q.set(this.omega.x, this.omega.y, this.omega.z, 0).multiply(this.quat);
+    this.quat.x += 0.5 * dt * this._q.x;
+    this.quat.y += 0.5 * dt * this._q.y;
+    this.quat.z += 0.5 * dt * this._q.z;
+    this.quat.w += 0.5 * dt * this._q.w;
+    this.quat.normalize();
+    this.invQuat.copy(this.quat).conjugate();
+
+    /* --- hull contacts, resolved against the move just taken ------------ */
+    this._hullContacts(world, dt);
+
+    // heading for the camera, frozen while the nose is near vertical
+    const hx = this.fwd.x, hz = this.fwd.z;
+    if (hx * hx + hz * hz > 0.06) this.heading = Math.atan2(hx, hz);
+
+    /* Stranded detection, covering three states the player cannot drive out of:
+       upside down; beached, resting on the hull with no wheel touching
+       anything; and wedged, a hull corner buried in the geometry. A corner 5 cm
+       inside the decking cannot happen in normal driving — there is 15 cm of
+       clearance even at full suspension compression — so any embedment is a
+       glitch state. Wedging accumulates faster than the others because it is
+       not a recoverable racing situation, so the run restarts promptly rather
+       than leaving the car sitting in the scenery. */
+    const beached = !this.grounded && this.hullContact && spd < 2.0;
+    const wedged = (this.hullDepth > 0.05 && spd < 6.0) || this.hullDepth > 0.30;
+    const stranded = (this.up.y < 0.25 && spd < 2.2) || beached;
+    if (stranded || wedged) this.stuckTime += dt * (wedged ? 4 : 1);
+    else this.stuckTime = 0;
+
+    return isFinite(this.pos.x) && isFinite(this.pos.y) && isFinite(this.pos.z)
+      && isFinite(this.quat.w) && isFinite(this.vel.x);
+  }
+
+  _springForce(w, dt, bar) {
+    if (!w.contact || w.comp <= 0) { w.load = 0; return; }
+    const rel = this._v5.copy(w.point).sub(this.pos);
+    const vp = this.pointVel(rel, this._v6);
+    const vn = vp.dot(w.normal);
+    const damp = (vn < 0 ? CAR.cComp : CAR.cReb) * vn;
+    let load = CAR.kSpring * w.comp - damp + bar;
+    if (w.comp > CAR.bumpStart) {
+      const over = w.comp - CAR.bumpStart;
+      load += CAR.kBump * over * over;              // progressive, not a cliff
+      if (vn < 0) load += CAR.cBump * over * -vn;   // hysteretic: absorbs, not rebounds
+    }
+    load = clamp(load, 0, CAR.loadMax);
+    w.load = load;
+    this.addForceAt(this._v3.copy(w.normal).multiplyScalar(load), rel);
+  }
+
+  /** gearbox, torque curve, engine braking and the boost budget */
+  _drivetrain(dt, input, vFwd) {
+    if (this.shiftTimer > 0) this.shiftTimer -= dt;
+    const ratio = CAR.gears[this.gear] * CAR.finalDrive;
+    this.rpm = clamp(Math.max(vFwd, 0) / CAR.wheelR * ratio * 9.5493,
+      CAR.idleRpm, CAR.redline);
+    if (this.shiftTimer <= 0) {
+      if (this.rpm > CAR.shiftUp && this.gear < CAR.gears.length - 1) {
+        this.gear++; this.shiftTimer = CAR.shiftTime;
+      } else if (this.rpm < CAR.shiftDown && this.gear > 0) {
+        this.gear--; this.shiftTimer = CAR.shiftTime;
+      }
+    }
+
+    let drive = 0;
+    if (input.brake && vFwd < 0.4) {
+      const t = clamp(-vFwd / CAR.vTopRev, 0, 1);
+      drive = -CAR.revForce * (1 - t * t);
+    } else if (input.throttle && this.shiftTimer <= 0) {
+      drive = engineTorque(this.rpm) * ratio * CAR.driveEff / CAR.wheelR;
+      if (this.rpm >= CAR.redline - 60) drive *= 0.25;      // limiter
+    } else if (vFwd > 1) {
+      drive = -CAR.engineBrake;                             // trailing throttle
+    }
+
+    this.boosting = false;
+    if (input.boost && this.boostLeft > 0 && vFwd > -0.5) {
+      this.boosting = true;
+      this.boostLeft = Math.max(0, this.boostLeft - dt);
+      drive += CAR.boostForce;
+    }
+    this.driveForce = drive;
+    return drive;
+  }
+
+  _tyreForces(dt, input, vFwd) {
+    const drive = this._drivetrain(dt, input, vFwd);
+    const braking = input.brake && vFwd >= 0.4;
+    this.brakeLight = braking || input.handbrake ? 1 : 0;
+
+    let loaded = 0;
+    for (const w of this.wheels) if (w.load > 1) loaded++;
+    if (!loaded) {
+      for (const w of this.wheels) {
+        w.slip = 0;
+        w.spinVel *= Math.exp(-0.6 * dt);
+        if (input.throttle) w.spinVel = lerp(w.spinVel, 34, approach(2.2, dt));
+        w.spin += w.spinVel * dt;
+      }
+      return;
+    }
+    const share = 1 / loaded;
+
+    for (const w of this.wheels) {
+      if (w.load <= 1) {
+        w.slip = 0;
+        w.spinVel *= Math.exp(-1.2 * dt);
+        w.spin += w.spinVel * dt;
+        continue;
+      }
+      const n = w.normal;
+      // Ackermann geometry: the inner front wheel runs at a larger angle than
+      // the outer one, because it follows a tighter circle.
+      w.steerAngle = w.front ? this.ackermann(w) : 0;
+      const ca = Math.cos(w.steerAngle), sa = Math.sin(w.steerAngle);
+      const dirW = this._v1.copy(this.fwd).multiplyScalar(ca).addScaledVector(this.left, sa);
+      const f = this._v2.copy(dirW).addScaledVector(n, -dirW.dot(n));
+      if (f.lengthSq() < 1e-8) { w.slip = 0; continue; }
+      f.normalize();
+      const s = this._v3.crossVectors(n, f);
+      w.side.copy(s);
+
+      const rel = this._v4.copy(w.point).sub(this.pos);
+      const vp = this.pointVel(rel, this._v5);
+      const vLong = vp.dot(f);
+      const vLat = vp.dot(s);
+
+      // load sensitivity: grip per newton falls as the tyre is pushed harder
+      const muEff = CAR.mu * clamp(
+        1 - CAR.muLoadSens * (w.load / CAR.loadRef - 1), 0.62, 1.16);
+      w.mu = muEff;
+      const budget = muEff * w.load * w.grip * dt;
+      const mLong = this.effMass(rel, f);
+      const mLat = this.effMass(rel, s);
+
+      let jLong = drive * share * dt;
+      let brakeF = 0;
+      if (braking) brakeF = w.front ? CAR.brakeFront : CAR.brakeRear;
+      if (input.handbrake && !w.front) brakeF = Math.max(brakeF, CAR.handbrake);
+      if (brakeF > 0) {
+        const cancel = -vLong * mLong;
+        jLong += clamp(cancel, -brakeF * dt, brakeF * dt);
+      } else if (!input.throttle) {
+        const rr = CAR.rollResist * w.load * dt;
+        const cancel = -vLong * mLong;
+        jLong += clamp(cancel, -rr, rr);
+      }
+      let jLat = -vLat * mLat;
+
+      const mag = Math.hypot(jLong, jLat);
+      if (mag > budget && mag > 1e-9) {
+        const k = budget / mag;
+        jLong *= k; jLat *= k;
+        w.slip = clamp((mag - budget) / Math.max(budget, 1e-6), 0, 2);
+      } else {
+        w.slip = 0;
+      }
+      this.slipMax = Math.max(this.slipMax, w.slip);
+
+      const J = this._v6.copy(f).multiplyScalar(jLong).addScaledVector(s, jLat);
+      this.addImpulseAt(J, rel);
+
+      // visual + audio wheel spin: rolling speed plus any traction loss
+      const excess = w.slip * (drive >= 0 ? 1 : -1) * 9;
+      w.spinVel = vLong / CAR.wheelR + excess;
+      w.spin += w.spinVel * dt;
+      if (drive !== 0) this.wheelspin = Math.max(this.wheelspin, w.slip);
+    }
+  }
+
+  /** per-wheel steer angle from the shared rack position */
+  ackermann(w) {
+    const d = this.steer;
+    if (Math.abs(d) < 1e-4) return 0;
+    const base = CAR.wheelZ * 2;
+    const turnR = base / Math.tan(Math.abs(d));
+    const inner = Math.atan(base / Math.max(turnR - CAR.wheelX, 0.4));
+    const outer = Math.atan(base / (turnR + CAR.wheelX));
+    const leftWheel = w.mount.x > 0;          // local +X is the car's left
+    const turningLeft = d > 0;
+    return Math.sign(d) * (leftWheel === turningLeft ? inner : outer);
+  }
+
+  /**
+   * Hull collision, run immediately after the pose integration so the swept
+   * test covers exactly the motion just taken.
+   *
+   * A penetration probe on its own only sees a corner that is ALREADY inside
+   * the decking, and at 58 m/s a corner covers 16 cm in a substep — easily
+   * enough to arrive deep inside an edge in one step, where the nearest face
+   * is not the one it came through and the push-out sends it further in. That
+   * is how a car ended up welded into the side of the track. Casting from
+   * where each corner was to where it now is catches the crossing itself and
+   * stops the corner at the surface. The probe stays as a backstop for a
+   * corner that is somehow already inside.
+   */
+  _hullContacts(world, dt) {
+    this.hullContact = false;
+    this.hullDepth = 0;
+    const jMax = CAR.hullMaxG * 9.81 * this.mass * dt;
+
+    for (let ci = 0; ci < this.corners.length; ci++) {
+      const c = this.corners[ci];
+      const prev = this._prevCorners[ci];
+      // recomputed each iteration: an earlier corner may have moved the body
+      const wp = this._v1.copy(c).applyQuaternion(this.quat).add(this.pos);
+
+      let n = null, depth = 0;
+      const seg = this._v5.subVectors(wp, prev);
+      const segLen = seg.length();
+      if (segLen > 1e-4) {
+        seg.multiplyScalar(1 / segLen);
+        if (world.raycast(prev, seg, segLen, this._sweep, true)) {
+          n = this._sweep.normal;
+          depth = segLen - this._sweep.t;      // how far past the face it went
+        }
+      }
+      if (!n && world.probeSurface(wp, this._pen)) {
+        n = this._pen.normal;
+        depth = this._pen.depth;
+      }
+      if (!n) continue;
+
+      this.hullContact = true;
+      this.hullDepth = Math.max(this.hullDepth, depth);
+
+      const rel = this._v2.copy(wp).sub(this.pos);
+      const vp = this.pointVel(rel, this._v3);
+      const vn = vp.dot(n);
+      if (vn < 0) {
+        const m = this.effMass(rel, n);
+        const j = Math.min(-vn * (1 + CAR.restitution) * m, jMax);
+        this.addImpulseAt(this._v4.copy(n).multiplyScalar(j), rel);
+        // tangential friction at the scrape
+        const vt = this._v6.copy(vp).addScaledVector(n, -vn);
+        const vtLen = vt.length();
+        if (vtLen > 0.06) {
+          vt.multiplyScalar(1 / vtLen);
+          const mt = this.effMass(rel, vt);
+          const jt = Math.max(-vtLen * mt, -CAR.hullFriction * j);
+          this.addImpulseAt(this._v3.copy(vt).multiplyScalar(jt), rel);
+        }
+        this.scrapeImpact = Math.max(this.scrapeImpact, clamp(-vn / 9, 0, 1));
+      }
+
+      // Move the body so this corner sits just outside the face. Bounded by
+      // one substep of travel, so it can never teleport.
+      if (depth > 0.002) {
+        this.pos.addScaledVector(n, Math.min(depth + 0.004, 0.35));
+      }
+    }
+  }
+
+  /** visuals only — physics never reads anything written here */
+  syncMesh(dt) {
+    this.mesh.position.copy(this.pos);
+    this.mesh.quaternion.copy(this.quat);
+    const full = CAR.susRest + CAR.susDroop;
+    for (const w of this.wheels) {
+      const target = w.contact ? clamp(w.hitDist - CAR.wheelR, 0.02, full) : full;
+      w.drop = dt ? lerp(w.drop, target, approach(24, dt)) : target;
+      w.pivot.position.set(w.mount.x, w.mount.y - w.drop, w.mount.z);
+      w.pivot.rotation.y = w.front ? w.steerAngle : 0;
+      w.tyre.rotation.x = w.spin;
+    }
+    if (dt && this.flame) {
+      this.flamePhase += dt * 34;
+      const lit = this.boosting && this.boostLeft > 0;
+      this.flame.visible = lit;
+      if (lit) {
+        const pulse = 0.8 + 0.26 * Math.sin(this.flamePhase)
+          + 0.14 * Math.sin(this.flamePhase * 2.7);
+        for (const c of this.flame.children) {
+          const k = c.userData.k;
+          const len = (0.7 + pulse * 1.15) * k;
+          const rad = (0.20 + pulse * 0.05) * k;
+          c.scale.set(rad, len, rad);
+          c.position.z = -2.05 - len * 0.5;
+        }
+      }
+    }
+    if (dt) {
+      this.landImpact *= Math.exp(-7 * dt);
+      this.scrapeImpact *= Math.exp(-9 * dt);
+      MAT.brake.emissiveIntensity = lerp(MAT.brake.emissiveIntensity,
+        this.brakeLight ? 1.5 : 0.12, approach(14, dt));
+    }
+  }
+}
+
+/* --------------------------------------------------------- 7. track builder
+   A course is a list of strips, each a chain of cross-section frames
+   {position, orientation, width}. Consecutive quads share their edge
+   vertices, so banking, pitch and width changes sweep smoothly instead of
+   stepping. A gap simply ends one strip and starts another.
+   TrackBuilder is authoring sugar that walks a cursor through the layout;
+   buildCourse turns the frames into geometry and collision triangles.     */
+const DECK_T = 0.62;
+const SEG = 3.2;        // target frame spacing: shorter quads mean smaller
+                        // position creases between them as well as smoother normals
+const CURB_W = 0.55;
+let RAMP_MAX = 0.40;
+
+class TrackBuilder {
+  constructor(o) {
+    o = o || {};
+    this.p = new THREE.Vector3(0, 0, 0);
+    this.h = deg(o.heading || 0);
+    this.w = o.width || 10;
+    this.strips = [];
+    this.cur = null;
+    this.gates = [];
+    this.path = [[0, 0, 0]];
+    this.n = 0;
+    this.pierEvery = o.pierEvery || 5;
+    this.start = { pos: [0, 0, 7], heading: this.h };
+  }
+
+  dir(out) { return (out || new THREE.Vector3()).set(Math.sin(this.h), 0, Math.cos(this.h)); }
+
+  _frame(pitch, roll, w) {
+    return { p: this.p.toArray(), t: pitch, y: this.h, r: roll, w: w };
+  }
+
+  /** core sweep: run forward with the given rise, subdivided to SEG spacing */
+  slab(run, rise, o) {
+    o = o || {};
+    const len = Math.hypot(run, rise);
+    if (!(len > 0.02)) return this;
+    const w = o.w || this.w;
+    if (!(w > 0.4)) return this;
+    const pitch = -Math.atan2(rise, run);
+    const roll = o.roll || 0;
+    const subs = Math.max(1, Math.round(len / SEG));
+    if (!this.cur) {
+      this.cur = { frames: [], segs: [] };
+      this.strips.push(this.cur);
+      this.cur.frames.push(this._frame(pitch, roll, w));
+    }
+    const d = this.dir(new THREE.Vector3());
+    for (let i = 0; i < subs; i++) {
+      this.p.addScaledVector(d, run / subs);
+      this.p.y += rise / subs;
+      this.n++;
+      this.cur.frames.push(this._frame(pitch, roll, w));
+      this.cur.segs.push({
+        grip: o.grip === undefined ? 1 : o.grip,
+        curb: o.curbs !== false && w > 4,
+        dash: o.dash !== false && w >= 9.5,
+        rail: o.rail || null,
+        chev: (o.chev && i % 2 === 0) ? o.chev : 0,
+        pier: this.n % this.pierEvery === 0,
+        pad: !!o.pad
+      });
+    }
+    this.path.push(this.p.toArray());
+    return this;
+  }
+
+  straight(len, o) { return this.slab(len, 0, o); }
+  slope(run, rise, o) { return this.slab(run, rise, o); }
+  pad(len, w) { return this.slab(len, 0, { w: w, pad: true, dash: false }); }
+  table(len, w) { return this.slab(len, 0, { w: w || this.w + 4, pad: true }); }
+
+  /** launch kicker, easing into the angle so the crease is never abrupt */
+  ramp(run, angleDeg, o) {
+    const a = deg(angleDeg), seg = run / 3;
+    for (let i = 1; i <= 3; i++) this.slab(seg, seg * Math.tan((a * i) / 3), o);
+    return this;
+  }
+  /** receiving ramp: starts at the angle and flattens out */
+  landing(run, angleDeg, o) {
+    const a = deg(angleDeg), seg = run / 3;
+    for (let i = 3; i >= 1; i--) this.slab(seg, seg * Math.tan((a * i) / 3), o);
+    return this;
+  }
+  crest(run, angleDeg, o) {
+    return this.ramp(run * 0.5, angleDeg, o).landing(run * 0.5, -angleDeg, o);
+  }
+  gap(len, rise) {
+    this.cur = null;                       // ends the ribbon; nothing spans a gap
+    this.p.addScaledVector(this.dir(new THREE.Vector3()), len);
+    this.p.y += rise || 0;
+    this.path.push(this.p.toArray());
+    return this;
+  }
+  bumps(n, seg, h, o) {
+    for (let i = 0; i < n; i++) { this.slope(seg, h, o); this.slope(seg, -h, o); }
+    return this;
+  }
+  curve(radius, arcDeg, o) {
+    o = o || {};
+    const arcLen = Math.abs(deg(arcDeg)) * radius;
+    const segs = Math.max(5, Math.round(arcLen / SEG));
+    const segArc = deg(arcDeg) / segs;
+    const chord = 2 * radius * Math.abs(Math.sin(segArc / 2));
+    // a positive arc curves toward local +X, so +X is the inside of the turn.
+    // Banking must drop the inside edge and positive roll raises +X, hence
+    // the negation — inverting this tips the deck outward and throws the car off.
+    const bank = -deg(o.bank || 0) * Math.sign(arcDeg);
+    const rise = (o.rise || 0) / segs;
+    const chev = o.chev ? -Math.sign(arcDeg) : 0;
+    // Bank profile: ramp in over the first quarter, hold, ramp out over the
+    // last quarter. A plain sine fades the banking to nothing at the exit,
+    // which is exactly where the car is still asking for lateral grip.
+    // Ramp in, hold, ramp out. The ramp length grows with the bank angle:
+    // a 45 degree wall needs a far longer twist than a 10 degree sweeper, and
+    // holding the plateau through the exit keeps grip where the car still
+    // needs it (a plain sine fades the bank to zero exactly at the exit).
+    const rf = clamp(0.22 + Math.abs(o.bank || 0) * 0.0055, 0.22, RAMP_MAX);
+    const profile = (t) => {
+      const s = (x) => x * x * (3 - 2 * x);
+      if (t < rf) return s(t / rf);
+      if (t > 1 - rf) return s((1 - t) / rf);
+      return 1;
+    };
+    for (let i = 0; i < segs; i++) {
+      const ease = profile((i + 0.5) / segs);
+      this.h += segArc / 2;
+      this.slab(chord, rise, {
+        w: o.w, roll: bank * ease, rail: o.rail, grip: o.grip,
+        chev: (i % 3 === 0) ? chev : 0, dash: o.dash
+      });
+      this.h += segArc / 2;
+    }
+    return this;
+  }
+  chicane(radius, arcDeg, o) {
+    return this.curve(radius, arcDeg, o).curve(radius, -arcDeg, o);
+  }
+  gate(kind, o) {
+    o = o || {};
+    const w = o.w || this.w;
+    this.gates.push({
+      kind: kind, pos: this.p.toArray(), heading: this.h,
+      width: w, radius: Math.max(w * 0.5 + 5, 9)
+    });
+    return this;
+  }
+  build() {
+    smoothProfile(this.strips, 7);
+    return { strips: this.strips, gates: this.gates, start: this.start, path: this.path };
+  }
+}
+
+/**
+ * Vertical transition curves. Laying out a course by segments produces
+ * instant pitch changes, and a real car launches off any such crease: a 7
+ * degree kink at 24 m/s is an involuntary jump. Real tracks ease elevation
+ * changes, so each ribbon's profile gets a few smoothing passes and every
+ * frame's pitch is recomputed from its neighbours. Strip ends are pinned,
+ * which keeps jump lips and landing ramps exactly as authored.
+ */
+function smoothProfile(strips, iterations) {
+  for (const st of strips) {
+    const F = st.frames;
+    const n = F.length;
+    if (n < 4) continue;
+    for (let it = 0; it < iterations; it++) {
+      const y = F.map((f) => f.p[1]);
+      for (let i = 1; i < n - 1; i++) F[i].p[1] = 0.25 * y[i - 1] + 0.5 * y[i] + 0.25 * y[i + 1];
+    }
+    for (let i = 0; i < n; i++) {
+      const a = F[Math.max(0, i - 1)], b = F[Math.min(n - 1, i + 1)];
+      const dy = b.p[1] - a.p[1];
+      const dh = Math.hypot(b.p[0] - a.p[0], b.p[2] - a.p[2]);
+      F[i].t = -Math.atan2(dy, Math.max(dh, 0.001));
+    }
+  }
+}
+
+/** drop malformed frames rather than letting one bad course kill the game */
+function validateCourse(data) {
+  const num = (v) => typeof v === 'number' && isFinite(v);
+  const okArr = (a, n) => Array.isArray(a) && a.length === n && a.every(num);
+  const strips = [];
+  for (const st of (data.strips || [])) {
+    if (!st || !Array.isArray(st.frames)) continue;
+    const frames = [], segs = [];
+    for (let i = 0; i < st.frames.length; i++) {
+      const f = st.frames[i];
+      if (!f || !okArr(f.p, 3) || !num(f.w) || f.w <= 0) break;
+      if (!num(f.t) || !num(f.y) || !num(f.r)) break;
+      frames.push(f);
+      if (i > 0) segs.push(st.segs[i - 1] || {});
+    }
+    if (frames.length >= 2) strips.push({ frames, segs });
+  }
+  const gates = (data.gates || []).filter((g) =>
+    g && okArr(g.pos, 3) && num(g.heading) && num(g.radius));
+  const path = (data.path || []).filter((q) => okArr(q, 3));
+  const finish = gates.filter((g) => g.kind === 'finish').length;
+  return {
+    strips, gates, path, start: data.start,
+    valid: strips.length > 0 && finish === 1 && path.length > 1
+  };
+}
+
+/** accumulates flat-shaded triangles into one BufferGeometry */
+class MeshBuilder {
+  constructor() { this.pos = []; this.norm = []; }
+  tri(a, b, c) {
+    const nx = (b.y - a.y) * (c.z - a.z) - (b.z - a.z) * (c.y - a.y);
+    const ny = (b.z - a.z) * (c.x - a.x) - (b.x - a.x) * (c.z - a.z);
+    const nz = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    const l = Math.hypot(nx, ny, nz) || 1;
+    const n = [nx / l, ny / l, nz / l];
+    this.pos.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+    for (let i = 0; i < 3; i++) this.norm.push(n[0], n[1], n[2]);
+  }
+  quad(a, b, c, d) { this.tri(a, b, c); this.tri(a, c, d); }
+  /** quad with explicit per-vertex normals (smooth shading along the ribbon) */
+  quadN(a, b, c, d, na, nb, nc, nd) {
+    this.triN(a, b, c, na, nb, nc);
+    this.triN(a, c, d, na, nc, nd);
+  }
+  triN(a, b, c, na, nb, nc) {
+    this.pos.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+    this.norm.push(na.x, na.y, na.z, nb.x, nb.y, nb.z, nc.x, nc.y, nc.z);
+  }
+  geometry() {
+    if (!this.pos.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.norm, 3));
+    g.computeBoundingSphere();
+    return g;
+  }
+  get count() { return this.pos.length / 9; }
+}
+
+function makeGateMesh(kind, width) {
+  const g = new THREE.Group();
+  const mat = kind === 'finish' ? MAT.finish : MAT.gate;
+  const half = Math.max(3.2, width / 2) + 1.0;
+  const P = new PartSet();
+  for (const sx of [-1, 1]) {
+    P.add(MAT.truss, [0.44, 5.0, 0.44], [sx * half, 2.5, 0]);
+    P.add(mat, [0.54, 0.54, 0.54], [sx * half, 5.2, 0]);
+    P.add(mat, [0.3, 3.8, 0.3], [sx * (half - 0.55), 2.0, 0]);
+  }
+  P.add(MAT.truss, [half * 2, 0.32, 0.36], [0, 4.95, 0]);
+  P.add(mat, [half * 2 - 0.7, 0.6, 0.2], [0, 4.3, 0]);
+  P.build(g, []);
+  return g;
+}
+
+function buildCourse(data, scene, world) {
+  const root = new THREE.Group();
+  const M = {
+    deck: new MeshBuilder(), alt: new MeshBuilder(), pad: new MeshBuilder(),
+    curb: new MeshBuilder(), curbAlt: new MeshBuilder(),
+    side: new MeshBuilder(), dash: new MeshBuilder(), rail: new MeshBuilder(),
+    bank: new MeshBuilder()
+  };
+  const chevs = [];
+  const q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
+  const p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
+  const x0 = new THREE.Vector3(), x1 = new THREE.Vector3();
+  const u0 = new THREE.Vector3(), u1 = new THREE.Vector3();
+  const XA = new THREE.Vector3(1, 0, 0), YA = new THREE.Vector3(0, 1, 0);
+  const V = () => new THREE.Vector3();
+  let minY = Infinity, segCount = 0;
+
+  const edge = (p, x, u, off, lift) =>
+    V().copy(p).addScaledVector(x, off).addScaledVector(u, lift || 0);
+
+  for (const strip of data.strips) {
+    const F = strip.frames;
+    for (let i = 0; i < F.length - 1; i++) {
+      const s = strip.segs[i] || {};
+      const a = F[i], b = F[i + 1];
+      p0.fromArray(a.p); p1.fromArray(b.p);
+      q0.setFromEuler(new THREE.Euler(a.t, a.y, a.r, 'YXZ'));
+      q1.setFromEuler(new THREE.Euler(b.t, b.y, b.r, 'YXZ'));
+      x0.copy(XA).applyQuaternion(q0); u0.copy(YA).applyQuaternion(q0);
+      x1.copy(XA).applyQuaternion(q1); u1.copy(YA).applyQuaternion(q1);
+      const hw0 = a.w / 2, hw1 = b.w / 2;
+      minY = Math.min(minY, p0.y, p1.y);
+      segCount++;
+
+      const l0 = edge(p0, x0, u0, hw0), r0 = edge(p0, x0, u0, -hw0);
+      const l1 = edge(p1, x1, u1, hw1), r1 = edge(p1, x1, u1, -hw1);
+      const l0d = V().copy(l0).addScaledVector(u0, -DECK_T);
+      const r0d = V().copy(r0).addScaledVector(u0, -DECK_T);
+      const l1d = V().copy(l1).addScaledVector(u1, -DECK_T);
+      const r1d = V().copy(r1).addScaledVector(u1, -DECK_T);
+
+      // collision: full-width top (with smooth vertex normals so the ribbon
+      // drives like a curve, not a chain of facets), both skirts, underside
+      const NT = { a: u0.clone(), b: u0.clone(), c: u1.clone(), d: u1.clone() };
+      world.addQuad(l0, r0, r1, l1, s.grip === undefined ? 1 : s.grip, 1.10, false, NT);
+      world.addQuad(l0, l1, l1d, l0d, 1, 1.00);
+      world.addQuad(r0, r0d, r1d, r1, 1, 1.00);
+      world.addQuad(l0d, l1d, r1d, r0d, 1, 0.10);
+
+      // visible top: painted curbs either side of the running surface
+      const low = s.grip !== undefined && s.grip < 0.95;
+      const deckMesh = s.pad ? M.pad : (low ? M.alt : M.deck);
+      if (s.curb) {
+        const li0 = edge(p0, x0, u0, hw0 - CURB_W), li1 = edge(p1, x1, u1, hw1 - CURB_W);
+        const ri0 = edge(p0, x0, u0, -(hw0 - CURB_W)), ri1 = edge(p1, x1, u1, -(hw1 - CURB_W));
+        const cm = low ? M.curbAlt : M.curb;
+        cm.quadN(l0, li0, li1, l1, NT.a, NT.a, NT.c, NT.c);
+        cm.quadN(ri0, r0, r1, ri1, NT.a, NT.a, NT.c, NT.c);
+        deckMesh.quadN(li0, ri0, ri1, li1, NT.a, NT.a, NT.c, NT.c);
+      } else {
+        deckMesh.quadN(l0, r0, r1, l1, NT.a, NT.a, NT.c, NT.c);
+      }
+      M.side.quad(l0, l1, l1d, l0d);
+      M.side.quad(r0, r0d, r1d, r1);
+
+      // Where the deck stands above the terrain, flare an earth embankment
+      // down to ground level instead of propping it on piers. The course is
+      // then genuinely attached to the ground, and running off the edge means
+      // sliding down a grass bank rather than falling into nothing.
+      // Always flare an embankment from the deck edge down to the terrain, at
+      // roughly 40 degrees and with a minimum width even where the deck is
+      // barely off the ground. Without this, a low deck presents a 0.6 m
+      // vertical kerb that a car which has run wide can never climb back over
+      // — it simply jams against it with the throttle open.
+      const h0 = Math.max(l0d.y - GROUND_Y, 0), h1 = Math.max(l1d.y - GROUND_Y, 0);
+      const foot = (d0, x, sx, h) => {
+        const f = V().copy(d0).addScaledVector(x, sx * Math.max(h * 1.15, 1.0));
+        f.y = GROUND_Y;
+        return f;
+      };
+      const fl0 = foot(l0d, x0, 1, h0), fl1 = foot(l1d, x1, 1, h1);
+      const fr0 = foot(r0d, x0, -1, h0), fr1 = foot(r1d, x1, -1, h1);
+      M.bank.quad(l0d, l1d, fl1, fl0);
+      M.bank.quad(r0d, fr0, fr1, r1d);
+      world.addQuad(l0d, l1d, fl1, fl0, 0.70, 0.9, false, null, false);
+      world.addQuad(r0d, fr0, fr1, r1d, 0.70, 0.9, false, null, false);
+      M.side.quad(l0d, l1d, r1d, r0d);
+
+      if (s.dash && i % 2 === 0) {
+        const lift = 0.02;
+        M.dash.quad(
+          edge(p0, x0, u0, 0.18, lift), edge(p0, x0, u0, -0.18, lift),
+          edge(p1, x1, u1, -0.18, lift), edge(p1, x1, u1, 0.18, lift));
+      }
+      if (s.rail) {
+        const sides = s.rail === 'both' ? [1, -1] : [s.rail === 'left' ? 1 : -1];
+        for (const sx of sides) {
+          const b0 = edge(p0, x0, u0, sx * (hw0 + 0.14), 0.05);
+          const b1 = edge(p1, x1, u1, sx * (hw1 + 0.14), 0.05);
+          const t0 = V().copy(b0).addScaledVector(u0, 0.95);
+          const t1 = V().copy(b1).addScaledVector(u1, 0.95);
+          M.rail.quad(b0, b1, t1, t0);
+          world.addQuad(b0, b1, t1, t0, 1, 0.6, true);
+        }
+      }
+      // Cap the open ends of every strip. Without a cap the front face of a
+      // landing ramp is not a surface at all, so a car that comes up short
+      // drives straight into the inside of the deck.
+      if (i === 0 || i === F.length - 2) {
+        const first = i === 0;
+        const ea = first ? l0 : l1, eb = first ? r0 : r1;
+        const ed = first ? l0d : l1d, ee = first ? r0d : r1d;
+        if (first) {
+          M.side.quad(ea, ed, ee, eb);
+          world.addQuad(ea, ed, ee, eb, 1, 1.00);
+        } else {
+          M.side.quad(ea, eb, ee, ed);
+          world.addQuad(ea, eb, ee, ed, 1, 1.00);
+        }
+      }
+      if (s.chev) {
+        const cp = edge(p0, x0, u0, s.chev * (hw0 - 1.1), 0.5);
+        const cq = q0.clone().multiply(new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(0, s.chev * deg(40), 0, 'YXZ')));
+        chevs.push(new THREE.Matrix4().compose(cp, cq, new THREE.Vector3(0.18, 1.0, 1.7)));
+      }
+
+    }
+  }
+
+  const addMesh = (mb, mat, receive) => {
+    const g = mb.geometry();
+    if (!g) return;
+    const m = new THREE.Mesh(g, mat);
+    m.receiveShadow = !!receive;
+    m.castShadow = false;
+    root.add(m);
+  };
+  addMesh(M.deck, MAT.deck, true);
+  addMesh(M.alt, MAT.deckAlt, true);
+  addMesh(M.pad, MAT.pad, true);
+  addMesh(M.curb, MAT.curb, false);
+  addMesh(M.curbAlt, MAT.curbAlt, false);
+  addMesh(M.side, MAT.side, false);
+  addMesh(M.bank, MAT.bank, true);
+  addMesh(M.dash, MAT.dash, false);
+  addMesh(M.rail, MAT.rail, true);
+
+  const inst = (list, mat) => {
+    if (!list.length) return;
+    const im = new THREE.InstancedMesh(GEO.box, mat, list.length);
+    for (let i = 0; i < list.length; i++) im.setMatrixAt(i, list[i]);
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = false; im.receiveShadow = false; im.frustumCulled = false;
+    root.add(im);
+  };
+  inst(chevs, MAT.chev);
+  const instGeo = (list, geo, mat) => {
+    if (!list.length) return;
+    const im = new THREE.InstancedMesh(geo, mat, list.length);
+    for (let i = 0; i < list.length; i++) im.setMatrixAt(i, list[i]);
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = false; im.receiveShadow = false; im.frustumCulled = false;
+    root.add(im);
+  };
+
+  // Scenery: two instanced meshes for the whole course, placed from a seeded
+  // generator so a given course looks identical every single load. Candidates
+  // are rejected unless they clear the centreline by more than any deck plus
+  // its embankment could reach.
+  const props = { tree: [], rock: [] };
+  let seed = 0x9e3779b9;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const pathPts = data.path;
+  const clearOf = (x, z, need) => {
+    let best = Infinity;
+    for (let i = 0; i < pathPts.length; i++) {
+      const dx = pathPts[i][0] - x, dz = pathPts[i][2] - z;
+      const d = dx * dx + dz * dz;
+      if (d < best) best = d;
+      if (best < need * need) return false;
+    }
+    return true;
+  };
+  if (pathPts.length > 1) {
+    const pm = new THREE.Matrix4(), pq = new THREE.Quaternion();
+    const pp = new THREE.Vector3(), ps = new THREE.Vector3();
+    for (let n = 0; n < 900 && props.tree.length + props.rock.length < 420; n++) {
+      const anchor = pathPts[Math.floor(rnd() * pathPts.length)];
+      const ang = rnd() * Math.PI * 2;
+      const rad = 26 + rnd() * 70;
+      const x = anchor[0] + Math.cos(ang) * rad, z = anchor[2] + Math.sin(ang) * rad;
+      if (!clearOf(x, z, 25)) continue;
+      const tree = rnd() < 0.72;
+      const h = tree ? 5 + rnd() * 7 : 0.8 + rnd() * 1.6;
+      pp.set(x, GROUND_Y + h / 2, z);
+      pq.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * 6.28);
+      const w = tree ? h * (0.26 + rnd() * 0.14) : h * (0.7 + rnd() * 0.5);
+      ps.set(w, h, w);
+      (tree ? props.tree : props.rock).push(new THREE.Matrix4().compose(pp.clone(), pq, ps));
+    }
+  }
+
+  instGeo(props.tree, GEO.tree, MAT.tree);
+  instGeo(props.rock, GEO.rock, MAT.rock);
+
+  const gates = [];
+  let cp = 0;
+  for (const g of data.gates) {
+    const mesh = makeGateMesh(g.kind, g.width);
+    mesh.position.fromArray(g.pos);
+    mesh.rotation.y = g.heading;
+    root.add(mesh);
+    gates.push({
+      kind: g.kind, mesh,
+      pos: new THREE.Vector3().fromArray(g.pos),
+      dir: new THREE.Vector3(Math.sin(g.heading), 0, Math.cos(g.heading)),
+      heading: g.heading, radius: g.radius,
+      index: g.kind === 'finish' ? -1 : cp++,
+      passed: false
+    });
+  }
+
+  const path = data.path.map((q) => new THREE.Vector3(q[0], q[1], q[2]));
+  const cum = [0];
+  for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + path[i].distanceTo(path[i - 1]));
+
+  world.index();
+  scene.add(root);
+  return {
+    root, gates, path, cum, length: cum[cum.length - 1],
+    minY: isFinite(minY) ? minY : 0, segments: segCount, tris: world.tris.length,
+    props: props.tree.length + props.rock.length
+  };
+}
+
+function disposeCourse(course, scene) {
+  if (!course) return;
+  scene.remove(course.root);
+  course.root.traverse((o) => {
+    if (o.isInstancedMesh) o.dispose();
+    else if (o.isMesh && o.geometry) o.geometry.dispose();
+  });
+}
+
+/* --------------------------------------------------------- 8. course data
+   Ten original layouts, all built on the terrain: the deck starts at ground
+   level and every elevated section is carried on an earth embankment, so
+   nothing floats and there is nowhere to fall. Running wide puts you on
+   grass, which is slow but recoverable, and that is why no course needs a
+   checkpoint — start line to finish line, one clean run.
+
+   Sized to the car's measured limits: 16.7 m/s^2 of lateral grip, so corners
+   run 28-60 m radii and banking stays inside the 18-22 degree envelope that
+   direct corner tests hold at any speed. A 10 degree kicker at 30 m/s carries
+   about 40 m, so the gaps are long and the landing ramps are generous.
+   Stacked spirals are deliberately absent: an embankment under an upper deck
+   would drive straight through the deck below it.                          */
+const LEVELS = [
+  {
+    name: 'Proving Ground', tier: 1,
+    blurb: 'Wide decking and open sweepers. Learn what the brakes do before the decking narrows.',
+    build() {
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.straight(70);
+      b.curve(60, 42, { bank: 6, chev: 1 });
+      b.straight(40);
+      b.slope(30, 4.5);
+      b.straight(26);
+      b.curve(55, -70, { bank: 8, chev: 1 });
+      b.straight(46);
+      b.crest(24, 9);
+      b.straight(34);
+      b.curve(48, 62, { bank: 8, chev: 1 });
+      b.slope(30, -4.5);
+      b.straight(50);
+      b.gate('finish');
+      b.straight(34, { w: 17 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Overpass', tier: 1,
+    blurb: 'Banked S-bends onto an embankment, then the first jump worth respecting.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(20, 15);
+      b.straight(54);
+      b.chicane(38, 48, { bank: 11, chev: 1 });
+      b.straight(34);
+      b.slope(40, 7);
+      b.straight(22);
+      b.ramp(18, 11);
+      b.gap(24, -4);
+      b.landing(20, -8, { w: 13 });
+      b.straight(30);
+      b.curve(34, 96, { bank: 15, chev: 1 });
+      b.straight(40);
+      b.bumps(3, 11, 1.1);
+      b.slope(26, -3.2);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(30, { w: 15 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Switchback', tier: 2,
+    blurb: 'Climb the hill, then four banked hairpins back down it. Brake in a straight line.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(20, 15);
+      b.straight(56);
+      b.slope(44, 11);
+      b.curve(30, 150, { bank: 16, rise: -3, chev: 1 });
+      b.straight(34);
+      b.curve(30, -150, { bank: 16, rise: -3, chev: 1 });
+      b.straight(38);
+      b.curve(28, 144, { bank: 17, rise: -2.5, chev: 1 });
+      b.straight(30);
+      b.curve(28, -144, { bank: 17, rise: -2.5, chev: 1 });
+      b.straight(44);
+      b.crest(22, 10);
+      b.straight(28);
+      b.curve(40, 54, { bank: 10, chev: 1 });
+      b.straight(32);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Ribbon', tier: 2,
+    blurb: 'Seven metres wide, rolling crests, and a chicane that arrives faster than it looks.',
+    build() {
+      const b = new TrackBuilder({ width: 7 });
+      b.pad(20, 13);
+      b.straight(40, { w: 9 });
+      b.bumps(4, 9, 1.0, { w: 8 });
+      b.straight(26);
+      b.curve(30, 84, { bank: 14, chev: 1 });
+      b.straight(46);
+      b.chicane(32, 30, { bank: 10, w: 9 });
+      b.straight(24, { w: 8.5 });
+      b.slope(24, 4, { w: 8.5 });
+      b.ramp(16, 10, { w: 8.5 });
+      b.gap(22, -3.5);
+      b.landing(20, -8, { w: 11 });
+      b.straight(26, { w: 9 });
+      b.curve(30, -104, { bank: 16, chev: 1 });
+      b.straight(34, { w: 7, rail: 'both' });
+      b.straight(30);
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Cauldron', tier: 3,
+    blurb: 'Up the long bank, then two huge opposed sweepers spiral you back to the floor.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(48);
+      b.slope(48, 12.5);
+      b.curve(40, 180, { bank: 18, rise: -6, chev: 1 });
+      b.straight(22);
+      b.curve(40, -180, { bank: 18, rise: -6, chev: 1 });
+      b.straight(30);
+      b.slope(34, 5);
+      b.ramp(18, 12);
+      b.gap(26, -5);
+      b.landing(22, -9, { w: 13 });
+      b.straight(30, { w: 10 });
+      b.curve(32, 84, { bank: 14, chev: 1 });
+      b.straight(34, { w: 8 });
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Stepping Stones', tier: 3,
+    blurb: 'Four jumps off a raised plateau. Come up short and you are picking your way back.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(22, 15);
+      b.straight(40);
+      b.slope(40, 6);
+      b.straight(20);
+      b.ramp(18, 8);
+      b.gap(22, -2.5);
+      b.table(36, 16);
+      b.straight(24);
+      b.ramp(18, 8);
+      b.gap(24, -2.5);
+      b.table(36, 16);
+      b.curve(34, 70, { bank: 13, chev: 1 });
+      b.straight(36);
+      b.ramp(18, 8);
+      b.gap(24, -2.5);
+      b.table(38, 16);
+      b.straight(22);
+      b.ramp(20, 9);
+      b.gap(27, -3);
+      b.table(40, 18);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(26, { w: 15 });
+      return b.build();
+    }
+  },
+  {
+    name: 'The Wall', tier: 4,
+    blurb: 'Two banked walls wide enough to run high or low. Pick a line and hold it.',
+    build() {
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(22, 15);
+      b.straight(80);
+      b.curve(50, 108, { bank: 21, w: 20, chev: 1 });
+      b.straight(40);
+      b.curve(54, -120, { bank: 22, w: 20, chev: 1 });
+      b.straight(44);
+      b.crest(26, 11);
+      b.straight(30, { w: 10 });
+      b.curve(40, 84, { bank: 20, w: 11, chev: 1 });
+      b.straight(36, { w: 9 });
+      b.slope(24, 4);
+      b.ramp(16, 10);
+      b.gap(24, -3.5);
+      b.landing(22, -9, { w: 13 });
+      b.straight(36, { w: 10 });
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Dust Line', tier: 4,
+    blurb: 'The pale decking is dusty and short on grip. Gentler throttle, earlier brakes.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(20, 15);
+      b.straight(50);
+      b.curve(44, 58, { bank: 10, chev: 1 });
+      b.straight(34, { grip: 0.85 });
+      b.curve(46, -76, { bank: 12, grip: 0.85, chev: 1 });
+      b.straight(26, { grip: 0.85 });
+      b.straight(34);
+      b.slope(28, 4.5);
+      b.curve(34, 92, { bank: 17, chev: 1 });
+      b.straight(40, { grip: 0.85 });
+      b.bumps(3, 10, 1.0, { grip: 0.85 });
+      b.straight(24, { grip: 0.85 });
+      b.curve(40, -68, { bank: 12, chev: 1 });
+      b.straight(30);
+      b.slope(26, -3);
+      b.ramp(16, 10);
+      b.gap(22, -1);
+      b.landing(22, -8, { w: 13, grip: 0.85 });
+      b.straight(34, { w: 10 });
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Filament', tier: 5,
+    blurb: 'Five metres wide, high on the bank, and no rails. The big gap needs everything.',
+    build() {
+      const b = new TrackBuilder({ width: 5.5 });
+      b.pad(20, 13);
+      b.straight(46, { w: 9 });
+      b.slope(30, 7, { w: 7 });
+      b.straight(22, { w: 6 });
+      b.curve(28, 156, { bank: 18, w: 8, chev: 1 });
+      b.straight(70, { w: 6.5 });
+      b.ramp(20, 12, { w: 7 });
+      b.gap(27, -5);
+      b.landing(26, -10, { w: 14 });
+      b.straight(26, { w: 9 });
+      b.bumps(4, 8, 1.2, { w: 7 });
+      b.straight(22, { w: 5.6 });
+      b.curve(30, -104, { bank: 18, w: 6.5, chev: 1 });
+      b.straight(40, { w: 5.2 });
+      b.slope(26, -2, { w: 5.5 });
+      b.straight(26, { w: 6 });
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Skyline', tier: 5,
+    blurb: 'The long one. Wall, sweepers, two big jumps and a thin run to the line.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(22, 15);
+      b.straight(76);
+      b.curve(50, 56, { bank: 12, chev: 1 });
+      b.straight(34);
+      b.curve(52, 96, { bank: 21, w: 18, chev: 1 });
+      b.straight(40);
+      b.slope(40, 8);
+      b.chicane(32, 40, { bank: 12 });
+      b.straight(30);
+      b.ramp(18, 11);
+      b.gap(24, -4);
+      b.landing(26, -9, { w: 15 });
+      b.straight(34, { w: 10 });
+      b.curve(38, 180, { bank: 18, rise: -2, chev: 1 });
+      b.straight(24);
+      b.curve(36, -132, { bank: 18, rise: -1.5, chev: 1 });
+      b.straight(46);
+      b.slope(30, 5);
+      b.ramp(20, 12);
+      b.gap(26, -4.5);
+      b.landing(26, -10, { w: 15 });
+      b.straight(30, { w: 8 });
+      b.bumps(3, 9, 1.1, { w: 8 });
+      b.straight(34, { w: 6.5, rail: 'right' });
+      b.curve(32, 70, { bank: 16, w: 8, chev: 1 });
+      b.straight(38, { w: 7 });
+      b.gate('finish');
+      b.straight(30, { w: 14 });
+      return b.build();
+    }
+  }
+];
+
+/* --------------------------------------------------------- 9. chase camera
+   Critically damped spring on the rig position, a much tighter filter on the
+   aim point so the car stays framed through landings, a hard leash so it
+   cannot trail far at speed, and a smoothed occlusion pull-in. The rig is
+   always world-up: the body may be mid-backflip, the horizon should not be. */
+function smoothDamp(cur, tgt, vel, key, smoothTime, dt) {
+  const omega = 2 / Math.max(smoothTime, 1e-4);
+  const x = omega * dt;
+  const e = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
+  const change = cur - tgt;
+  const temp = (vel[key] + omega * change) * dt;
+  vel[key] = (vel[key] - omega * temp) * e;
+  return tgt + (change + temp) * e;
+}
+
+const CAM = {
+  dist: 9.4, distSpeed: 4.2, height: 3.5, heightSpeed: 0.6,
+  lookAhead: 7.0, lookHeight: 1.5,
+  smoothXZ: 0.11, smoothY: 0.18, smoothLook: 0.06,
+  leash: 3.0, minDist: 4.0,
+  yawGround: 6.5, yawAir: 3.0,
+  lookLead: 1.9, lookLeadMax: 0.24,
+  fovBase: 64, fovSpeed: 6
+};
+
+class ChaseCamera {
+  constructor(camera, world) {
+    this.cam = camera; this.world = world;
+    this.pos = new THREE.Vector3();
+    this.look = new THREE.Vector3();
+    this.vel = { x: 0, y: 0, z: 0 };
+    this.lookVel = { x: 0, y: 0, z: 0 };
+    this.yaw = 0; this.fov = CAM.fovBase; this.occl = 1;
+    this._anchor = new THREE.Vector3();
+    this._tmp = new THREE.Vector3();
+    this._d = new THREE.Vector3();
+    this._a = new THREE.Vector3();
+    this._b = new THREE.Vector3();
+    this._hit = { t: 0, point: new THREE.Vector3(), normal: new THREE.Vector3(), grip: 1, track: true };
+  }
+  idealDist(car) {
+    return CAM.dist + clamp(car.speed / CAR.vTop, 0, 1) * CAM.distSpeed
+      + (car.boosting ? 1.1 : 0);
+  }
+  anchorFor(car, dist, out) {
+    const sn = clamp(car.speed / CAR.vTop, 0, 1);
+    this._d.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+    out.copy(car.pos).addScaledVector(this._d, -dist);
+    out.y += CAM.height + sn * CAM.heightSpeed + (car.grounded ? 0 : 0.5)
+      + clamp(car.vel.y * 0.05, -0.8, 1.3);
+    return out;
+  }
+  lookFor(car, out) {
+    let lead = car.heading - this.yaw;
+    while (lead > Math.PI) lead -= Math.PI * 2;
+    while (lead < -Math.PI) lead += Math.PI * 2;
+    const ly = this.yaw + clamp(lead * CAM.lookLead, -CAM.lookLeadMax, CAM.lookLeadMax);
+    this._d.set(Math.sin(ly), 0, Math.cos(ly));
+    out.copy(car.pos).addScaledVector(this._d, CAM.lookAhead);
+    out.y += CAM.lookHeight + clamp(car.vel.y * 0.05, -1.1, 1.1);
+    return out;
+  }
+  snap(car) {
+    this.yaw = car.heading; this.occl = 1;
+    this.vel.x = this.vel.y = this.vel.z = 0;
+    this.lookVel.x = this.lookVel.y = this.lookVel.z = 0;
+    this.pos.copy(this.anchorFor(car, this.idealDist(car), this._anchor));
+    this.lookFor(car, this.look);
+    this.fov = CAM.fovBase;
+    this.cam.fov = this.fov;
+    this.cam.updateProjectionMatrix();
+    this.apply();
+  }
+  update(dt, car) {
+    let d = car.heading - this.yaw;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    this.yaw += d * approach(car.grounded ? CAM.yawGround : CAM.yawAir, dt);
+
+    const ideal = this.idealDist(car);
+    this.updateOcclusion(dt, car, ideal);
+    const anchor = this.anchorFor(car, ideal * this.occl, this._anchor);
+
+    this.pos.x = smoothDamp(this.pos.x, anchor.x, this.vel, 'x', CAM.smoothXZ, dt);
+    this.pos.z = smoothDamp(this.pos.z, anchor.z, this.vel, 'z', CAM.smoothXZ, dt);
+    this.pos.y = smoothDamp(this.pos.y, anchor.y, this.vel, 'y', CAM.smoothY, dt);
+
+    const off = this._tmp.copy(this.pos).sub(anchor);
+    const len = off.length();
+    if (len > CAM.leash) this.pos.copy(anchor).addScaledVector(off.multiplyScalar(1 / len), CAM.leash);
+
+    const lk = this.lookFor(car, this._tmp);
+    this.look.x = smoothDamp(this.look.x, lk.x, this.lookVel, 'x', CAM.smoothLook, dt);
+    this.look.y = smoothDamp(this.look.y, lk.y, this.lookVel, 'y', CAM.smoothLook, dt);
+    this.look.z = smoothDamp(this.look.z, lk.z, this.lookVel, 'z', CAM.smoothLook, dt);
+
+    const wantFov = CAM.fovBase + clamp(car.speed / CAR.vTop, 0, 1) * CAM.fovSpeed
+      + (car.boosting ? 5 : 0);
+    this.fov = lerp(this.fov, wantFov, approach(2.5, dt));
+    if (Math.abs(this.cam.fov - this.fov) > 0.05) {
+      this.cam.fov = this.fov;
+      this.cam.updateProjectionMatrix();
+    }
+    this.apply();
+  }
+  updateOcclusion(dt, car, ideal) {
+    let want = 1;
+    if (car.grounded) {
+      const from = this._a.copy(car.pos); from.y += 1.1;
+      const to = this.anchorFor(car, ideal, this._tmp);
+      const dir = this._b.copy(to).sub(from);
+      const len = dir.length();
+      if (len > 0.6) {
+        dir.multiplyScalar(1 / len);
+        if (this.world.raycast(from, dir, len, this._hit)) {
+          want = clamp(Math.max(this._hit.t - 0.6, CAM.minDist) / ideal, 0.4, 1);
+        }
+      }
+    }
+    this.occl = lerp(this.occl, want, approach(want < this.occl ? 16 : 3.5, dt));
+  }
+  orbit(target, time) {
+    const r = 19;
+    this.pos.set(target.x + Math.sin(time * 0.15) * r, target.y + 7.5, target.z + Math.cos(time * 0.15) * r);
+    this.look.copy(target);
+    this.apply();
+  }
+  apply() {
+    this.cam.position.copy(this.pos);
+    this.cam.up.set(0, 1, 0);
+    this.cam.lookAt(this.look);
+  }
+}
+
+/* ---------------------------------------------------------- 9b. tyre marks
+   One pooled, unlit, translucent mesh holding a ring buffer of quads. Each
+   sliding wheel lays a quad from its previous contact patch to the current
+   one, so the marks follow the real contact geometry including banking. The
+   buffer recycles oldest-first, and only the bytes written this frame are
+   re-uploaded, so laying rubber costs one draw call and a few hundred bytes
+   rather than growing without bound. */
+class SkidMarks {
+  constructor(scene, maxQuads) {
+    this.max = maxQuads || 900;
+    this.head = 0;
+    this.count = 0;
+    this.data = new Float32Array(this.max * 18);      // 2 triangles per quad
+    this.str = new Float32Array(this.max * 6);        // one strength per vertex
+    const g = new THREE.BufferGeometry();
+    this.attr = new THREE.BufferAttribute(this.data, 3);
+    this.attr.setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('position', this.attr);
+    this.sAttr = new THREE.BufferAttribute(this.str, 1);
+    this.sAttr.setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('aStrength', this.sAttr);
+    this.idx = new Float32Array(this.max * 6);
+    this.iAttr = new THREE.BufferAttribute(this.idx, 1);
+    this.iAttr.setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('aIdx', this.iAttr);
+    MAT.skid.uniforms.uMax.value = this.max;
+    g.setDrawRange(0, 0);
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e5);
+    this.geom = g;
+    this.mesh = new THREE.Mesh(g, MAT.skid);
+    this.mesh.frustumCulled = false;
+    this.mesh.renderOrder = 2;
+    scene.add(this.mesh);
+    this.prev = [];
+    for (let i = 0; i < 4; i++) {
+      this.prev.push({ live: false, s: 0, l: new THREE.Vector3(), r: new THREE.Vector3() });
+    }
+    this._l = new THREE.Vector3();
+    this._r = new THREE.Vector3();
+    this.lo = 0; this.hi = 0;
+  }
+
+  reset() {
+    this.head = 0;
+    this.count = 0;
+    this.geom.setDrawRange(0, 0);
+    for (const p of this.prev) p.live = false;
+  }
+
+  quad(a, b, c, d, s0, s1) {
+    const o = this.head * 18;
+    const so = this.head * 6;
+    const v = this.data, st = this.str, ix = this.idx;
+    st[so] = s0; st[so + 1] = s0; st[so + 2] = s1;
+    st[so + 3] = s0; st[so + 4] = s1; st[so + 5] = s1;
+    for (let q = 0; q < 6; q++) ix[so + q] = this.head;
+    v[o] = a.x; v[o + 1] = a.y; v[o + 2] = a.z;
+    v[o + 3] = b.x; v[o + 4] = b.y; v[o + 5] = b.z;
+    v[o + 6] = c.x; v[o + 7] = c.y; v[o + 8] = c.z;
+    v[o + 9] = a.x; v[o + 10] = a.y; v[o + 11] = a.z;
+    v[o + 12] = c.x; v[o + 13] = c.y; v[o + 14] = c.z;
+    v[o + 15] = d.x; v[o + 16] = d.y; v[o + 17] = d.z;
+    if (this.dirty) { this.lo = Math.min(this.lo, o); this.hi = Math.max(this.hi, o + 18); }
+    else { this.lo = o; this.hi = o + 18; this.dirty = true; }
+    this.head = (this.head + 1) % this.max;
+    this.count = Math.min(this.count + 1, this.max);
+  }
+
+  update(car) {
+    this.dirty = false;
+    // How hard the tyre is working: faster, more sideways and more steering
+    // lock all darken and widen the mark.
+    const spdN = clamp(car.speed / CAR.vTop, 0, 1);
+    const steerN = clamp(Math.abs(car.steer) / CAR.maxSteer, 0, 1);
+    for (let i = 0; i < 4; i++) {
+      const w = car.wheels[i], p = this.prev[i];
+      // No on/off threshold: strength rises smoothly with how hard the tyre
+      // is working, so gentle cornering leaves a faint trace and a full slide
+      // leaves a black one, with everything in between.
+      const fast = clamp(car.speed / 12, 0, 1);
+      const work = clamp(w.slip / 0.8, 0, 1);
+      const raw = (0.68 * work + 0.34 * steerN * fast) * fast;
+      if (!w.contact || w.load < 200 || raw < 0.10) { p.live = false; continue; }
+      const strength = clamp(raw, 0.14, 1);
+      const half = 0.09 + 0.09 * strength;
+      this._l.copy(w.point).addScaledVector(w.side, half).addScaledVector(w.normal, 0.02);
+      this._r.copy(w.point).addScaledVector(w.side, -half).addScaledVector(w.normal, 0.02);
+      if (p.live && p.l.distanceToSquared(this._l) > 0.0025) {
+        this.quad(p.l, p.r, this._r, this._l, p.s, strength);
+      }
+      if (!p.live || p.l.distanceToSquared(this._l) > 0.0025) {
+        p.l.copy(this._l); p.r.copy(this._r); p.s = strength; p.live = true;
+      }
+    }
+    if (this.dirty) {
+      this.geom.setDrawRange(0, this.count * 6);
+      // upload only the span written this frame
+      this.attr.updateRange.offset = this.lo;
+      this.attr.updateRange.count = this.hi - this.lo;
+      this.attr.needsUpdate = true;
+      this.sAttr.updateRange.offset = (this.lo / 18) * 6;
+      this.sAttr.updateRange.count = ((this.hi - this.lo) / 18) * 6;
+      this.sAttr.needsUpdate = true;
+      this.iAttr.updateRange.offset = this.sAttr.updateRange.offset;
+      this.iAttr.updateRange.count = this.sAttr.updateRange.count;
+      this.iAttr.needsUpdate = true;
+    }
+    MAT.skid.uniforms.uHead.value = this.head;
+  }
+}
+
+/* ------------------------------------------------------------- 10. scene */
+const App = {
+  renderer: null, scene: null, camera: null, light: null, lightTarget: null,
+  init() {
+    const canvas = $('view');
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    // Render at most 1.75x device pixels: beyond that the cost climbs faster
+    // than the image improves on flat-shaded geometry like this.
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;   // soft PCF costs ~4x for little gain here
+    // Correct colour pipeline. Without sRGB output the whole scene is
+    // gamma-wrong, and tone mapping keeps sunlit decking off full white.
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.12;
+
+    this.scene = new THREE.Scene();
+    this.scene.fog = new THREE.Fog(0xcfe6f6, 260, 1400);
+    this.camera = new THREE.PerspectiveCamera(CAM.fovBase, 1, 0.3, 2600);
+
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(1500, 18, 12),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide, depthWrite: false, fog: false,
+        uniforms: {
+          zenith: { value: new THREE.Color(0x2e86d8) },
+          band: { value: new THREE.Color(0xcfe6f6) },
+          nadir: { value: new THREE.Color(0xb9d8c6) },
+          glow: { value: new THREE.Color(0xfff4d8) },
+          sunDir: { value: new THREE.Vector3(0.52, 0.30, 0.36).normalize() }
+        },
+        vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+        fragmentShader: [
+          'uniform vec3 zenith; uniform vec3 band; uniform vec3 nadir; uniform vec3 glow;',
+          'uniform vec3 sunDir; varying vec3 vP;',
+          'void main(){',
+          '  vec3 d = normalize(vP);',
+          '  vec3 c = mix(nadir, band, smoothstep(-0.34, 0.015, d.y));',
+          '  c = mix(c, zenith, smoothstep(0.02, 0.66, d.y));',
+          '  float s = max(dot(d, sunDir), 0.0);',
+          '  c += glow * pow(s, 8.0) * 0.30;',
+          '  c += glow * pow(s, 260.0) * 1.4;',
+          '  gl_FragColor = vec4(c, 1.0);',
+          '}'
+        ].join('\n')
+      }));
+    sky.frustumCulled = false;
+    this.scene.add(sky);
+
+    this.light = new THREE.DirectionalLight(0xfffaf0, 2.05);
+    this.light.position.set(52, 70, 36);
+    this.light.castShadow = true;
+    this.light.shadow.mapSize.set(1024, 1024);   // ample for a +-22 m frustum
+    const sc = this.light.shadow.camera;
+    // tighter shadow frustum around the car: same texel budget, sharper edges
+    sc.left = -22; sc.right = 22; sc.top = 22; sc.bottom = -22; sc.near = 1; sc.far = 200;
+    this.light.shadow.bias = -0.0006;
+    this.light.shadow.normalBias = 0.03;
+    this.scene.add(this.light);
+    this.lightTarget = new THREE.Object3D();
+    this.scene.add(this.lightTarget);
+    this.light.target = this.lightTarget;
+    this.scene.add(new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95));
+
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), MAT.floor);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = GROUND_Y;
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    // two rings of low-poly peaks for depth, the far ring fading into the fog
+    const ring = (count, radMin, radSpread, hMin, hSpread, mat, y) => {
+      const im = new THREE.InstancedMesh(GEO.peak, mat, count);
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion();
+      const p = new THREE.Vector3(), s = new THREE.Vector3();
+      for (let i = 0; i < count; i++) {
+        const ang = (i / count) * Math.PI * 2 + (i % 3) * 0.19;
+        const rad = radMin + ((i * 137) % radSpread);
+        const hgt = hMin + ((i * 71) % hSpread);
+        p.set(Math.cos(ang) * rad, y + hgt / 2, Math.sin(ang) * rad);
+        q.setFromAxisAngle(UP, ang * 1.7);
+        s.set(hgt * (0.75 + (i % 4) * 0.09), hgt, hgt * 0.82);
+        im.setMatrixAt(i, m.compose(p, q, s));
+      }
+      im.instanceMatrix.needsUpdate = true;
+      im.frustumCulled = false;
+      this.scene.add(im);
+    };
+    ring(22, 340, 260, 40, 70, MAT.scenery, GROUND_Y);
+    ring(18, 700, 420, 90, 150, MAT.sceneryFar, GROUND_Y);
+
+    this.resize();
+    addEventListener('resize', () => this.resize());
+  },
+  /**
+   * Three quality tiers, stepped automatically from measured frame rate so a
+   * weak machine degrades instead of stuttering. Toggling shadowMap.enabled
+   * changes the shader permutation, so the materials need recompiling.
+   */
+  setQuality(q) {
+    if (q === this.quality) return;
+    this.quality = q;
+    const dpr = devicePixelRatio || 1;
+    this.renderer.setPixelRatio(q >= 2 ? Math.min(dpr, 1.75) : (q === 1 ? Math.min(dpr, 1.1) : 0.85));
+    this.renderer.shadowMap.enabled = q >= 1;
+    this.scene.fog.far = q >= 2 ? 1400 : 800;
+    for (const k in MAT) if (MAT[k] && MAT[k].isMaterial) MAT[k].needsUpdate = true;
+    this.resize();
+  },
+  quality: 2,
+
+  resize() {
+    const w = innerWidth, h = innerHeight;
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / Math.max(h, 1);
+    this.camera.updateProjectionMatrix();
+  },
+  aimLight(t) {
+    const gx = Math.round(t.x), gy = Math.round(t.y), gz = Math.round(t.z);
+    this.lightTarget.position.set(gx, gy, gz);
+    this.light.position.set(gx + 52, gy + 70, gz + 36);
+  },
+  render() { this.renderer.render(this.scene, this.camera); }
+};
+
+/* ---------------------------------------------------------------- 11. ui */
+const UI = {
+  toastT: 0,
+  show(id) {
+    ['menu', 'select', 'boards', 'result', 'gate', 'banned']
+      .forEach((k) => { $(k).hidden = k !== id; });
+    $('hud').hidden = !(id === 'hud' || id === 'result');
+  },
+  who(name, credits) {
+    $('who').hidden = !name;
+    if (!name) return;
+    $('whoName').textContent = name;
+    $('whoCredits').textContent = credits;
+  },
+  gateError(msg) { $('gErr').textContent = msg || ''; },
+  gateMode(creating) {
+    $('gateTitle').textContent = creating ? 'Create an account' : 'Sign in';
+    $('gateNote').textContent = creating
+      ? 'You need an invite code from whoever runs this server.'
+      : 'Skyframe is invite-only. Sign in to load your times.';
+    $('gNewFields').hidden = !creating;
+    $('gGo').textContent = creating ? 'Create account' : 'Sign in';
+    $('gToggle').textContent = creating ? 'Sign in instead' : 'Create an account';
+    $('gSwitch').firstChild.textContent = creating
+      ? 'Already have an account? ' : 'Have an invite code? ';
+    this.gateError('');
+  },
+  course(i, name) {
+    $('hNum').textContent = 'Course ' + (i + 1);
+    $('hName').textContent = name;
+  },
+  clock(t, stopped) {
+    $('hClock').textContent = formatTime(t);
+    $('hClock').classList.toggle('stop', !!stopped);
+  },
+  speed(v) { $('hSpd').innerHTML = Math.round(Math.abs(v) * 3.6) + '<small>km/h</small>'; },
+  state(car) {
+    const el = $('hGrip');
+    if (!car.grounded) { el.textContent = 'airborne'; el.className = 'gear air'; }
+    else if (car.slipMax > 0.3) { el.textContent = 'sliding'; el.className = 'gear air'; }
+    else { el.textContent = ''; el.className = 'gear'; }
+  },
+  progress(f) { $('hBar').style.width = clamp(f, 0, 1) * 100 + '%'; },
+  best(t) { $('hProg').textContent = t ? 'best ' + formatTime(t) : 'no time yet'; },
+  boost(car) {
+    const f = clamp(car.boostLeft / CAR.boostTotal, 0, 1);
+    $('hBoost').style.width = (f * 100) + '%';
+    $('hBoostBar').classList.toggle('spent', f <= 0.001);
+    $('hBoostTxt').textContent = car.boosting ? 'BOOST'
+      : (f > 0 ? 'boost ' + car.boostLeft.toFixed(1) + 's' : 'boost spent');
+  },
+  teleOn: true,
+  toggleTele() {
+    this.teleOn = !this.teleOn;
+    $('tele').hidden = !this.teleOn;
+  },
+  /**
+   * Only the readouts that actually matter while driving, large enough to read
+   * at a glance: which gear, how close to the limiter, how hard the car is
+   * cornering, and how much the tyres are letting go. Refreshed at 10 Hz.
+   */
+  telemetry(car) {
+    if (!this.teleOn) return;
+    let peakSlip = 0;
+    for (const w of car.wheels) peakSlip = Math.max(peakSlip, w.slip);
+    $('tGear').textContent = car.shiftTimer > 0 ? '--' : String(car.gear + 1);
+    $('tRpm').textContent = Math.round(car.rpm);
+    const rf = clamp((car.rpm - CAR.idleRpm) / (CAR.redline - CAR.idleRpm), 0, 1);
+    const bar = $('tRpmBar');
+    bar.style.width = (rf * 100) + '%';
+    bar.className = car.rpm > CAR.shiftUp ? 'red' : '';
+    $('tGLat').textContent = Math.abs(car.gLat).toFixed(2);
+    $('tSlip').textContent = Math.round(clamp(peakSlip, 0, 2) * 100) + '%';
+  },
+
+  prompt(text) {
+    const n = $('hPrompt');
+    if (text) { n.textContent = text; n.classList.add('on'); } else n.classList.remove('on');
+  },
+  toast(text) {
+    const t = $('toast');
+    t.textContent = text;
+    t.classList.add('on');
+    this.toastT = 1.8;
+  },
+  /** live gap to the ghost, shown under the clock */
+  delta(d) {
+    const s = $('hSplit');
+    if (d === null || d === undefined) { s.textContent = ''; s.className = 'split'; return; }
+    s.textContent = formatDelta(d);
+    s.className = 'split ' + (d > 0 ? 'up' : 'down');
+  },
+  tick(dt) {
+    if (this.toastT > 0 && (this.toastT -= dt) <= 0) $('toast').classList.remove('on');
+  },
+  flash() {
+    const f = $('flash');
+    f.style.transition = 'none';
+    f.style.opacity = '0.9';
+    requestAnimationFrame(() => {
+      f.style.transition = 'opacity .3s ease';
+      f.style.opacity = '0';
+    });
+  },
+  bars(tier) {
+    let s = '<span class="bars">';
+    for (let i = 0; i < 5; i++) s += '<i class="' + (i < tier ? 'on' : '') + '"></i>';
+    return s + '</span>';
+  },
+  courseList(playable, onPick) {
+    const wrap = $('courseList');
+    wrap.innerHTML = '';
+    LEVELS.forEach((lv, i) => {
+      const id = 'c' + (i + 1);
+      const open = i === 0 || Records.cleared('c' + i);
+      const best = Records.best(id);
+      const btn = document.createElement('button');
+      btn.className = 'card';
+      if (!open || !playable[i]) btn.disabled = true;
+      btn.innerHTML =
+        '<div class="idx">Course ' + (i + 1) + '</div>' +
+        '<div class="ttl">' + lv.name + '</div>' +
+        '<div class="desc">' + (playable[i] ? lv.blurb : 'This course failed to load and was skipped.') + '</div>' +
+        '<div class="foot"><span>' + this.bars(lv.tier) + '</span><span class="best">' +
+        (best ? formatTime(best) : (open ? 'no time' : 'locked')) + '</span></div>' +
+        (Records.cleared(id) ? '<span class="done"></span>' : '');
+      btn.addEventListener('click', () => onPick(i));
+      wrap.appendChild(btn);
+    });
+  },
+  boardTab: 'all',
+  boards() {
+    const tabs = $('boardTabs');
+    tabs.innerHTML = '';
+    const mk = (key, label) => {
+      const b = document.createElement('button');
+      b.className = 'tab' + (this.boardTab === key ? ' on' : '');
+      b.textContent = label;
+      b.addEventListener('click', () => { this.boardTab = key; this.boards(); });
+      tabs.appendChild(b);
+    };
+    mk('all', 'Overall');
+    LEVELS.forEach((lv, i) => mk('c' + (i + 1), String(i + 1)));
+
+    const body = $('boardBody');
+    const me = Records.driver();
+    if (this.boardTab === 'all') {
+      const ids = LEVELS.map((l, i) => 'c' + (i + 1));
+      const rows = Records.overall(ids);
+      if (!rows.length) {
+        body.innerHTML = '<p class="empty">No times yet. Clear a course and it will appear here.</p>';
+        return;
+      }
+      let h = '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Cleared</th>' +
+        '<th style="text-align:right">Total of bests</th></tr></thead><tbody>';
+      rows.forEach((r, i) => {
+        h += '<tr class="' + (r.n === me ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td>' +
+          escapeHtml(r.n) + '</td><td class="d">' + r.count + ' / ' + ids.length +
+          '</td><td class="t">' + formatTime(r.total) + '</td></tr>';
+      });
+      body.innerHTML = h + '</tbody></table>';
+      return;
+    }
+    const idx = parseInt(this.boardTab.slice(1), 10) - 1;
+    const list = Records.board(this.boardTab);
+    if (!list.length) {
+      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(LEVELS[idx].name) +
+        ' yet.</p>';
+      return;
+    }
+    let h = '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Time</th>' +
+      '<th style="text-align:right">Set</th></tr></thead><tbody>';
+    list.forEach((e, i) => {
+      const when = new Date(e.d);
+      h += '<tr class="' + (e.n === me ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td>' +
+        escapeHtml(e.n) + '</td><td class="t">' + formatTime(e.t) + '</td><td class="d">' +
+        (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td></tr>';
+    });
+    body.innerHTML = h + '</tbody></table>';
+  }
+};
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* -------------------------------------------------------------- 12. game
+   Ghost replay: every run is sampled at a fixed 20 Hz into a flat array of
+   position + quaternion. The best run per course is kept and played back as a
+   translucent car on later attempts, so you are always racing yourself. The
+   sample index is derived from the run clock rather than a frame counter, so
+   playback stays in step whatever the frame rate does.                      */
+const GHOST_HZ = 20;
+const GHOST_MAX = 7 * GHOST_HZ * 300;        // 300 s ceiling per recording
+const _gq1 = new THREE.Quaternion(), _gq2 = new THREE.Quaternion();
+const _gp = new THREE.Vector3();
+
+const Game = {
+  ghostMesh: null, ghostData: null, rec: [],
+  recPrevPos: new THREE.Vector3(), recPrevQuat: new THREE.Quaternion(),
+  state: 'boot',
+  course: null, data: null, playable: [],
+  levelIndex: 0,
+  world: new PhysicsWorld(),
+  car: null, chase: null,
+  time: 0, running: false, started: false,
+  ghostDist: null, ghostCursor: 0, offTrack: 0,
+  marks: null, fps: 60, teleAcc: 0, qAcc: 0, qGood: 0,
+  lastGear: 0, wasBoosting: false,
+  startPose: { pos: new THREE.Vector3(), heading: 0 },
+  accum: 0, clock: 0, pathIdx: 0,
+
+  boot() {
+    buildMaterials();
+    buildGeometry();
+    App.init();
+    Input.init();
+    this.car = new Vehicle(App.scene);
+    this.chase = new ChaseCamera(App.camera, this.world);
+    this.ghostMesh = buildGhostMesh();
+    App.scene.add(this.ghostMesh);
+    this.marks = new SkidMarks(App.scene, 900);
+
+    this.data = LEVELS.map((lv, i) => {
+      try {
+        const d = validateCourse(lv.build());
+        if (!d.valid) throw new Error('no finish gate or no usable decking');
+        return d;
+      } catch (err) {
+        console.warn('Skyframe: course ' + (i + 1) + ' rejected —', err && err.message);
+        return null;
+      }
+    });
+    this.playable = this.data.map(Boolean);
+    if (!this.playable.some(Boolean)) {
+      fatal('No courses could be built',
+        'Every course failed validation, so there is nothing to drive. The console has details.');
+      return false;
+    }
+
+    $('hKeys').innerHTML = '<b>W A S D</b> drive &nbsp; <b>Space</b> boost &nbsp; ' +
+      '<b>Shift</b> handbrake &nbsp; <b>R</b> restart &nbsp; <b>T</b> telemetry &nbsp; ' +
+      '<b>Esc</b> menu';
+    this.wire();
+    $('boot').hidden = true;
+    this.loadLevel(this.data.findIndex(Boolean), true);
+
+    if (Cloud.on) {
+      UI.gateMode(false);
+      UI.show('gate');
+      this.state = 'gate';
+      Cloud.watch((user, profile) => this.onAuth(user, profile));
+    } else {
+      UI.who(null);
+      this.toMenu();
+    }
+    return true;
+  },
+
+  /** called whenever Firebase reports a sign-in or sign-out */
+  async onAuth(user, profile) {
+    if (!user) { UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate'; return; }
+    if (!profile) {
+      UI.gateError(Cloud.error || 'This account has no profile — an invite code is needed.');
+      UI.show('gate'); this.state = 'gate'; return;
+    }
+    if (Cloud.banned()) { UI.show('banned'); this.state = 'banned'; return; }
+    try {
+      Records.hydrate(await Cloud.pull());
+    } catch (e) {
+      console.warn('Skyframe: could not read the leaderboards', e && e.message);
+    }
+    UI.who(Cloud.name(), Records.credits);
+    $('driverRow').hidden = true;
+    this.toMenu();
+  },
+
+  wire() {
+    const name = $('driver');
+    name.value = Records.data.driver || '';
+    name.addEventListener('change', () => Records.setDriver(name.value));
+    name.addEventListener('blur', () => Records.setDriver(name.value));
+
+    let creating = false;
+    $('gToggle').addEventListener('click', () => {
+      creating = !creating;
+      UI.gateMode(creating);
+    });
+    $('gGo').addEventListener('click', async () => {
+      const em = $('gEmail').value.trim(), pw = $('gPass').value;
+      if (!em || pw.length < 6) {
+        UI.gateError('Enter an email and a password of at least 6 characters.');
+        return;
+      }
+      $('gGo').disabled = true;
+      UI.gateError('Working…');
+      try {
+        if (creating) await Cloud.signUp(em, pw, $('gCode').value, $('gName').value);
+        else await Cloud.signIn(em, pw);
+        UI.gateError('');
+      } catch (e) {
+        UI.gateError(this.authMessage(e));
+      }
+      $('gGo').disabled = false;
+    });
+    $('gOffline').addEventListener('click', () => {
+      Cloud.on = false;
+      UI.who(null);
+      this.toMenu();
+      UI.toast('Offline — times are kept on this device only');
+    });
+    $('bnOut').addEventListener('click', () => Cloud.signOut());
+    $('whoOut').addEventListener('click', () => Cloud.signOut());
+
+    $('bDrive').addEventListener('click', () => {
+      let i = LEVELS.findIndex((l, k) => this.playable[k] && !Records.cleared('c' + (k + 1)));
+      if (i < 0) i = this.data.findIndex(Boolean);
+      this.startLevel(i);
+    });
+    $('bCourses').addEventListener('click', () => this.toSelect());
+    $('bBoards').addEventListener('click', () => this.toBoards());
+    $('bSelBack').addEventListener('click', () => this.toMenu());
+    $('bBoardBack').addEventListener('click', () => this.toMenu());
+    $('bBoardWipe').addEventListener('click', () => {
+      Records.wipe();
+      UI.boards();
+      UI.toast('Times cleared');
+    });
+    $('bRetry').addEventListener('click', () => this.startLevel(this.levelIndex));
+    $('bResCourses').addEventListener('click', () => this.toSelect());
+    $('bNext').addEventListener('click', () => {
+      const n = this.nextPlayable(this.levelIndex);
+      if (n < 0) this.toSelect(); else this.startLevel(n);
+    });
+    $('bSound').addEventListener('click', () => {
+      Sound.init();
+      Sound.setEnabled(!Sound.on);
+      $('bSound').textContent = 'Sound: ' + (Sound.on ? 'on' : 'off');
+    });
+    const wake = () => { Sound.init(); Sound.resume(); };
+    document.addEventListener('pointerdown', wake, { once: true });
+    addEventListener('keydown', wake, { once: true });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) Input.clear(); });
+  },
+
+  /** Firebase error codes are not for humans */
+  authMessage(e) {
+    const c = (e && e.code) || '';
+    if (c.indexOf('invalid-credential') >= 0 || c.indexOf('wrong-password') >= 0
+      || c.indexOf('user-not-found') >= 0) return 'That email and password do not match.';
+    if (c.indexOf('email-already-in-use') >= 0) return 'That email already has an account.';
+    if (c.indexOf('invalid-email') >= 0) return 'That email address is not valid.';
+    if (c.indexOf('weak-password') >= 0) return 'Pick a longer password.';
+    if (c.indexOf('too-many-requests') >= 0) return 'Too many attempts — wait a minute.';
+    if (c.indexOf('network') >= 0) return 'No connection to the server.';
+    return (e && e.message) || 'Something went wrong.';
+  },
+
+  nextPlayable(from) {
+    for (let i = from + 1; i < this.data.length; i++) if (this.data[i]) return i;
+    return -1;
+  },
+  id(i) { return 'c' + ((i === undefined ? this.levelIndex : i) + 1); },
+
+  loadLevel(i, silent) {
+    if (!this.data[i]) return false;
+    disposeCourse(this.course, App.scene);
+    this.world.clear();
+    try {
+      this.course = buildCourse(this.data[i], App.scene, this.world);
+    } catch (err) {
+      console.error('Skyframe: failed to build course', i + 1, err);
+      this.playable[i] = false;
+      this.course = null;
+      if (!silent) {
+        fatal('That course could not be built',
+          'Pick another from the course list. The console has details.');
+      }
+      return false;
+    }
+    this.levelIndex = i;
+    this.rec = [];
+    this.ghostData = Records.ghost('c' + (i + 1));
+    if (this.ghostMesh) this.ghostMesh.visible = false;
+    this.pathIdx = 0;
+    this.buildGhostProgress();
+    if (this.marks) this.marks.reset();
+    const s = this.data[i].start;
+    this.startPose.pos.set(s.pos[0], s.pos[1] + CAR.comHeight + 0.05, s.pos[2]);
+    this.startPose.heading = s.heading;
+    this.car.place(this.startPose.pos, this.startPose.heading);
+    this.chase.snap(this.car);
+    return true;
+  },
+
+  /**
+   * Where the ghost was, measured in distance along the course rather than in
+   * time. Projecting each stored sample onto the centreline once at load lets
+   * the HUD show a live gap: how long the ghost took to reach the point you
+   * are standing on now. That replaces checkpoint splits entirely.
+   */
+  buildGhostProgress() {
+    this.ghostDist = null;
+    this.ghostCursor = 0;
+    const g = this.ghostData;
+    if (!g || !this.course) return;
+    const path = this.course.path, cum = this.course.cum;
+    const n = g.s.length / 7;
+    const gd = new Float32Array(n);
+    const p = new THREE.Vector3();
+    let idx = 0;
+    for (let k = 0; k < n; k++) {
+      p.set(g.s[k * 7], g.s[k * 7 + 1], g.s[k * 7 + 2]);
+      let best = idx, bd = Infinity;
+      const hi = Math.min(path.length - 1, idx + 16);
+      for (let j = idx; j <= hi; j++) {
+        const d = path[j].distanceToSquared(p);
+        if (d < bd) { bd = d; best = j; }
+      }
+      idx = best;
+      gd[k] = cum[best];
+    }
+    this.ghostDist = gd;
+  },
+
+  /** No checkpoints: a run is start line to finish line, so the only reset is
+      back to the line with the clock zeroed. */
+  restartRun(msg) {
+    this.car.place(this.startPose.pos, this.startPose.heading);
+    this.chase.snap(this.car);
+    this.time = 0;
+    this.started = false;
+    this.accum = 0;
+    this.rec = [];
+    this.pathIdx = 0;
+    this.ghostCursor = 0;
+    this.offTrack = 0;
+    if (this.ghostMesh) this.ghostMesh.visible = false;
+    if (this.marks) this.marks.reset();
+    if (this.course) for (const g of this.course.gates) g.passed = false;
+    UI.clock(0, false);
+    UI.progress(0);
+    UI.delta(null);
+    UI.prompt('Hold W to launch');
+    UI.flash();
+    Sound.respawn();
+    if (msg) UI.toast(msg);
+  },
+
+  startLevel(i) {
+    if (!this.loadLevel(i)) { this.toSelect(); return; }
+    Input.clear();
+    this.time = 0; this.started = false; this.running = true;
+    this.accum = 0;
+    this.state = 'play';
+    UI.show('hud');
+    UI.course(i, LEVELS[i].name);
+    UI.best(Records.best(this.id(i)));
+    UI.clock(0, false);
+    UI.delta(null);
+    UI.progress(0);
+    UI.prompt('Hold W to launch');
+    if (this.ghostData) UI.toast('Chasing your best run — ' + formatTime(this.ghostData.t));
+    Sound.init(); Sound.resume(); Sound.startEngine();
+  },
+
+  toMenu() {
+    this.state = 'menu'; this.running = false;
+    Sound.stopEngine();
+    if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
+    UI.show('menu');
+  },
+  toSelect() {
+    this.state = 'select'; this.running = false;
+    Sound.stopEngine();
+    UI.courseList(this.playable, (i) => this.startLevel(i));
+    UI.show('select');
+  },
+  toBoards() {
+    this.state = 'boards'; this.running = false;
+    Sound.stopEngine();
+    $('boardNote').textContent = 'Times are kept on this device, one table per course. ' +
+      'Change the driver name on the title screen to share the machine.';
+    UI.boards();
+    UI.show('boards');
+  },
+
+  finishLevel() {
+    this.running = false;
+    this.state = 'result';
+    const id = this.id();
+    const prevBest = Records.best(id);
+    const firstClear = !Records.cleared(id);
+    const res = Records.submit(id, this.time);
+    if (Cloud.on && Cloud.user && !Cloud.banned() && (!prevBest || this.time < prevBest)) {
+      Cloud.pushBest(id, this.time, this.rec, firstClear).then(() => {
+        // the award is granted by its document id, so it lands exactly once
+        if (firstClear) {
+          Cloud.credits += CREDITS_PER_CLEAR;
+          Records.credits = Cloud.credits;
+        }
+        UI.who(Cloud.name(), Records.credits);
+      }).catch((e) => console.warn('Skyframe: could not publish the time', e && e.message));
+    }
+    Sound.stopEngine();
+    Sound.finish(res.rank === 1);
+
+    $('rKick').textContent = res.rank === 1 ? 'Course record' : 'Course clear';
+    $('rName').textContent = LEVELS[this.levelIndex].name;
+    $('rTime').textContent = formatTime(this.time);
+    $('rSub').innerHTML = !prevBest
+      ? 'First clean run on this course.'
+      : (this.time < prevBest
+        ? '<em>' + formatDelta(this.time - prevBest) + 's</em> on your previous best of ' + formatTime(prevBest) + '.'
+        : formatDelta(this.time - prevBest) + 's off your best of ' + formatTime(prevBest) + '.');
+
+    if (!prevBest || this.time < prevBest) Records.setGhost(id, this.time, this.rec);
+    this.ghostMesh.visible = false;
+
+    const list = Records.board(id).slice(0, 5);
+    $('rBoardHd').textContent = 'Course leaderboard — ' + LEVELS[this.levelIndex].name;
+    $('rBoard').innerHTML = list.map((e, i) =>
+      '<li class="' + (e.t === this.time && e.n === Records.driver() ? 'me' : '') + '"><span>' +
+      (i + 1) + '. ' + escapeHtml(e.n) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
+    this.ghostData = Records.ghost(id);
+    this.buildGhostProgress();
+    UI.best(Records.best(id));
+    $('bNext').hidden = this.nextPlayable(this.levelIndex) < 0;
+    UI.show('result');
+    UI.clock(this.time, true);
+  },
+
+  checkFinish() {
+    const car = this.car;
+    const travelled = this.course.cum[this.pathIdx] / Math.max(this.course.length, 1);
+    for (const g of this.course.gates) {
+      if (g.passed || g.kind !== 'finish') continue;
+      if (travelled < 0.55) continue;              // cannot be cut short
+      if (Math.abs(car.pos.y - g.pos.y) > 7) continue;
+      if (car.pos.distanceToSquared(g.pos) > g.radius * g.radius) continue;
+      if (car.speed > 1.5 && car.vel.dot(g.dir) < 0) continue;
+      g.passed = true;
+      this.finishLevel();
+      return;
+    }
+  },
+
+  recordGhost(dt) {
+    // Land each sample exactly on the 20 Hz grid by interpolating between last
+    // frame's pose and this one. Simply storing "the pose at the first frame
+    // after k/20" biases every sample up to a frame late, which at 22 m/s puts
+    // the replayed ghost a third of a metre ahead of where the run really was.
+    const p = this.car.pos, q = this.car.quat;
+    const t1 = this.time, t0 = t1 - dt;
+    const r2 = (v) => Math.round(v * 100) / 100;
+    const r3 = (v) => Math.round(v * 1000) / 1000;
+    const want = Math.floor(t1 * GHOST_HZ) + 1;
+    while (this.rec.length / 7 < want && this.rec.length < GHOST_MAX) {
+      const tk = (this.rec.length / 7) / GHOST_HZ;
+      const u = dt > 1e-6 ? clamp((tk - t0) / dt, 0, 1) : 1;
+      _gp.lerpVectors(this.recPrevPos, p, u);
+      _gq1.copy(this.recPrevQuat).slerp(q, u);
+      this.rec.push(r2(_gp.x), r2(_gp.y), r2(_gp.z),
+        r3(_gq1.x), r3(_gq1.y), r3(_gq1.z), r3(_gq1.w));
+    }
+    this.recPrevPos.copy(p);
+    this.recPrevQuat.copy(q);
+  },
+
+  updateGhost() {
+    const g = this.ghostData;
+    if (!g || !this.started) { this.ghostMesh.visible = false; return; }
+    const n = g.s.length / 7;
+    const f = this.time * GHOST_HZ;
+    if (f >= n - 1) { this.ghostMesh.visible = false; return; }
+    const i = Math.floor(f), u = f - i, a = i * 7, b = a + 7;
+    this.ghostMesh.visible = true;
+    this.ghostMesh.position.set(
+      lerp(g.s[a], g.s[b], u), lerp(g.s[a + 1], g.s[b + 1], u), lerp(g.s[a + 2], g.s[b + 2], u));
+    _gq1.set(g.s[a + 3], g.s[a + 4], g.s[a + 5], g.s[a + 6]);
+    _gq2.set(g.s[b + 3], g.s[b + 4], g.s[b + 5], g.s[b + 6]);
+    this.ghostMesh.quaternion.copy(_gq1).slerp(_gq2, u);
+  },
+
+  updateProgress() {
+    const path = this.course.path;
+    let best = this.pathIdx, bd = Infinity;
+    const lo = Math.max(0, this.pathIdx - 4), hi = Math.min(path.length - 1, this.pathIdx + 12);
+    for (let i = lo; i <= hi; i++) {
+      const d = path[i].distanceToSquared(this.car.pos);
+      if (d < bd) { bd = d; best = i; }
+    }
+    this.pathIdx = best;
+    const dist = this.course.cum[best];
+    UI.progress(dist / Math.max(this.course.length, 1));
+
+    // live gap to the ghost: my clock now, minus the ghost's clock at this
+    // same point on the course
+    const gd = this.ghostDist;
+    if (!gd || !this.started) { UI.delta(null); return; }
+    let c = this.ghostCursor;
+    while (c < gd.length - 1 && gd[c + 1] <= dist) c++;
+    this.ghostCursor = c;
+    if (c >= gd.length - 1) { UI.delta(null); return; }
+    const d0 = gd[c], d1 = gd[c + 1];
+    const u = d1 > d0 ? clamp((dist - d0) / (d1 - d0), 0, 1) : 0;
+    UI.delta(this.time - (c + u) / GHOST_HZ);
+  },
+
+  stepPlay(dt) {
+    Input.sample();
+    if (Input.tapped('Escape')) { this.toMenu(); return; }
+    if (Input.tapped('KeyR')) this.restartRun('Restarted');
+    if (Input.tapped('KeyT')) UI.toggleTele();
+    if (!this.started && Input.anyDrive) {
+      this.started = true;
+      this.recPrevPos.copy(this.car.pos);
+      this.recPrevQuat.copy(this.car.quat);
+      UI.prompt('');
+    }
+    const input = this.started ? Input : { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
+
+    this.accum += dt;
+    const H = 1 / 360;
+    let steps = 0;
+    while (this.accum >= H && steps < 18) {
+      if (!this.car.step(H, this.world, input)) {
+        console.warn('Skyframe: vehicle state went non-finite, restarting');
+        this.restartRun('Restarted');
+        this.accum = 0;
+        break;
+      }
+      this.accum -= H; steps++;
+    }
+    if (steps === 18) this.accum = 0;
+
+    if (this.car.landImpact > 0.22) { Sound.land(this.car.landImpact); this.car.landImpact *= 0.25; }
+    const bottomed = this.car.wheels.some((w) => w.comp >= CAR.susMaxComp - 0.004);
+    if (bottomed && !this.wasBottomed) Sound.bottomOut(0.8);
+    this.wasBottomed = bottomed;
+    if (this.car.scrapeImpact > 0.18) { Sound.scrape(this.car.scrapeImpact); this.car.scrapeImpact *= 0.3; }
+
+    // The terrain catches you rather than a void, so a spoiled run is ended by
+    // time off the decking instead of by falling. Airborne does not count,
+    // otherwise every jump would trip it.
+    const onDeck = this.car.wheels.some((w) => w.contact && w.onTrack);
+    if (!this.car.grounded || onDeck) this.offTrack = 0;
+    else this.offTrack += dt;
+
+    if (this.car.pos.y < GROUND_Y - 8) this.restartRun('Restarted');
+    else if (this.car.stuckTime > 0.9) this.restartRun('Stuck — restarted');
+    else if (this.offTrack > 4) this.restartRun('Off the track — restarted');
+
+    if (this.started) { this.time += dt; this.recordGhost(dt); }
+    this.checkFinish();
+    if (this.state === 'play') this.updateProgress();
+  },
+
+  /** step the quality tier down when frames are slow, back up when they are not */
+  autoQuality(dt) {
+    this.qAcc += dt;
+    if (this.fps > 57) this.qGood += dt; else this.qGood = 0;
+    if (this.qAcc < 2) return;
+    this.qAcc = 0;
+    if (this.fps < 42 && App.quality > 0) {
+      App.setQuality(App.quality - 1);
+      this.qGood = 0;
+      UI.toast('Graphics eased to keep the frame rate up');
+    } else if (this.qGood > 8 && App.quality < 2) {
+      App.setQuality(App.quality + 1);
+      this.qGood = 0;
+    }
+  },
+
+  frame(dt) {
+    if (dt > 0.0005) this.fps = lerp(this.fps, 1 / dt, 0.08);
+    this.autoQuality(dt);
+    if (this.state === 'play') {
+      this.stepPlay(dt);
+      if (this.state === 'play') {
+        this.car.syncMesh(dt);
+        this.chase.update(dt, this.car);
+        UI.clock(this.time, false);
+        UI.speed(this.car.speedFwd);
+        UI.state(this.car);
+        UI.boost(this.car);
+        this.marks.update(this.car);
+        this.updateGhost();
+        this.teleAcc += dt;
+        if (this.teleAcc >= 0.1) { UI.telemetry(this.car); this.teleAcc = 0; }
+        const onGrass = this.car.wheels.some((w) => w.contact && !w.onTrack);
+        Sound.engine(this.car, Input.throttle, onGrass);
+        if (this.car.gear !== this.lastGear) {
+          if (this.started) Sound.shift(this.car.gear > this.lastGear);
+          this.lastGear = this.car.gear;
+        }
+        if (this.car.boosting && !this.wasBoosting) Sound.boostFire();
+        this.wasBoosting = this.car.boosting;
+      }
+    } else if (this.state === 'result') {
+      const input = { throttle: 0, brake: 1, steer: 0, handbrake: 0 };
+      this.accum += dt;
+      const H = 1 / 240;
+      let steps = 0;
+      while (this.accum >= H && steps < 8) { this.car.step(H, this.world, input); this.accum -= H; steps++; }
+      this.car.syncMesh(dt);
+      this.chase.update(dt, this.car);
+      UI.speed(this.car.speedFwd);
+    } else {
+      this.clock += dt;
+      if (this.car && this.course) this.chase.orbit(this.car.pos, this.clock);
+    }
+    if (this.car) App.aimLight(this.car.pos);
+    UI.tick(dt);
+    Input.endFrame();
+    App.render();
+  }
+};
+
+/* ------------------------------------------------------------- main loop */
+let last = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  let dt = (now - last) / 1000;
+  last = now;
+  if (!isFinite(dt) || dt < 0) dt = 0;
+  dt = Math.min(dt, 0.05);
+  try {
+    Game.frame(dt);
+  } catch (err) {
+    console.error('Skyframe: frame error', err);
+    fatal('Something went wrong mid-run',
+      'The game hit an unexpected error and stopped. Reload to start again; the browser ' +
+      'console has the details.');
+    throw err;
+  }
+}
+
+Records.load().catch(() => {}).then(() => {
+  try {
+    if (Game.boot()) requestAnimationFrame(loop);
+  } catch (err) {
+    console.error(err);
+    fatal("Skyframe couldn't start",
+      'Initialisation failed: ' + (err && err.message ? err.message : 'unknown error') + '.');
+  }
+});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skyframe — admin</title>
+<style>
+:root{--bg:#0b1220;--panel:#111b30;--ink:#eaf0f8;--dim:#8798b5;--dimmer:#5b6a86;
+  --ember:#f2733f;--aqua:#3ddbb8;--signal:#ffcf5c;--rule:rgba(234,240,248,.13);
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif;
+  padding:36px 28px 60px}
+.wrap{max-width:920px;margin:0 auto}
+h1{font-size:30px;letter-spacing:-.03em;margin-bottom:4px}
+h1 span{color:var(--ember)}
+h2{font-size:14px;letter-spacing:.1em;color:var(--ember);margin:30px 0 12px;font-weight:600}
+p.note{color:var(--dim);font-size:13px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--rule);padding:20px 22px;margin-bottom:16px}
+label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px}
+input{font:14px var(--mono);color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
+  padding:10px 12px;width:260px;max-width:100%}
+input:focus{outline:none;border-color:var(--aqua)}
+button{font:14px inherit;color:var(--ink);background:transparent;border:1px solid var(--rule);
+  padding:10px 16px;cursor:pointer}
+button:hover{background:rgba(234,240,248,.07)}
+button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;font-weight:600}
+button.danger{border-color:rgba(242,115,63,.5);color:var(--ember)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;color:var(--dimmer);font-weight:500;padding:0 10px 8px 0;
+  border-bottom:1px solid var(--rule)}
+td{padding:9px 10px 9px 0;border-bottom:1px solid rgba(234,240,248,.06);vertical-align:middle}
+td.mono{font-family:var(--mono);font-size:12px;color:var(--dim)}
+tr.banned td{color:var(--dimmer)}
+tr.banned td.name{text-decoration:line-through}
+.pill{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border:1px solid var(--rule);
+  color:var(--dim)}
+.pill.on{border-color:var(--ember);color:var(--ember)}
+.code{font-family:var(--mono);font-size:22px;color:var(--aqua);letter-spacing:.04em}
+.msg{font-size:13px;margin-top:12px;min-height:1.4em}
+.msg.err{color:var(--ember)} .msg.ok{color:var(--aqua)}
+.hide{display:none}
+small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sky<span>frame</span> admin</h1>
+  <p class="note">Invite codes, accounts and bans. This page is public — everything it can do is
+    enforced by Firestore rules against your admin uid, so loading it as anyone else shows nothing.</p>
+
+  <!-- sign in -->
+  <div class="card" id="cardAuth">
+    <h2 style="margin-top:0">SIGN IN</h2>
+    <div class="row">
+      <div><label for="email">Email</label><input type="email" id="email"></div>
+      <div><label for="pass">Password</label><input type="password" id="pass"></div>
+      <button class="primary" id="btnIn">Sign in</button>
+    </div>
+    <div class="msg" id="authMsg"></div>
+  </div>
+
+  <div id="panel" class="hide">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>signed in as <b id="whoami" style="font-family:var(--mono)"></b></div>
+        <button id="btnOut">Sign out</button>
+      </div>
+    </div>
+
+    <h2>INVITE CODE</h2>
+    <div class="card">
+      <p class="note" style="margin-bottom:14px">Anyone creating an account must type this. Players
+        already signed up are unaffected when you change it.</p>
+      <div class="code" id="curCode">—</div>
+      <div class="row" style="margin-top:16px">
+        <div><label for="newCode">New code</label><input type="text" id="newCode"></div>
+        <button id="btnRandom">Generate</button>
+        <button class="primary" id="btnSaveCode">Set code</button>
+      </div>
+      <div class="msg" id="codeMsg"></div>
+      <small class="hint">Keep it long. Rules are evaluated server-side, so a short code could be
+        guessed by repeated sign-up attempts, and each attempt spends your daily write quota.</small>
+    </div>
+
+    <h2>PLAYERS <span id="pCount" style="color:var(--dimmer);font-weight:400"></span></h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Driver</th><th>Status</th><th>Credits</th><th>Courses</th>
+          <th style="text-align:right">Actions</th></tr></thead>
+        <tbody id="players"></tbody>
+      </table>
+      <div class="msg" id="pMsg"></div>
+      <div class="row" style="margin-top:14px"><button id="btnReload">Reload</button></div>
+    </div>
+
+    <h2>TIMES</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Course</th><th>Driver</th><th style="text-align:right">Time</th>
+          <th style="text-align:right"></th></tr></thead>
+        <tbody id="times"></tbody>
+      </table>
+      <small class="hint">Times are reported by the browser and are not verified. If one looks
+        impossible, delete it — and ban the account if it keeps happening.</small>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// Paste the same config you put in the game.
+const CONFIG = {
+  apiKey: '',
+  authDomain: '',
+  projectId: '',
+  appId: ''
+};
+const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const CREDIT_PER_CLEAR = 100;
+const COURSES = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron',
+                 'Stepping Stones','The Wall','Dust Line','Filament','Skyline'];
+
+const { initializeApp } = await import(SDK + 'firebase-app.js');
+const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } =
+  await import(SDK + 'firebase-auth.js');
+const { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection,
+        getDocs, query, where, writeBatch } = await import(SDK + 'firebase-firestore.js');
+
+const $ = (id) => document.getElementById(id);
+const app = initializeApp(CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const say = (el, text, kind) => { $(el).textContent = text; $(el).className = 'msg ' + (kind || ''); };
+const courseName = (id) => COURSES[parseInt(String(id).slice(1), 10) - 1] || id;
+const fmt = (ms) => {
+  const t = ms / 1000, m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return m + ':' + String(s).padStart(2, '0') + '.' +
+    String(Math.floor((t % 1) * 100)).padStart(2, '0');
+};
+
+$('btnIn').addEventListener('click', async () => {
+  say('authMsg', 'Working…');
+  try {
+    await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value);
+  } catch (e) { say('authMsg', e.message, 'err'); }
+});
+$('btnOut').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    $('panel').classList.add('hide');
+    $('cardAuth').classList.remove('hide');
+    return;
+  }
+  $('whoami').textContent = user.email + '  ·  ' + user.uid;
+  // the rules decide whether this account is the admin; try an admin-only read
+  try {
+    await getDoc(doc(db, 'config', 'invite'));
+  } catch (e) {
+    say('authMsg', 'That account is not the admin. Put its uid in firestore.rules.', 'err');
+    await signOut(auth);
+    return;
+  }
+  $('cardAuth').classList.add('hide');
+  $('panel').classList.remove('hide');
+  say('authMsg', '');
+  await loadAll();
+});
+
+$('btnRandom').addEventListener('click', () => {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  const buf = new Uint32Array(16);
+  crypto.getRandomValues(buf);
+  for (let i = 0; i < 16; i++) out += abc[buf[i] % abc.length];
+  $('newCode').value = out.slice(0, 5) + '-' + out.slice(5, 10) + '-' + out.slice(10, 16);
+});
+
+$('btnSaveCode').addEventListener('click', async () => {
+  const code = $('newCode').value.trim();
+  if (code.length < 8) { say('codeMsg', 'Use at least 8 characters.', 'err'); return; }
+  try {
+    await setDoc(doc(db, 'config', 'invite'), { code });
+    $('curCode').textContent = code;
+    $('newCode').value = '';
+    say('codeMsg', 'Invite code updated.', 'ok');
+  } catch (e) { say('codeMsg', e.message, 'err'); }
+});
+
+$('btnReload').addEventListener('click', loadAll);
+
+async function loadAll() {
+  say('pMsg', 'Loading…');
+  try {
+    const inv = await getDoc(doc(db, 'config', 'invite'));
+    $('curCode').textContent = inv.exists() ? inv.data().code : 'not set — set one below';
+
+    const [profs, bests, credits] = await Promise.all([
+      getDocs(collection(db, 'profiles')),
+      getDocs(collection(db, 'bests')),
+      getDocs(collection(db, 'creditEvents'))
+    ]);
+
+    const players = [];
+    profs.forEach((d) => players.push({ uid: d.id, ...d.data() }));
+    const byUid = {};
+    players.forEach((p) => { byUid[p.uid] = p; p.credits = 0; p.courses = 0; });
+    credits.forEach((d) => {
+      const v = d.data();
+      if (byUid[v.uid] && typeof v.delta === 'number') byUid[v.uid].credits += v.delta;
+    });
+    const rows = [];
+    bests.forEach((d) => {
+      const v = d.data();
+      rows.push({ id: d.id, ...v });
+      if (byUid[v.uid]) byUid[v.uid].courses++;
+    });
+
+    players.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+    $('pCount').textContent = '(' + players.length + ')';
+    const tb = $('players');
+    tb.innerHTML = '';
+    for (const p of players) {
+      const tr = document.createElement('tr');
+      if (p.banned) tr.className = 'banned';
+      tr.innerHTML =
+        '<td class="name"><b>' + esc(p.displayName || '—') + '</b><br>' +
+          '<span class="mono">' + p.uid + '</span></td>' +
+        '<td><span class="pill' + (p.banned ? ' on' : '') + '">' +
+          (p.banned ? 'banned' : 'active') + '</span></td>' +
+        '<td class="mono">' + p.credits + '</td>' +
+        '<td class="mono">' + p.courses + ' / ' + COURSES.length + '</td>' +
+        '<td style="text-align:right"></td>';
+      const cell = tr.lastElementChild;
+      const ban = document.createElement('button');
+      ban.textContent = p.banned ? 'Unban' : 'Ban';
+      if (!p.banned) ban.className = 'danger';
+      ban.addEventListener('click', () => setBanned(p, !p.banned));
+      cell.appendChild(ban);
+      tb.appendChild(tr);
+    }
+
+    rows.sort((a, b) => a.courseId === b.courseId
+      ? a.timeMs - b.timeMs : String(a.courseId).localeCompare(String(b.courseId)));
+    const tt = $('times');
+    tt.innerHTML = '';
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + esc(courseName(r.courseId)) + '</td>' +
+        '<td>' + esc(r.displayName || '—') + (r.banned ? ' <span class="pill on">hidden</span>' : '') + '</td>' +
+        '<td class="mono" style="text-align:right">' + fmt(r.timeMs) + '</td>' +
+        '<td style="text-align:right"></td>';
+      const del = document.createElement('button');
+      del.textContent = 'Delete';
+      del.className = 'danger';
+      del.addEventListener('click', async () => {
+        if (!confirm('Delete this time?')) return;
+        await deleteDoc(doc(db, 'bests', r.id));
+        await loadAll();
+      });
+      tr.lastElementChild.appendChild(del);
+      tt.appendChild(tr);
+    }
+    say('pMsg', '');
+  } catch (e) {
+    say('pMsg', e.message, 'err');
+  }
+}
+
+/**
+ * Banning flips the profile flag AND the copy denormalised onto every one of
+ * that player's leaderboard rows. Firestore cannot join, so the boards filter
+ * on their own banned field — without this second write a banned player would
+ * stay on the leaderboard.
+ */
+async function setBanned(p, banned) {
+  say('pMsg', banned ? 'Banning…' : 'Unbanning…');
+  try {
+    const mine = await getDocs(query(collection(db, 'bests'), where('uid', '==', p.uid)));
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'profiles', p.uid), { banned });
+    mine.forEach((d) => batch.update(d.ref, { banned }));
+    await batch.commit();
+    await loadAll();
+    say('pMsg', (p.displayName || 'Player') + (banned ? ' is banned.' : ' is active again.'), 'ok');
+  } catch (e) { say('pMsg', e.message, 'err'); }
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+</script>
+</body>
+</html>
