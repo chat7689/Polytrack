@@ -51,6 +51,10 @@ service cloud.firestore {
     // Doc id must be "{uid}_{courseId}" so a player can only ever hold their own
     // row per course. displayName/banned are denormalised from profiles/{uid} so
     // the leaderboard can filter without a join — the rule forces them to match.
+    // Admins additionally get a narrow update path that touches only `banned`,
+    // which is how a ban actually gets hidden from the leaderboard: the owner
+    // write path can't do it, since request.auth.uid there is the admin, not
+    // the row's own player.
     match /bests/{docId} {
       allow get, list: if signedIn();
       allow create, update: if signedIn()
@@ -61,6 +65,8 @@ service cloud.firestore {
         && request.resource.data.timeMs is number
         && request.resource.data.timeMs > 0
         && request.resource.data.timeMs < 600000;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned']);
       allow delete: if isAdmin();
     }
 

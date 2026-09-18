@@ -211,6 +211,8 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
   <canvas id="view"></canvas>
   <div class="vignette"></div>
   <div class="boot" id="boot">Building the frame…</div>
+  <div class="toast" id="toast"></div>
+  <div id="flash"></div>
 
   <div class="layer" id="hud" hidden>
     <div class="hud">
@@ -237,8 +239,6 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
       <div class="prompt" id="hPrompt">Hold W to launch</div>
       <div class="bar"><i id="hBar"></i></div>
     </div>
-    <div class="toast" id="toast"></div>
-    <div id="flash"></div>
   </div>
 
   <div class="layer" id="spectate" hidden>
@@ -3817,6 +3817,7 @@ const Game = {
       Records.hydrate(await Cloud.pull());
     } catch (e) {
       console.warn('Skyframe: could not read the leaderboards', e && e.message);
+      UI.toast('Could not load leaderboards or credits — check your connection and try again.');
     }
     UI.who(Cloud.name(), Records.credits);
     $('driverRow').hidden = true;
@@ -4214,7 +4215,14 @@ const Game = {
           Records.credits = Cloud.credits;
         }
         UI.who(Cloud.name(), Records.credits);
-      }).catch((e) => console.warn('Skyframe: could not publish the time', e && e.message));
+      }).catch((e) => {
+        console.warn('Skyframe: could not publish the time', e && e.message);
+        // A silent failure here means the run looks saved (this device
+        // still shows it) but the shared leaderboard never got it — tell
+        // the player rather than let them find out days later that a
+        // record run never left their machine.
+        UI.toast('Time saved locally, but could not reach the server — check your connection.');
+      });
     }
     Sound.stopEngine();
     Sound.finish(res.rank === 1);

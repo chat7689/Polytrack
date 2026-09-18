@@ -67,6 +67,9 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
       <button class="primary" id="btnIn">Sign in</button>
     </div>
     <div class="msg" id="authMsg"></div>
+    <div class="row" id="resetRow" style="margin-top:10px;display:none">
+      <button id="btnReset">Email me a password reset link</button>
+    </div>
   </div>
 
   <div id="panel" class="hide">
@@ -132,7 +135,7 @@ const COURSES = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron',
                  'Stepping Stones','The Wall','Dust Line','Filament','Skyline'];
 
 const { initializeApp } = await import(SDK + 'firebase-app.js');
-const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } =
+const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
   await import(SDK + 'firebase-auth.js');
 const { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection,
         getDocs, query, where, writeBatch } = await import(SDK + 'firebase-firestore.js');
@@ -149,11 +152,40 @@ const fmt = (ms) => {
     String(Math.floor((t % 1) * 100)).padStart(2, '0');
 };
 
+/** Firebase's own error codes are either too vague ("invalid-credential"
+ *  covers both a wrong email and a wrong password, by design, so a bad
+ *  actor can't use the message to tell which one they got right) or too
+ *  technical to act on. Translate the ones an admin will actually hit. */
+function authErrorMessage(e) {
+  const c = (e && e.code) || '';
+  if (c.indexOf('invalid-credential') >= 0 || c.indexOf('wrong-password') >= 0
+    || c.indexOf('user-not-found') >= 0) {
+    return 'That email and password do not match. If you forgot the password, use the reset link below.';
+  }
+  if (c.indexOf('invalid-email') >= 0) return 'That is not a valid email address.';
+  if (c.indexOf('too-many-requests') >= 0) return 'Too many attempts — wait a few minutes and try again.';
+  if (c.indexOf('user-disabled') >= 0) return 'That account has been disabled in Firebase Auth.';
+  if (c.indexOf('network') >= 0) return 'No connection to Firebase — check your internet connection.';
+  return (e && e.message) || 'Something went wrong.';
+}
+
 $('btnIn').addEventListener('click', async () => {
   say('authMsg', 'Working…');
+  $('resetRow').style.display = 'none';
   try {
     await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value);
-  } catch (e) { say('authMsg', e.message, 'err'); }
+  } catch (e) {
+    say('authMsg', authErrorMessage(e), 'err');
+    $('resetRow').style.display = '';
+  }
+});
+$('btnReset').addEventListener('click', async () => {
+  const email = $('email').value.trim();
+  if (!email) { say('authMsg', 'Type the email address first.', 'err'); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    say('authMsg', 'Password reset email sent to ' + email + ' — check your inbox.', 'ok');
+  } catch (e) { say('authMsg', authErrorMessage(e), 'err'); }
 });
 $('btnOut').addEventListener('click', () => signOut(auth));
 
