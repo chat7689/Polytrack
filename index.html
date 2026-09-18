@@ -577,7 +577,7 @@ try {
 const KEY = 'skyframe.records.v1';
 const Records = {
   mode: 'memory',
-  data: { driver: '', boards: {}, cleared: {}, ghosts: {} },
+  data: { driver: '', boards: {}, cleared: {}, ghosts: {}, myBests: {} },
   MAX: 10,
 
   async load() {
@@ -628,9 +628,17 @@ const Records = {
     this.data.boards = remote.boards || {};
     this.data.cleared = remote.cleared || {};
     this.data.myBests = remote.myBests || {};
-    this.credits = remote.credits || 0;
+    Cloud.credits = remote.credits || 0;
   },
-  credits: 0,
+  // Credits only ever mean anything once signed in — this is a thin
+  // pass-through onto Cloud.credits, the single source of truth, rather
+  // than a second copy that has to be remembered and kept in sync by hand
+  // at every call site that changes it (a mistake made more than once:
+  // several credit-changing actions updated Cloud.credits and then read
+  // this field straight back out, showing a stale balance on screen even
+  // though the real number, and the actual Firestore write, were correct).
+  get credits() { return Cloud.credits || 0; },
+  set credits(v) { Cloud.credits = v; },
   setDriver(n) {
     this.data.driver = (n || '').trim().slice(0, 14);
     this.save();
@@ -710,6 +718,7 @@ const Records = {
     this.data.boards = {};
     this.data.cleared = {};
     this.data.ghosts = {};
+    this.data.myBests = {};
     this.save();
   }
 };
@@ -5111,6 +5120,7 @@ const Game = {
     msg.textContent = 'Working…';
     try {
       await Cloud.joinRace(this.race.id, buyIn);
+      Records.credits = Cloud.credits;
       UI.who(Cloud.name(), Records.credits);
       msg.textContent = '';
     } catch (e) { msg.textContent = e.message || 'Could not join.'; }
@@ -5123,6 +5133,8 @@ const Game = {
    *  and the 3-attempt cap differ from a campaign run. */
   driveRaceAttempt() {
     if (!this.race || !this.race.doc || this.race.doc.state !== 'running') return;
+    const mine = Cloud.user && this.race.entries.find((e) => e.uid === Cloud.user.uid);
+    if (!mine || (mine.attempts || []).length >= 3) return;
     const idx = LEVELS.findIndex((l, i) => this.id(i) === this.race.doc.courseId);
     if (idx < 0 || !this.loadLevel(idx)) return;
     this.ghostData = null; this.ghostDist = null;
@@ -5203,6 +5215,11 @@ const Game = {
     UI.clock(this.time, true);
     try {
       await Cloud.grindCredit();
+      // Cloud.grindCredit() bumps Cloud.credits internally, but the HUD
+      // reads Records.credits — without this sync the write genuinely
+      // succeeds yet the on-screen balance never visibly moves until the
+      // next full sign-in re-hydrates it.
+      Records.credits = Cloud.credits;
       UI.who(Cloud.name(), Records.credits);
       UI.toast('+1 credit');
     } catch (e) {

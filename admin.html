@@ -318,6 +318,11 @@ async function loadAll() {
         '<td class="mono">' + p.courses + ' / ' + COURSES.length + '</td>' +
         '<td style="text-align:right"></td>';
       const cell = tr.lastElementChild;
+      const setCr = document.createElement('button');
+      setCr.textContent = 'Set credits';
+      setCr.style.marginRight = '6px';
+      setCr.addEventListener('click', () => setCredits(p));
+      cell.appendChild(setCr);
       const ban = document.createElement('button');
       ban.textContent = p.banned ? 'Unban' : 'Ban';
       if (!p.banned) ban.className = 'danger';
@@ -498,14 +503,28 @@ async function settleRace(raceId, entries) {
   finishers.forEach((e, i) => { e.placement = i + 1; });
   const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
   const denom = finishers.reduce((s, e) => s + (e.buyIn / e.placement), 0);
-  const d = denom > 0 ? pot / denom : 0;
 
   const batch = writeBatch(db);
-  for (const e of finishers) {
-    const payout = d * (e.buyIn / e.placement);
-    batch.update(doc(db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
-    batch.set(doc(db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-      { uid: e.uid, raceId, delta: payout });
+  if (finishers.length === 0) {
+    // Nobody finished — there is no ranking to pay out by, and the pot
+    // must not simply vanish. Refund every entrant their own buy-in
+    // instead, so credits in always equals credits out even here.
+    for (const e of entries) {
+      batch.update(doc(db, 'races', raceId, 'entries', e.uid), { placement: null, payout: e.buyIn });
+      batch.set(doc(db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
+        { uid: e.uid, raceId, delta: e.buyIn });
+    }
+  } else {
+    const d = pot / denom;
+    for (const e of finishers) {
+      const payout = d * (e.buyIn / e.placement);
+      batch.update(doc(db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
+      batch.set(doc(db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
+        { uid: e.uid, raceId, delta: payout });
+    }
+    // DNF entrants who did not finish stay unranked, with no payout — their
+    // stake is absorbed into the pot the finishers just split, matching the
+    // decision that a DNF forfeits its buy-in entirely.
   }
   batch.update(doc(db, 'races', raceId), { state: 'settled' });
   await batch.commit();
@@ -527,6 +546,37 @@ async function setBanned(p, banned) {
     await batch.commit();
     await loadAll();
     say('pMsg', (p.displayName || 'Player') + (banned ? ' is banned.' : ' is active again.'), 'ok');
+  } catch (e) { say('pMsg', e.message, 'err'); }
+}
+
+/**
+ * Credits have no single mutable field anywhere — every credit change,
+ * everywhere in this app, is an append-only event and the balance is
+ * always just the sum of them (see creditEvents in firestore.rules). So
+ * "set someone's credits to N" can't overwrite anything; it has to work
+ * out the one adjustment event that gets the sum there and write that.
+ */
+async function setCredits(p) {
+  const input = prompt((p.displayName || 'Player') + ' currently has ' + p.credits +
+    ' credits. Set their balance to:', String(p.credits));
+  if (input === null) return;
+  const target = parseInt(input, 10);
+  if (!Number.isFinite(target)) { say('pMsg', 'Enter a whole number.', 'err'); return; }
+  say('pMsg', 'Setting credits…');
+  try {
+    // p.credits is whatever the last Reload loaded — the player could have
+    // earned or spent credits since, so re-total from the live events
+    // right before computing the adjustment rather than trusting the
+    // possibly-stale cached figure the prompt was seeded with.
+    const ceSnap = await getDocs(query(collection(db, 'creditEvents'), where('uid', '==', p.uid)));
+    let live = 0;
+    ceSnap.forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') live += v.delta; });
+    const delta = target - live;
+    if (delta === 0) { say('pMsg', 'Already at ' + target + ' credits.', 'ok'); return; }
+    const id = p.uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_adjust';
+    await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, note: 'admin set to ' + target });
+    await loadAll();
+    say('pMsg', (p.displayName || 'Player') + ' now has ' + target + ' credits.', 'ok');
   } catch (e) { say('pMsg', e.message, 'err'); }
 }
 

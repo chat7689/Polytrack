@@ -98,10 +98,13 @@ service cloud.firestore {
     //                            actual amount is trusted from the admin's
     //                            settlement the same way every other
     //                            admin-authored write in this file is.
+    //   {uid}_{anything}_adjust  an admin manually setting a player's
+    //                            balance from the panel — any sign, any
+    //                            size, purely at admin discretion.
     match /creditEvents/{docId} {
       allow get, list: if signedIn() &&
         (resource.data.uid == request.auth.uid || isAdmin());
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+      allow create: if (signedIn() && request.resource.data.uid == request.auth.uid
         && (
           (docId == request.auth.uid + '_' + request.resource.data.courseId + '_clear'
             && request.resource.data.delta == 100)
@@ -110,10 +113,11 @@ service cloud.firestore {
           || (docId == request.auth.uid + '_' + request.resource.data.raceId + '_buyin'
             && request.resource.data.delta is number
             && request.resource.data.delta < 0 && request.resource.data.delta > -1000000)
-        )
-        || (isAdmin()
-            && docId.matches('.+_' + request.resource.data.raceId + '_payout')
-            && request.resource.data.delta is number && request.resource.data.delta > 0);
+        ))
+        || (isAdmin() && docId.matches('.+_' + request.resource.data.raceId + '_payout')
+            && request.resource.data.delta is number && request.resource.data.delta > 0)
+        || (isAdmin() && docId.matches(request.resource.data.uid + '_.+_adjust')
+            && request.resource.data.delta is number);
       allow update, delete: if false;
     }
 
@@ -151,16 +155,21 @@ service cloud.firestore {
         // buyIn is fixed at that moment and never changes afterward.
         allow create: if signedIn() && request.auth.uid == uid
           && request.resource.data.uid == uid
-          && request.resource.data.buyIn is number && request.resource.data.buyIn > 0
+          && request.resource.data.buyIn is number
+          && request.resource.data.buyIn > 0 && request.resource.data.buyIn < 1000000
           && request.resource.data.attempts == []
           && request.resource.data.keys().hasOnly(
                ['uid', 'displayName', 'buyIn', 'attempts', 'bestTimeMs']);
         // Recording attempts is the player's own job as they drive; setting
         // placement/payout is the admin's job alone, once, at settlement —
         // two disjoint field sets so neither side can touch the other's.
+        // Capped at 3 attempts server-side, not just by the UI hiding the
+        // Drive button once used up — that hides the button, it does not
+        // stop a direct write.
         allow update: if (signedIn() && request.auth.uid == uid
               && request.resource.data.diff(resource.data).affectedKeys()
-                   .hasOnly(['attempts', 'bestTimeMs']))
+                   .hasOnly(['attempts', 'bestTimeMs'])
+              && request.resource.data.attempts.size() <= 3)
             || (isAdmin()
               && request.resource.data.diff(resource.data).affectedKeys()
                    .hasOnly(['placement', 'payout']));
