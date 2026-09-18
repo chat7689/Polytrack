@@ -107,6 +107,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 .rule{height:1px;background:var(--rule);margin:26px 0}
 h2.big{font-size:32px;letter-spacing:-.03em;margin-bottom:6px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.row[hidden]{display:none}
 button{font-family:inherit;font-size:14px;color:var(--ink);background:transparent;
   border:1px solid var(--rule);border-radius:2px;padding:12px 20px;cursor:pointer;
   transition:background .14s,border-color .14s,color .14s,transform .08s}
@@ -202,11 +203,13 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
 .gate .switch b{color:var(--aqua);cursor:pointer;font-weight:500}
 .who{display:flex;gap:14px;align-items:baseline;font-family:var(--mono);font-size:12px;
   color:var(--dim);margin-bottom:18px}
+.who[hidden]{display:none}
 .who b{color:var(--ink);font-weight:500}
 .who .cr{color:var(--signal)}
 .race-banner{display:flex;justify-content:space-between;align-items:center;gap:16px;
   padding:14px 18px;margin-bottom:22px;background:rgba(242,115,63,.1);
   border:1px solid rgba(242,115,63,.4);border-radius:2px}
+.race-banner[hidden]{display:none}
 .race-banner b{display:block;font-size:14px}
 .race-banner .dim{display:block;color:var(--dim);font-size:12px;margin-top:2px}
 .boot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;
@@ -4469,7 +4472,12 @@ const Game = {
    * problem to retry, not a reason to boot the player back to the gate.
    */
   async onAuth(user, profile) {
-    const interruptible = this.state !== 'play' && this.state !== 'spectate' && this.state !== 'result';
+    // 'race' and 'creditsrun' are active-driving states exactly like 'play'
+    // (added after this check was first written, and missed then) — an
+    // auth blip mid-attempt in either one must not be able to yank the
+    // gate up over the player any more than it can during a campaign run.
+    const interruptible = this.state !== 'play' && this.state !== 'spectate'
+      && this.state !== 'result' && this.state !== 'race' && this.state !== 'creditsrun';
     if (!interruptible) {
       // Don't yank the gate up over an active run or a replay someone is
       // watching — re-check once they get back to a safe screen instead.
@@ -4978,6 +4986,7 @@ const Game = {
       this.race = { id, doc: null, entries: [], unwatch, attemptNum: 0 };
     }
     UI.show('race');
+    this.flushPendingAuth();
   },
 
   onRaceUpdate(race, entries) {
