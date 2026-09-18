@@ -41,12 +41,10 @@ service cloud.firestore {
         && request.resource.data.displayName.size() >= 1
         && request.resource.data.displayName.size() <= 14
         && request.resource.data.banned == false;
+      // displayName is fixed to the username at signup and never editable —
+      // only an admin may touch a profile after creation (banning).
       allow update: if isAdmin()
-        || (signedIn() && request.auth.uid == uid
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
-              && request.resource.data.displayName is string
-              && request.resource.data.displayName.size() >= 1
-              && request.resource.data.displayName.size() <= 14);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned']);
       allow delete: if false;
     }
 

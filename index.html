@@ -95,7 +95,8 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   radial-gradient(130% 100% at 50% 0%,rgba(7,11,24,.5),rgba(7,11,24,.94))}
 .panel{position:relative;width:min(960px,94vw);max-height:92vh;overflow-y:auto;
   padding:42px 46px 38px;background:rgba(10,17,36,.86);border:1px solid var(--rule);
-  backdrop-filter:blur(7px)}
+  backdrop-filter:blur(7px);border-radius:3px;
+  box-shadow:0 24px 64px rgba(3,7,18,.55),0 2px 0 rgba(255,255,255,.03) inset}
 .panel::-webkit-scrollbar{width:8px}
 .panel::-webkit-scrollbar-thumb{background:var(--rule)}
 .brand{display:flex;align-items:flex-end;gap:18px;margin-bottom:8px}
@@ -107,19 +108,23 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 h2.big{font-size:32px;letter-spacing:-.03em;margin-bottom:6px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 button{font-family:inherit;font-size:14px;color:var(--ink);background:transparent;
-  border:1px solid var(--rule);padding:12px 20px;cursor:pointer;
-  transition:background .14s,border-color .14s,color .14s}
+  border:1px solid var(--rule);border-radius:2px;padding:12px 20px;cursor:pointer;
+  transition:background .14s,border-color .14s,color .14s,transform .08s}
 button:hover{background:rgba(234,240,248,.07);border-color:rgba(234,240,248,.35)}
+button:active{transform:scale(.98)}
 button:focus-visible{outline:2px solid var(--aqua);outline-offset:2px}
-button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;font-weight:600}
-button.primary:hover{background:#ff8a58;border-color:#ff8a58}
+button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;font-weight:600;
+  box-shadow:0 6px 18px rgba(242,115,63,.25)}
+button.primary:hover{background:#ff8a58;border-color:#ff8a58;box-shadow:0 8px 22px rgba(242,115,63,.35)}
 button.ghost{border-color:transparent;color:var(--dim);padding-left:0}
 button.ghost:hover{color:var(--ink);background:transparent}
 button.small{padding:5px 10px;font-size:12px;border-color:var(--rule)}
 button.small.ghost{padding:5px 10px}
-input[type=text]{font-family:inherit;font-size:14px;color:var(--ink);background:rgba(0,0,0,.25);
-  border:1px solid var(--rule);padding:11px 13px;width:190px}
-input[type=text]:focus{outline:none;border-color:var(--aqua)}
+input[type=text],input[type=password],input[type=email]{font-family:inherit;font-size:14px;
+  color:var(--ink);background:rgba(0,0,0,.25);border:1px solid var(--rule);border-radius:2px;
+  padding:11px 13px;width:190px;transition:border-color .14s,background .14s}
+input[type=text]:focus,input[type=password]:focus,input[type=email]:focus{
+  outline:none;border-color:var(--aqua);background:rgba(0,0,0,.35)}
 label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 .cols{display:grid;grid-template-columns:1.15fr .85fr;gap:40px}
 @media(max-width:760px){.cols{grid-template-columns:1fr;gap:24px}.panel{padding:28px 22px}}
@@ -131,7 +136,10 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 /* ---------- course grid ---------- */
 .courses{display:grid;grid-template-columns:repeat(auto-fill,minmax(222px,1fr));gap:11px}
 .card{position:relative;text-align:left;padding:15px 17px 14px;width:100%;
-  border:1px solid var(--rule);background:rgba(255,255,255,.022)}
+  border:1px solid var(--rule);background:rgba(255,255,255,.022);border-radius:2px;
+  transition:background .14s,border-color .14s,transform .14s}
+.card:not([disabled]):hover{background:rgba(255,255,255,.045);border-color:rgba(234,240,248,.3);
+  transform:translateY(-1px)}
 .card .idx{font-family:var(--mono);font-size:10.5px;color:var(--ember);letter-spacing:.16em}
 .card .ttl{font-size:16.5px;font-weight:600;margin:3px 0 5px;letter-spacing:-.012em}
 .card .desc{font-size:12px;color:var(--dim);line-height:1.45;min-height:3.4em}
@@ -140,17 +148,19 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 .card .best{color:var(--aqua)}
 .card[disabled]{opacity:.38;cursor:not-allowed}
 .card[disabled]:hover{background:rgba(255,255,255,.022);border-color:var(--rule)}
-.card .done{position:absolute;top:13px;right:15px;width:8px;height:8px;background:var(--aqua)}
+.card .done{position:absolute;top:13px;right:15px;width:8px;height:8px;background:var(--aqua);
+  border-radius:50%;box-shadow:0 0 8px rgba(61,219,184,.7)}
 .bars{display:inline-flex;gap:3px;vertical-align:middle}
 .bars i{width:4px;height:9px;background:rgba(234,240,248,.18)}
 .bars i.on{background:var(--ember)}
 
 /* ---------- leaderboard ---------- */
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
-.tab{font-family:var(--mono);font-size:11.5px;padding:7px 11px;border:1px solid var(--rule-2);
-  color:var(--dim);cursor:pointer;background:transparent}
-.tab:hover{color:var(--ink)}
-.tab.on{border-color:var(--ember);color:var(--ink)}
+.tab{font-family:var(--mono);font-size:11.5px;padding:7px 12px;border:1px solid var(--rule-2);
+  border-radius:999px;color:var(--dim);cursor:pointer;background:transparent;
+  transition:background .14s,border-color .14s,color .14s}
+.tab:hover{color:var(--ink);border-color:rgba(234,240,248,.3)}
+.tab.on{border-color:var(--ember);color:var(--ink);background:rgba(242,115,63,.12)}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{text-align:left;font-size:11px;color:var(--dimmer);font-weight:500;padding:0 10px 9px 0;
   border-bottom:1px solid var(--rule)}
@@ -158,7 +168,9 @@ td{padding:10px 10px 10px 0;border-bottom:1px solid var(--rule-2);font-variant-n
 td.r{font-family:var(--mono);color:var(--dim);width:38px}
 td.t{font-family:var(--mono);color:var(--aqua);text-align:right}
 td.d{font-family:var(--mono);color:var(--dimmer);text-align:right;font-size:12px}
-tr.me td{color:var(--ink)} tr.me td.r{color:var(--ember)}
+tr{transition:background .12s}
+tr:hover td{background:rgba(255,255,255,.02)}
+tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(--ember)}
 .empty{color:var(--dim);font-size:13.5px;padding:22px 0;line-height:1.6}
 
 /* ---------- result ---------- */
@@ -268,8 +280,6 @@ tr.me td{color:var(--ink)} tr.me td.r{color:var(--ember)}
       <label class="fld" for="gPass">Password</label>
       <input type="password" id="gPass" autocomplete="current-password">
       <div id="gNewFields" hidden>
-        <label class="fld" for="gName">Driver name — shown on the leaderboards</label>
-        <input type="text" id="gName" maxlength="14">
         <label class="fld" for="gCode">Invite code</label>
         <input type="text" id="gCode" autocomplete="off">
       </div>
@@ -963,7 +973,7 @@ const Cloud = {
    * so a wrong code is rejected server-side and the real code never leaves the
    * database. Only then can the profile be created.
    */
-  async signUp(username, pass, code, displayName) {
+  async signUp(username, pass, code) {
     if (!validUsername(username)) {
       throw new Error('Usernames are 3-14 characters: letters, numbers, _ and - only.');
     }
@@ -973,7 +983,9 @@ const Cloud = {
     // adopt the user straight away: the auth-state watcher fires asynchronously
     // and loadProfile below would otherwise read a null user
     this.user = cred.user;
-    const name = (displayName || '').trim().slice(0, 14) || username;
+    // the driver name IS the username — one identity, no separate display
+    // name that could drift out of sync or be used to impersonate someone
+    const name = username;
     try {
       await fsMod.setDoc(fsMod.doc(this.db, 'claims', uid), { code: (code || '').trim() });
     } catch (e) {
@@ -1315,16 +1327,20 @@ function buildMaterials() {
   // Bright, flat, saturated: a clear-daylight low-poly look rather than the
   // moody night of the earlier build. Flat shading everywhere keeps facets
   // reading as facets.
-  MAT.deck = std(0xd9e0e6, { roughness: 0.94, metalness: 0 });
-  MAT.deckAlt = std(0xe6d9b8, { roughness: 0.96, metalness: 0 });
+  // Asphalt tones read as tarmac rather than concrete: darker, cooler, and
+  // slightly less saturated than the original pale grey/tan, so the track
+  // reads as a real driving surface against the terrain and the curbs/rail
+  // pop with more contrast against it.
+  MAT.deck = std(0x35383e, { roughness: 0.88, metalness: 0 });
+  MAT.deckAlt = std(0x3d372c, { roughness: 0.9, metalness: 0 });
   MAT.curb = std(0xe8544c, { roughness: 0.78 });
   MAT.curbAlt = std(0xf6f7f9, { roughness: 0.82 });
   MAT.rail = std(0xf1f4f7, { roughness: 0.8, side: THREE.DoubleSide });
   MAT.truss = std(0x8492a1, { roughness: 0.95 });
   MAT.pier = std(0xa7b3bf, { roughness: 0.97 });
   MAT.bank = std(0x7fb968, { roughness: 1 });          // grass embankment
-  MAT.side = std(0x9aa7b3, { roughness: 0.95 });
-  MAT.pad = std(0xc3ccd4, { roughness: 0.95 });
+  MAT.side = std(0x4a4f57, { roughness: 0.92 });
+  MAT.pad = std(0x5a616a, { roughness: 0.92 });
   MAT.dash = std(0xffffff, { roughness: 0.7 });
   MAT.chev = std(0xffc628, { roughness: 0.7 });
   MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
@@ -3813,7 +3829,7 @@ const Game = {
       UI.gateError('Working…');
       Cloud.busy = true;
       try {
-        if (creating) await Cloud.signUp(user, pw, $('gCode').value, $('gName').value);
+        if (creating) await Cloud.signUp(user, pw, $('gCode').value);
         else await Cloud.signIn(user, pw);
         UI.gateError('');
         // The auth-state listener sits out while Cloud.busy is set, so this
