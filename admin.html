@@ -97,6 +97,7 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
 
     <h2>RACES</h2>
     <div class="card" id="raceCard">
+      <div class="msg" id="raceTopMsg"></div>
       <div id="raceIdle">
         <p class="note" style="margin-bottom:14px">Starts a lobby players can join and buy into from
           their main screen. When you start it, a random course is picked and everyone gets 10 minutes
@@ -405,7 +406,7 @@ function renderRace() {
     if (remainMs <= 0 && !settling) {
       settling = true;
       settleRace(currentRace.id, currentEntries)
-        .catch((e) => say('raceMsg', e.message, 'err'))
+        .catch((e) => say('raceTopMsg', 'Could not auto-settle the race: ' + e.message, 'err'))
         .finally(() => { settling = false; });
     }
   }
@@ -428,32 +429,59 @@ function renderRace() {
 }
 
 $('btnNewRace').addEventListener('click', async () => {
+  $('btnNewRace').disabled = true;
+  say('raceTopMsg', 'Creating race lobby…');
   try {
     const id = 'race_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
     await setDoc(doc(db, 'races', id), {
       state: 'lobby', courseId: null, createdAt: Date.now(),
       startedAt: null, endsAt: null, createdBy: auth.currentUser.uid
     });
-  } catch (e) { say('raceMsg', e.message, 'err'); }
+    // The live watchCurrentRace() listener normally flips raceIdle to
+    // raceActive within a moment of this write landing. If that somehow
+    // doesn't happen, say so instead of leaving the admin staring at an
+    // unchanged screen with no idea whether the click did anything.
+    const gotIt = await new Promise((resolve) => {
+      const check = () => {
+        if (currentRace && currentRace.id === id) { resolve(true); return; }
+        if (Date.now() - start > 5000) { resolve(false); return; }
+        setTimeout(check, 200);
+      };
+      const start = Date.now();
+      check();
+    });
+    say('raceTopMsg', gotIt ? '' :
+      'Race created, but the screen hasn’t updated yet — try Reload below or refresh the page.', gotIt ? '' : 'err');
+  } catch (e) {
+    say('raceTopMsg', 'Could not create the race: ' + e.message, 'err');
+  }
+  $('btnNewRace').disabled = false;
 });
 
 $('btnStartRace').addEventListener('click', async () => {
-  if (!currentRace || currentEntries.length < 2) return;
+  if (!currentRace) return;
+  if (currentEntries.length < 2) {
+    say('raceTopMsg', 'Needs at least 2 joined players before it can start.', 'err');
+    return;
+  }
   try {
     const courseId = 'c' + (1 + Math.floor(Math.random() * COURSES.length));
     await updateDoc(doc(db, 'races', currentRace.id), {
       state: 'running', courseId, startedAt: Date.now(), endsAt: Date.now() + 10 * 60 * 1000
     });
-  } catch (e) { say('raceMsg', e.message, 'err'); }
+    say('raceTopMsg', 'Race started — ' + courseName(courseId) + '.', 'ok');
+  } catch (e) { say('raceTopMsg', 'Could not start the race: ' + e.message, 'err'); }
 });
 
 $('btnEndRace').addEventListener('click', async () => {
   if (!currentRace || settling) return;
   if (!confirm('End this race now and pay out? Anyone still driving loses the chance to improve.')) return;
   settling = true;
+  say('raceTopMsg', 'Settling…');
   try {
     await settleRace(currentRace.id, currentEntries);
-  } catch (e) { say('raceMsg', e.message, 'err'); }
+    say('raceTopMsg', 'Race settled and paid out.', 'ok');
+  } catch (e) { say('raceTopMsg', 'Could not settle the race: ' + e.message, 'err'); }
   settling = false;
 });
 

@@ -627,6 +627,7 @@ const Records = {
   hydrate(remote) {
     this.data.boards = remote.boards || {};
     this.data.cleared = remote.cleared || {};
+    this.data.myBests = remote.myBests || {};
     this.credits = remote.credits || 0;
   },
   credits: 0,
@@ -651,7 +652,17 @@ const Records = {
     const b = this.data.boards[id];
     return Array.isArray(b) ? b : [];
   },
+  /**
+   * The player's OWN best time on a course — not the current #1 on the
+   * shared leaderboard, which is what board(id)[0] holds once Cloud is on.
+   * Conflating the two used to mean only whoever already led a course
+   * could ever push a new time to it: everyone else's runs always looked
+   * "worse than the best" and were silently never uploaded. In local/
+   * offline mode there is only one board (this device's own), so myBests
+   * is never populated there and the board's own #1 is already correct.
+   */
   best(id) {
+    if (Cloud.on) return (this.data.myBests && this.data.myBests[id]) || 0;
     const b = this.board(id);
     return b.length ? b[0].t : 0;
   },
@@ -1205,9 +1216,29 @@ const Cloud = {
       try { await cred.user.delete(); } catch (x) {}
       throw new Error('That invite code is not valid.');
     }
-    await fsMod.setDoc(fsMod.doc(this.db, 'profiles', uid), {
-      displayName: name, banned: false, createdAt: fsMod.serverTimestamp()
-    });
+    try {
+      await fsMod.setDoc(fsMod.doc(this.db, 'profiles', uid), {
+        displayName: name, banned: false, createdAt: fsMod.serverTimestamp()
+      });
+    } catch (e) {
+      // The claim write above already succeeded and committed server-side,
+      // so the invite code itself was genuinely right — a permission error
+      // here is something else (most likely the profiles rule's exists()
+      // check on the claim not yet being visible to this immediately
+      // following request). Retry once after a short pause before giving
+      // up, since a real second attempt a moment later routinely succeeds
+      // where an instant retry wouldn't.
+      await new Promise((r) => setTimeout(r, 800));
+      try {
+        await fsMod.setDoc(fsMod.doc(this.db, 'profiles', uid), {
+          displayName: name, banned: false, createdAt: fsMod.serverTimestamp()
+        });
+      } catch (e2) {
+        throw new Error('Your invite code was accepted, but the account could not finish ' +
+          'setting up (' + (e2 && e2.message || 'unknown error') + '). Try signing up again ' +
+          'with the same details in a few seconds.');
+      }
+    }
     await this.loadProfile();
   },
 
@@ -1225,12 +1256,18 @@ const Cloud = {
   banned() { return !!(this.profile && this.profile.banned); },
   name() { return (this.profile && this.profile.displayName) || 'Driver'; },
 
-  /** every player's best per course, plus my credits, into the local cache */
+  /** every player's best per course, plus my own bests and my credits, into
+   *  the local cache. myBests is kept separate from boards (which is only
+   *  ever the shared top-10) because "is this run worth pushing" has to
+   *  compare against the player's own previous time, not the current #1 —
+   *  otherwise nobody except whoever is already in first place would ever
+   *  get a new time onto the shared leaderboard at all. */
   async pull() {
     const { fsMod } = this.fb;
     const { collection, getDocs, query, where } = fsMod;
     const boards = {};
     const cleared = {};
+    const myBests = {};
     const snap = await getDocs(query(collection(this.db, 'bests'), where('banned', '==', false)));
     snap.forEach((d) => {
       const r = d.data();
@@ -1238,7 +1275,10 @@ const Cloud = {
       (boards[r.courseId] = boards[r.courseId] || []).push({
         n: r.displayName || 'Driver', t: r.timeMs / 1000, d: r.updatedMs || 0, uid: r.uid
       });
-      if (r.uid === this.user.uid) cleared[r.courseId] = true;
+      if (r.uid === this.user.uid) {
+        cleared[r.courseId] = true;
+        myBests[r.courseId] = r.timeMs / 1000;
+      }
     });
     for (const k in boards) {
       boards[k].sort((a, b) => a.t - b.t);
@@ -1249,7 +1289,7 @@ const Cloud = {
       where('uid', '==', this.user.uid)));
     ce.forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') credits += v.delta; });
     this.credits = credits;
-    return { boards, cleared, credits };
+    return { boards, cleared, myBests, credits };
   },
 
   /**
@@ -4377,7 +4417,7 @@ const Game = {
   ghostOverride: null, ghostOverrideName: null,
   spec: null,
   confirmedUid: null, authPending: false,
-  race: null, openRacesUnwatch: null,
+  race: null, openRacesUnwatch: null, raceTickTimer: null,
 
   boot() {
     buildMaterials();
@@ -4515,6 +4555,11 @@ const Game = {
     $('driverRow').hidden = true;
     if (!this.openRacesUnwatch) {
       this.openRacesUnwatch = Cloud.watchOpenRaces((races) => this.onOpenRaces(races));
+      // The banner's countdown has to keep ticking between actual Firestore
+      // updates (the race doc itself only changes at join/start/settle, not
+      // once a second) — re-render the last-known data locally every
+      // second instead of re-fetching anything.
+      setInterval(() => { if (this.openRaces) this.onOpenRaces(this.openRaces); }, 1000);
     }
     this.toMenu();
   },
@@ -4533,9 +4578,17 @@ const Game = {
     const joined = this.race && this.race.id === mine.id;
     $('raceBannerTitle').textContent = mine.state === 'lobby'
       ? 'A race is open to join' : 'A race is in progress';
-    $('raceBannerSub').textContent = mine.state === 'lobby'
-      ? 'Buy in before the admin starts it.'
-      : (joined ? 'You’re in it — jump back in.' : 'Already started, but you can still watch.');
+    if (mine.state === 'lobby') {
+      $('raceBannerSub').textContent = 'Buy in before the admin starts it.';
+    } else {
+      // Someone deciding whether it's worth joining the next one needs to
+      // see how much of this one is actually left, not just "in progress".
+      const remain = mine.endsAt ? Math.max(0, mine.endsAt - Date.now()) : 0;
+      const mm = Math.floor(remain / 60000), ss = Math.floor((remain % 60000) / 1000);
+      const left = mm + ':' + String(ss).padStart(2, '0') + ' left';
+      $('raceBannerSub').textContent = joined
+        ? left + ' — jump back in.' : left + ' — too late to join this one.';
+    }
   },
 
   wire() {
@@ -4600,6 +4653,7 @@ const Game = {
     $('bRaceBack').addEventListener('click', () => {
       if (this.race && this.race.unwatch) this.race.unwatch();
       this.race = null;
+      if (this.raceTickTimer) { clearInterval(this.raceTickTimer); this.raceTickTimer = null; }
       this.toMenu();
     });
     $('bRaceJoin').addEventListener('click', () => this.joinCurrentRace());
@@ -4987,6 +5041,12 @@ const Game = {
     }
     UI.show('race');
     this.flushPendingAuth();
+    // Same reasoning as the menu banner's tick: the countdown has to move
+    // every second on its own, since the race document itself only changes
+    // at join/start/settle, not once a second.
+    if (!this.raceTickTimer) {
+      this.raceTickTimer = setInterval(() => this.renderRace(), 1000);
+    }
   },
 
   onRaceUpdate(race, entries) {
@@ -5098,10 +5158,17 @@ const Game = {
    *  or ghost side effects, +1 credit for any finish regardless of time. */
   toCreditsRun() {
     if (!Cloud.on || !Cloud.user) { UI.toast('Sign in to run for credits.'); return; }
+    if (Cloud.banned()) { UI.toast('This account is suspended.'); return; }
     const playableIdx = this.playable.map((p, i) => p ? i : -1).filter((i) => i >= 0);
-    if (!playableIdx.length) return;
+    if (!playableIdx.length) {
+      UI.toast('No courses are available right now.');
+      return;
+    }
     const idx = playableIdx[Math.floor(Math.random() * playableIdx.length)];
-    if (!this.loadLevel(idx)) return;
+    if (!this.loadLevel(idx)) {
+      UI.toast('That course failed to load — try again.');
+      return;
+    }
     this.ghostData = null; this.ghostDist = null;
     Input.clear();
     this.time = 0; this.started = false; this.running = true;
