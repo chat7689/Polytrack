@@ -3788,8 +3788,25 @@ const Game = {
     return true;
   },
 
-  /** called whenever Firebase reports a sign-in or sign-out */
+  /**
+   * Called whenever Firebase reports a sign-in or sign-out, and once
+   * explicitly after a sign-up/sign-in click resolves. A stray or delayed
+   * firing of the auth-state listener — a network blip, a slow token
+   * refresh — must never yank the gate up over an active run or a replay
+   * someone is watching: that would look like the game randomly kicking
+   * you out mid-drive. Only actually interrupt when it is safe to, i.e.
+   * when nothing is being played or watched right now.
+   */
   async onAuth(user, profile) {
+    const interruptible = this.state !== 'play' && this.state !== 'spectate' && this.state !== 'result';
+    if (!interruptible) {
+      // Don't yank the gate up over an active run or a replay someone is
+      // watching — re-check once they get back to a safe screen instead.
+      this.authPending = true;
+      if (!user) UI.who(null);
+      return;
+    }
+    this.authPending = false;
     if (!user) { UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate'; return; }
     if (!profile) {
       UI.gateError(Cloud.error || 'This account has no profile — an invite code is needed.');
@@ -4149,17 +4166,26 @@ const Game = {
     this.toBoards();
   },
 
+  /** applies a sign-out/ban/etc. that arrived while a run or replay was in
+   *  progress and was deliberately deferred — call from every screen that
+   *  is safe to interrupt on, so the player never lands on a menu that
+   *  still looks signed in after the account state actually changed */
+  flushPendingAuth() {
+    if (this.authPending) this.onAuth(Cloud.user, Cloud.profile);
+  },
   toMenu() {
     this.state = 'menu'; this.running = false;
     Sound.stopEngine();
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
     UI.show('menu');
+    this.flushPendingAuth();
   },
   toSelect() {
     this.state = 'select'; this.running = false;
     Sound.stopEngine();
     UI.courseList(this.playable, (i) => this.startLevel(i));
     UI.show('select');
+    this.flushPendingAuth();
   },
   toBoards() {
     this.state = 'boards'; this.running = false;
@@ -4170,6 +4196,7 @@ const Game = {
         'Change the driver name on the title screen to share the machine.';
     UI.boards();
     UI.show('boards');
+    this.flushPendingAuth();
   },
 
   finishLevel() {
