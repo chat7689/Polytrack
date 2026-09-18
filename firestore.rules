@@ -67,18 +67,53 @@ service cloud.firestore {
         && request.resource.data.timeMs < 600000;
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned']);
-      allow delete: if isAdmin();
+      // A player may delete their own row (Settings > reset scores); an
+      // admin may delete any row (a suspicious time). Checked against the
+      // uid prefix baked into the doc id itself, not resource.data — a
+      // delete on a course the player never cleared targets a document
+      // that was never created, so resource is null and reading its data
+      // would fail the rule outright instead of just evaluating false.
+      allow delete: if isAdmin()
+        || (signedIn() && docId.split('_')[0] == request.auth.uid);
     }
 
-    // Doc id "{uid}_{courseId}_clear" makes the award idempotent by construction:
-    // it can physically exist only once, so it is create-only and never mutable.
+    // Four shapes of credit event, every one create-only and never mutable:
+    //   {uid}_{courseId}_clear   campaign clear bonus, delta==100, once per
+    //                            course (the doc id itself is the lock).
+    //   {uid}_{anything}_grind   credits-grind mode: +1 per completed random
+    //                            course, intentionally repeatable, so unlike
+    //                            _clear the id has no fixed course/lock —
+    //                            the cap is delta==1 exactly, every time.
+    //   {uid}_{raceId}_buyin     a player staking into a race they joined —
+    //                            a self-authorised debit, delta<0. Not
+    //                            cross-checked against the entry doc's own
+    //                            buyIn: both are written in the same client
+    //                            call, and rules evaluate each write in a
+    //                            batch against the state before the batch
+    //                            runs, so a same-batch get() of the entry
+    //                            document would never see it and always
+    //                            fail. Same trust level as a lap time —
+    //                            self-reported, moderated after the fact.
+    //   {uid}_{raceId}_payout    a race payout, admin-only, delta>0 — the
+    //                            actual amount is trusted from the admin's
+    //                            settlement the same way every other
+    //                            admin-authored write in this file is.
     match /creditEvents/{docId} {
       allow get, list: if signedIn() &&
         (resource.data.uid == request.auth.uid || isAdmin());
-      allow create: if signedIn()
-        && docId == request.auth.uid + '_' + request.resource.data.courseId + '_clear'
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.delta == 100;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && (
+          (docId == request.auth.uid + '_' + request.resource.data.courseId + '_clear'
+            && request.resource.data.delta == 100)
+          || (docId.matches(request.auth.uid + '_.+_grind')
+            && request.resource.data.delta == 1)
+          || (docId == request.auth.uid + '_' + request.resource.data.raceId + '_buyin'
+            && request.resource.data.delta is number
+            && request.resource.data.delta < 0 && request.resource.data.delta > -1000000)
+        )
+        || (isAdmin()
+            && docId.matches('.+_' + request.resource.data.raceId + '_payout')
+            && request.resource.data.delta is number && request.resource.data.delta > 0);
       allow update, delete: if false;
     }
 
@@ -94,7 +129,43 @@ service cloud.firestore {
         && request.resource.data.timeMs is number
         && request.resource.data.samples is string
         && request.resource.data.samples.size() < 60000;
-      allow delete: if isAdmin();
+      // A player may delete their own ghost (Settings > reset scores); an
+      // admin may delete any ghost. Checked against the doc id itself, not
+      // resource.data — see the identical note on bests' delete rule.
+      allow delete: if isAdmin()
+        || (signedIn() && docId.split('_')[0] == request.auth.uid);
+    }
+
+    // Admin-run buy-in races. The race document itself (state, chosen
+    // course, timing, pot) is admin-authored only — a player never writes
+    // it, only their own entry subdocument, so there is one clear author
+    // for anything that affects every participant at once.
+    match /races/{raceId} {
+      allow get, list: if signedIn();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+
+      match /entries/{uid} {
+        allow get, list: if signedIn();
+        // A player creates their own entry once, when they join — the
+        // buyIn is fixed at that moment and never changes afterward.
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.uid == uid
+          && request.resource.data.buyIn is number && request.resource.data.buyIn > 0
+          && request.resource.data.attempts == []
+          && request.resource.data.keys().hasOnly(
+               ['uid', 'displayName', 'buyIn', 'attempts', 'bestTimeMs']);
+        // Recording attempts is the player's own job as they drive; setting
+        // placement/payout is the admin's job alone, once, at settlement —
+        // two disjoint field sets so neither side can touch the other's.
+        allow update: if (signedIn() && request.auth.uid == uid
+              && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['attempts', 'bestTimeMs']))
+            || (isAdmin()
+              && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['placement', 'payout']));
+        allow delete: if false;
+      }
     }
 
     match /{document=**} {

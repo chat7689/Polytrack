@@ -120,6 +120,8 @@ button.ghost{border-color:transparent;color:var(--dim);padding-left:0}
 button.ghost:hover{color:var(--ink);background:transparent}
 button.small{padding:5px 10px;font-size:12px;border-color:var(--rule)}
 button.small.ghost{padding:5px 10px}
+button.danger-outline{border-color:rgba(242,115,63,.5);color:var(--ember)}
+button.danger-outline:hover{background:rgba(242,115,63,.1)}
 input[type=text],input[type=password],input[type=email]{font-family:inherit;font-size:14px;
   color:var(--ink);background:rgba(0,0,0,.25);border:1px solid var(--rule);border-radius:2px;
   padding:11px 13px;width:190px;transition:border-color .14s,background .14s}
@@ -202,6 +204,11 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
   color:var(--dim);margin-bottom:18px}
 .who b{color:var(--ink);font-weight:500}
 .who .cr{color:var(--signal)}
+.race-banner{display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:14px 18px;margin-bottom:22px;background:rgba(242,115,63,.1);
+  border:1px solid rgba(242,115,63,.4);border-radius:2px}
+.race-banner b{display:block;font-size:14px}
+.race-banner .dim{display:block;color:var(--dim);font-size:12px;margin-top:2px}
 .boot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;
   color:#2b4364;text-shadow:none}
 </style>
@@ -317,15 +324,26 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
         <span>credits <b class="cr" id="whoCredits">0</b></span>
         <button class="ghost" id="whoOut" style="padding:0;font-size:12px">Sign out</button>
       </div>
-      <p class="lede">Ten courses cut into the hills, a coupe with real springs, dampers and
+      <p class="lede">Thirty-two courses cut into the hills, a coupe with real springs, dampers and
         tyres, and no luck anywhere in it. Start line to finish line, no checkpoints: brake for
         the corners, lean on the banking, land nose-up, and chase the ghost of your own best run.</p>
+      <div class="race-banner" id="raceBanner" hidden>
+        <div>
+          <b id="raceBannerTitle">A race is open</b>
+          <span id="raceBannerSub" class="dim"></span>
+        </div>
+        <button class="primary small" id="bRaceBanner">View race</button>
+      </div>
       <div class="cols">
         <div>
           <div class="row">
             <button class="primary" id="bDrive">Start driving</button>
             <button id="bCourses">Courses</button>
             <button id="bBoards">Leaderboards</button>
+            <button id="bSettings">Settings</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="ghost" id="bCreditsRun">Credits run — random course, +1 credit</button>
           </div>
           <div class="rule"></div>
           <div id="driverRow">
@@ -387,6 +405,77 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
     </div>
   </div>
 
+  <div class="layer" id="settings" hidden>
+    <div class="scrim"></div>
+    <div class="panel" style="width:min(560px,94vw)">
+      <h2 class="big">Settings</h2>
+      <p class="lede" style="margin-bottom:26px">Signed in as <b id="setUser">—</b>.</p>
+
+      <div id="setOnlineOnly">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px">CHANGE PASSWORD</h3>
+        <label class="fld" for="setOldPass">Current password</label>
+        <input type="password" id="setOldPass" autocomplete="current-password" style="width:100%">
+        <label class="fld" for="setNewPass" style="margin-top:12px">New password</label>
+        <input type="password" id="setNewPass" autocomplete="new-password" style="width:100%">
+        <div class="row" style="margin-top:14px">
+          <button class="primary" id="bSetPassword">Update password</button>
+        </div>
+        <div class="err" id="setPassMsg"></div>
+
+        <div class="rule"></div>
+
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--ember)">RESET SCORES</h3>
+        <p class="lede" style="font-size:12.5px;margin-bottom:14px">Deletes every one of your times and
+          ghosts from every course, everywhere — your local device and the shared leaderboards. Credits
+          you've already earned are not affected. This cannot be undone.</p>
+        <div class="row">
+          <button class="danger-outline" id="bResetScores">Reset all my scores</button>
+        </div>
+        <div class="err" id="setResetMsg"></div>
+
+        <div class="rule"></div>
+      </div>
+      <p class="lede" id="setOfflineNote" hidden>Playing offline — there's no account to change here.
+        Use "Clear all times" on the Leaderboards screen to reset your local times instead.</p>
+      <div class="rule" id="setOfflineRule" hidden></div>
+      <div class="row">
+        <button class="ghost" id="bSetBack">Back to title</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="race" hidden>
+    <div class="scrim"></div>
+    <div class="panel" style="width:min(640px,94vw)">
+      <h2 class="big">Race</h2>
+      <p class="lede" id="raceState" style="margin-bottom:20px">—</p>
+
+      <div id="raceJoinBox" hidden>
+        <label class="fld" for="raceBuyIn">Buy-in (credits)</label>
+        <input type="text" id="raceBuyIn" inputmode="numeric" style="width:140px">
+        <div class="row" style="margin-top:12px">
+          <button class="primary" id="bRaceJoin">Join race</button>
+        </div>
+        <div class="err" id="raceJoinMsg"></div>
+      </div>
+
+      <table id="raceTable" style="margin-top:10px">
+        <thead><tr><th></th><th>Driver</th><th style="text-align:right">Buy-in</th>
+          <th style="text-align:right">Best</th><th style="text-align:right" id="raceLastCol"></th></tr></thead>
+        <tbody id="raceRows"></tbody>
+      </table>
+
+      <div class="row" id="raceDriveRow" style="margin-top:16px" hidden>
+        <button class="primary" id="bRaceDrive">Drive — attempt <span id="raceAttemptNum">1</span> of 3</button>
+      </div>
+
+      <div class="rule"></div>
+      <div class="row">
+        <button class="ghost" id="bRaceBack">Back to title</button>
+      </div>
+    </div>
+  </div>
+
   <div class="layer" id="result" hidden>
     <div class="scrim"></div>
     <div class="panel result">
@@ -395,10 +484,14 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
       <div class="bigtime" id="rTime">0:00.00</div>
       <div class="sub" id="rSub"></div>
       <div class="mini"><div class="hd" id="rBoardHd">Course leaderboard</div><ol id="rBoard"></ol></div>
-      <div class="row">
+      <div class="row" id="rCampaignRow">
         <button class="primary" id="bNext">Next course</button>
         <button id="bRetry">Drive it again</button>
         <button class="ghost" id="bResCourses">Courses</button>
+      </div>
+      <div class="row" id="rCreditsRunRow" hidden>
+        <button class="primary" id="bCreditsRunAgain">Run again</button>
+        <button class="ghost" id="bCreditsRunBack">Back to title</button>
       </div>
     </div>
   </div>
@@ -964,7 +1057,123 @@ const Cloud = {
     try { await this.loadProfile(); } catch (e) { this.error = e.message; }
   },
   async signOut() {
+    Game.confirmedUid = null;
     await this.fb.authMod.signOut(this.auth);
+  },
+
+  /**
+   * Firebase treats a password change as security-sensitive and refuses it
+   * on a session that isn't "recently" authenticated, so the current
+   * password is used to re-authenticate immediately beforehand rather than
+   * making the player sign out and back in.
+   */
+  async changePassword(oldPass, newPass) {
+    if (!this.user) throw new Error('Not signed in.');
+    if (newPass.length < 6) throw new Error('Pick a new password of at least 6 characters.');
+    const { authMod } = this.fb;
+    const cred = authMod.EmailAuthProvider.credential(this.user.email, oldPass);
+    await authMod.reauthenticateWithCredential(this.user, cred);
+    await authMod.updatePassword(this.user, newPass);
+  },
+
+  /**
+   * Deletes every one of this player's own bests and ghosts, on every
+   * course, from Firestore, plus the local device cache. creditEvents are
+   * untouched — they are the append-only record of credits already
+   * earned, not a leaderboard entry, and letting a reset erase them would
+   * let a player farm the clear bonus repeatedly on the same course.
+   */
+  async resetScores() {
+    if (!this.user || !this.on) throw new Error('Not signed in.');
+    const { fsMod } = this.fb;
+    const uid = this.user.uid;
+    const batch = fsMod.writeBatch(this.db);
+    for (const courseId of this.courseIds()) {
+      const id = uid + '_' + courseId;
+      batch.delete(fsMod.doc(this.db, 'bests', id));
+      batch.delete(fsMod.doc(this.db, 'ghosts', id));
+    }
+    await batch.commit();
+    Records.wipe();
+  },
+
+  /** +1 credit for a completed credits-grind run. Repeatable by design (the
+   *  id is unique per call, not per course), capped server-side at exactly
+   *  delta==1 so a write can never claim more than one credit at a time. */
+  async grindCredit() {
+    if (!this.user || !this.on || this.banned()) return;
+    const { fsMod } = this.fb;
+    const uid = this.user.uid;
+    const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_grind';
+    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: 1 });
+    this.credits += 1;
+  },
+
+  /** live-subscribes to every race currently open for joining or running;
+   *  returns an unsubscribe fn. Used for the menu's race banner. */
+  watchOpenRaces(onChange) {
+    if (!this.on) return () => {};
+    const { fsMod } = this.fb;
+    const { collection, onSnapshot, query, where } = fsMod;
+    return onSnapshot(query(collection(this.db, 'races'), where('state', 'in', ['lobby', 'running'])),
+      (snap) => {
+        const races = [];
+        snap.forEach((d) => races.push({ id: d.id, ...d.data() }));
+        races.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        onChange(races);
+      });
+  },
+
+  /** live-subscribes to one race doc plus its entries; returns an unsubscribe fn */
+  watchRace(raceId, onChange) {
+    const { fsMod } = this.fb;
+    const { doc, onSnapshot, collection } = fsMod;
+    let race = null, entries = [];
+    const fire = () => onChange(race, entries);
+    const un1 = onSnapshot(doc(this.db, 'races', raceId), (snap) => {
+      race = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      fire();
+    });
+    const un2 = onSnapshot(collection(this.db, 'races', raceId, 'entries'), (snap) => {
+      entries = [];
+      snap.forEach((d) => entries.push({ uid: d.id, ...d.data() }));
+      fire();
+    });
+    return () => { un1(); un2(); };
+  },
+
+  /** join a race: writes the entry doc and the matching buy-in debit
+   *  together, so a join is never left half-applied */
+  async joinRace(raceId, buyIn) {
+    if (!this.user || !this.on) throw new Error('Not signed in.');
+    if (this.banned()) throw new Error('This account is suspended.');
+    if (!(buyIn > 0)) throw new Error('Enter a buy-in of at least 1 credit.');
+    if (buyIn > this.credits) throw new Error('That is more credits than you have.');
+    const { fsMod } = this.fb;
+    const uid = this.user.uid;
+    const batch = fsMod.writeBatch(this.db);
+    batch.set(fsMod.doc(this.db, 'races', raceId, 'entries', uid), {
+      uid, displayName: this.name(), buyIn, attempts: [], bestTimeMs: null
+    });
+    batch.set(fsMod.doc(this.db, 'creditEvents', uid + '_' + raceId + '_buyin'), {
+      uid, raceId, delta: -buyIn
+    });
+    await batch.commit();
+    this.credits -= buyIn;
+  },
+
+  /** append one attempt time to the caller's own race entry */
+  async recordRaceAttempt(raceId, timeMsOrNull) {
+    const { fsMod } = this.fb;
+    const uid = this.user.uid;
+    const ref = fsMod.doc(this.db, 'races', raceId, 'entries', uid);
+    const snap = await fsMod.getDoc(ref);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const attempts = (data.attempts || []).concat([timeMsOrNull]);
+    const valid = attempts.filter((t) => typeof t === 'number' && isFinite(t));
+    const bestTimeMs = valid.length ? Math.min(...valid) : null;
+    await fsMod.updateDoc(ref, { attempts, bestTimeMs });
   },
 
   /**
@@ -3080,6 +3289,455 @@ const LEVELS = [
       b.straight(30, { w: 14 });
       return b.build();
     }
+  },
+  {
+    name: 'Causeway', tier: 1,
+    blurb: 'A long, honest straight into two easy sweepers. A good place to learn throttle control.',
+    build() {
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 17);
+      b.straight(90);
+      b.curve(64, 50, { bank: 7, chev: 1 });
+      b.straight(50);
+      b.curve(64, -50, { bank: 7, chev: 1 });
+      b.straight(56);
+      b.slope(26, 3.5);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 17 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Millrace', tier: 1,
+    blurb: 'Wide and forgiving, with one gentle hop to get the wheels off the ground for the first time.',
+    build() {
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 16);
+      b.straight(60);
+      b.curve(56, 46, { bank: 7, chev: 1 });
+      b.straight(30);
+      b.slope(24, 4);
+      b.ramp(16, 7);
+      b.gap(18, -2);
+      b.landing(18, -7, { w: 15 });
+      b.straight(36);
+      b.curve(50, -60, { bank: 8, chev: 1 });
+      b.straight(40);
+      b.gate('finish');
+      b.straight(30, { w: 16 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Foxglove', tier: 1,
+    blurb: 'A single lazy S through the meadow. Nothing here will catch you out.',
+    build() {
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(20, 15);
+      b.straight(50);
+      b.chicane(46, 36, { bank: 8, chev: 1 });
+      b.straight(40);
+      b.slope(30, 4);
+      b.straight(30);
+      b.curve(50, 58, { bank: 9, chev: 1 });
+      b.straight(44);
+      b.gate('finish');
+      b.straight(30, { w: 15 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Grainfield', tier: 2,
+    blurb: 'Three hairpins strung along a low ridge, each one tighter than the last.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(20, 15);
+      b.straight(46);
+      b.curve(36, 130, { bank: 15, chev: 1 });
+      b.straight(28);
+      b.curve(30, -140, { bank: 16, chev: 1 });
+      b.straight(30);
+      b.curve(26, 150, { bank: 17, chev: 1 });
+      b.straight(40);
+      b.crest(22, 8);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Harrow Cut', tier: 2,
+    blurb: 'A cutting through the hillside, banked hard on both sides with a jump halfway.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(44);
+      b.curve(38, 100, { bank: 16, chev: 1 });
+      b.straight(26);
+      b.slope(30, 6);
+      b.ramp(16, 9);
+      b.gap(20, -3);
+      b.landing(20, -8, { w: 13 });
+      b.straight(30);
+      b.curve(38, -100, { bank: 16, chev: 1 });
+      b.straight(36);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Tallow Ridge', tier: 2,
+    blurb: 'Climb along the ridge, then a long banked bowl carries you back down to the line.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(40);
+      b.slope(40, 9);
+      b.straight(24);
+      b.bumps(3, 10, 1.0);
+      b.straight(24);
+      b.curve(44, 160, { bank: 17, rise: -5, chev: 1 });
+      b.straight(30);
+      b.slope(24, -4);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Needle Pass', tier: 2,
+    blurb: 'A narrow cut between two rises. Rails both sides — no room to drift wide here.',
+    build() {
+      const b = new TrackBuilder({ width: 8 });
+      b.pad(20, 13);
+      b.straight(40, { w: 10 });
+      b.curve(34, 70, { bank: 13, chev: 1 });
+      b.straight(50, { w: 7, rail: 'both' });
+      b.curve(30, -84, { bank: 14, chev: 1 });
+      b.straight(40, { w: 7.5, rail: 'both' });
+      b.straight(30, { w: 10 });
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Kettle Bowl', tier: 3,
+    blurb: 'A full banked bowl that spirals you down almost a full turn. Trust the wall.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(20, 15);
+      b.straight(44);
+      b.slope(30, 8);
+      b.curve(36, 260, { bank: 20, rise: -9, chev: 1 });
+      b.straight(30);
+      b.slope(24, -3);
+      b.curve(40, 76, { bank: 13, chev: 1 });
+      b.straight(36);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Splinter Row', tier: 3,
+    blurb: 'Three short jumps back to back — land straight or the next one punishes you for it.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(36);
+      b.ramp(16, 9);
+      b.gap(20, -3);
+      b.table(28, 15);
+      b.ramp(16, 9);
+      b.gap(20, -3);
+      b.table(28, 15);
+      b.ramp(16, 9);
+      b.gap(20, -3);
+      b.landing(22, -9, { w: 14 });
+      b.straight(30);
+      b.curve(36, 84, { bank: 14, chev: 1 });
+      b.straight(34);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Blackwater', tier: 3,
+    blurb: 'Loose, low-grip decking through the whole middle section. Smooth inputs only.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(40);
+      b.curve(40, 66, { bank: 11, grip: 0.82, chev: 1 });
+      b.straight(30, { grip: 0.82 });
+      b.bumps(3, 10, 0.9, { grip: 0.82 });
+      b.curve(38, -80, { bank: 12, grip: 0.82, chev: 1 });
+      b.straight(30, { grip: 0.82 });
+      b.slope(26, 4);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Anvil Yard', tier: 3,
+    blurb: 'A flat, wide yard with two opposed high banks. Carry speed through both or lose the line.',
+    build() {
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 16);
+      b.straight(50);
+      b.curve(44, 118, { bank: 19, w: 16, chev: 1 });
+      b.straight(36);
+      b.curve(46, -118, { bank: 19, w: 16, chev: 1 });
+      b.straight(40);
+      b.slope(28, 5);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(30, { w: 15 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Cinder Loop', tier: 3,
+    blurb: 'A tight, twisty loop back on itself. Handbrake territory more than once.',
+    build() {
+      const b = new TrackBuilder({ width: 9 });
+      b.pad(20, 13);
+      b.straight(36);
+      b.curve(26, 150, { bank: 16, chev: 1 });
+      b.straight(24);
+      b.curve(24, -160, { bank: 17, chev: 1 });
+      b.straight(24);
+      b.curve(22, 168, { bank: 18, chev: 1 });
+      b.straight(30);
+      b.crest(20, 8);
+      b.straight(26);
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Longshadow', tier: 4,
+    blurb: 'A tall bank, a blind crest, and a second bank the opposite way. Commit before you can see the exit.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(22, 15);
+      b.straight(60);
+      b.curve(48, 108, { bank: 22, w: 18, chev: 1 });
+      b.straight(34);
+      b.crest(26, 12);
+      b.curve(46, -108, { bank: 22, w: 18, chev: 1 });
+      b.straight(40);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Furrow', tier: 4,
+    blurb: 'Rolling bumps the whole back half, taken at speed. The car never quite settles.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(40);
+      b.curve(40, 70, { bank: 13, chev: 1 });
+      b.straight(30);
+      b.bumps(6, 9, 1.3);
+      b.curve(38, -70, { bank: 13, chev: 1 });
+      b.straight(30);
+      b.slope(24, -4);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Gallows Reach', tier: 4,
+    blurb: 'A long gap off a high table, landing on a narrower deck than you left. Line it up early.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(50);
+      b.curve(40, 76, { bank: 16, chev: 1 });
+      b.straight(30);
+      b.slope(36, 9);
+      b.ramp(20, 13);
+      b.gap(30, -5);
+      b.landing(24, -10, { w: 12 });
+      b.straight(30, { w: 8.5 });
+      b.curve(34, -84, { bank: 16, w: 8.5, chev: 1 });
+      b.straight(34, { w: 8 });
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Slate Vault', tier: 4,
+    blurb: 'Narrow decking through a sunken cut, then a wall out of it. No margin either side.',
+    build() {
+      const b = new TrackBuilder({ width: 7 });
+      b.pad(20, 13);
+      b.straight(36, { w: 9 });
+      b.curve(28, 80, { bank: 12, w: 7, chev: 1 });
+      b.straight(50, { w: 6.5, rail: 'both' });
+      b.slope(26, 6, { w: 6.5 });
+      b.curve(30, 130, { bank: 20, w: 9, chev: 1 });
+      b.straight(30, { w: 7 });
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Pilot Light', tier: 4,
+    blurb: 'Four jumps of steadily increasing size. Each one asks a little more of the boost.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(20, 14);
+      b.straight(36);
+      b.ramp(14, 7);
+      b.gap(16, -2);
+      b.table(26, 14);
+      b.ramp(16, 9);
+      b.gap(20, -3);
+      b.table(28, 14);
+      b.ramp(18, 11);
+      b.gap(24, -4);
+      b.table(30, 15);
+      b.ramp(20, 13);
+      b.gap(28, -5);
+      b.landing(24, -10, { w: 14 });
+      b.straight(30);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Wraith Line', tier: 5,
+    blurb: 'Thin, high, and nearly seven hundred metres of it. No rails, no mercy.',
+    build() {
+      const b = new TrackBuilder({ width: 6 });
+      b.pad(20, 13);
+      b.straight(50, { w: 8 });
+      b.slope(30, 8, { w: 6.5 });
+      b.curve(30, 140, { bank: 19, w: 7.5, chev: 1 });
+      b.straight(60, { w: 6 });
+      b.bumps(4, 9, 1.1, { w: 6 });
+      b.curve(28, -150, { bank: 19, w: 7, chev: 1 });
+      b.straight(50, { w: 5.8 });
+      b.ramp(18, 11, { w: 6.5 });
+      b.gap(24, -4);
+      b.landing(24, -9, { w: 13 });
+      b.straight(40, { w: 8 });
+      b.curve(34, 90, { bank: 15, w: 7.5, chev: 1 });
+      b.straight(40, { w: 5.6 });
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Ironclad', tier: 5,
+    blurb: 'Every kind of corner this game has, one after another, on a deck that keeps narrowing.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(22, 15);
+      b.straight(60);
+      b.curve(50, 90, { bank: 16, chev: 1 });
+      b.straight(30);
+      b.chicane(36, 34, { bank: 11 });
+      b.straight(30, { w: 9 });
+      b.curve(34, 200, { bank: 20, rise: -6, w: 9, chev: 1 });
+      b.straight(30, { w: 8 });
+      b.slope(30, 7, { w: 8 });
+      b.ramp(18, 11, { w: 7.5 });
+      b.gap(24, -4);
+      b.landing(24, -9, { w: 13 });
+      b.straight(30, { w: 7.5 });
+      b.curve(30, -110, { bank: 17, w: 7.5, chev: 1 });
+      b.straight(34, { w: 6.5 });
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Deadfall', tier: 5,
+    blurb: 'The biggest gap on any course here, off a table that drops away behind you.',
+    build() {
+      const b = new TrackBuilder({ width: 9 });
+      b.pad(20, 14);
+      b.straight(46);
+      b.curve(36, 90, { bank: 15, chev: 1 });
+      b.straight(30);
+      b.slope(40, 10);
+      b.ramp(24, 15);
+      b.gap(34, -6);
+      b.landing(28, -11, { w: 13 });
+      b.straight(30, { w: 8 });
+      b.bumps(3, 9, 1.2, { w: 8 });
+      b.curve(30, -96, { bank: 15, w: 8, chev: 1 });
+      b.straight(34, { w: 7 });
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Hollow Bend', tier: 2,
+    blurb: 'A single wide sweeper carved into the hillside, long enough to find a proper rhythm in.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(20, 15);
+      b.straight(50);
+      b.curve(70, 130, { bank: 12, chev: 1 });
+      b.straight(30);
+      b.slope(28, 5);
+      b.straight(26);
+      b.curve(50, -60, { bank: 10, chev: 1 });
+      b.straight(36);
+      b.gate('finish');
+      b.straight(28, { w: 14 });
+      return b.build();
+    }
+  },
+  {
+    name: 'Last Ember', tier: 5,
+    blurb: 'The final exam: everything the other courses taught you, back to back.',
+    build() {
+      const b = new TrackBuilder({ width: 10 });
+      b.pad(22, 15);
+      b.straight(56);
+      b.curve(44, 96, { bank: 18, chev: 1 });
+      b.straight(30);
+      b.curve(40, -110, { bank: 18, chev: 1 });
+      b.straight(30, { grip: 0.85 });
+      b.bumps(4, 9, 1.1, { grip: 0.85 });
+      b.straight(24, { grip: 0.85 });
+      b.slope(34, 9);
+      b.ramp(20, 12);
+      b.gap(28, -5);
+      b.landing(26, -10, { w: 13 });
+      b.straight(30, { w: 8 });
+      b.curve(30, 220, { bank: 20, rise: -6, w: 8, chev: 1 });
+      b.straight(30, { w: 7 });
+      b.chicane(28, 30, { bank: 11, w: 7 });
+      b.straight(30, { w: 6.5 });
+      b.gate('finish');
+      b.straight(26, { w: 13 });
+      return b.build();
+    }
   }
 ];
 
@@ -3124,8 +3782,7 @@ class ChaseCamera {
     this._hit = { t: 0, point: new THREE.Vector3(), normal: new THREE.Vector3(), grip: 1, track: true };
   }
   idealDist(car) {
-    return CAM.dist + clamp(car.speed / CAR.vTop, 0, 1) * CAM.distSpeed
-      + (car.boosting ? 1.1 : 0);
+    return CAM.dist + clamp(car.speed / CAR.vTop, 0, 1) * CAM.distSpeed;
   }
   anchorFor(car, dist, out) {
     const sn = clamp(car.speed / CAR.vTop, 0, 1);
@@ -3179,8 +3836,7 @@ class ChaseCamera {
     this.look.y = smoothDamp(this.look.y, lk.y, this.lookVel, 'y', CAM.smoothLook, dt);
     this.look.z = smoothDamp(this.look.z, lk.z, this.lookVel, 'z', CAM.smoothLook, dt);
 
-    const wantFov = CAM.fovBase + clamp(car.speed / CAR.vTop, 0, 1) * CAM.fovSpeed
-      + (car.boosting ? 5 : 0);
+    const wantFov = CAM.fovBase + clamp(car.speed / CAR.vTop, 0, 1) * CAM.fovSpeed;
     this.fov = lerp(this.fov, wantFov, approach(2.5, dt));
     if (Math.abs(this.cam.fov - this.fov) > 0.05) {
       this.cam.fov = this.fov;
@@ -3417,8 +4073,12 @@ const App = {
       im.frustumCulled = false;
       this.scene.add(im);
     };
-    ring(22, 340, 260, 40, 70, MAT.scenery, GROUND_Y);
-    ring(18, 700, 420, 90, 150, MAT.sceneryFar, GROUND_Y);
+    // Radii are kept well clear of every course's own extent (the longest,
+    // Dust Line, reaches ~600 units from the origin every course is built
+    // around) plus each peak's own base footprint, so the backdrop can
+    // never clip through track geometry no matter which course is loaded.
+    ring(22, 780, 260, 40, 70, MAT.scenery, GROUND_Y);
+    ring(18, 1140, 420, 90, 150, MAT.sceneryFar, GROUND_Y);
 
     this.resize();
     addEventListener('resize', () => this.resize());
@@ -3458,7 +4118,7 @@ const App = {
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'boards', 'result', 'gate', 'banned', 'spectate']
+    ['menu', 'select', 'boards', 'result', 'gate', 'banned', 'spectate', 'settings', 'race']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
   },
@@ -3713,6 +4373,8 @@ const Game = {
   accum: 0, clock: 0, pathIdx: 0,
   ghostOverride: null, ghostOverrideName: null,
   spec: null,
+  confirmedUid: null, authPending: false,
+  race: null, openRacesUnwatch: null,
 
   boot() {
     buildMaterials();
@@ -3796,6 +4458,15 @@ const Game = {
    * someone is watching: that would look like the game randomly kicking
    * you out mid-drive. Only actually interrupt when it is safe to, i.e.
    * when nothing is being played or watched right now.
+   *
+   * Firebase's own SDK can fire onAuthStateChanged a second time shortly
+   * after a sign-in actually completes (the initial callback, then another
+   * once the ID token exchange settles), and that second firing runs its
+   * own profile fetch independently. If that fetch merely hiccups — a slow
+   * read, not a real sign-out — this function must not undo a session it
+   * already confirmed good: once a uid has reached the menu successfully,
+   * a later "no profile" report for that *same* uid is treated as a fetch
+   * problem to retry, not a reason to boot the player back to the gate.
    */
   async onAuth(user, profile) {
     const interruptible = this.state !== 'play' && this.state !== 'spectate' && this.state !== 'result';
@@ -3807,21 +4478,56 @@ const Game = {
       return;
     }
     this.authPending = false;
-    if (!user) { UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate'; return; }
+    const knownGoodUid = this.confirmedUid;
+    if (!user) {
+      if (knownGoodUid) return; // an explicit signOut() clears confirmedUid itself
+      UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate'; return;
+    }
     if (!profile) {
+      if (knownGoodUid && knownGoodUid === user.uid) {
+        // Retry once in the background instead of dropping an already-good
+        // session over what is most likely a transient read failure.
+        try {
+          await Cloud.loadProfile();
+          if (Cloud.profile) return this.onAuth(Cloud.user, Cloud.profile);
+        } catch (e) { /* still no profile — fall through and report it below */ }
+      }
       UI.gateError(Cloud.error || 'This account has no profile — an invite code is needed.');
       UI.show('gate'); this.state = 'gate'; return;
     }
-    if (Cloud.banned()) { UI.show('banned'); this.state = 'banned'; return; }
+    if (Cloud.banned()) { this.confirmedUid = null; UI.show('banned'); this.state = 'banned'; return; }
     try {
       Records.hydrate(await Cloud.pull());
     } catch (e) {
       console.warn('Skyframe: could not read the leaderboards', e && e.message);
       UI.toast('Could not load leaderboards or credits — check your connection and try again.');
     }
+    this.confirmedUid = user.uid;
     UI.who(Cloud.name(), Records.credits);
     $('driverRow').hidden = true;
+    if (!this.openRacesUnwatch) {
+      this.openRacesUnwatch = Cloud.watchOpenRaces((races) => this.onOpenRaces(races));
+    }
     this.toMenu();
+  },
+
+  /** the menu's "a race is open" banner, driven by a live Firestore watch
+   *  started once on sign-in — races are rare enough that one small
+   *  collection listener for the whole session costs nothing against the
+   *  free-tier read quota, and it keeps the banner honest without the
+   *  player having to reload to see one appear */
+  onOpenRaces(races) {
+    this.openRaces = races;
+    const mine = Cloud.user ? races.find((r) =>
+      r.state === 'running' || r.state === 'lobby') : null;
+    $('raceBanner').hidden = !mine;
+    if (!mine) return;
+    const joined = this.race && this.race.id === mine.id;
+    $('raceBannerTitle').textContent = mine.state === 'lobby'
+      ? 'A race is open to join' : 'A race is in progress';
+    $('raceBannerSub').textContent = mine.state === 'lobby'
+      ? 'Buy in before the admin starts it.'
+      : (joined ? 'You’re in it — jump back in.' : 'Already started, but you can still watch.');
   },
 
   wire() {
@@ -3875,12 +4581,52 @@ const Game = {
     });
     $('bCourses').addEventListener('click', () => this.toSelect());
     $('bBoards').addEventListener('click', () => this.toBoards());
+    $('bSettings').addEventListener('click', () => this.toSettings());
+    $('bSetBack').addEventListener('click', () => this.toMenu());
     $('bSelBack').addEventListener('click', () => this.toMenu());
     $('bBoardBack').addEventListener('click', () => this.toMenu());
+    $('bRaceBanner').addEventListener('click', () => {
+      const open = this.openRaces && this.openRaces[0];
+      this.toRace(open && open.id);
+    });
+    $('bRaceBack').addEventListener('click', () => {
+      if (this.race && this.race.unwatch) this.race.unwatch();
+      this.race = null;
+      this.toMenu();
+    });
+    $('bRaceJoin').addEventListener('click', () => this.joinCurrentRace());
+    $('bRaceDrive').addEventListener('click', () => this.driveRaceAttempt());
+    $('bCreditsRun').addEventListener('click', () => this.toCreditsRun());
+    $('bCreditsRunAgain').addEventListener('click', () => this.toCreditsRun());
+    $('bCreditsRunBack').addEventListener('click', () => this.toMenu());
     $('bBoardWipe').addEventListener('click', () => {
       Records.wipe();
       UI.boards();
       UI.toast('Times cleared');
+    });
+    $('bSetPassword').addEventListener('click', async () => {
+      const oldPass = $('setOldPass').value, newPass = $('setNewPass').value;
+      const msg = $('setPassMsg');
+      if (!oldPass || !newPass) { msg.textContent = 'Fill in both fields.'; return; }
+      $('bSetPassword').disabled = true;
+      msg.textContent = 'Working…';
+      try {
+        await Cloud.changePassword(oldPass, newPass);
+        $('setOldPass').value = ''; $('setNewPass').value = '';
+        msg.textContent = 'Password updated.';
+      } catch (e) { msg.textContent = this.authMessage(e); }
+      $('bSetPassword').disabled = false;
+    });
+    $('bResetScores').addEventListener('click', async () => {
+      const msg = $('setResetMsg');
+      if (!confirm('Delete every one of your times and ghosts on every course? This cannot be undone.')) return;
+      $('bResetScores').disabled = true;
+      msg.textContent = 'Working…';
+      try {
+        await Cloud.resetScores();
+        msg.textContent = 'Scores reset.';
+      } catch (e) { msg.textContent = this.authMessage(e); }
+      $('bResetScores').disabled = false;
     });
     $('bSpecBack').addEventListener('click', () => this.exitSpectate());
     $('bSpecPlay').addEventListener('click', () => {
@@ -3938,6 +4684,7 @@ const Game = {
     if (c.indexOf('invalid-email') >= 0) return 'That username is not valid.';
     if (c.indexOf('weak-password') >= 0) return 'Pick a longer password.';
     if (c.indexOf('too-many-requests') >= 0) return 'Too many attempts — wait a minute.';
+    if (c.indexOf('requires-recent-login') >= 0) return 'Sign out and back in, then try again.';
     if (c.indexOf('network') >= 0) return 'No connection to the server.';
     return (e && e.message) || 'Something went wrong.';
   },
@@ -4200,6 +4947,194 @@ const Game = {
     this.flushPendingAuth();
   },
 
+  toSettings() {
+    this.state = 'settings'; this.running = false;
+    Sound.stopEngine();
+    $('setUser').textContent = Cloud.on ? Cloud.name() : Records.driver();
+    $('setOldPass').value = ''; $('setNewPass').value = '';
+    $('setPassMsg').textContent = ''; $('setResetMsg').textContent = '';
+    // password change and cloud score reset only make sense signed in —
+    // offline/local-only mode has no account to change or server data to
+    // wipe, only the same "Clear all times" already on the boards screen
+    $('setOnlineOnly').hidden = !Cloud.on;
+    $('setOfflineNote').hidden = Cloud.on;
+    $('setOfflineRule').hidden = Cloud.on;
+    UI.show('settings');
+    this.flushPendingAuth();
+  },
+
+  /** enter (or return to) the race screen for whichever race is currently
+   *  open — the lobby/standings view, the join form, and the "drive" button
+   *  are all driven live off the same watchRace subscription so every
+   *  joined player sees the same state without polling. */
+  toRace(raceId) {
+    const id = raceId || (this.openRaces && this.openRaces[0] && this.openRaces[0].id);
+    if (!id) { this.toMenu(); return; }
+    this.state = 'racehub'; this.running = false;
+    Sound.stopEngine();
+    if (this.race && this.race.unwatch && this.race.id !== id) this.race.unwatch();
+    if (!this.race || this.race.id !== id) {
+      const unwatch = Cloud.watchRace(id, (race, entries) => this.onRaceUpdate(race, entries));
+      this.race = { id, doc: null, entries: [], unwatch, attemptNum: 0 };
+    }
+    UI.show('race');
+  },
+
+  onRaceUpdate(race, entries) {
+    if (!this.race) return;
+    this.race.doc = race;
+    this.race.entries = entries;
+    this.renderRace();
+  },
+
+  renderRace() {
+    if (this.state !== 'racehub' || !this.race || !this.race.doc) return;
+    const race = this.race.doc, entries = this.race.entries;
+    const mine = Cloud.user && entries.find((e) => e.uid === Cloud.user.uid);
+    const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
+
+    if (race.state === 'lobby') {
+      $('raceState').textContent = entries.length + ' joined — pot ' + pot + ' credits. ' +
+        'Waiting for the admin to start.';
+    } else if (race.state === 'running') {
+      const idx = LEVELS.findIndex((l, i) => this.id(i) === race.courseId);
+      const name = idx >= 0 ? LEVELS[idx].name : race.courseId;
+      const remain = race.endsAt ? Math.max(0, Math.round((race.endsAt - Date.now()) / 1000)) : 0;
+      $('raceState').textContent = 'Racing ' + name + ' — pot ' + pot + ' credits. ' +
+        (remain > 0 ? Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0') + ' left.'
+          : 'Time’s up — finishing up.');
+    } else {
+      $('raceState').textContent = 'Race settled — pot ' + pot + ' credits paid out.';
+    }
+
+    $('raceJoinBox').hidden = !(race.state === 'lobby' && !mine);
+    $('raceDriveRow').hidden = !(race.state === 'running' && mine
+      && (mine.attempts || []).length < 3);
+    if (!$('raceDriveRow').hidden) {
+      $('raceAttemptNum').textContent = String((mine.attempts || []).length + 1);
+    }
+
+    const settled = race.state === 'settled';
+    $('raceLastCol').textContent = settled ? 'Payout' : 'Attempts';
+    const rows = entries.slice().sort((a, b) => {
+      if (settled) return (a.placement || 999) - (b.placement || 999);
+      return (a.bestTimeMs ?? Infinity) - (b.bestTimeMs ?? Infinity);
+    });
+    $('raceRows').innerHTML = rows.map((e) => {
+      const isMe = Cloud.user && e.uid === Cloud.user.uid;
+      const best = typeof e.bestTimeMs === 'number' ? formatTime(e.bestTimeMs / 1000) : '—';
+      const last = settled
+        ? (typeof e.payout === 'number' ? e.payout.toFixed(1) : '—')
+        : (e.attempts || []).length + ' / 3';
+      const place = settled && e.placement ? e.placement + '.' : '';
+      return '<tr class="' + (isMe ? 'me' : '') + '"><td class="r">' + place + '</td><td>' +
+        escapeHtml(e.displayName || '—') + '</td><td class="t">' + e.buyIn + '</td>' +
+        '<td class="t">' + best + '</td><td class="t">' + last + '</td></tr>';
+    }).join('');
+  },
+
+  async joinCurrentRace() {
+    const msg = $('raceJoinMsg');
+    const buyIn = parseInt($('raceBuyIn').value, 10);
+    if (!this.race) return;
+    if (!isFinite(buyIn) || buyIn <= 0) { msg.textContent = 'Enter a whole number of credits.'; return; }
+    $('bRaceJoin').disabled = true;
+    msg.textContent = 'Working…';
+    try {
+      await Cloud.joinRace(this.race.id, buyIn);
+      UI.who(Cloud.name(), Records.credits);
+      msg.textContent = '';
+    } catch (e) { msg.textContent = e.message || 'Could not join.'; }
+    $('bRaceJoin').disabled = false;
+  },
+
+  /** launches one race attempt as an ordinary drive on the race's chosen
+   *  course, reusing loadLevel/startLevel's own physics setup exactly —
+   *  only the finish handling (finishRaceAttempt, wired via checkFinish)
+   *  and the 3-attempt cap differ from a campaign run. */
+  driveRaceAttempt() {
+    if (!this.race || !this.race.doc || this.race.doc.state !== 'running') return;
+    const idx = LEVELS.findIndex((l, i) => this.id(i) === this.race.doc.courseId);
+    if (idx < 0 || !this.loadLevel(idx)) return;
+    this.ghostData = null; this.ghostDist = null;
+    Input.clear();
+    this.time = 0; this.started = false; this.running = true;
+    this.accum = 0;
+    this.state = 'race';
+    UI.show('hud');
+    UI.course(idx, LEVELS[idx].name);
+    UI.best(0);
+    UI.clock(0, false);
+    UI.delta(null);
+    UI.progress(0);
+    UI.prompt('Hold W to launch');
+    Sound.init(); Sound.resume(); Sound.startEngine();
+  },
+
+  async finishRaceAttempt(timeSec) {
+    this.running = false;
+    const race = this.race;
+    Sound.stopEngine();
+    Sound.finish(false);
+    try {
+      await Cloud.recordRaceAttempt(race.id, Math.round(timeSec * 1000));
+    } catch (e) {
+      console.warn('Skyframe: could not record race attempt', e && e.message);
+      UI.toast('Could not save that attempt — check your connection.');
+    }
+    this.toRace(race.id);
+  },
+
+  /** solo credits-grind mode: a random course from all 32, no leaderboard
+   *  or ghost side effects, +1 credit for any finish regardless of time. */
+  toCreditsRun() {
+    if (!Cloud.on || !Cloud.user) { UI.toast('Sign in to run for credits.'); return; }
+    const playableIdx = this.playable.map((p, i) => p ? i : -1).filter((i) => i >= 0);
+    if (!playableIdx.length) return;
+    const idx = playableIdx[Math.floor(Math.random() * playableIdx.length)];
+    if (!this.loadLevel(idx)) return;
+    this.ghostData = null; this.ghostDist = null;
+    Input.clear();
+    this.time = 0; this.started = false; this.running = true;
+    this.accum = 0;
+    this.state = 'creditsrun';
+    UI.show('hud');
+    UI.course(idx, LEVELS[idx].name);
+    UI.best(0);
+    UI.clock(0, false);
+    UI.delta(null);
+    UI.progress(0);
+    UI.prompt('Hold W to launch');
+    UI.toast('Credits run — finish for +1 credit. Times here don’t count.');
+    Sound.init(); Sound.resume(); Sound.startEngine();
+  },
+
+  async finishCreditsRun() {
+    this.running = false;
+    this.state = 'result';
+    Sound.stopEngine();
+    Sound.finish(false);
+    $('rKick').textContent = 'Credits run';
+    $('rName').textContent = LEVELS[this.levelIndex].name;
+    $('rTime').textContent = formatTime(this.time);
+    $('rSub').textContent = 'This run doesn’t count toward times or leaderboards.';
+    $('rBoardHd').textContent = '';
+    $('rBoard').innerHTML = '';
+    $('rCampaignRow').hidden = true;
+    $('rCreditsRunRow').hidden = false;
+    UI.best(0);
+    UI.show('result');
+    UI.clock(this.time, true);
+    try {
+      await Cloud.grindCredit();
+      UI.who(Cloud.name(), Records.credits);
+      UI.toast('+1 credit');
+    } catch (e) {
+      console.warn('Skyframe: could not award the credits-run credit', e && e.message);
+      UI.toast('Could not save that credit — check your connection.');
+    }
+  },
+
   finishLevel() {
     this.running = false;
     this.state = 'result';
@@ -4248,6 +5183,8 @@ const Game = {
     this.buildGhostProgress();
     UI.best(Records.best(id));
     $('bNext').hidden = this.nextPlayable(this.levelIndex) < 0;
+    $('rCampaignRow').hidden = false;
+    $('rCreditsRunRow').hidden = true;
     UI.show('result');
     UI.clock(this.time, true);
   },
@@ -4262,7 +5199,9 @@ const Game = {
       if (car.pos.distanceToSquared(g.pos) > g.radius * g.radius) continue;
       if (car.speed > 1.5 && car.vel.dot(g.dir) < 0) continue;
       g.passed = true;
-      this.finishLevel();
+      if (this.state === 'race') this.finishRaceAttempt(this.time);
+      else if (this.state === 'creditsrun') this.finishCreditsRun();
+      else this.finishLevel();
       return;
     }
   },
@@ -4341,7 +5280,14 @@ const Game = {
 
   stepPlay(dt) {
     Input.sample();
-    if (Input.tapped('Escape')) { this.toMenu(); return; }
+    if (Input.tapped('Escape')) {
+      // Bailing mid-attempt in a race or credits run must not silently
+      // record a time — it isn't a finish, so route back to the race
+      // lobby / menu without ever calling checkFinish's success path.
+      if (this.state === 'race') { this.toRace(); return; }
+      if (this.state === 'creditsrun') { this.toMenu(); return; }
+      this.toMenu(); return;
+    }
     if (Input.tapped('KeyR')) this.restartRun('Restarted');
     if (Input.tapped('KeyT')) UI.toggleTele();
     if (!this.started && Input.anyDrive) {
@@ -4385,7 +5331,7 @@ const Game = {
 
     if (this.started) { this.time += dt; this.recordGhost(dt); }
     this.checkFinish();
-    if (this.state === 'play') this.updateProgress();
+    if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') this.updateProgress();
   },
 
   /** step the quality tier down when frames are slow, back up when they are not */
@@ -4407,9 +5353,10 @@ const Game = {
   frame(dt) {
     if (dt > 0.0005) this.fps = lerp(this.fps, 1 / dt, 0.08);
     this.autoQuality(dt);
-    if (this.state === 'play') {
+    const driving = this.state === 'play' || this.state === 'race' || this.state === 'creditsrun';
+    if (driving) {
       this.stepPlay(dt);
-      if (this.state === 'play') {
+      if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') {
         this.car.syncMesh(dt);
         this.chase.update(dt, this.car);
         UI.clock(this.time, false);
