@@ -3469,7 +3469,9 @@ const UI = {
     $('whoCredits').textContent = credits;
   },
   gateError(msg) { $('gErr').textContent = msg || ''; },
+  creating: false,
   gateMode(creating) {
+    this.creating = creating;
     $('gateTitle').textContent = creating ? 'Create an account' : 'Sign in';
     $('gateNote').textContent = creating
       ? 'You need an invite code from whoever runs this server.'
@@ -3810,10 +3812,8 @@ const Game = {
     name.addEventListener('change', () => Records.setDriver(name.value));
     name.addEventListener('blur', () => Records.setDriver(name.value));
 
-    let creating = false;
     $('gToggle').addEventListener('click', () => {
-      creating = !creating;
-      UI.gateMode(creating);
+      UI.gateMode(!UI.creating);
     });
     $('gGo').addEventListener('click', async () => {
       const user = $('gUser').value.trim(), pw = $('gPass').value;
@@ -3829,7 +3829,12 @@ const Game = {
       UI.gateError('Working…');
       Cloud.busy = true;
       try {
-        if (creating) await Cloud.signUp(user, pw, $('gCode').value);
+        // UI.creating is read fresh here rather than captured once, because
+        // a failed sign-up mid-flow can force the gate back to "Sign in"
+        // (Cloud reporting a signed-out state) without the user re-clicking
+        // the toggle — reading a stale local flag would then silently keep
+        // calling signUp() even though the button now reads "Sign in".
+        if (UI.creating) await Cloud.signUp(user, pw, $('gCode').value);
         else await Cloud.signIn(user, pw);
         UI.gateError('');
         // The auth-state listener sits out while Cloud.busy is set, so this
