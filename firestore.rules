@@ -1,21 +1,100 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /config/invite {
-      allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == 'spRteEkQRHaCUMizkijKff1ZzRI3';
+
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in
+        ['spRteEkQRHaCUMizkijKff1ZzRI3', 'O0FJorXpLvZnLnXNPYEsS6udTAG3'];
     }
-    match /users/{userId} {
-      allow read, list: if request.auth != null;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
+    function signedIn() {
+      return request.auth != null;
     }
-    match /leaderboard/{scoreId} {
-      allow read, list: if request.auth != null;
-      allow create, update: if request.auth != null;
+    function myProfile() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
     }
-    match /usernames/{username} {
-      allow read, list: if true;
-      allow create, update: if request.auth != null;
+
+    // config/invite holds the current invite code. No player may ever read it —
+    // that is what makes the claims/{uid} check below meaningful.
+    match /config/{doc} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Write-once proof that the caller typed the right invite code, checked
+    // against config/invite server-side. Never readable, never updatable, so a
+    // claim can only ever be spent once per uid.
+    match /claims/{uid} {
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['code'])
+        && request.resource.data.code is string
+        && request.resource.data.code ==
+             get(/databases/$(database)/documents/config/invite).data.code;
+      allow read, update, delete: if false;
+    }
+
+    match /profiles/{uid} {
+      allow get, list: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid
+        && exists(/databases/$(database)/documents/claims/$(uid))
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 1
+        && request.resource.data.displayName.size() <= 14
+        && request.resource.data.banned == false;
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
+              && request.resource.data.displayName is string
+              && request.resource.data.displayName.size() >= 1
+              && request.resource.data.displayName.size() <= 14);
+      allow delete: if false;
+    }
+
+    // Doc id must be "{uid}_{courseId}" so a player can only ever hold their own
+    // row per course. displayName/banned are denormalised from profiles/{uid} so
+    // the leaderboard can filter without a join — the rule forces them to match.
+    match /bests/{docId} {
+      allow get, list: if signedIn();
+      allow create, update: if signedIn()
+        && docId == request.auth.uid + '_' + request.resource.data.courseId
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.displayName == myProfile().displayName
+        && request.resource.data.banned == myProfile().banned
+        && request.resource.data.timeMs is number
+        && request.resource.data.timeMs > 0
+        && request.resource.data.timeMs < 600000;
+      allow delete: if isAdmin();
+    }
+
+    // Doc id "{uid}_{courseId}_clear" makes the award idempotent by construction:
+    // it can physically exist only once, so it is create-only and never mutable.
+    match /creditEvents/{docId} {
+      allow get, list: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+        && docId == request.auth.uid + '_' + request.resource.data.courseId + '_clear'
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.delta == 100;
+      allow update, delete: if false;
+    }
+
+    // Doc id "{uid}_{courseId}". Ghosts are read by anyone racing that run, but
+    // only their owner can write one, and samples are capped so a malicious
+    // client can't burn the free-tier 1 GiB storage quota with one write.
+    match /ghosts/{docId} {
+      allow get: if signedIn();
+      allow list: if isAdmin();
+      allow create, update: if signedIn()
+        && docId == request.auth.uid + '_' + request.resource.data.courseId
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.timeMs is number
+        && request.resource.data.samples is string
+        && request.resource.data.samples.size() < 60000;
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

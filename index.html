@@ -72,6 +72,24 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   background:var(--rule-2)}
 .bar i{display:block;height:100%;width:0;background:var(--ember);transition:width .25s linear}
 
+/* ---------- spectate ---------- */
+.specTop{position:absolute;top:20px;left:24px;right:24px;display:flex;justify-content:space-between;
+  align-items:flex-start;gap:16px}
+.specWho{font-size:16px;font-weight:600}
+.specWho small{display:block;font-size:11px;color:var(--dim);font-weight:400;
+  font-family:var(--mono);letter-spacing:.1em;margin-top:2px}
+.keys{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+.keys .k{width:34px;height:34px;border:1px solid var(--rule);display:flex;align-items:center;
+  justify-content:center;font-family:var(--mono);font-size:12px;color:var(--dimmer);
+  background:rgba(8,20,38,.5);transition:background .1s,color .1s,border-color .1s}
+.keys .k.on{color:#1d0a02;background:var(--signal);border-color:var(--signal)}
+.keys .k.boost.on{background:var(--ember);border-color:var(--ember);color:#1d0a02}
+.specBar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:min(70vw,520px);
+  display:flex;align-items:center;gap:10px}
+.specBar input[type=range]{flex:1;accent-color:var(--ember)}
+.specBar span{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
+.specCtl{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+
 /* ---------- panels ---------- */
 .scrim{position:absolute;inset:0;background:
   radial-gradient(130% 100% at 50% 0%,rgba(7,11,24,.5),rgba(7,11,24,.94))}
@@ -97,6 +115,8 @@ button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;f
 button.primary:hover{background:#ff8a58;border-color:#ff8a58}
 button.ghost{border-color:transparent;color:var(--dim);padding-left:0}
 button.ghost:hover{color:var(--ink);background:transparent}
+button.small{padding:5px 10px;font-size:12px;border-color:var(--rule)}
+button.small.ghost{padding:5px 10px}
 input[type=text]{font-family:inherit;font-size:14px;color:var(--ink);background:rgba(0,0,0,.25);
   border:1px solid var(--rule);padding:11px 13px;width:190px}
 input[type=text]:focus{outline:none;border-color:var(--aqua)}
@@ -209,13 +229,42 @@ tr.me td{color:var(--ink)} tr.me td.r{color:var(--ember)}
     <div id="flash"></div>
   </div>
 
+  <div class="layer" id="spectate" hidden>
+    <div class="hud">
+      <div class="specTop">
+        <div class="specWho"><span id="specName">—</span>
+          <small id="specCourse">COURSE</small></div>
+        <button class="ghost small" id="bSpecBack">Back to leaderboard</button>
+      </div>
+      <div class="clock" id="specClock" style="position:absolute;top:20px;left:50%;
+        transform:translateX(-50%)">0:00.00</div>
+      <div class="keys" id="specKeys">
+        <div class="k" data-k="handbrake">SH</div>
+        <div class="k" data-k="left">A</div>
+        <div class="k" data-k="throttle">W</div>
+        <div class="k" data-k="right">D</div>
+        <div class="k" data-k="brake">S</div>
+        <div class="k boost" data-k="boost">SPC</div>
+      </div>
+      <div class="specCtl">
+        <button class="ghost small" id="bSpecPlay">Pause</button>
+        <button class="ghost small" id="bSpecRestart">Restart</button>
+      </div>
+      <div class="specBar">
+        <span id="specT0">0:00</span>
+        <input type="range" id="specScrub" min="0" max="1000" value="0">
+        <span id="specT1">0:00</span>
+      </div>
+    </div>
+  </div>
+
   <div class="layer" id="gate" hidden>
     <div class="scrim"></div>
     <div class="panel gate">
       <h2 id="gateTitle">Sign in</h2>
       <p class="note" id="gateNote">Skyframe is invite-only. Sign in to load your times.</p>
-      <label class="fld" for="gEmail">Email</label>
-      <input type="email" id="gEmail" autocomplete="email">
+      <label class="fld" for="gUser">Username</label>
+      <input type="text" id="gUser" maxlength="14" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
       <label class="fld" for="gPass">Password</label>
       <input type="password" id="gPass" autocomplete="current-password">
       <div id="gNewFields" hidden>
@@ -227,7 +276,6 @@ tr.me td{color:var(--ink)} tr.me td.r{color:var(--ember)}
       <div class="err" id="gErr"></div>
       <div class="row">
         <button class="primary" id="gGo">Sign in</button>
-        <button class="ghost" id="gOffline">Play offline</button>
       </div>
       <div class="switch" id="gSwitch">Have an invite code? <b id="gToggle">Create an account</b></div>
     </div>
@@ -484,7 +532,8 @@ const Records = {
   /** best-run replay: a flat array of 7 numbers (position + quaternion) per sample */
   ghost(id) {
     const g = this.data.ghosts && this.data.ghosts[id];
-    return (g && Array.isArray(g.s) && g.s.length >= 14) ? g : null;
+    return (g && Array.isArray(g.s) && g.s.length >= GHOST_STRIDE * 2
+      && g.s.length % GHOST_STRIDE === 0) ? g : null;
   },
   setGhost(id, time, samples) {
     if (!this.data.ghosts) this.data.ghosts = {};
@@ -831,19 +880,34 @@ const Sound = {
    into the same in-memory cache on sign-in, writes are optimistic, and the
    call sites never change.                                                  */
 const FIREBASE = {
-  enabled: false,          // flip to true once you have pasted a config below
+  enabled: true,
   sdk: 'https://www.gstatic.com/firebasejs/10.12.2/',
   config: {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    appId: ''
+    apiKey: 'AIzaSyAeDQFyJvnV9TiVQMnhX6PkcPkXoXzhm-I',
+    authDomain: 'polytrack-918a0.firebaseapp.com',
+    projectId: 'polytrack-918a0',
+    storageBucket: 'polytrack-918a0.firebasestorage.app',
+    messagingSenderId: '928788678841',
+    appId: '1:928788678841:web:12475f136c4acd28887368'
   }
 };
+
+// Firebase Auth has no username provider, so a username is mapped to a hidden
+// address nobody sees or types. This also gets uniqueness for free: Firebase
+// refuses to create a duplicate address.
+const USERNAME_DOMAIN = '@players.skyframe.local';
+function usernameToEmail(name) { return (name || '').trim().toLowerCase() + USERNAME_DOMAIN; }
+function validUsername(name) { return /^[A-Za-z0-9_-]{3,14}$/.test(name || ''); }
 
 const Cloud = {
   ready: false, on: false, user: null, profile: null, credits: 0,
   fb: null, auth: null, db: null, error: '',
+  // Firebase fires onAuthStateChanged the instant an account exists — for a
+  // brand new sign-up that is before claims/profile are written, so the
+  // listener would otherwise race the sign-up/sign-in flow's own writes and
+  // can clobber its result. Setting this while one of those flows is in
+  // progress tells watch() to sit out; the flow reports the outcome itself.
+  busy: false,
 
   courseIds() { return LEVELS.map((l, i) => 'c' + (i + 1)); },
 
@@ -873,6 +937,7 @@ const Cloud = {
   watch(onChange) {
     if (!this.on) return;
     this.fb.authMod.onAuthStateChanged(this.auth, async (user) => {
+      if (this.busy) return;
       this.user = user || null;
       this.profile = null;
       if (user) {
@@ -882,8 +947,11 @@ const Cloud = {
     });
   },
 
-  async signIn(email, pass) {
-    await this.fb.authMod.signInWithEmailAndPassword(this.auth, email, pass);
+  async signIn(username, pass) {
+    const cred = await this.fb.authMod.signInWithEmailAndPassword(
+      this.auth, usernameToEmail(username), pass);
+    this.user = cred.user;
+    try { await this.loadProfile(); } catch (e) { this.error = e.message; }
   },
   async signOut() {
     await this.fb.authMod.signOut(this.auth);
@@ -895,14 +963,17 @@ const Cloud = {
    * so a wrong code is rejected server-side and the real code never leaves the
    * database. Only then can the profile be created.
    */
-  async signUp(email, pass, code, displayName) {
+  async signUp(username, pass, code, displayName) {
+    if (!validUsername(username)) {
+      throw new Error('Usernames are 3-14 characters: letters, numbers, _ and - only.');
+    }
     const { authMod, fsMod } = this.fb;
-    const cred = await authMod.createUserWithEmailAndPassword(this.auth, email, pass);
+    const cred = await authMod.createUserWithEmailAndPassword(this.auth, usernameToEmail(username), pass);
     const uid = cred.user.uid;
     // adopt the user straight away: the auth-state watcher fires asynchronously
     // and loadProfile below would otherwise read a null user
     this.user = cred.user;
-    const name = (displayName || '').trim().slice(0, 14) || 'Driver';
+    const name = (displayName || '').trim().slice(0, 14) || username;
     try {
       await fsMod.setDoc(fsMod.doc(this.db, 'claims', uid), { code: (code || '').trim() });
     } catch (e) {
@@ -941,7 +1012,7 @@ const Cloud = {
       const r = d.data();
       if (!r || typeof r.timeMs !== 'number' || !r.courseId) return;
       (boards[r.courseId] = boards[r.courseId] || []).push({
-        n: r.displayName || 'Driver', t: r.timeMs / 1000, d: r.updatedMs || 0
+        n: r.displayName || 'Driver', t: r.timeMs / 1000, d: r.updatedMs || 0, uid: r.uid
       });
       if (r.uid === this.user.uid) cleared[r.courseId] = true;
     });
@@ -996,7 +1067,8 @@ const Cloud = {
       if (!snap.exists()) return null;
       const d = snap.data();
       const s = String(d.samples || '').split(',').map(Number);
-      if (s.length < 14 || s.some((v) => !isFinite(v))) return null;
+      if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
+        || s.some((v) => !isFinite(v))) return null;
       return { t: d.timeMs / 1000, s };
     } catch (e) { return null; }
   }
@@ -1278,6 +1350,10 @@ function buildMaterials() {
   MAT.flameCore = new THREE.MeshBasicMaterial({
     color: 0xfff0c0, transparent: true, opacity: 0.95, depthWrite: false,
     blending: THREE.AdditiveBlending });
+  // the hottest sliver at the very tip of the plume, almost white
+  MAT.flameSpark = new THREE.MeshBasicMaterial({
+    color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false,
+    blending: THREE.AdditiveBlending });
   // Laid rubber, with per-vertex strength so a mark darkens and widens with
   // speed, slip and steering angle. A plain material can only carry one
   // opacity for the whole mesh, hence the tiny shader.
@@ -1465,6 +1541,45 @@ const CAR = {
 // above mu, so the car slides before it trips over itself.
 CAR.comHeight = CAR.susRest + CAR.wheelR - CAR.mountY;
 
+/**
+ * A three-layer boost plume per exhaust (soft outer flame, hot core,
+ * near-white tip spark) plus a point light so boosting throws light onto
+ * the road and bodywork. Shared by the driven car and the ghost/replay
+ * mesh — each call clones the flame materials so two boosting cars on
+ * screen at once can each fade their own plume without fighting over one
+ * shared opacity value.
+ */
+function buildFlameGroup() {
+  const flame = new THREE.Group();
+  const flameLights = [];
+  for (const sx of [-0.30, 0.30]) {
+    const outer = new THREE.Mesh(GEO.tree, MAT.flame.clone());
+    outer.scale.set(0.22, 1.1, 0.22);
+    outer.position.set(sx, -0.12, -2.45);
+    outer.rotation.x = Math.PI / 2;
+    outer.userData = { k: 1, baseOpacity: MAT.flame.opacity };
+    flame.add(outer);
+    const core = new THREE.Mesh(GEO.tree, MAT.flameCore.clone());
+    core.scale.set(0.11, 0.6, 0.11);
+    core.position.set(sx, -0.12, -2.25);
+    core.rotation.x = Math.PI / 2;
+    core.userData = { k: 0.55, baseOpacity: MAT.flameCore.opacity };
+    flame.add(core);
+    const spark = new THREE.Mesh(GEO.tree, MAT.flameSpark.clone());
+    spark.scale.set(0.045, 0.22, 0.045);
+    spark.position.set(sx, -0.12, -2.10);
+    spark.rotation.x = Math.PI / 2;
+    spark.userData = { k: 0.28, baseOpacity: MAT.flameSpark.opacity };
+    flame.add(spark);
+    const light = new THREE.PointLight(0xff9a44, 0, 5.5, 2);
+    light.position.set(sx, -0.12, -2.3);
+    flame.add(light);
+    flameLights.push(light);
+  }
+  flame.visible = false;
+  return { flame, flameLights };
+}
+
 /** original low-poly coupe: authored as primitives, baked per material */
 function buildCarMesh() {
   const g = new THREE.Group();
@@ -1496,24 +1611,7 @@ function buildCarMesh() {
   P.add(T, [0.14, 0.10, 0.12], [0.30, -0.12, -1.93]);
   P.build(g, [B, D, T, G]);
 
-  // boost plumes: two emissive cones behind the exhausts, hidden unless lit
-  // boost plumes: an additive outer flame with a hot inner core at each pipe
-  const flame = new THREE.Group();
-  for (const sx of [-0.30, 0.30]) {
-    const outer = new THREE.Mesh(GEO.tree, MAT.flame);
-    outer.scale.set(0.22, 1.1, 0.22);
-    outer.position.set(sx, -0.12, -2.45);
-    outer.rotation.x = Math.PI / 2;
-    outer.userData.k = 1;
-    flame.add(outer);
-    const core = new THREE.Mesh(GEO.tree, MAT.flameCore);
-    core.scale.set(0.11, 0.6, 0.11);
-    core.position.set(sx, -0.12, -2.25);
-    core.rotation.x = Math.PI / 2;
-    core.userData.k = 0.55;
-    flame.add(core);
-  }
-  flame.visible = false;
+  const { flame, flameLights } = buildFlameGroup();
   g.add(flame);
 
   const wheels = [];
@@ -1547,7 +1645,7 @@ function buildCarMesh() {
       mu: CAR.mu, side: new THREE.Vector3(1, 0, 0)
     });
   }
-  return { group: g, wheels, flame };
+  return { group: g, wheels, flame, flameLights };
 }
 
 /** simplified translucent car used to replay the player's best run */
@@ -1564,8 +1662,42 @@ function buildGhostMesh() {
     }
   }
   P.build(g, []);
+  const { flame, flameLights } = buildFlameGroup();
+  g.add(flame);
+  g.userData.flame = flame;
+  g.userData.flameLights = flameLights;
+  g.userData.flamePhase = 0;
+  g.userData.flameAmt = 0;
   g.visible = false;
   return g;
+}
+
+/** sets whether a ghost/replay mesh's boost plume is lit this frame, driving
+ *  the same flicker and fade as the driven car's own flame animation */
+function setGhostFlame(mesh, lit, dt) {
+  const u = mesh.userData;
+  if (!u || !u.flame) return;
+  u.flamePhase += (dt || 1 / 60) * 34;
+  u.flameAmt = lerp(u.flameAmt, lit ? 1 : 0, approach(lit ? 40 : 10, dt || 1 / 60));
+  const amt = u.flameAmt;
+  u.flame.visible = amt > 0.01;
+  if (!u.flame.visible) {
+    for (const light of u.flameLights) light.intensity = 0;
+    return;
+  }
+  const pulse = 0.78 + 0.22 * Math.sin(u.flamePhase)
+    + 0.13 * Math.sin(u.flamePhase * 2.7 + 1.1)
+    + 0.07 * Math.sin(u.flamePhase * 5.3 + 2.4);
+  for (const c of u.flame.children) {
+    if (c.userData.k === undefined) continue;
+    const k = c.userData.k;
+    const len = (0.7 + pulse * 1.15) * k * amt;
+    const rad = (0.20 + pulse * 0.05) * k * amt;
+    c.scale.set(rad, Math.max(len, 0.001), rad);
+    c.position.z = -2.05 - len * 0.5;
+    if (c.material) c.material.opacity = c.userData.baseOpacity * amt;
+  }
+  for (const light of u.flameLights) light.intensity = 2.4 * pulse * amt;
 }
 
 /** engine torque in Nm — a peaky curve, flattening off either side */
@@ -1590,6 +1722,7 @@ class Vehicle {
     this.mesh = built.group;
     this.wheels = built.wheels;
     this.flame = built.flame;
+    this.flameLights = built.flameLights;
     if (scene) scene.add(this.mesh);
 
     const d = CAR.dims, m = CAR.mass;
@@ -2108,17 +2241,33 @@ class Vehicle {
     if (dt && this.flame) {
       this.flamePhase += dt * 34;
       const lit = this.boosting && this.boostLeft > 0;
-      this.flame.visible = lit;
-      if (lit) {
-        const pulse = 0.8 + 0.26 * Math.sin(this.flamePhase)
-          + 0.14 * Math.sin(this.flamePhase * 2.7);
+      // fade out over a few frames instead of a hard cut, so the plume
+      // gutters out rather than vanishing the instant the key is released
+      this.flameAmt = lerp(this.flameAmt || 0, lit ? 1 : 0, approach(lit ? 40 : 10, dt));
+      const amt = this.flameAmt;
+      this.flame.visible = amt > 0.01;
+      if (this.flame.visible) {
+        // three incommensurate sine terms deterministically driven by the
+        // per-instance flamePhase (never the shared LCG) so a hot rocket
+        // flicker never perturbs the audio/course random stream
+        const pulse = 0.78 + 0.22 * Math.sin(this.flamePhase)
+          + 0.13 * Math.sin(this.flamePhase * 2.7 + 1.1)
+          + 0.07 * Math.sin(this.flamePhase * 5.3 + 2.4);
         for (const c of this.flame.children) {
+          if (c.userData.k === undefined) continue;
           const k = c.userData.k;
-          const len = (0.7 + pulse * 1.15) * k;
-          const rad = (0.20 + pulse * 0.05) * k;
-          c.scale.set(rad, len, rad);
+          const len = (0.7 + pulse * 1.15) * k * amt;
+          const rad = (0.20 + pulse * 0.05) * k * amt;
+          c.scale.set(rad, Math.max(len, 0.001), rad);
           c.position.z = -2.05 - len * 0.5;
+          if (c.material) c.material.opacity = c.userData.baseOpacity !== undefined
+            ? c.userData.baseOpacity * amt : amt;
         }
+        if (this.flameLights) {
+          for (const light of this.flameLights) light.intensity = 2.4 * pulse * amt;
+        }
+      } else if (this.flameLights) {
+        for (const light of this.flameLights) light.intensity = 0;
       }
     }
     if (dt) {
@@ -3293,7 +3442,7 @@ const App = {
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'boards', 'result', 'gate', 'banned']
+    ['menu', 'select', 'boards', 'result', 'gate', 'banned', 'spectate']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
   },
@@ -3339,6 +3488,23 @@ const UI = {
     $('hBoostBar').classList.toggle('spent', f <= 0.001);
     $('hBoostTxt').textContent = car.boosting ? 'BOOST'
       : (f > 0 ? 'boost ' + car.boostLeft.toFixed(1) + 's' : 'boost spent');
+  },
+  /** lights up the WASD/boost/handbrake glyphs from a recorded input-bits
+   *  byte, so a spectated run shows exactly what its driver was pressing */
+  specKeys(bits) {
+    const el = $('specKeys');
+    if (!el) return;
+    el.querySelector('[data-k=throttle]').classList.toggle('on', !!(bits & 1));
+    el.querySelector('[data-k=brake]').classList.toggle('on', !!(bits & 2));
+    el.querySelector('[data-k=left]').classList.toggle('on', !!(bits & 4));
+    el.querySelector('[data-k=right]').classList.toggle('on', !!(bits & 8));
+    el.querySelector('[data-k=boost]').classList.toggle('on', !!(bits & 16));
+    el.querySelector('[data-k=handbrake]').classList.toggle('on', !!(bits & 32));
+  },
+  specClock(t) {
+    $('specClock').textContent = formatTime(t);
+    if (!Game.spec || !Game.spec.scrubbing) $('specScrub').value = String(Math.round(t * 1000));
+    $('specT0').textContent = formatTime(t);
   },
   teleOn: true,
   toggleTele() {
@@ -3459,15 +3625,33 @@ const UI = {
         ' yet.</p>';
       return;
     }
+    const showActions = Cloud.on;
     let h = '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Time</th>' +
-      '<th style="text-align:right">Set</th></tr></thead><tbody>';
+      '<th style="text-align:right">Set</th>' + (showActions ? '<th></th>' : '') +
+      '</tr></thead><tbody>';
     list.forEach((e, i) => {
       const when = new Date(e.d);
       h += '<tr class="' + (e.n === me ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td>' +
         escapeHtml(e.n) + '</td><td class="t">' + formatTime(e.t) + '</td><td class="d">' +
-        (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td></tr>';
+        (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td>';
+      if (showActions && e.uid) {
+        h += '<td class="d" style="text-align:right;white-space:nowrap">' +
+          '<button class="ghost small raceBtn" data-uid="' + escapeHtml(e.uid) +
+          '" data-course="' + this.boardTab + '" style="margin-right:4px">Race</button>' +
+          '<button class="ghost small watchBtn" data-uid="' + escapeHtml(e.uid) +
+          '" data-course="' + this.boardTab + '">Watch</button></td>';
+      } else if (showActions) {
+        h += '<td></td>';
+      }
+      h += '</tr>';
     });
     body.innerHTML = h + '</tbody></table>';
+    if (showActions) {
+      body.querySelectorAll('.raceBtn').forEach((b) => b.addEventListener('click', () =>
+        Game.raceGhostOf(b.dataset.course, b.dataset.uid)));
+      body.querySelectorAll('.watchBtn').forEach((b) => b.addEventListener('click', () =>
+        Game.spectate(b.dataset.course, b.dataset.uid)));
+    }
   }
 };
 function escapeHtml(s) {
@@ -3482,7 +3666,16 @@ function escapeHtml(s) {
    sample index is derived from the run clock rather than a frame counter, so
    playback stays in step whatever the frame rate does.                      */
 const GHOST_HZ = 20;
-const GHOST_MAX = 7 * GHOST_HZ * 300;        // 300 s ceiling per recording
+const GHOST_STRIDE = 8;                      // pos.xyz, quat.xyzw, input bits
+const GHOST_MAX = GHOST_STRIDE * GHOST_HZ * 300;   // 300 s ceiling per recording
+
+/** throttle/brake/steer/boost/handbrake packed into one small integer so the
+ *  replay stream can show what keys were held without recording every frame */
+function packInputBits(inp) {
+  return (inp.throttle ? 1 : 0) | (inp.brake ? 2 : 0) |
+    (inp.steer < 0 ? 4 : 0) | (inp.steer > 0 ? 8 : 0) |
+    (inp.boost ? 16 : 0) | (inp.handbrake ? 32 : 0);
+}
 const _gq1 = new THREE.Quaternion(), _gq2 = new THREE.Quaternion();
 const _gp = new THREE.Vector3();
 
@@ -3500,6 +3693,8 @@ const Game = {
   lastGear: 0, wasBoosting: false,
   startPose: { pos: new THREE.Vector3(), heading: 0 },
   accum: 0, clock: 0, pathIdx: 0,
+  ghostOverride: null, ghostOverrideName: null,
+  spec: null,
 
   boot() {
     buildMaterials();
@@ -3511,6 +3706,19 @@ const Game = {
     this.ghostMesh = buildGhostMesh();
     App.scene.add(this.ghostMesh);
     this.marks = new SkidMarks(App.scene, 900);
+    // a full-detail, fully opaque car used only when spectating someone
+    // else's recorded run — the translucent ghost mesh is deliberately
+    // simplified and reads poorly as the main subject of a replay
+    const specBuilt = buildCarMesh();
+    this.specMesh = specBuilt.group;
+    this.specFlame = specBuilt.flame;
+    this.specFlameLights = specBuilt.flameLights;
+    this.specMesh.userData.flame = specBuilt.flame;
+    this.specMesh.userData.flameLights = specBuilt.flameLights;
+    this.specMesh.userData.flamePhase = 0;
+    this.specMesh.userData.flameAmt = 0;
+    this.specMesh.visible = false;
+    App.scene.add(this.specMesh);
 
     this.data = LEVELS.map((lv, i) => {
       try {
@@ -3533,15 +3741,29 @@ const Game = {
       '<b>Shift</b> handbrake &nbsp; <b>R</b> restart &nbsp; <b>T</b> telemetry &nbsp; ' +
       '<b>Esc</b> menu';
     this.wire();
-    $('boot').hidden = true;
     this.loadLevel(this.data.findIndex(Boolean), true);
 
-    if (Cloud.on) {
-      UI.gateMode(false);
-      UI.show('gate');
-      this.state = 'gate';
-      Cloud.watch((user, profile) => this.onAuth(user, profile));
+    // Cloud.init() loads the Firebase SDK over the network, so it cannot
+    // finish before this function returns. The render loop is started
+    // immediately either way (return true below) — the boot overlay just
+    // stays up a moment longer when the cloud is enabled, then swaps
+    // straight to the gate rather than flashing the menu first.
+    if (FIREBASE.enabled) {
+      Cloud.init().then((ok) => {
+        $('boot').hidden = true;
+        if (ok && Cloud.on) {
+          UI.gateMode(false);
+          UI.show('gate');
+          this.state = 'gate';
+          Cloud.watch((user, profile) => this.onAuth(user, profile));
+        } else {
+          if (!ok) console.warn('Skyframe:', Cloud.error);
+          UI.who(null);
+          this.toMenu();
+        }
+      });
     } else {
+      $('boot').hidden = true;
       UI.who(null);
       this.toMenu();
     }
@@ -3578,27 +3800,31 @@ const Game = {
       UI.gateMode(creating);
     });
     $('gGo').addEventListener('click', async () => {
-      const em = $('gEmail').value.trim(), pw = $('gPass').value;
-      if (!em || pw.length < 6) {
-        UI.gateError('Enter an email and a password of at least 6 characters.');
+      const user = $('gUser').value.trim(), pw = $('gPass').value;
+      if (!validUsername(user)) {
+        UI.gateError('Usernames are 3-14 characters: letters, numbers, _ and - only.');
+        return;
+      }
+      if (pw.length < 6) {
+        UI.gateError('Enter a password of at least 6 characters.');
         return;
       }
       $('gGo').disabled = true;
       UI.gateError('Working…');
+      Cloud.busy = true;
       try {
-        if (creating) await Cloud.signUp(em, pw, $('gCode').value, $('gName').value);
-        else await Cloud.signIn(em, pw);
+        if (creating) await Cloud.signUp(user, pw, $('gCode').value, $('gName').value);
+        else await Cloud.signIn(user, pw);
         UI.gateError('');
+        // The auth-state listener sits out while Cloud.busy is set, so this
+        // flow reports its own outcome once sign-up/sign-in has actually
+        // finished writing (or loading) the profile.
+        await this.onAuth(Cloud.user, Cloud.profile);
       } catch (e) {
         UI.gateError(this.authMessage(e));
       }
+      Cloud.busy = false;
       $('gGo').disabled = false;
-    });
-    $('gOffline').addEventListener('click', () => {
-      Cloud.on = false;
-      UI.who(null);
-      this.toMenu();
-      UI.toast('Offline — times are kept on this device only');
     });
     $('bnOut').addEventListener('click', () => Cloud.signOut());
     $('whoOut').addEventListener('click', () => Cloud.signOut());
@@ -3617,6 +3843,36 @@ const Game = {
       UI.boards();
       UI.toast('Times cleared');
     });
+    $('bSpecBack').addEventListener('click', () => this.exitSpectate());
+    $('bSpecPlay').addEventListener('click', () => {
+      if (!this.spec) return;
+      if (this.spec.t >= this.spec.data.t) { this.spec.t = 0; this.spec.playing = true; }
+      else this.spec.playing = !this.spec.playing;
+      $('bSpecPlay').textContent = this.spec.playing ? 'Pause' : 'Play';
+    });
+    $('bSpecRestart').addEventListener('click', () => {
+      if (!this.spec) return;
+      this.spec.t = 0;
+      this.spec.playing = true;
+      $('bSpecPlay').textContent = 'Pause';
+    });
+    const scrub = $('specScrub');
+    const beginScrub = () => { if (this.spec) this.spec.scrubbing = true; };
+    const endScrub = () => {
+      if (!this.spec) return;
+      this.spec.scrubbing = false;
+      this.spec.t = clamp(parseInt(scrub.value, 10) / 1000, 0, this.spec.data.t);
+    };
+    scrub.addEventListener('mousedown', beginScrub);
+    scrub.addEventListener('touchstart', beginScrub);
+    scrub.addEventListener('input', () => {
+      if (!this.spec) return;
+      this.spec.scrubbing = true;
+      this.spec.t = clamp(parseInt(scrub.value, 10) / 1000, 0, this.spec.data.t);
+    });
+    scrub.addEventListener('change', endScrub);
+    scrub.addEventListener('mouseup', endScrub);
+    scrub.addEventListener('touchend', endScrub);
     $('bRetry').addEventListener('click', () => this.startLevel(this.levelIndex));
     $('bResCourses').addEventListener('click', () => this.toSelect());
     $('bNext').addEventListener('click', () => {
@@ -3638,9 +3894,9 @@ const Game = {
   authMessage(e) {
     const c = (e && e.code) || '';
     if (c.indexOf('invalid-credential') >= 0 || c.indexOf('wrong-password') >= 0
-      || c.indexOf('user-not-found') >= 0) return 'That email and password do not match.';
-    if (c.indexOf('email-already-in-use') >= 0) return 'That email already has an account.';
-    if (c.indexOf('invalid-email') >= 0) return 'That email address is not valid.';
+      || c.indexOf('user-not-found') >= 0) return 'That username and password do not match.';
+    if (c.indexOf('email-already-in-use') >= 0) return 'That username is already taken.';
+    if (c.indexOf('invalid-email') >= 0) return 'That username is not valid.';
     if (c.indexOf('weak-password') >= 0) return 'Pick a longer password.';
     if (c.indexOf('too-many-requests') >= 0) return 'Too many attempts — wait a minute.';
     if (c.indexOf('network') >= 0) return 'No connection to the server.';
@@ -3671,7 +3927,9 @@ const Game = {
     }
     this.levelIndex = i;
     this.rec = [];
-    this.ghostData = Records.ghost('c' + (i + 1));
+    this.ghostData = this.ghostOverride || Records.ghost('c' + (i + 1));
+    this.ghostOverrideName = this.ghostOverride ? this.ghostOverrideName : null;
+    this.ghostOverride = null;
     if (this.ghostMesh) this.ghostMesh.visible = false;
     this.pathIdx = 0;
     this.buildGhostProgress();
@@ -3696,12 +3954,12 @@ const Game = {
     const g = this.ghostData;
     if (!g || !this.course) return;
     const path = this.course.path, cum = this.course.cum;
-    const n = g.s.length / 7;
+    const n = g.s.length / GHOST_STRIDE;
     const gd = new Float32Array(n);
     const p = new THREE.Vector3();
     let idx = 0;
     for (let k = 0; k < n; k++) {
-      p.set(g.s[k * 7], g.s[k * 7 + 1], g.s[k * 7 + 2]);
+      p.set(g.s[k * GHOST_STRIDE], g.s[k * GHOST_STRIDE + 1], g.s[k * GHOST_STRIDE + 2]);
       let best = idx, bd = Infinity;
       const hi = Math.min(path.length - 1, idx + 16);
       for (let j = idx; j <= hi; j++) {
@@ -3751,8 +4009,123 @@ const Game = {
     UI.delta(null);
     UI.progress(0);
     UI.prompt('Hold W to launch');
-    if (this.ghostData) UI.toast('Chasing your best run — ' + formatTime(this.ghostData.t));
+    if (this.ghostData) {
+      UI.toast(this.ghostOverrideName
+        ? 'Chasing ' + this.ghostOverrideName + ' — ' + formatTime(this.ghostData.t)
+        : 'Chasing your best run — ' + formatTime(this.ghostData.t));
+    }
     Sound.init(); Sound.resume(); Sound.startEngine();
+  },
+
+  /** load someone else's stored run as the ghost for the next attempt on this
+   *  course, instead of the player's own best */
+  async raceGhostOf(courseId, uid) {
+    const idx = parseInt(courseId.slice(1), 10) - 1;
+    if (!this.playable[idx]) return;
+    UI.toast('Loading ghost…');
+    const g = await Cloud.fetchGhost(courseId, uid);
+    if (!g) { UI.toast('That run has no ghost data.'); return; }
+    const row = (Records.board(courseId) || []).find((e) => e.uid === uid);
+    this.ghostOverride = g;
+    this.ghostOverrideName = (row && row.n) || 'that driver';
+    this.startLevel(idx);
+  },
+
+  /**
+   * Replay spectating: play back a stored run at full fidelity with a live
+   * key-press overlay reconstructed from the recorded input bits. This is
+   * built on top of the exact same 20 Hz sample stream as own-best ghost
+   * racing — there is no separate "live" transport, since a free-tier
+   * Firestore project cannot support streaming another player's position
+   * at frame rate. Watching a finished run, keys and all, is what is
+   * actually deliverable without a realtime backend.
+   */
+  async spectate(courseId, uid) {
+    const idx = parseInt(courseId.slice(1), 10) - 1;
+    if (!this.playable[idx]) return;
+    UI.toast('Loading run…');
+    const g = await Cloud.fetchGhost(courseId, uid);
+    if (!g) { UI.toast('That run has no ghost data.'); return; }
+    const row = (Records.board(courseId) || []).find((e) => e.uid === uid);
+    if (!this.loadLevel(idx)) return;
+    this._specRig = null;
+    this.spec = {
+      data: g, courseId, t: 0, playing: true,
+      name: (row && row.n) || 'that driver', scrubbing: false
+    };
+    this.state = 'spectate';
+    Sound.stopEngine();
+    $('specName').textContent = this.spec.name;
+    $('specCourse').textContent = LEVELS[idx].name + ' — ' + formatTime(g.t);
+    $('specT1').textContent = formatTime(g.t);
+    $('specScrub').max = String(Math.round(g.t * 1000));
+    $('specScrub').value = '0';
+    $('bSpecPlay').textContent = 'Pause';
+    this.specMesh.visible = true;
+    this.ghostMesh.visible = false;
+    this.syncSpectate(0);
+    this.chase.snap(this.specRig(0));
+    UI.show('spectate');
+  },
+
+  /** a minimal object exposing exactly what ChaseCamera reads off a car */
+  specRig() {
+    if (!this._specRig) {
+      this._specRig = { pos: new THREE.Vector3(), heading: 0, speed: 0,
+        boosting: false, grounded: true, vel: { y: 0 }, _hasPos: false };
+    }
+    return this._specRig;
+  },
+
+  /** pose the spectate mesh and camera rig at time t (seconds) into the run */
+  syncSpectate(t) {
+    const g = this.spec.data, s = g.s;
+    const n = s.length / GHOST_STRIDE;
+    const f = clamp(t * GHOST_HZ, 0, n - 1.001);
+    const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
+    const rig = this.specRig();
+    const prevPos = rig.pos.clone();
+    rig.pos.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
+    this.specMesh.position.copy(rig.pos);
+    _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
+    _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
+    this.specMesh.quaternion.copy(_gq1).slerp(_gq2, u);
+    const fwd = this._specFwd || (this._specFwd = new THREE.Vector3());
+    fwd.set(0, 0, 1).applyQuaternion(this.specMesh.quaternion);
+    if (fwd.x * fwd.x + fwd.z * fwd.z > 0.06) rig.heading = Math.atan2(fwd.x, fwd.z);
+    rig.speed = rig._hasPos ? prevPos.distanceTo(rig.pos) * GHOST_HZ : 0;
+    rig._hasPos = true;
+    rig.vel.y = 0;
+    rig.grounded = true;
+    const bits = (s[a + 7] | 0);
+    rig.boosting = !!(bits & 16);
+    setGhostFlame(this.specMesh, rig.boosting, 1 / 60);
+    UI.specKeys(bits);
+    return rig;
+  },
+
+  stepSpectate(dt) {
+    if (Input.tapped('Escape')) { this.exitSpectate(); return; }
+    if (Input.tapped('Space')) $('bSpecPlay').click();
+    if (Input.tapped('KeyR')) $('bSpecRestart').click();
+    if (!this.spec.scrubbing && this.spec.playing) {
+      this.spec.t += dt;
+      if (this.spec.t >= this.spec.data.t) {
+        this.spec.t = this.spec.data.t;
+        this.spec.playing = false;
+        $('bSpecPlay').textContent = 'Replay';
+      }
+    }
+    const rig = this.syncSpectate(this.spec.t);
+    this.chase.update(dt, rig);
+    UI.specClock(this.spec.t);
+  },
+
+  exitSpectate() {
+    this.spec = null;
+    this.specMesh.visible = false;
+    setGhostFlame(this.specMesh, false, 1);
+    this.toBoards();
   },
 
   toMenu() {
@@ -3770,8 +4143,10 @@ const Game = {
   toBoards() {
     this.state = 'boards'; this.running = false;
     Sound.stopEngine();
-    $('boardNote').textContent = 'Times are kept on this device, one table per course. ' +
-      'Change the driver name on the title screen to share the machine.';
+    $('boardNote').textContent = Cloud.on
+      ? 'Shared online leaderboards, one table per course. Race or watch anyone\'s best run.'
+      : 'Times are kept on this device, one table per course. ' +
+        'Change the driver name on the title screen to share the machine.';
     UI.boards();
     UI.show('boards');
   },
@@ -3845,32 +4220,42 @@ const Game = {
     const t1 = this.time, t0 = t1 - dt;
     const r2 = (v) => Math.round(v * 100) / 100;
     const r3 = (v) => Math.round(v * 1000) / 1000;
+    const bits = packInputBits(Input);
     const want = Math.floor(t1 * GHOST_HZ) + 1;
-    while (this.rec.length / 7 < want && this.rec.length < GHOST_MAX) {
-      const tk = (this.rec.length / 7) / GHOST_HZ;
+    while (this.rec.length / GHOST_STRIDE < want && this.rec.length < GHOST_MAX) {
+      const tk = (this.rec.length / GHOST_STRIDE) / GHOST_HZ;
       const u = dt > 1e-6 ? clamp((tk - t0) / dt, 0, 1) : 1;
       _gp.lerpVectors(this.recPrevPos, p, u);
       _gq1.copy(this.recPrevQuat).slerp(q, u);
       this.rec.push(r2(_gp.x), r2(_gp.y), r2(_gp.z),
-        r3(_gq1.x), r3(_gq1.y), r3(_gq1.z), r3(_gq1.w));
+        r3(_gq1.x), r3(_gq1.y), r3(_gq1.z), r3(_gq1.w), bits);
     }
     this.recPrevPos.copy(p);
     this.recPrevQuat.copy(q);
   },
 
-  updateGhost() {
+  updateGhost(dt) {
     const g = this.ghostData;
-    if (!g || !this.started) { this.ghostMesh.visible = false; return; }
-    const n = g.s.length / 7;
+    if (!g || !this.started) {
+      this.ghostMesh.visible = false;
+      setGhostFlame(this.ghostMesh, false, dt);
+      return;
+    }
+    const n = g.s.length / GHOST_STRIDE;
     const f = this.time * GHOST_HZ;
-    if (f >= n - 1) { this.ghostMesh.visible = false; return; }
-    const i = Math.floor(f), u = f - i, a = i * 7, b = a + 7;
+    if (f >= n - 1) {
+      this.ghostMesh.visible = false;
+      setGhostFlame(this.ghostMesh, false, dt);
+      return;
+    }
+    const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
     this.ghostMesh.visible = true;
     this.ghostMesh.position.set(
       lerp(g.s[a], g.s[b], u), lerp(g.s[a + 1], g.s[b + 1], u), lerp(g.s[a + 2], g.s[b + 2], u));
     _gq1.set(g.s[a + 3], g.s[a + 4], g.s[a + 5], g.s[a + 6]);
     _gq2.set(g.s[b + 3], g.s[b + 4], g.s[b + 5], g.s[b + 6]);
     this.ghostMesh.quaternion.copy(_gq1).slerp(_gq2, u);
+    setGhostFlame(this.ghostMesh, !!((g.s[a + 7] | 0) & 16), dt);
   },
 
   updateProgress() {
@@ -3976,7 +4361,7 @@ const Game = {
         UI.state(this.car);
         UI.boost(this.car);
         this.marks.update(this.car);
-        this.updateGhost();
+        this.updateGhost(dt);
         this.teleAcc += dt;
         if (this.teleAcc >= 0.1) { UI.telemetry(this.car); this.teleAcc = 0; }
         const onGrass = this.car.wheels.some((w) => w.contact && !w.onTrack);
@@ -3997,11 +4382,14 @@ const Game = {
       this.car.syncMesh(dt);
       this.chase.update(dt, this.car);
       UI.speed(this.car.speedFwd);
+    } else if (this.state === 'spectate') {
+      this.stepSpectate(dt);
     } else {
       this.clock += dt;
       if (this.car && this.course) this.chase.orbit(this.car.pos, this.clock);
     }
-    if (this.car) App.aimLight(this.car.pos);
+    if (this.state !== 'spectate' && this.car) App.aimLight(this.car.pos);
+    else if (this.state === 'spectate') App.aimLight(this.specMesh.position);
     UI.tick(dt);
     Input.endFrame();
     App.render();
