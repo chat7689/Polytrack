@@ -1469,6 +1469,41 @@ const Cloud = {
   },
 
   /**
+   * Live version of pull()'s boards/cleared/myBests transform — subscribes
+   * to the whole bests collection with onSnapshot instead of a one-shot
+   * getDocs, so the leaderboards screen updates the instant anyone posts a
+   * new time, with no reload needed. Deliberately leaves credits alone
+   * (pull() already covers that at sign-in, and credits changing has
+   * nothing to do with the boards screen being open). Returns an
+   * unsubscribe fn; the caller is responsible for calling it the moment
+   * the boards screen is left, so this never keeps listening in the
+   * background burning free-tier read quota for no reason. */
+  watchBoards(onChange) {
+    if (!this.on) return () => {};
+    const { fsMod } = this.fb;
+    const { collection, onSnapshot, query, where } = fsMod;
+    return onSnapshot(query(collection(this.db, 'bests'), where('banned', '==', false)), (snap) => {
+      const boards = {}, cleared = {}, myBests = {};
+      snap.forEach((d) => {
+        const r = d.data();
+        if (!r || typeof r.timeMs !== 'number' || !r.courseId) return;
+        (boards[r.courseId] = boards[r.courseId] || []).push({
+          n: r.displayName || 'Driver', t: r.timeMs / 1000, d: r.updatedMs || 0, uid: r.uid
+        });
+        if (this.user && r.uid === this.user.uid) {
+          cleared[r.courseId] = true;
+          myBests[r.courseId] = r.timeMs / 1000;
+        }
+      });
+      for (const k in boards) {
+        boards[k].sort((a, b) => a.t - b.t);
+        boards[k] = boards[k].slice(0, 10);
+      }
+      onChange({ boards, cleared, myBests });
+    });
+  },
+
+  /**
    * Push a personal best. The bests document id is the player's own uid and the
    * course, so nobody can write into anyone else's row, and the award event id
    * is derived the same way, which makes the credit idempotent — claiming it
@@ -4597,6 +4632,7 @@ const Game = {
   lobby: null, lobbyEntries: [], lobbyUnwatch: null,
   _lockedRaceId: null, _settlingRace: null, _nextLobbyTimer: null,
   _startingCountdownFor: null, _startingRaceFor: null,
+  boardsUnwatch: null,
 
   boot() {
     buildMaterials();
@@ -5322,8 +5358,17 @@ const Game = {
     this.state = 'menu'; this.running = false;
     Sound.stopEngine();
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
+    this.stopWatchingBoards();
     UI.show('menu');
     this.flushPendingAuth();
+  },
+  /** tears down the live boards subscription — called from toMenu() since
+   *  that is the one place every path away from the boards screen passes
+   *  through (the "watch this run" button leads to spectate, but exiting
+   *  spectate returns to toBoards() again, so the subscription should
+   *  survive that round trip rather than restarting for no reason). */
+  stopWatchingBoards() {
+    if (this.boardsUnwatch) { this.boardsUnwatch(); this.boardsUnwatch = null; }
   },
   toSelect() {
     this.state = 'select'; this.running = false;
@@ -5336,12 +5381,24 @@ const Game = {
     this.state = 'boards'; this.running = false;
     Sound.stopEngine();
     $('boardNote').textContent = Cloud.on
-      ? 'Shared online leaderboards, one table per course. Race or watch anyone\'s best run.'
+      ? 'Shared leaderboards, one table per course, updating live. Race or watch anyone\'s best run.'
       : 'Times are kept on this device, one table per course. ' +
         'Change the driver name on the title screen to share the machine.';
     UI.boards();
     UI.show('boards');
     this.flushPendingAuth();
+    // Live-updates the boards screen with no reload needed — started once
+    // per visit (harmless to call again: watchBoards() only ever runs one
+    // onSnapshot per call, and the previous one was already torn down by
+    // toMenu() on the way out, or was never started in local/offline mode).
+    if (Cloud.on && !this.boardsUnwatch) {
+      this.boardsUnwatch = Cloud.watchBoards((remote) => {
+        Records.data.boards = remote.boards;
+        Records.data.cleared = remote.cleared;
+        Records.data.myBests = remote.myBests;
+        if (this.state === 'boards') UI.boards();
+      });
+    }
   },
 
   toSettings() {
