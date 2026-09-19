@@ -520,6 +520,7 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
         way back to the menu once you start, so take a breath now. Your fastest of the three counts.</p>
       <div class="row">
         <button class="primary" id="bRevealGo">Go</button>
+        <button class="ghost" id="bRevealSignOut" style="margin-left:auto">Sign out</button>
       </div>
     </div>
   </div>
@@ -1149,6 +1150,18 @@ const Cloud = {
   async signOut() {
     Game.confirmedUid = null;
     await this.fb.authMod.signOut(this.auth);
+    // A player clicking "Sign out" is a deliberate, explicit action, not
+    // an incidental auth blip — it must take effect immediately regardless
+    // of what screen it was clicked from, unlike the passive
+    // onAuthStateChanged listener (Game.onAuth's own call from watch())
+    // which deliberately defers over an active run so a stray network
+    // hiccup can't yank the gate up mid-drive. Forcing it here is what
+    // makes the Sign out button on the race-reveal screen actually work
+    // instead of silently queuing behind that deferral forever (a locked
+    // race attempt has no other screen to "get back to" that would ever
+    // flush it).
+    Game.authPending = false;
+    await Game.onAuth(this.user, this.profile, true);
   },
 
   /**
@@ -4645,6 +4658,7 @@ const Game = {
   lobby: null, lobbyEntries: [], lobbyUnwatch: null,
   _lockedRaceId: null, _settlingRace: null, _nextLobbyTimer: null,
   _startingCountdownFor: null, _startingRaceFor: null,
+  _joinedRaceId: null, _joinedEntry: null,
   boardsUnwatch: null,
 
   boot() {
@@ -4739,14 +4753,21 @@ const Game = {
    * a later "no profile" report for that *same* uid is treated as a fetch
    * problem to retry, not a reason to boot the player back to the gate.
    */
-  async onAuth(user, profile) {
+  async onAuth(user, profile, force) {
     // 'race' and 'creditsrun' are active-driving states exactly like 'play'
     // (added after this check was first written, and missed then) — an
     // auth blip mid-attempt in either one must not be able to yank the
     // gate up over the player any more than it can during a campaign run.
-    const interruptible = this.state !== 'play' && this.state !== 'spectate'
+    // `force` bypasses all of that: it means this call came from the
+    // player explicitly clicking Sign out, not from the passive
+    // onAuthStateChanged listener noticing an incidental change, so it
+    // must take effect immediately — otherwise a sign-out clicked from a
+    // locked race screen would just queue behind this deferral forever,
+    // since a locked race attempt has no other screen to "get back to"
+    // that would ever flush it.
+    const interruptible = force || (this.state !== 'play' && this.state !== 'spectate'
       && this.state !== 'result' && this.state !== 'race' && this.state !== 'creditsrun'
-      && this.state !== 'raceReveal' && this.state !== 'raceBetween';
+      && this.state !== 'raceReveal' && this.state !== 'raceBetween');
     if (!interruptible) {
       // Don't yank the gate up over an active run or a replay someone is
       // watching — re-check once they get back to a safe screen instead.
@@ -4758,6 +4779,9 @@ const Game = {
     const knownGoodUid = this.confirmedUid;
     if (!user) {
       if (knownGoodUid) return; // an explicit signOut() clears confirmedUid itself
+      if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
+      this.stopWatchingBoards();
+      this.lobby = null; this.lobbyEntries = [];
       UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate'; return;
     }
     if (!profile) {
@@ -4882,8 +4906,23 @@ const Game = {
   renderLobbyCard() {
     $('raceLobbyCard').hidden = !this.lobby;
     if (!this.lobby) return;
-    const race = this.lobby, entries = this.lobbyEntries;
-    const mine = Cloud.user && entries.find((e) => e.uid === Cloud.user.uid);
+    const race = this.lobby;
+    // A join that already landed locally (see joinCurrentRace) is
+    // authoritative over a live entries snapshot that simply hasn't
+    // caught up yet — the race document and the entries subcollection are
+    // two independent Firestore listeners with no ordering guarantee
+    // between them, so a race-doc update can legitimately arrive a beat
+    // before the entries update that would otherwise confirm "you're in".
+    // Without this, the join form could flash back on screen right after
+    // joining, and a click on it then would be rejected server-side (the
+    // rules correctly refuse a second buy-in) but look to the player like
+    // joining silently failed. Folding it into the entries list here too
+    // keeps the joined-count/pot text from briefly undercounting for the
+    // same reason.
+    const haveMine = Cloud.user && this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
+    const pending = !haveMine && this._joinedRaceId === race.id ? this._joinedEntry : null;
+    const entries = pending ? this.lobbyEntries.concat([pending]) : this.lobbyEntries;
+    const mine = haveMine || pending;
     const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
 
     const badge = $('lobbyStageBadge');
@@ -5027,6 +5066,15 @@ const Game = {
     });
     $('bnOut').addEventListener('click', () => Cloud.signOut());
     $('whoOut').addEventListener('click', () => Cloud.signOut());
+    // The one point in the locked race sequence where signing out is
+    // offered — between attempts, never mid-drive. Doing this forfeits
+    // the buy-in exactly like any other DNF (no special-cased refund),
+    // since leaving with attempts still unused is functionally identical
+    // to just not finishing them.
+    $('bRevealSignOut').addEventListener('click', () => {
+      if (!confirm('Sign out now? You will forfeit your race buy-in, same as any other unfinished attempt.')) return;
+      Cloud.signOut();
+    });
 
     $('bDrive').addEventListener('click', () => {
       let i = LEVELS.findIndex((l, k) => this.playable[k] && !Records.cleared('c' + (k + 1)));
@@ -5493,6 +5541,16 @@ const Game = {
     const raw = $('lobbyBuyIn').value.trim();
     const buyIn = parseInt(raw, 10);
     if (!this.lobby) return;
+    // Already joined — this can still be reached by a stray click on a
+    // stale render (see renderLobbyCard's note on the two independent
+    // listeners), so bail out the same way the hidden join box normally
+    // would, instead of sending a doomed second buy-in that the rules
+    // will just reject anyway.
+    if (this._joinedRaceId === this.lobby.id
+      || (Cloud.user && this.lobbyEntries.some((e) => e.uid === Cloud.user.uid))) {
+      this.renderLobbyCard();
+      return;
+    }
     if (!raw || !isFinite(buyIn) || buyIn <= 0 || String(buyIn) !== raw) {
       msg.textContent = 'Enter a whole number of credits, at least 1.';
       return;
@@ -5510,10 +5568,14 @@ const Game = {
       msg.textContent = '';
       $('lobbyBuyIn').value = '';
       // Don't wait on the next Firestore snapshot to flip into the
-      // "you're in" state — update this client's own view immediately.
-      this.lobbyEntries = this.lobbyEntries.filter((e) => e.uid !== Cloud.user.uid).concat([
-        { uid: Cloud.user.uid, displayName: Cloud.name(), buyIn, attempts: [], bestTimeMs: null }
-      ]);
+      // "you're in" state — update this client's own view immediately,
+      // and remember this join independently of the live entries array
+      // (see renderLobbyCard) so a race-doc snapshot that outruns the
+      // matching entries snapshot can never flip the join form back on.
+      const myEntry = { uid: Cloud.user.uid, displayName: Cloud.name(), buyIn, attempts: [], bestTimeMs: null };
+      this._joinedRaceId = this.lobby.id;
+      this._joinedEntry = myEntry;
+      this.lobbyEntries = this.lobbyEntries.filter((e) => e.uid !== Cloud.user.uid).concat([myEntry]);
       this.renderLobbyCard();
     } catch (e) { msg.textContent = e.message || 'Could not join.'; }
     $('bLobbyJoin').disabled = false;
