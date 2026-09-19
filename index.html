@@ -88,7 +88,13 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   display:flex;align-items:center;gap:10px}
 .specBar input[type=range]{flex:1;accent-color:var(--ember)}
 .specBar span{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
-.specCtl{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.specCtl{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.specGraph{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:min(70vw,520px);
+  height:40px;display:flex;align-items:center;gap:10px}
+.specGraph svg{flex:1;height:40px;background:rgba(7,11,24,.45);border:1px solid var(--rule);
+  border-radius:2px}
+.specGraphLabel{font-family:var(--mono);font-size:12px;color:var(--aqua);white-space:nowrap;
+  width:64px;text-align:right}
 
 /* ---------- panels ---------- */
 .scrim{position:absolute;inset:0;background:
@@ -291,6 +297,13 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
       <div class="specCtl">
         <button class="ghost small" id="bSpecPlay">Pause</button>
         <button class="ghost small" id="bSpecRestart">Restart</button>
+      </div>
+      <div class="specGraph">
+        <svg id="specSpeedSvg" viewBox="0 0 300 40" preserveAspectRatio="none">
+          <path id="specSpeedPath" d="" fill="none" stroke="#3ddbb8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          <line id="specSpeedHead" x1="0" y1="0" x2="0" y2="40" stroke="#f2733f" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <span class="specGraphLabel" id="specSpeedNow">0 km/h</span>
       </div>
       <div class="specBar">
         <span id="specT0">0:00</span>
@@ -5280,6 +5293,7 @@ const Game = {
     $('specScrub').max = String(Math.round(g.t * 1000));
     $('specScrub').value = '0';
     $('bSpecPlay').textContent = 'Pause';
+    this.buildSpeedGraph(g);
     this.specMesh.visible = true;
     this.ghostMesh.visible = false;
     this.syncSpectate(0);
@@ -5294,6 +5308,60 @@ const Game = {
         boosting: false, grounded: true, vel: { y: 0 }, _hasPos: false };
     }
     return this._specRig;
+  },
+
+  /**
+   * Precomputes the whole run's speed-over-time sparkline once per loaded
+   * run, from the same ghost samples own-best chasing and spectate replay
+   * already use — speed at each sample is just the distance to the
+   * previous sample times GHOST_HZ, exactly what syncSpectate's rig.speed
+   * computes per frame, just done once up front for the whole run instead
+   * of frame by frame. No new data collection: this is entirely derived
+   * from samples already recorded and stored for the ghost itself.
+   */
+  buildSpeedGraph(g) {
+    const s = g.s, n = s.length / GHOST_STRIDE;
+    const speeds = new Array(n);
+    speeds[0] = 0;
+    let maxSpeed = 0;
+    const p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
+    for (let i = 1; i < n; i++) {
+      p0.set(s[(i - 1) * GHOST_STRIDE], s[(i - 1) * GHOST_STRIDE + 1], s[(i - 1) * GHOST_STRIDE + 2]);
+      p1.set(s[i * GHOST_STRIDE], s[i * GHOST_STRIDE + 1], s[i * GHOST_STRIDE + 2]);
+      const v = p0.distanceTo(p1) * GHOST_HZ;
+      speeds[i] = v;
+      if (v > maxSpeed) maxSpeed = v;
+    }
+    this.spec.speeds = speeds;
+    this.spec.maxSpeed = Math.max(maxSpeed, 1);
+    // Build the sparkline path once — a fixed 300x40 viewBox regardless of
+    // the on-screen size, scaled up by the SVG itself, so this never has
+    // to be rebuilt as the window resizes.
+    const W = 300, H = 40, PAD = 3;
+    let d = '';
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * W;
+      const y = H - PAD - (speeds[i] / this.spec.maxSpeed) * (H - PAD * 2);
+      d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    }
+    $('specSpeedPath').setAttribute('d', d);
+    this.updateSpeedHead(0);
+  },
+
+  /** moves the playhead line and live speed readout to time t (seconds) —
+   *  called every spectate frame alongside the existing scrub bar update,
+   *  not replacing it. */
+  updateSpeedHead(t) {
+    const sp = this.spec;
+    if (!sp || !sp.speeds) return;
+    const n = sp.speeds.length;
+    const f = clamp(t * GHOST_HZ, 0, n - 1);
+    const x = (f / Math.max(n - 1, 1)) * 300;
+    $('specSpeedHead').setAttribute('x1', x.toFixed(1));
+    $('specSpeedHead').setAttribute('x2', x.toFixed(1));
+    const i = Math.min(n - 1, Math.round(f));
+    // m/s -> km/h for a more readable HUD figure than the raw simulation unit
+    $('specSpeedNow').textContent = Math.round(sp.speeds[i] * 3.6) + ' km/h';
   },
 
   /** pose the spectate mesh and camera rig at time t (seconds) into the run */
@@ -5338,6 +5406,7 @@ const Game = {
     const rig = this.syncSpectate(this.spec.t);
     this.chase.update(dt, rig);
     UI.specClock(this.spec.t);
+    this.updateSpeedHead(this.spec.t);
   },
 
   exitSpectate() {
