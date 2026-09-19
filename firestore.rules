@@ -241,6 +241,20 @@ service cloud.firestore {
               && request.resource.data.diff(resource.data).affectedKeys()
                    .hasOnly(['attempts', 'bestTimeMs'])
               && request.resource.data.attempts.size() <= 3;
+        // Setting placement/payout is settlement's job, done once by
+        // whichever signed-in player's client notices the race clock ran
+        // out — there is no admin gate any more, so this is checked the
+        // same way the race document's own running->settled transition
+        // is: only once the parent race is actually running and endsAt
+        // has genuinely passed. (Rules can't see sibling writes in the
+        // same batch, so this can't also require the race doc to already
+        // read back as 'settled' — the timing check on the race's own
+        // endsAt is the equivalent guarantee.)
+        allow update: if signedIn()
+              && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['placement', 'payout'])
+              && get(/databases/$(database)/documents/races/$(raceId)).data.state == 'running'
+              && request.time >= get(/databases/$(database)/documents/races/$(raceId)).data.endsAt;
         allow delete: if false;
       }
     }
