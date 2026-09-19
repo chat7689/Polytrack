@@ -212,6 +212,20 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
 .race-banner[hidden]{display:none}
 .race-banner b{display:block;font-size:14px}
 .race-banner .dim{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+.dim{color:var(--dim)}
+.race-stage{font-family:var(--mono);font-size:11px;letter-spacing:.12em;padding:5px 11px;
+  border-radius:999px;font-weight:600}
+.race-stage.lobby{background:rgba(255,207,92,.15);color:var(--signal);
+  border:1px solid rgba(255,207,92,.4)}
+.race-stage.running{background:rgba(61,219,184,.15);color:var(--aqua);
+  border:1px solid rgba(61,219,184,.4)}
+.race-stage.settled{background:rgba(234,240,248,.08);color:var(--dim);
+  border:1px solid var(--rule)}
+.race-mine{background:rgba(61,219,184,.1);border:1px solid rgba(61,219,184,.35);
+  border-radius:2px;padding:11px 16px;margin-bottom:16px;font-size:13px}
+.race-mine[hidden]{display:none}
+.race-mine b{color:var(--aqua)}
+.race-waiting{color:var(--dim);font-size:12.5px}
 .boot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;
   color:#2b4364;text-shadow:none}
 </style>
@@ -450,10 +464,21 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
   <div class="layer" id="race" hidden>
     <div class="scrim"></div>
     <div class="panel" style="width:min(640px,94vw)">
-      <h2 class="big">Race</h2>
-      <p class="lede" id="raceState" style="margin-bottom:20px">—</p>
+      <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:4px">
+        <h2 class="big" style="margin-bottom:0">Race</h2>
+        <span class="race-stage" id="raceStageBadge">LOBBY</span>
+      </div>
+      <p class="lede" id="raceCourseLine" style="margin-bottom:4px;font-weight:600"></p>
+      <p class="lede" id="raceState" style="margin-bottom:18px">—</p>
+
+      <div id="raceMineBox" class="race-mine" hidden>
+        You’re in — you bought in for <b id="raceMineBuyIn">0</b> credits.
+      </div>
 
       <div id="raceJoinBox" hidden>
+        <p class="lede" style="font-size:12.5px;margin-bottom:10px">Choose how many of your
+          <b id="raceJoinCredits">0</b> credits to stake. Placing better and staking more both
+          increase your share of the pot — but a run with no finish forfeits the whole stake.</p>
         <label class="fld" for="raceBuyIn">Buy-in (credits)</label>
         <input type="text" id="raceBuyIn" inputmode="numeric" style="width:140px">
         <div class="row" style="margin-top:12px">
@@ -462,15 +487,18 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
         <div class="err" id="raceJoinMsg"></div>
       </div>
 
+      <p class="lede" id="raceEmptyNote" style="font-size:12.5px" hidden>Nobody has joined yet.</p>
       <table id="raceTable" style="margin-top:10px">
         <thead><tr><th></th><th>Driver</th><th style="text-align:right">Buy-in</th>
           <th style="text-align:right">Best</th><th style="text-align:right" id="raceLastCol"></th></tr></thead>
         <tbody id="raceRows"></tbody>
       </table>
 
-      <div class="row" id="raceDriveRow" style="margin-top:16px" hidden>
+      <div id="raceDriveRow" style="margin-top:16px" hidden>
+        <p class="lede" style="font-size:12.5px;margin-bottom:10px" id="raceDriveNote"></p>
         <button class="primary" id="bRaceDrive">Drive — attempt <span id="raceAttemptNum">1</span> of 3</button>
       </div>
+      <p class="lede race-waiting" id="raceWaitingNote" style="margin-top:16px" hidden></p>
 
       <div class="rule"></div>
       <div class="row">
@@ -4588,7 +4616,9 @@ const Game = {
     $('raceBannerTitle').textContent = mine.state === 'lobby'
       ? 'A race is open to join' : 'A race is in progress';
     if (mine.state === 'lobby') {
-      $('raceBannerSub').textContent = 'Buy in before the admin starts it.';
+      $('raceBannerSub').textContent = joined
+        ? 'You’re in — waiting for the admin to start.'
+        : 'Stake some credits before the admin starts it.';
     } else {
       // Someone deciding whether it's worth joining the next one needs to
       // see how much of this one is actually left, not just "in progress".
@@ -5043,6 +5073,8 @@ const Game = {
     if (!id) { this.toMenu(); return; }
     this.state = 'racehub'; this.running = false;
     Sound.stopEngine();
+    $('raceBuyIn').value = '';
+    $('raceJoinMsg').textContent = '';
     if (this.race && this.race.unwatch && this.race.id !== id) this.race.unwatch();
     if (!this.race || this.race.id !== id) {
       const unwatch = Cloud.watchRace(id, (race, entries) => this.onRaceUpdate(race, entries));
@@ -5070,29 +5102,66 @@ const Game = {
     const race = this.race.doc, entries = this.race.entries;
     const mine = Cloud.user && entries.find((e) => e.uid === Cloud.user.uid);
     const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
+    const settled = race.state === 'settled';
+    const idx = LEVELS.findIndex((l, i) => this.id(i) === race.courseId);
+    const courseName = idx >= 0 ? LEVELS[idx].name : null;
+
+    // A badge plus a one-line course name up top makes the current stage
+    // legible at a glance, instead of only being buried in a sentence.
+    const badge = $('raceStageBadge');
+    badge.className = 'race-stage ' + race.state;
+    badge.textContent = race.state.toUpperCase();
+    $('raceCourseLine').textContent = courseName || '';
+    $('raceCourseLine').hidden = !courseName;
 
     if (race.state === 'lobby') {
-      $('raceState').textContent = entries.length + ' joined — pot ' + pot + ' credits. ' +
-        'Waiting for the admin to start.';
+      $('raceState').textContent = entries.length + ' joined so far, staking ' + pot +
+        ' credits total. The admin picks a random course and starts the clock when ready.';
     } else if (race.state === 'running') {
-      const idx = LEVELS.findIndex((l, i) => this.id(i) === race.courseId);
-      const name = idx >= 0 ? LEVELS[idx].name : race.courseId;
       const remain = race.endsAt ? Math.max(0, Math.round((race.endsAt - Date.now()) / 1000)) : 0;
-      $('raceState').textContent = 'Racing ' + name + ' — pot ' + pot + ' credits. ' +
-        (remain > 0 ? Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0') + ' left.'
-          : 'Time’s up — finishing up.');
+      const left = Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
+      $('raceState').textContent = pot + ' credits in the pot. ' +
+        (remain > 0 ? left + ' left to drive.' : 'Time’s up — finishing up.');
     } else {
-      $('raceState').textContent = 'Race settled — pot ' + pot + ' credits paid out.';
+      $('raceState').textContent = pot + ' credits paid out. Standings below are final.';
     }
+
+    // "You're in" confirmation stays visible the whole time once joined,
+    // separate from the standings table, so it never has to be inferred
+    // from scanning your own row in a list.
+    $('raceMineBox').hidden = !mine;
+    if (mine) $('raceMineBuyIn').textContent = mine.buyIn;
 
     $('raceJoinBox').hidden = !(race.state === 'lobby' && !mine);
-    $('raceDriveRow').hidden = !(race.state === 'running' && mine
-      && (mine.attempts || []).length < 3);
-    if (!$('raceDriveRow').hidden) {
-      $('raceAttemptNum').textContent = String((mine.attempts || []).length + 1);
+    if (!$('raceJoinBox').hidden) $('raceJoinCredits').textContent = Cloud.credits || 0;
+
+    const canDrive = race.state === 'running' && mine && (mine.attempts || []).length < 3;
+    $('raceDriveRow').hidden = !canDrive;
+    if (canDrive) {
+      const n = (mine.attempts || []).length + 1;
+      $('raceAttemptNum').textContent = String(n);
+      $('raceDriveNote').textContent = n === 1
+        ? 'Your fastest of up to 3 attempts counts.'
+        : (mine.attempts.length) + ' down, ' + (3 - mine.attempts.length) + ' to go — only your best time counts.';
     }
 
-    const settled = race.state === 'settled';
+    // Cover every other state explicitly instead of leaving a blank gap
+    // between the standings table and the back button: waiting for the
+    // race to start, done with your attempts, or just watching someone
+    // else's race you didn't join.
+    let waiting = '';
+    if (race.state === 'running' && mine && (mine.attempts || []).length >= 3) {
+      waiting = 'All 3 attempts used — your best stands. Waiting for the race to end.';
+    } else if (race.state === 'running' && !mine) {
+      waiting = 'This race already started, so it’s too late to join — watching the standings live.';
+    } else if (race.state === 'lobby' && mine) {
+      waiting = 'Waiting for the admin to start the race.';
+    }
+    $('raceWaitingNote').hidden = !waiting;
+    $('raceWaitingNote').textContent = waiting;
+
+    $('raceEmptyNote').hidden = entries.length > 0;
+    $('raceTable').hidden = entries.length === 0;
     $('raceLastCol').textContent = settled ? 'Payout' : 'Attempts';
     const rows = entries.slice().sort((a, b) => {
       if (settled) return (a.placement || 999) - (b.placement || 999);
@@ -5106,23 +5175,42 @@ const Game = {
         : (e.attempts || []).length + ' / 3';
       const place = settled && e.placement ? e.placement + '.' : '';
       return '<tr class="' + (isMe ? 'me' : '') + '"><td class="r">' + place + '</td><td>' +
-        escapeHtml(e.displayName || '—') + '</td><td class="t">' + e.buyIn + '</td>' +
+        escapeHtml(e.displayName || '—') + (isMe ? ' <span class="dim">(you)</span>' : '') +
+        '</td><td class="t">' + e.buyIn + '</td>' +
         '<td class="t">' + best + '</td><td class="t">' + last + '</td></tr>';
     }).join('');
   },
 
   async joinCurrentRace() {
     const msg = $('raceJoinMsg');
-    const buyIn = parseInt($('raceBuyIn').value, 10);
+    const raw = $('raceBuyIn').value.trim();
+    const buyIn = parseInt(raw, 10);
     if (!this.race) return;
-    if (!isFinite(buyIn) || buyIn <= 0) { msg.textContent = 'Enter a whole number of credits.'; return; }
+    if (!raw || !isFinite(buyIn) || buyIn <= 0 || String(buyIn) !== raw) {
+      msg.textContent = 'Enter a whole number of credits, at least 1.';
+      return;
+    }
+    if (buyIn > (Cloud.credits || 0)) {
+      msg.textContent = 'You only have ' + (Cloud.credits || 0) + ' credits.';
+      return;
+    }
     $('bRaceJoin').disabled = true;
-    msg.textContent = 'Working…';
+    msg.textContent = 'Joining…';
     try {
       await Cloud.joinRace(this.race.id, buyIn);
       Records.credits = Cloud.credits;
       UI.who(Cloud.name(), Records.credits);
       msg.textContent = '';
+      $('raceBuyIn').value = '';
+      // Don't wait on the next Firestore snapshot to flip the join box
+      // into the "you're in" state — update this client's own view of its
+      // entry immediately so the screen reacts the instant the join lands.
+      if (this.race && this.race.entries) {
+        this.race.entries = this.race.entries.filter((e) => e.uid !== Cloud.user.uid).concat([
+          { uid: Cloud.user.uid, displayName: Cloud.name(), buyIn, attempts: [], bestTimeMs: null }
+        ]);
+      }
+      this.renderRace();
     } catch (e) { msg.textContent = e.message || 'Could not join.'; }
     $('bRaceJoin').disabled = false;
   },
@@ -5205,7 +5293,11 @@ const Game = {
     $('rKick').textContent = 'Credits run';
     $('rName').textContent = LEVELS[this.levelIndex].name;
     $('rTime').textContent = formatTime(this.time);
-    $('rSub').textContent = 'This run doesn’t count toward times or leaderboards.';
+    // Awarding the credit is asynchronous, so the result screen must not
+    // just say "you got a credit" and hope — it shows "Awarding…" first,
+    // then the real outcome once the write actually resolves, so the
+    // credit landing (or not) is never only a toast that can be missed.
+    $('rSub').textContent = 'Awarding your credit…';
     $('rBoardHd').textContent = '';
     $('rBoard').innerHTML = '';
     $('rCampaignRow').hidden = true;
@@ -5221,9 +5313,11 @@ const Game = {
       // next full sign-in re-hydrates it.
       Records.credits = Cloud.credits;
       UI.who(Cloud.name(), Records.credits);
+      $('rSub').textContent = '+1 credit — you now have ' + Records.credits + '. Doesn’t count toward times or leaderboards.';
       UI.toast('+1 credit');
     } catch (e) {
       console.warn('Skyframe: could not award the credits-run credit', e && e.message);
+      $('rSub').textContent = 'Could not award the credit — check your connection and try again.';
       UI.toast('Could not save that credit — check your connection.');
     }
   },
