@@ -94,10 +94,21 @@ service cloud.firestore {
     //                            document would never see it and always
     //                            fail. Same trust level as a lap time —
     //                            self-reported, moderated after the fact.
-    //   {uid}_{raceId}_payout    a race payout, admin-only, delta>0 — the
-    //                            actual amount is trusted from the admin's
-    //                            settlement the same way every other
-    //                            admin-authored write in this file is.
+    //   {uid}_{raceId}_payout    a race payout. There is no admin/backend
+    //                            role in race settlement any more — any
+    //                            signed-in player's client may notice the
+    //                            race timer ran out and write every
+    //                            finisher's payout, same trust level a lap
+    //                            time already has (self-reported, not
+    //                            cross-checked against the pot here for
+    //                            the same batch-visibility reason the
+    //                            _buyin case above can't be cross-checked
+    //                            either — moderated after the fact, not
+    //                            enforced at write time). delta may be
+    //                            zero (a DNF-refund-everyone settlement
+    //                            still "pays out" each player their own
+    //                            buy-in back) but never negative — a
+    //                            payout can't also be used to debit.
     //   {uid}_{anything}_adjust  an admin manually setting a player's
     //                            balance from the panel — any sign, any
     //                            size, purely at admin discretion.
@@ -114,8 +125,9 @@ service cloud.firestore {
             && request.resource.data.delta is number
             && request.resource.data.delta < 0 && request.resource.data.delta > -1000000)
         ))
-        || (isAdmin() && docId.matches('.+_' + request.resource.data.raceId + '_payout')
-            && request.resource.data.delta is number && request.resource.data.delta > 0)
+        || (signedIn() && docId.matches('.+_' + request.resource.data.raceId + '_payout')
+            && request.resource.data.delta is number
+            && request.resource.data.delta >= 0 && request.resource.data.delta < 1000000)
         || (isAdmin() && docId.matches(request.resource.data.uid + '_.+_adjust')
             && request.resource.data.delta is number);
       allow update, delete: if false;
@@ -140,39 +152,95 @@ service cloud.firestore {
         || (signedIn() && docId.split('_')[0] == request.auth.uid);
     }
 
-    // Admin-run buy-in races. The race document itself (state, chosen
-    // course, timing, pot) is admin-authored only — a player never writes
-    // it, only their own entry subdocument, so there is one clear author
-    // for anything that affects every participant at once.
+    // Admin-free buy-in races. There is no backend, so every transition
+    // below is triggered by whichever signed-in player's client notices
+    // it should happen — the same trust level lap times already have.
+    // Each rule constrains the *shape* of one specific state transition,
+    // not who may attempt it; nothing here can verify e.g. "were there
+    // really 2+ entries" (a subcollection count isn't cheaply readable
+    // from a rule), so that safety property is enforced by client logic
+    // choosing when to attempt the write, not by the rule itself.
+    //
+    // States: lobby -> starting -> running -> settled.
+    //   lobby     just created, no courseId yet, players joining.
+    //   starting  2+ joined; a 60s joinDeadline is set so late arrivals
+    //             can still get in before the course is picked.
+    //   running   joinDeadline passed; courseId chosen and written for
+    //             the first time here — this is also what makes "you
+    //             can't see the course before it starts" true: the field
+    //             simply doesn't exist before this transition, and
+    //             Firestore has no per-field read restriction, so this
+    //             is the only honest way to hide it.
+    //   settled   endsAt passed; payouts written to creditEvents
+    //             separately (see creditEvents' _payout case above).
     match /races/{raceId} {
       allow get, list: if signedIn();
-      allow create, update: if isAdmin();
+
+      // Anyone may open the next lobby once none is open. Two players'
+      // clients racing to do this is harmless — whichever create lands
+      // first wins, the loser's local state just gets corrected by the
+      // next snapshot of the query that found nothing open.
+      allow create: if signedIn()
+        && request.resource.data.state == 'lobby'
+        && !request.resource.data.keys().hasAny(['courseId'])
+        && request.resource.data.pot == 0;
+
+      // lobby -> starting: only state + joinDeadline change, and the
+      // deadline must actually be in the future (roughly now+60s, given
+      // some slack for the writer's own clock).
+      allow update: if signedIn()
+        && resource.data.state == 'lobby' && request.resource.data.state == 'starting'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['state', 'joinDeadline'])
+        && request.resource.data.joinDeadline is timestamp
+        && request.resource.data.joinDeadline > request.time;
+
+      // starting -> running: only once the join window has genuinely
+      // elapsed; picks and locks in the course for the first time.
+      allow update: if signedIn()
+        && resource.data.state == 'starting' && request.resource.data.state == 'running'
+        && request.time >= resource.data.joinDeadline
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['state', 'courseId', 'startedAt', 'endsAt'])
+        && request.resource.data.courseId is string
+        && request.resource.data.startedAt is timestamp
+        && request.resource.data.endsAt is timestamp;
+
+      // running -> settled: only once the race clock has genuinely run
+      // out; payouts themselves are separate creditEvents writes, not
+      // part of this document at all.
+      allow update: if signedIn()
+        && resource.data.state == 'running' && request.resource.data.state == 'settled'
+        && request.time >= resource.data.endsAt
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['state', 'settledBy'])
+        && request.resource.data.settledBy == request.auth.uid;
+
       allow delete: if false;
 
       match /entries/{uid} {
         allow get, list: if signedIn();
         // A player creates their own entry once, when they join — the
         // buyIn is fixed at that moment and never changes afterward.
+        // Joining is only meaningful before the course is locked in, so
+        // this is restricted to lobby/starting, checked via the parent
+        // race document.
         allow create: if signedIn() && request.auth.uid == uid
           && request.resource.data.uid == uid
           && request.resource.data.buyIn is number
           && request.resource.data.buyIn > 0 && request.resource.data.buyIn < 1000000
           && request.resource.data.attempts == []
           && request.resource.data.keys().hasOnly(
-               ['uid', 'displayName', 'buyIn', 'attempts', 'bestTimeMs']);
-        // Recording attempts is the player's own job as they drive; setting
-        // placement/payout is the admin's job alone, once, at settlement —
-        // two disjoint field sets so neither side can touch the other's.
+               ['uid', 'displayName', 'buyIn', 'attempts', 'bestTimeMs'])
+          && get(/databases/$(database)/documents/races/$(raceId)).data.state in ['lobby', 'starting'];
+        // Recording attempts is the player's own job as they drive.
         // Capped at 3 attempts server-side, not just by the UI hiding the
         // Drive button once used up — that hides the button, it does not
         // stop a direct write.
-        allow update: if (signedIn() && request.auth.uid == uid
+        allow update: if signedIn() && request.auth.uid == uid
               && request.resource.data.diff(resource.data).affectedKeys()
                    .hasOnly(['attempts', 'bestTimeMs'])
-              && request.resource.data.attempts.size() <= 3)
-            || (isAdmin()
-              && request.resource.data.diff(resource.data).affectedKeys()
-                   .hasOnly(['placement', 'payout']));
+              && request.resource.data.attempts.size() <= 3;
         allow delete: if false;
       }
     }

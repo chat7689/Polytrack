@@ -95,39 +95,6 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
         guessed by repeated sign-up attempts, and each attempt spends your daily write quota.</small>
     </div>
 
-    <h2>RACES</h2>
-    <div class="card" id="raceCard">
-      <div class="msg" id="raceTopMsg"></div>
-      <div id="raceIdle">
-        <p class="note" style="margin-bottom:14px">Starts a lobby players can join and buy into from
-          their main screen. When you start it, a random course is picked and everyone gets 10 minutes
-          and up to 3 attempts each.</p>
-        <button class="primary" id="btnNewRace">Start a new race lobby</button>
-      </div>
-      <div id="raceActive" class="hide">
-        <div class="row" style="justify-content:space-between;align-items:flex-start">
-          <div>
-            <div id="raceStateLine" class="note" style="margin-bottom:4px"></div>
-            <div class="code" id="racePot" style="font-size:16px">0 credits</div>
-          </div>
-          <div class="row">
-            <button class="primary" id="btnStartRace">Start race</button>
-            <button class="danger" id="btnEndRace">End race now</button>
-          </div>
-        </div>
-        <table style="margin-top:16px">
-          <thead><tr><th>Driver</th><th style="text-align:right">Buy-in</th>
-            <th style="text-align:right">Best</th><th style="text-align:right">Place</th>
-            <th style="text-align:right">Payout</th></tr></thead>
-          <tbody id="raceEntries"></tbody>
-        </table>
-        <div class="msg" id="raceMsg"></div>
-        <small class="hint">A race needs at least 2 joined players before it can start. Ending it early
-          computes placement from whatever attempts are already in — anyone still driving loses the
-          chance to improve their time.</small>
-      </div>
-    </div>
-
     <h2>PLAYERS <span id="pCount" style="color:var(--dimmer);font-weight:400"></span></h2>
     <div class="card">
       <table>
@@ -179,8 +146,8 @@ const COURSES = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron',
 const { initializeApp } = await import(SDK + 'firebase-app.js');
 const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
   await import(SDK + 'firebase-auth.js');
-const { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection,
-        getDocs, query, where, writeBatch, onSnapshot } = await import(SDK + 'firebase-firestore.js');
+const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection,
+        getDocs, query, where, writeBatch } = await import(SDK + 'firebase-firestore.js');
 
 const $ = (id) => document.getElementById(id);
 const app = initializeApp(CONFIG);
@@ -250,7 +217,6 @@ onAuthStateChanged(auth, async (user) => {
   $('panel').classList.remove('hide');
   say('authMsg', '');
   await loadAll();
-  watchCurrentRace();
 });
 
 $('btnRandom').addEventListener('click', () => {
@@ -356,178 +322,6 @@ async function loadAll() {
   } catch (e) {
     say('pMsg', e.message, 'err');
   }
-}
-
-/* ------------------------------------------------------------- races */
-let currentRace = null, currentEntries = [], raceEntriesUnsub = null, raceTickTimer = null;
-let settling = false;
-
-function watchCurrentRace() {
-  onSnapshot(query(collection(db, 'races'), where('state', 'in', ['lobby', 'running'])),
-    (snap) => {
-      let doc0 = null;
-      snap.forEach((d) => { if (!doc0) doc0 = { id: d.id, ...d.data() }; });
-      currentRace = doc0;
-      if (raceEntriesUnsub) { raceEntriesUnsub(); raceEntriesUnsub = null; }
-      if (currentRace) {
-        raceEntriesUnsub = onSnapshot(collection(db, 'races', currentRace.id, 'entries'), (esnap) => {
-          currentEntries = [];
-          esnap.forEach((d) => currentEntries.push({ uid: d.id, ...d.data() }));
-          renderRace();
-        });
-      } else {
-        currentEntries = [];
-      }
-      renderRace();
-    });
-}
-
-function renderRace() {
-  const idle = !currentRace;
-  $('raceIdle').classList.toggle('hide', !idle);
-  $('raceActive').classList.toggle('hide', idle);
-  if (idle) {
-    if (raceTickTimer) { clearInterval(raceTickTimer); raceTickTimer = null; }
-    return;
-  }
-  const pot = currentEntries.reduce((s, e) => s + (e.buyIn || 0), 0);
-  $('racePot').textContent = pot + ' credits';
-  if (currentRace.state === 'lobby') {
-    $('raceStateLine').textContent = 'Lobby open — ' + currentEntries.length + ' joined.';
-    $('btnStartRace').disabled = currentEntries.length < 2;
-    $('btnStartRace').classList.remove('hide');
-    $('btnEndRace').classList.add('hide');
-  } else {
-    const remainMs = currentRace.endsAt ? currentRace.endsAt - Date.now() : 0;
-    const remain = Math.max(0, remainMs);
-    const mm = Math.floor(remain / 60000), ss = Math.floor((remain % 60000) / 1000);
-    $('raceStateLine').textContent = 'Running: ' + courseName(currentRace.courseId) +
-      ' — ' + mm + ':' + String(ss).padStart(2, '0') + ' left.';
-    $('btnStartRace').classList.add('hide');
-    $('btnEndRace').classList.remove('hide');
-    if (!raceTickTimer) raceTickTimer = setInterval(renderRace, 1000);
-    // Auto-settle once the clock runs out, as long as this admin tab stays
-    // open — a race left running forever otherwise has no other trigger.
-    if (remainMs <= 0 && !settling) {
-      settling = true;
-      settleRace(currentRace.id, currentEntries)
-        .catch((e) => say('raceTopMsg', 'Could not auto-settle the race: ' + e.message, 'err'))
-        .finally(() => { settling = false; });
-    }
-  }
-  const tb = $('raceEntries');
-  tb.innerHTML = '';
-  const settled = currentRace.state === 'settled';
-  const sorted = currentEntries.slice().sort((a, b) =>
-    (a.bestTimeMs ?? Infinity) - (b.bestTimeMs ?? Infinity));
-  for (const e of sorted) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + esc(e.displayName || '—') + '</td>' +
-      '<td class="mono" style="text-align:right">' + e.buyIn + '</td>' +
-      '<td class="mono" style="text-align:right">' +
-        (typeof e.bestTimeMs === 'number' ? fmt(e.bestTimeMs) : 'DNF') + '</td>' +
-      '<td class="mono" style="text-align:right">' + (e.placement || '—') + '</td>' +
-      '<td class="mono" style="text-align:right">' +
-        (typeof e.payout === 'number' ? e.payout.toFixed(1) : '—') + '</td>';
-    tb.appendChild(tr);
-  }
-}
-
-$('btnNewRace').addEventListener('click', async () => {
-  $('btnNewRace').disabled = true;
-  say('raceTopMsg', 'Creating race lobby…');
-  try {
-    const id = 'race_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
-    await setDoc(doc(db, 'races', id), {
-      state: 'lobby', courseId: null, createdAt: Date.now(),
-      startedAt: null, endsAt: null, createdBy: auth.currentUser.uid
-    });
-    // The live watchCurrentRace() listener normally flips raceIdle to
-    // raceActive within a moment of this write landing. If that somehow
-    // doesn't happen, say so instead of leaving the admin staring at an
-    // unchanged screen with no idea whether the click did anything.
-    const gotIt = await new Promise((resolve) => {
-      const check = () => {
-        if (currentRace && currentRace.id === id) { resolve(true); return; }
-        if (Date.now() - start > 5000) { resolve(false); return; }
-        setTimeout(check, 200);
-      };
-      const start = Date.now();
-      check();
-    });
-    say('raceTopMsg', gotIt ? '' :
-      'Race created, but the screen hasn’t updated yet — try Reload below or refresh the page.', gotIt ? '' : 'err');
-  } catch (e) {
-    say('raceTopMsg', 'Could not create the race: ' + e.message, 'err');
-  }
-  $('btnNewRace').disabled = false;
-});
-
-$('btnStartRace').addEventListener('click', async () => {
-  if (!currentRace) return;
-  if (currentEntries.length < 2) {
-    say('raceTopMsg', 'Needs at least 2 joined players before it can start.', 'err');
-    return;
-  }
-  try {
-    const courseId = 'c' + (1 + Math.floor(Math.random() * COURSES.length));
-    await updateDoc(doc(db, 'races', currentRace.id), {
-      state: 'running', courseId, startedAt: Date.now(), endsAt: Date.now() + 10 * 60 * 1000
-    });
-    say('raceTopMsg', 'Race started — ' + courseName(courseId) + '.', 'ok');
-  } catch (e) { say('raceTopMsg', 'Could not start the race: ' + e.message, 'err'); }
-});
-
-$('btnEndRace').addEventListener('click', async () => {
-  if (!currentRace || settling) return;
-  if (!confirm('End this race now and pay out? Anyone still driving loses the chance to improve.')) return;
-  settling = true;
-  say('raceTopMsg', 'Settling…');
-  try {
-    await settleRace(currentRace.id, currentEntries);
-    say('raceTopMsg', 'Race settled and paid out.', 'ok');
-  } catch (e) { say('raceTopMsg', 'Could not settle the race: ' + e.message, 'err'); }
-  settling = false;
-});
-
-/**
- * Payout: d = pot / sum(buyIn_i / place_i), payout_n = d * (buyIn_n / place_n).
- * Self-balancing by construction — sum of every payout equals the pot
- * exactly, so nothing is minted or lost. A DNF (no bestTimeMs after 3
- * attempts) is excluded from both the ranking and the formula entirely;
- * its buy-in stays in the pot for whoever actually finished.
- */
-async function settleRace(raceId, entries) {
-  const finishers = entries.filter((e) => typeof e.bestTimeMs === 'number')
-    .sort((a, b) => a.bestTimeMs - b.bestTimeMs);
-  finishers.forEach((e, i) => { e.placement = i + 1; });
-  const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
-  const denom = finishers.reduce((s, e) => s + (e.buyIn / e.placement), 0);
-
-  const batch = writeBatch(db);
-  if (finishers.length === 0) {
-    // Nobody finished — there is no ranking to pay out by, and the pot
-    // must not simply vanish. Refund every entrant their own buy-in
-    // instead, so credits in always equals credits out even here.
-    for (const e of entries) {
-      batch.update(doc(db, 'races', raceId, 'entries', e.uid), { placement: null, payout: e.buyIn });
-      batch.set(doc(db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-        { uid: e.uid, raceId, delta: e.buyIn });
-    }
-  } else {
-    const d = pot / denom;
-    for (const e of finishers) {
-      const payout = d * (e.buyIn / e.placement);
-      batch.update(doc(db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
-      batch.set(doc(db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-        { uid: e.uid, raceId, delta: payout });
-    }
-    // DNF entrants who did not finish stay unranked, with no payout — their
-    // stake is absorbed into the pot the finishers just split, matching the
-    // decision that a DNF forfeits its buy-in entirely.
-  }
-  batch.update(doc(db, 'races', raceId), { state: 'settled' });
-  await batch.commit();
 }
 
 /**
