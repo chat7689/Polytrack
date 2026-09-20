@@ -5287,7 +5287,13 @@ const Game = {
    *  course, instead of the player's own best */
   async raceGhostOf(courseId, uid) {
     const idx = parseInt(courseId.slice(1), 10) - 1;
-    if (!this.playable[idx]) return;
+    // A course that failed to build earlier this session is marked
+    // unplayable and would otherwise make this button silently do
+    // nothing — leaving the player stuck looking at the leaderboard with
+    // no feedback at all, which is exactly what one of Kettle Bowl's own
+    // bugs used to cause here before its course data was fixed. Always
+    // say something instead of quietly bailing out.
+    if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     UI.toast('Loading ghost…');
     const g = await Cloud.fetchGhost(courseId, uid);
     if (!g) { UI.toast('That run has no ghost data.'); return; }
@@ -5308,7 +5314,9 @@ const Game = {
    */
   async spectate(courseId, uid) {
     const idx = parseInt(courseId.slice(1), 10) - 1;
-    if (!this.playable[idx]) return;
+    // See the identical note in raceGhostOf — a course marked unplayable
+    // must never make this button look like it did nothing.
+    if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     UI.toast('Loading run…');
     const g = await Cloud.fetchGhost(courseId, uid);
     if (!g) { UI.toast('That run has no ghost data.'); return; }
