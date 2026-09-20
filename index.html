@@ -72,6 +72,26 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   background:var(--rule-2)}
 .bar i{display:block;height:100%;width:0;background:var(--ember);transition:width .25s linear}
 
+/* Always-on credit readout, fixed to the corner so a balance is visible
+   from literally every screen (menu, garage, boards, settings, course
+   select, the race lobby, even mid-HUD) rather than only wherever a
+   screen happens to have room to print it. Hidden only while signed out
+   or offline, where a credit balance has no meaning. */
+.creditBadge{position:absolute;top:16px;right:18px;z-index:40;display:flex;align-items:baseline;
+  gap:6px;padding:8px 14px;background:rgba(7,11,24,.78);border:1px solid rgba(255,207,92,.4);
+  border-radius:999px;font-family:var(--mono);pointer-events:none;
+  box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
+.creditBadge[hidden]{display:none}
+.creditBadge .ic{color:var(--signal);font-size:11px}
+.creditBadge b{color:var(--signal);font-size:15px;font-weight:700}
+.creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
+@keyframes creditPop{
+  0%{transform:scale(1)}
+  35%{transform:scale(1.22);box-shadow:0 6px 22px rgba(255,207,92,.55)}
+  100%{transform:scale(1)}
+}
+.creditBadge.bump{animation:creditPop .5s ease-out}
+
 /* ---------- spectate ---------- */
 .specTop{position:absolute;top:20px;left:24px;right:24px;display:flex;justify-content:space-between;
   align-items:flex-start;gap:16px}
@@ -197,6 +217,44 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
 .mini li.me{color:var(--ink)}
 .result .row{margin-top:26px}
 #fatal .panel{max-width:580px} #fatal h2{font-size:25px;margin-bottom:12px;letter-spacing:-.02em}
+
+/* Credits-run payoff: a coin pops in with a spin-and-settle, a ring of
+   sparks bursts outward behind it, and a "+1" floats up and fades — all
+   pure CSS so it costs nothing to run and needs no asset. Fires once per
+   successful award (see Game.playCreditBurst); an unsuccessful award
+   (offline, write failed) never triggers this, matching how the sub-text
+   already only says "+1 credit" on genuine success. */
+.creditBurst{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
+  width:0;height:0;pointer-events:none;z-index:5}
+.creditBurst[hidden]{display:none}
+.creditBurst .coin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);
+  width:64px;height:64px;line-height:64px;text-align:center;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ffe9a8,var(--signal) 60%,#c9930d 100%);
+  color:#3a2704;font-size:28px;font-weight:700;box-shadow:0 0 0 3px rgba(255,207,92,.35),
+  0 10px 30px rgba(255,207,92,.5);animation:creditCoinPop 1.1s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes creditCoinPop{
+  0%{transform:translate(-50%,-50%) scale(0) rotateY(0deg)}
+  55%{transform:translate(-50%,-50%) scale(1.15) rotateY(720deg)}
+  75%{transform:translate(-50%,-50%) scale(0.95) rotateY(760deg)}
+  100%{transform:translate(-50%,-50%) scale(1) rotateY(800deg)}
+}
+.creditBurst .plusOne{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:var(--mono);font-size:22px;font-weight:700;color:var(--signal);opacity:0;
+  text-shadow:0 2px 12px rgba(255,207,92,.6);animation:creditPlusFloat 1.3s ease-out .25s forwards}
+@keyframes creditPlusFloat{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}
+  25%{opacity:1;transform:translate(-50%,-70%) scale(1.1)}
+  100%{opacity:0;transform:translate(-50%,-160%) scale(1)}
+}
+.creditBurst::before,.creditBurst::after{content:'';position:absolute;left:50%;top:50%;
+  width:8px;height:8px;border-radius:50%;background:var(--signal);opacity:0}
+.creditBurst .spark{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;
+  background:var(--signal);box-shadow:0 0 6px 1px rgba(255,207,92,.8);opacity:0;
+  animation:creditSpark .7s ease-out .1s forwards}
+@keyframes creditSpark{
+  0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-50%) var(--sparkTo) scale(.3)}
+}
 #fatal p{color:var(--dim);font-size:14px;line-height:1.65}
 .gate{width:min(430px,94vw);padding:34px 34px 30px}
 .gate h2{font-size:27px;letter-spacing:-.03em;margin-bottom:6px}
@@ -253,21 +311,36 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
 .garageRoll{margin:4px 0 8px;padding:16px;border:1px solid var(--rule);border-radius:3px;
   background:rgba(0,0,0,.2);text-align:center}
 .garageGrid{display:grid;grid-template-columns:repeat(16,1fr);gap:1px;max-width:320px;
-  margin:0 auto 12px;aspect-ratio:1/1;border:1px solid var(--rule)}
-.garageGrid .cell{width:100%;height:100%;position:relative}
+  margin:0 auto 12px;aspect-ratio:1/1;border:1px solid var(--rule);background:#05070d}
+.garageGrid .cell{width:100%;height:100%;position:relative;transition:filter .12s,outline-color .12s}
 .garageGrid .cell.hit{outline:2px solid #fff;outline-offset:-2px;position:relative;z-index:1}
-.garageRollResult{font-size:13px;color:var(--dim)}
-.garageRollResult b{color:var(--ink)}
+.aqua{color:var(--aqua)}
+.dimx{color:var(--dimmer)}
 .garageSelectGrid{cursor:default}
-.garageSelectGrid .cell.locked{cursor:default}
-.garageSelectGrid .cell.unlocked{cursor:pointer}
-.garageSelectGrid .cell.unlocked:hover{outline:1px solid rgba(255,255,255,.6);outline-offset:-1px;z-index:1}
-.garageSelectGrid .cell.equipped{outline:2px solid #fff;outline-offset:-2px;z-index:2;box-shadow:0 0 6px rgba(255,255,255,.8)}
+/* Locked squares are heavily dimmed and desaturated so "which squares do
+   I actually own" reads at a glance across the whole grid, not just from
+   the X mark on close inspection — the X is still there as a second,
+   redundant signal for colorblind-safety and at-a-glance scanning. */
+.garageSelectGrid .cell.locked{cursor:default;filter:grayscale(0.85) brightness(0.32)}
+.garageSelectGrid .cell.unlocked{cursor:pointer;filter:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.garageSelectGrid .cell.unlocked:hover{outline:2px solid #fff;outline-offset:-2px;z-index:1;filter:brightness(1.15)}
+.garageSelectGrid .cell.equipped{outline:2px solid #fff;outline-offset:-2px;z-index:2;
+  box-shadow:0 0 8px 1px rgba(255,255,255,.9)}
 .garageSelectGrid .cell.locked::before,.garageSelectGrid .cell.locked::after{
-  content:'';position:absolute;left:10%;top:47%;width:80%;height:2px;background:#fff;
-  box-shadow:0 1px 0 #000,0 -1px 0 #000}
+  content:'';position:absolute;left:14%;top:47%;width:72%;height:1.6px;background:#fff;
+  box-shadow:0 1px 0 #000,0 -1px 0 #000;opacity:.9}
 .garageSelectGrid .cell.locked::before{transform:rotate(45deg)}
 .garageSelectGrid .cell.locked::after{transform:rotate(-45deg)}
+/* the roll-in-progress flicker and the final "you just unlocked this"
+   pulse both play on the real grid cell, in place — see UI.garageReveal */
+.garageSelectGrid .cell.rolling{filter:none;outline:2px solid #fff;outline-offset:-2px;z-index:3}
+@keyframes garageWin{
+  0%{outline-color:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.9)}
+  60%{outline-color:var(--aqua);box-shadow:0 0 14px 4px rgba(61,219,184,.85)}
+  100%{outline-color:#fff;box-shadow:0 0 8px 1px rgba(255,255,255,.9)}
+}
+.garageSelectGrid .cell.justUnlocked{animation:garageWin 1.1s ease-out;z-index:3}
 .garagePreviewWrap{width:100%;height:180px;margin-bottom:18px;border:1px solid var(--rule);
   border-radius:3px;background:radial-gradient(120% 140% at 50% 20%,#1a2740,#0b1220);overflow:hidden}
 .garagePreviewWrap canvas{width:100%;height:100%;display:block}
@@ -280,6 +353,10 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
   <div class="boot" id="boot">Building the frame…</div>
   <div class="toast" id="toast"></div>
   <div id="flash"></div>
+
+  <div class="creditBadge" id="creditBadge" hidden>
+    <span class="ic">◆</span><b id="creditBadgeAmt">0</b><small>credits</small>
+  </div>
 
   <div class="layer" id="hud" hidden>
     <div class="hud">
@@ -570,26 +647,26 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
         EDITING <span id="gActiveSlotName">PRIMARY</span> — <span id="gCredits">0</span> credits
       </h3>
 
-      <div class="row" style="margin-bottom:16px">
-        <button class="primary" id="gBuyHue">Buy a hue pack — 10 credits</button>
-        <button class="primary" id="gBuySatLight">Buy a saturation/brightness pack — 10 credits</button>
-      </div>
       <div class="err" id="gBuyMsg"></div>
-
-      <div id="gRollBox" class="garageRoll" hidden>
-        <div class="garageGrid" id="gRollGrid"></div>
-        <div class="garageRollResult" id="gRollResult"></div>
-      </div>
 
       <h3 style="font-size:13px;font-weight:600;margin:18px 0 6px">HUE</h3>
       <p class="lede" style="font-size:12px;margin-bottom:8px">Every hue you own, for either slot —
-        click one to put it on <span id="gHueSlotName">primary</span>. Locked hues are crossed out.</p>
+        <b class="aqua">bright squares</b> are unlocked, click one to put it on
+        <span id="gHueSlotName">primary</span>. <b class="dimx">Crossed-out squares</b> are still
+        locked.</p>
+      <div class="row" style="margin-bottom:10px">
+        <button class="primary" id="gBuyHue">Buy a hue pack — 10 credits</button>
+      </div>
       <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
 
       <h3 style="font-size:13px;font-weight:600;margin:20px 0 6px">SATURATION / BRIGHTNESS</h3>
       <p class="lede" style="font-size:12px;margin-bottom:8px">Variants of <span id="gSatLightSlotName">primary</span>'s
-        current hue — saturation runs left to right, brightness bottom to top. Locked squares are
-        crossed out.</p>
+        current hue — saturation runs left to right, brightness bottom to top.
+        <b class="aqua">Bright squares</b> are unlocked; <b class="dimx">crossed-out squares</b> are
+        still locked.</p>
+      <div class="row" style="margin-bottom:10px">
+        <button class="primary" id="gBuySatLight">Buy a saturation/brightness pack — 10 credits</button>
+      </div>
       <div class="garageGrid garageSelectGrid" id="gSatLightGrid"></div>
 
       <div class="rule"></div>
@@ -641,6 +718,10 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
       <div class="row" id="rCreditsRunRow" hidden>
         <button class="primary" id="bCreditsRunAgain">Run again</button>
         <button class="ghost" id="bCreditsRunBack">Back to title</button>
+      </div>
+      <div class="creditBurst" id="creditBurst" hidden>
+        <div class="coin">◆</div>
+        <div class="plusOne" id="creditBurstAmt">+1</div>
       </div>
     </div>
   </div>
@@ -905,9 +986,10 @@ const Records = {
    saturation/brightness roll around whichever hue is currently equipped
    on the slot being shopped for. There is no picking a specific color:
    the whole point is that the 10 credits buys a random square out of a
-   16x16 grid, never a chosen one. Everyone starts with the same default
-   red/dark-red pair (see MAT.body/MAT.bodyDark's own initial values)
-   before anything has ever been unlocked or bought.
+   16x16 grid, never a chosen one, and never a square already owned.
+   A brand new account (nothing ever saved) is dealt one random hue and
+   one random saturation/brightness variant of that same hue for free, so
+   nobody starts on a bare default — see rollStarterColors().
    Persisted to Firestore (carCustomization/{uid}) when signed in, and to
    local storage otherwise — same two-tier pattern Records already uses,
    since car color is cosmetic and has no server-side stake to protect. */
@@ -920,22 +1002,34 @@ const CarColor = {
   secondary: { ...DEFAULT_SECONDARY },
 
   /** loads from Firestore when signed in, else local storage; called once
-   *  at startup and again right after sign-in resolves. */
+   *  at startup and again right after sign-in resolves. A truly fresh
+   *  account (never saved anything here before) gets its one-time random
+   *  starter pair instead of the bare default, and that starter is
+   *  persisted immediately so it's stable across reloads. */
   async load() {
+    let remote = null, isNew = false;
     if (Cloud.on && Cloud.user) {
-      const remote = await Cloud.fetchCarColors();
-      this.unlocked = remote.unlocked;
-      this.primary = remote.primary;
-      this.secondary = remote.secondary;
+      remote = await Cloud.fetchCarColors();
+      isNew = remote.isNew;
     } else {
       try {
         const raw = localStorage.getItem(CARCOLOR_KEY);
-        const d = raw ? JSON.parse(raw) : null;
-        this.unlocked = (d && Array.isArray(d.unlocked)) ? d.unlocked : [];
-        this.primary = (d && d.primary) || { ...DEFAULT_PRIMARY };
-        this.secondary = (d && d.secondary) || { ...DEFAULT_SECONDARY };
-      } catch (e) { this.unlocked = []; this.primary = { ...DEFAULT_PRIMARY }; this.secondary = { ...DEFAULT_SECONDARY }; }
+        remote = raw ? JSON.parse(raw) : null;
+        isNew = !remote;
+      } catch (e) { remote = null; isNew = true; }
     }
+    if (isNew || !remote || !Array.isArray(remote.unlocked) || remote.unlocked.length === 0) {
+      const starter = this.rollStarterColors();
+      this.unlocked = starter.unlocked;
+      this.primary = starter.primary;
+      this.secondary = starter.secondary;
+      this.apply();
+      await this.save();
+      return;
+    }
+    this.unlocked = remote.unlocked;
+    this.primary = remote.primary || { ...DEFAULT_PRIMARY };
+    this.secondary = remote.secondary || { ...DEFAULT_SECONDARY };
     this.apply();
   },
 
@@ -959,9 +1053,9 @@ const CarColor = {
     }
   },
 
-  /** true color-equality check (not reference), since the same color can
-   *  be independently unlocked twice by chance — that's fine, it just
-   *  shows once, deduped by value here. */
+  /** true color-equality check (not reference), used both to dedupe the
+   *  starter roll and to keep a purchased pack from ever landing on a
+   *  cell already owned (see rollHue/rollSatLight below). */
   has(c) { return this.unlocked.some((u) => u.h === c.h && u.s === c.s && u.l === c.l); },
 
   // Fixed s/l the whole hue grid is drawn at, and the s/l step tables the
@@ -977,31 +1071,92 @@ const CarColor = {
   satColOf(s) { return Math.round((s - 10) / (90 / 15)); },
   lightRowOf(l) { return Math.round((l - 10) / (80 / 15)); },
 
-  /** hue pack: one of exactly 256 hues (a 16x16 grid), fixed at a vivid,
-   *  legible saturation/lightness so every roll reads as a clear color
-   *  rather than something washed out or near-black. */
+  /** every hue-grid cell index (0-255) this account does NOT yet own —
+   *  the pool a hue-pack roll is actually drawn from, so a purchase can
+   *  never land on a square already unlocked. */
+  lockedHueCells() {
+    const owned = new Set(this.unlocked
+      .filter((c) => c.s === this.HUE_S && c.l === this.HUE_L)
+      .map((c) => this.hueCellOf(c.h)));
+    const free = [];
+    for (let i = 0; i < 256; i++) if (!owned.has(i)) free.push(i);
+    return free;
+  },
+
+  /** every sat/brightness-grid cell index (0-255) at the given hue this
+   *  account does NOT yet own. */
+  lockedSatLightCells(hue) {
+    const owned = new Set(this.unlocked
+      .filter((c) => c.h === hue)
+      .map((c) => this.lightRowOf(c.l) * 16 + this.satColOf(c.s)));
+    const free = [];
+    for (let i = 0; i < 256; i++) if (!owned.has(i)) free.push(i);
+    return free;
+  },
+
+  /** hue pack: one of the hue-grid cells not already owned, fixed at a
+   *  vivid, legible saturation/lightness so every roll reads as a clear
+   *  color rather than something washed out or near-black. Returns null
+   *  if every one of the 256 hues is already unlocked. */
   rollHue() {
-    const cell = Math.floor(Math.random() * 256);
+    const free = this.lockedHueCells();
+    if (!free.length) return null;
+    const cell = free[Math.floor(Math.random() * free.length)];
     return { h: this.hueAt(cell), s: this.HUE_S, l: this.HUE_L };
   },
 
-  /** saturation/brightness pack: one of 256 cells (16 saturation steps x
-   *  16 lightness steps) at the CURRENT hue of whichever slot is being
-   *  shopped for — this pack is about finding a more vivid or more muted,
-   *  lighter or darker version of a hue you already have equipped, not a
-   *  new hue. */
+  /** saturation/brightness pack: one of the 256 cells (16 saturation
+   *  steps x 16 lightness steps) at the CURRENT hue of whichever slot is
+   *  being shopped for, excluding cells already owned at that hue — this
+   *  pack is about finding a more vivid or more muted, lighter or darker
+   *  version of a hue already owned, not a new hue. Returns null if every
+   *  cell at this hue is already unlocked. */
   rollSatLight(slot) {
     const hue = (slot === 'secondary' ? this.secondary : this.primary).h;
-    const col = Math.floor(Math.random() * 16), row = Math.floor(Math.random() * 16);
+    const free = this.lockedSatLightCells(hue);
+    if (!free.length) return null;
+    const cell = free[Math.floor(Math.random() * free.length)];
+    const col = cell % 16, row = Math.floor(cell / 16);
     return { h: hue, s: this.satAt(col), l: this.lightAt(row) };
   },
 
+  /** A brand-new account's one-time free pair: a random hue (exactly the
+   *  hue-pack's own pool/shape, so it's a square on that same grid) for
+   *  primary, and a random saturation/brightness variant of that same hue
+   *  for secondary — the same relationship a bought S/B pack always has
+   *  to whatever hue is current. Never produces a duplicate of itself
+   *  (the two rolls draw from different grids, and the second explicitly
+   *  excludes the first). */
+  rollStarterColors() {
+    const hueCell = Math.floor(Math.random() * 256);
+    const primary = { h: this.hueAt(hueCell), s: this.HUE_S, l: this.HUE_L };
+    const slCell = Math.floor(Math.random() * 256);
+    const col = slCell % 16, row = Math.floor(slCell / 16);
+    let secondary = { h: primary.h, s: this.satAt(col), l: this.lightAt(row) };
+    if (secondary.s === primary.s && secondary.l === primary.l) {
+      // the extremely unlikely case the S/B roll landed on the exact same
+      // s/l the hue pack always uses — nudge one step so the two starter
+      // colors are never literally identical.
+      secondary = { h: primary.h, s: this.satAt((col + 1) % 16), l: this.lightAt(row) };
+    }
+    return { unlocked: [primary, secondary], primary, secondary };
+  },
+
   /** spends 10 credits, rolls the requested pack, adds the result to the
-   *  unlocked list (even if it duplicates one already owned — see has()),
-   *  equips it immediately on the slot that was shopping, and persists
-   *  everything in one go. Throws (and spends nothing) if payForColor
-   *  itself rejects, e.g. not enough credits. */
+   *  unlocked list, equips it immediately on the slot that was shopping,
+   *  and persists everything in one go. Throws (and spends nothing) if
+   *  payForColor itself rejects (not enough credits), or if the requested
+   *  pack has nothing left to roll (every square already owned) — checked
+   *  BEFORE spending, so a maxed-out pack can never charge for nothing. */
   async buy(pack, slot) {
+    const wouldRoll = pack === 'hue' ? this.rollHue.bind(this) : () => this.rollSatLight(slot);
+    // Peek at whether this pack has anything left before spending — the
+    // real roll happens again after payment so the two calls can't drift
+    // (rollHue/rollSatLight are pure w.r.t. current state, so calling
+    // twice is safe and simpler than threading a precomputed pool through).
+    const pool = pack === 'hue' ? this.lockedHueCells()
+      : this.lockedSatLightCells((slot === 'secondary' ? this.secondary : this.primary).h);
+    if (!pool.length) throw new Error('Every color in that pack is already unlocked.');
     await Cloud.payForColor();
     const color = pack === 'hue' ? this.rollHue() : this.rollSatLight(slot);
     this.unlocked.push(color);
@@ -1290,6 +1445,14 @@ const Sound = {
     const notes = record ? [523.25, 659.25, 783.99, 1046.5, 1318.5] : [523.25, 659.25, 783.99, 1046.5];
     notes.forEach((n, k) => this.tone(n, k * 0.095, 0.52, 0.075, 'triangle'));
     this.tone(130.81, 0, 0.85, 0.055, 'sine');
+  },
+  /** A quick, bright two-note "coin" chime for the credits-run payoff —
+   *  short and percussive rather than finish()'s longer fanfare, so it
+   *  reads as a small, frequent reward rather than a course-clear event. */
+  creditWin() {
+    this.tone(1046.5, 0, 0.14, 0.09, 'sine');
+    this.tone(1568, 0.05, 0.22, 0.085, 'triangle');
+    this.noiseHit(0.05, 0.12, 0.03, 2200, 5200, 'highpass');
   }
 };
 
@@ -1806,7 +1969,7 @@ const Cloud = {
   /** this player's saved car colors, or the default red/dark-red pair if
    *  they've never customized anything. */
   async fetchCarColors() {
-    const fallback = { unlocked: [], primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 } };
+    const fallback = { unlocked: [], primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 }, isNew: true };
     if (!this.on || !this.user) return fallback;
     try {
       const { fsMod } = this.fb;
@@ -1816,7 +1979,8 @@ const Cloud = {
       return {
         unlocked: Array.isArray(d.unlocked) ? d.unlocked : [],
         primary: d.primary || fallback.primary,
-        secondary: d.secondary || fallback.secondary
+        secondary: d.secondary || fallback.secondary,
+        isNew: false
       };
     } catch (e) { return fallback; }
   },
@@ -4760,9 +4924,34 @@ const UI = {
   },
   who(name, credits) {
     $('who').hidden = !name;
+    this.creditBadge(name ? credits : null);
     if (!name) return;
     $('whoName').textContent = name;
     $('whoCredits').textContent = credits;
+  },
+
+  /** The always-on corner credit readout — kept in sync from the same
+   *  single call site (who()) every other credit display already goes
+   *  through, so nothing new has to remember to update it. Pass null to
+   *  hide it (signed out / offline, where a balance has no meaning); a
+   *  genuine change in the number plays a short "pop" so a credit gain or
+   *  spend is never silent, even on a screen that isn't watching for it. */
+  _lastCreditAmt: undefined,
+  creditBadge(amt) {
+    const el = $('creditBadge');
+    if (amt === null || amt === undefined) {
+      el.hidden = true;
+      this._lastCreditAmt = undefined;
+      return;
+    }
+    el.hidden = false;
+    $('creditBadgeAmt').textContent = amt;
+    if (this._lastCreditAmt !== undefined && amt !== this._lastCreditAmt) {
+      el.classList.remove('bump');
+      void el.offsetWidth; // restart the animation even if it's still mid-play
+      el.classList.add('bump');
+    }
+    this._lastCreditAmt = amt;
   },
   gateError(msg) { $('gErr').textContent = msg || ''; },
   creating: false,
@@ -4853,6 +5042,32 @@ const UI = {
     t.textContent = text;
     t.classList.add('on');
     this.toastT = 1.8;
+  },
+  /** The credits-run payoff animation — a coin, a floating "+1", and a
+   *  burst of sparks flung outward in random directions. Sparks are
+   *  spawned fresh each call (their spread has to vary), everything else
+   *  is CSS-driven. Restarting mid-play (running the credits mode twice
+   *  quickly) just replaces the previous burst outright. */
+  playCreditBurst(amount) {
+    const box = $('creditBurst');
+    box.querySelectorAll('.spark').forEach((s) => s.remove());
+    const n = 14;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('div');
+      s.className = 'spark';
+      const ang = (i / n) * Math.PI * 2 + (Math.random() * 0.4 - 0.2);
+      const dist = 70 + Math.random() * 50;
+      s.style.setProperty('--sparkTo', (Math.cos(ang) * dist).toFixed(1) + 'px, ' + (Math.sin(ang) * dist).toFixed(1) + 'px');
+      s.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
+      box.appendChild(s);
+    }
+    $('creditBurstAmt').textContent = '+' + amount;
+    // Force a reflow before un-hiding so the CSS animations (which run
+    // once, on element creation/visibility) restart cleanly even if this
+    // fires again before the previous run's 1.3s has fully finished.
+    box.hidden = true;
+    void box.offsetWidth;
+    box.hidden = false;
   },
   /** live gap to the ghost, shown under the clock */
   delta(d) {
@@ -4983,8 +5198,13 @@ const UI = {
     $('gHueSlotName').textContent = slot;
     $('gSatLightSlotName').textContent = slot;
     $('gCredits').textContent = Cloud.on ? (Cloud.credits || 0) : 'offline';
-    $('gBuyHue').disabled = !Cloud.on;
-    $('gBuySatLight').disabled = !Cloud.on;
+    const hueMaxed = CarColor.lockedHueCells().length === 0;
+    const slMaxed = CarColor.lockedSatLightCells(equipped.h).length === 0;
+    $('gBuyHue').disabled = !Cloud.on || hueMaxed;
+    $('gBuyHue').textContent = hueMaxed ? 'Every hue already unlocked' : 'Buy a hue pack — 10 credits';
+    $('gBuySatLight').disabled = !Cloud.on || slMaxed;
+    $('gBuySatLight').textContent = slMaxed ? 'Every variant of this hue already unlocked'
+      : 'Buy a saturation/brightness pack — 10 credits';
     $('gBuyMsg').textContent = Cloud.on ? '' : 'Sign in to buy colors — offline mode keeps whatever you already unlocked, but can\'t spend credits.';
 
     // HUE grid: 256 cells, one per hue, at the pack's own fixed s/l — a
@@ -5026,60 +5246,58 @@ const UI = {
       if (equipped) d.className += ' equipped';
       d.style.background = bg;
       if (owned) {
-        d.title = 'h' + color.h + ' s' + color.s + '% l' + color.l + '%';
+        d.title = 'Unlocked — h' + color.h + ' s' + color.s + '% l' + color.l + '%. Click to equip.';
         d.addEventListener('click', () => Game.equipCarColor(color));
       } else {
-        d.title = 'Locked';
+        d.title = 'Locked — buy a pack above for a chance at this one.';
       }
       grid.appendChild(d);
     }
   },
 
-  /** Plays a short "which cell did we land on" reveal over the 16x16 grid
-   *  the pack was drawn from, then calls onDone. Purely presentational —
-   *  the color itself was already rolled before this runs; this just
-   *  shows where in the grid it came from. */
+  /** Plays the "which square did we land on" reveal directly on the real,
+   *  already-rendered selection grid (gHueGrid or gSatLightGrid) instead
+   *  of a separate throwaway one — the flicker only ever lands on squares
+   *  this account doesn't already own (excludedCells / the pool the roll
+   *  actually drew from), so it can never tease a square that was already
+   *  unlocked. Ends by turning the winning square from locked to
+   *  unlocked-with-a-pulse in place, then calls onDone once the pulse
+   *  finishes, by which point garage() has already been re-rendered
+   *  underneath so the rest of the grid (and the other grid, and the
+   *  swatches/preview) all reflect the purchase too. */
   garageReveal(pack, slot, color, onDone) {
-    const box = $('gRollBox'), grid = $('gRollGrid'), result = $('gRollResult');
-    box.hidden = false;
-    grid.innerHTML = '';
-    let hitIndex;
-    const cells = [];
-    if (pack === 'hue') {
-      for (let i = 0; i < 256; i++) cells.push(hslCss(CarColor.hueAt(i), CarColor.HUE_S, CarColor.HUE_L));
-      hitIndex = CarColor.hueCellOf(color.h);
-    } else {
-      const hue = color.h;
-      for (let row = 0; row < 16; row++) {
-        for (let col = 0; col < 16; col++) cells.push(hslCss(hue, CarColor.satAt(col), CarColor.lightAt(row)));
-      }
-      hitIndex = CarColor.lightRowOf(color.l) * 16 + CarColor.satColOf(color.s);
-    }
-    cells.forEach((bg, i) => {
-      const d = document.createElement('div');
-      d.className = 'cell';
-      d.style.background = bg;
-      grid.appendChild(d);
-    });
-    result.textContent = 'Rolling…';
-    // A quick flicker across a handful of random cells before landing on
-    // the real one makes the "blind pack" framing readable at a glance,
-    // instead of the result just appearing with no sense of a draw.
+    const grid = pack === 'hue' ? $('gHueGrid') : $('gSatLightGrid');
+    const hitIndex = pack === 'hue' ? CarColor.hueCellOf(color.h)
+      : CarColor.lightRowOf(color.l) * 16 + CarColor.satColOf(color.s);
     const cellEls = grid.children;
+    if (!cellEls.length || !cellEls[hitIndex]) { if (onDone) onDone(); return; }
+    // Flicker only across squares still locked at the moment the roll
+    // started (reading their class right now, before anything changes) —
+    // an already-unlocked square lighting up mid-roll would wrongly imply
+    // the pack could have re-landed on something already owned.
+    const lockedIdx = [];
+    for (let i = 0; i < cellEls.length; i++) if (cellEls[i].classList.contains('locked')) lockedIdx.push(i);
+    if (!lockedIdx.length) lockedIdx.push(hitIndex);
+    $('gBuyMsg').textContent = 'Rolling…';
     let ticks = 0;
-    const maxTicks = 14;
+    const maxTicks = 16;
+    let lastShown = -1;
     const timer = setInterval(() => {
-      for (const el of cellEls) el.classList.remove('hit');
-      const show = ticks < maxTicks - 1 ? Math.floor(Math.random() * cellEls.length) : hitIndex;
-      cellEls[show].classList.add('hit');
+      if (lastShown >= 0) cellEls[lastShown].classList.remove('rolling');
+      const show = ticks < maxTicks - 1 ? lockedIdx[Math.floor(Math.random() * lockedIdx.length)] : hitIndex;
+      cellEls[show].classList.add('rolling');
+      lastShown = show;
       ticks++;
       if (ticks >= maxTicks) {
         clearInterval(timer);
-        result.innerHTML = 'Landed on <b>h' + Math.round(color.h) + ' s' + color.s + '% l' + color.l +
-          '%</b> — added to your colors and equipped on ' + slot + '.';
-        if (onDone) onDone();
+        cellEls[hitIndex].classList.remove('rolling');
+        cellEls[hitIndex].classList.remove('locked');
+        cellEls[hitIndex].classList.add('unlocked', 'justUnlocked');
+        $('gBuyMsg').textContent = 'Unlocked h' + Math.round(color.h) + ' s' + color.s + '% l' + color.l +
+          '% — equipped on ' + slot + '.';
+        setTimeout(() => { if (onDone) onDone(); }, 550);
       }
-    }, 80);
+    }, 70);
   }
 };
 function escapeHtml(s) {
@@ -6030,7 +6248,6 @@ const Game = {
     this.state = 'garage'; this.running = false;
     Sound.stopEngine();
     this.garageSlot = 'primary';
-    $('gRollBox').hidden = true;
     UI.garage();
     UI.show('garage');
     GaragePreview.start();
@@ -6039,7 +6256,6 @@ const Game = {
 
   setGarageSlot(slot) {
     this.garageSlot = slot;
-    $('gRollBox').hidden = true;
     $('gBuyMsg').textContent = '';
     UI.garage();
   },
@@ -6241,6 +6457,7 @@ const Game = {
     $('rBoard').innerHTML = '';
     $('rCampaignRow').hidden = true;
     $('rCreditsRunRow').hidden = false;
+    $('creditBurst').hidden = true;
     UI.best(0);
     UI.show('result');
     UI.clock(this.time, true);
@@ -6254,6 +6471,8 @@ const Game = {
       UI.who(Cloud.name(), Records.credits);
       $('rSub').textContent = '+1 credit — you now have ' + Records.credits + '. Doesn’t count toward times or leaderboards.';
       UI.toast('+1 credit');
+      UI.playCreditBurst(1);
+      Sound.creditWin();
     } catch (e) {
       console.warn('Skyframe: could not award the credits-run credit', e && e.message);
       $('rSub').textContent = 'Could not award the credit — check your connection and try again.';
