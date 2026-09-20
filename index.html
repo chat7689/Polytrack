@@ -240,6 +240,29 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
 .race-waiting{color:var(--dim);font-size:12.5px}
 .boot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;
   color:#2b4364;text-shadow:none}
+
+/* ---------- garage ---------- */
+.garageSlot{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 16px;
+  border:2px solid var(--rule);border-radius:3px;background:rgba(255,255,255,.03);
+  font:inherit;color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s}
+.garageSlot:hover{background:rgba(255,255,255,.06)}
+.garageSlot.on{border-color:var(--aqua);background:rgba(61,219,184,.08)}
+.garageSlot small{font-weight:400}
+.swatch{display:inline-block;width:34px;height:34px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);box-shadow:inset 0 0 6px rgba(0,0,0,.35);flex:none}
+.garageRoll{margin:4px 0 8px;padding:16px;border:1px solid var(--rule);border-radius:3px;
+  background:rgba(0,0,0,.2);text-align:center}
+.garageGrid{display:grid;grid-template-columns:repeat(16,1fr);gap:1px;max-width:320px;
+  margin:0 auto 12px;aspect-ratio:1/1;border:1px solid var(--rule)}
+.garageGrid .cell{width:100%;height:100%}
+.garageGrid .cell.hit{outline:2px solid #fff;outline-offset:-2px;position:relative;z-index:1}
+.garageRollResult{font-size:13px;color:var(--dim)}
+.garageRollResult b{color:var(--ink)}
+.garageOwned{display:flex;flex-wrap:wrap;gap:10px}
+.garageColorBtn{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.25);
+  cursor:pointer;padding:0;transition:transform .12s,border-color .12s;box-shadow:inset 0 0 5px rgba(0,0,0,.3)}
+.garageColorBtn:hover{transform:scale(1.1)}
+.garageColorBtn.equipped{border-color:#fff;box-shadow:0 0 0 2px var(--aqua),inset 0 0 5px rgba(0,0,0,.3)}
 </style>
 </head>
 <body>
@@ -411,6 +434,7 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
           </div>
           <div class="row" style="margin-top:10px">
             <button class="ghost" id="bCreditsRun">Credits run — random course, +1 credit</button>
+            <button class="ghost" id="bGarage">Garage — paint your car</button>
           </div>
           <div class="rule"></div>
           <div id="driverRow">
@@ -511,6 +535,54 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
     </div>
   </div>
 
+  <div class="layer" id="garage" hidden>
+    <div class="scrim"></div>
+    <div class="panel" style="width:min(640px,94vw)">
+      <h2 class="big">Garage</h2>
+      <p class="lede" style="margin-bottom:22px">Paint your car. Every color starts locked — spend 10
+        credits on a pack and get back one random color from it, no picking. Once you own a color it's
+        yours to put on either slot, any time, for free.</p>
+
+      <div class="row" style="gap:18px;margin-bottom:20px">
+        <button class="garageSlot" id="gSlotPrimary" data-slot="primary">
+          <span class="swatch" id="gSwatchPrimary"></span>
+          <span>Primary<br><small class="dim">hull, nose, roof</small></span>
+        </button>
+        <button class="garageSlot" id="gSlotSecondary" data-slot="secondary">
+          <span class="swatch" id="gSwatchSecondary"></span>
+          <span>Secondary<br><small class="dim">splitter, sill, wing</small></span>
+        </button>
+      </div>
+
+      <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">
+        EDITING <span id="gActiveSlotName">PRIMARY</span> — <span id="gCredits">0</span> credits
+      </h3>
+
+      <div class="row" style="margin-bottom:16px">
+        <button class="primary" id="gBuyHue">Buy a hue pack — 10 credits</button>
+        <button class="primary" id="gBuySatLight">Buy a saturation/brightness pack — 10 credits</button>
+      </div>
+      <div class="err" id="gBuyMsg"></div>
+
+      <div id="gRollBox" class="garageRoll" hidden>
+        <div class="garageGrid" id="gRollGrid"></div>
+        <div class="garageRollResult" id="gRollResult"></div>
+      </div>
+
+      <h3 style="font-size:13px;font-weight:600;margin:18px 0 10px">
+        YOUR COLORS <span class="dim" id="gUnlockedCount"></span>
+      </h3>
+      <div class="garageOwned" id="gOwned"></div>
+      <p class="lede" id="gOwnedEmpty" style="font-size:12.5px" hidden>No colors unlocked yet — buy a
+        pack above to get your first one.</p>
+
+      <div class="rule"></div>
+      <div class="row">
+        <button class="ghost" id="bGarageBack">Back to title</button>
+      </div>
+    </div>
+  </div>
+
   <div class="layer" id="raceReveal" hidden>
     <div class="scrim"></div>
     <div class="panel">
@@ -599,6 +671,24 @@ function tsMs(v) {
   if (typeof v.seconds === 'number') return v.seconds * 1000 + Math.floor((v.nanoseconds || 0) / 1e6);
   return 0;
 }
+
+/** h: 0-360, s/l: 0-100 -> a THREE-friendly 0xRRGGBB integer */
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r, g, b;
+  if (h < 60) { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  const R = Math.round((r + m) * 255), G = Math.round((g + m) * 255), B = Math.round((b + m) * 255);
+  return (R << 16) | (G << 8) | B;
+}
+function hslCss(h, s, l) { return 'hsl(' + Math.round(h) + ',' + Math.round(s) + '%,' + Math.round(l) + '%)'; }
 
 function formatTime(t) {
   if (!isFinite(t) || t < 0) t = 0;
@@ -788,6 +878,118 @@ const Records = {
     this.data.ghosts = {};
     this.data.myBests = {};
     this.save();
+  }
+};
+
+/* ------------------------------------------------------- 1b. car colors
+   Two independently colored slots (primary: hull/roof/nose, secondary:
+   splitter/diffuser/sill/wing — see buildCarMesh), each an HSL triple.
+   Every color painted onto the car has to first be unlocked by spending
+   10 credits on one of two blind packs — a straight hue roll, or a
+   saturation/brightness roll around whichever hue is currently equipped
+   on the slot being shopped for. There is no picking a specific color:
+   the whole point is that the 10 credits buys a random square out of a
+   16x16 grid, never a chosen one. Everyone starts with the same default
+   red/dark-red pair (see MAT.body/MAT.bodyDark's own initial values)
+   before anything has ever been unlocked or bought.
+   Persisted to Firestore (carCustomization/{uid}) when signed in, and to
+   local storage otherwise — same two-tier pattern Records already uses,
+   since car color is cosmetic and has no server-side stake to protect. */
+const CARCOLOR_KEY = 'skyframe.carcolor.v1';
+const DEFAULT_PRIMARY = { h: 0, s: 80, l: 55 };
+const DEFAULT_SECONDARY = { h: 0, s: 60, l: 37 };
+const CarColor = {
+  unlocked: [],
+  primary: { ...DEFAULT_PRIMARY },
+  secondary: { ...DEFAULT_SECONDARY },
+
+  /** loads from Firestore when signed in, else local storage; called once
+   *  at startup and again right after sign-in resolves. */
+  async load() {
+    if (Cloud.on && Cloud.user) {
+      const remote = await Cloud.fetchCarColors();
+      this.unlocked = remote.unlocked;
+      this.primary = remote.primary;
+      this.secondary = remote.secondary;
+    } else {
+      try {
+        const raw = localStorage.getItem(CARCOLOR_KEY);
+        const d = raw ? JSON.parse(raw) : null;
+        this.unlocked = (d && Array.isArray(d.unlocked)) ? d.unlocked : [];
+        this.primary = (d && d.primary) || { ...DEFAULT_PRIMARY };
+        this.secondary = (d && d.secondary) || { ...DEFAULT_SECONDARY };
+      } catch (e) { this.unlocked = []; this.primary = { ...DEFAULT_PRIMARY }; this.secondary = { ...DEFAULT_SECONDARY }; }
+    }
+    this.apply();
+  },
+
+  /** paints the live car materials — the menu's own idle car, and every
+   *  attempt driven afterward, since both read the same MAT.body/
+   *  MAT.bodyDark instances rather than a baked-in color. */
+  apply() {
+    if (MAT.body) MAT.body.color.setHex(hslToHex(this.primary.h, this.primary.s, this.primary.l));
+    if (MAT.bodyDark) MAT.bodyDark.color.setHex(hslToHex(this.secondary.h, this.secondary.s, this.secondary.l));
+  },
+
+  async save() {
+    if (Cloud.on && Cloud.user) {
+      await Cloud.saveCarColors({ unlocked: this.unlocked, primary: this.primary, secondary: this.secondary });
+    } else {
+      try {
+        localStorage.setItem(CARCOLOR_KEY, JSON.stringify({
+          unlocked: this.unlocked, primary: this.primary, secondary: this.secondary
+        }));
+      } catch (e) { /* storage full or unavailable — cosmetic only, safe to drop */ }
+    }
+  },
+
+  /** true color-equality check (not reference), since the same color can
+   *  be independently unlocked twice by chance — that's fine, it just
+   *  shows once, deduped by value here. */
+  has(c) { return this.unlocked.some((u) => u.h === c.h && u.s === c.s && u.l === c.l); },
+
+  /** hue pack: one of exactly 256 hues (a 16x16 grid), fixed at a vivid,
+   *  legible saturation/lightness so every roll reads as a clear color
+   *  rather than something washed out or near-black. */
+  rollHue() {
+    const cell = Math.floor(Math.random() * 256);
+    return { h: Math.round(cell * (360 / 256)), s: 65, l: 55 };
+  },
+
+  /** saturation/brightness pack: one of 256 cells (16 saturation steps x
+   *  16 lightness steps) at the CURRENT hue of whichever slot is being
+   *  shopped for — this pack is about finding a more vivid or more muted,
+   *  lighter or darker version of a hue you already have equipped, not a
+   *  new hue. */
+  rollSatLight(slot) {
+    const hue = (slot === 'secondary' ? this.secondary : this.primary).h;
+    const col = Math.floor(Math.random() * 16), row = Math.floor(Math.random() * 16);
+    const s = Math.round(10 + col * (90 / 15));
+    const l = Math.round(10 + row * (80 / 15));
+    return { h: hue, s, l };
+  },
+
+  /** spends 10 credits, rolls the requested pack, adds the result to the
+   *  unlocked list (even if it duplicates one already owned — see has()),
+   *  equips it immediately on the slot that was shopping, and persists
+   *  everything in one go. Throws (and spends nothing) if payForColor
+   *  itself rejects, e.g. not enough credits. */
+  async buy(pack, slot) {
+    await Cloud.payForColor();
+    const color = pack === 'hue' ? this.rollHue() : this.rollSatLight(slot);
+    this.unlocked.push(color);
+    if (slot === 'secondary') this.secondary = color; else this.primary = color;
+    this.apply();
+    await this.save();
+    return color;
+  },
+
+  /** assigns an already-unlocked color to a slot, repaints immediately,
+   *  and persists the new equipped choice. */
+  async equip(slot, color) {
+    if (slot === 'secondary') this.secondary = color; else this.primary = color;
+    this.apply();
+    await this.save();
   }
 };
 
@@ -1572,6 +1774,50 @@ const Cloud = {
         || s.some((v) => !isFinite(v))) return null;
       return { t: d.timeMs / 1000, s };
     } catch (e) { return null; }
+  },
+
+  /** this player's saved car colors, or the default red/dark-red pair if
+   *  they've never customized anything. */
+  async fetchCarColors() {
+    const fallback = { unlocked: [], primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 } };
+    if (!this.on || !this.user) return fallback;
+    try {
+      const { fsMod } = this.fb;
+      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'carCustomization', this.user.uid));
+      if (!snap.exists()) return fallback;
+      const d = snap.data();
+      return {
+        unlocked: Array.isArray(d.unlocked) ? d.unlocked : [],
+        primary: d.primary || fallback.primary,
+        secondary: d.secondary || fallback.secondary
+      };
+    } catch (e) { return fallback; }
+  },
+
+  /** persists the full customization doc — called after every purchase or
+   *  every equip, so a refresh never loses what was already unlocked. */
+  async saveCarColors(state) {
+    if (!this.on || !this.user) return;
+    const { fsMod } = this.fb;
+    await fsMod.setDoc(fsMod.doc(this.db, 'carCustomization', this.user.uid), {
+      uid: this.user.uid, unlocked: state.unlocked, primary: state.primary, secondary: state.secondary
+    });
+  },
+
+  /** buys one color pack for 10 credits: the debit and the color purchase
+   *  are two separate documents (the debit in creditEvents, the color in
+   *  carCustomization) rather than one atomic batch, because
+   *  carCustomization holds the player's whole unlocked list and has to be
+   *  read-modify-written with the latest state anyway — see CarColor.buy(). */
+  async payForColor() {
+    if (!this.user || !this.on) throw new Error('Not signed in.');
+    if (this.banned()) throw new Error('This account is suspended.');
+    if ((this.credits || 0) < 10) throw new Error('You need 10 credits for a color.');
+    const { fsMod } = this.fb;
+    const uid = this.user.uid;
+    const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_color';
+    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: -10 });
+    this.credits -= 10;
   }
 };
 const CREDITS_PER_CLEAR = 100;
@@ -1833,8 +2079,12 @@ function buildMaterials() {
   MAT.chev = std(0xffc628, { roughness: 0.7 });
   MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
   MAT.finish = std(0xffc628, { emissive: 0xc9930d, emissiveIntensity: 0.45 });
-  MAT.body = std(0x2f7dff, { roughness: 0.42, metalness: 0.1 });
-  MAT.bodyDark = std(0x1b4fb8, { roughness: 0.5, metalness: 0.08 });
+  // Default red at "normal" saturation/lightness — CarColor.apply() recolors
+  // these two live from the player's saved choice once one exists, but the
+  // very first paint (before any save has loaded) has to be something, and
+  // this is that something.
+  MAT.body = std(0xe83030, { roughness: 0.42, metalness: 0.1 });
+  MAT.bodyDark = std(0x972626, { roughness: 0.5, metalness: 0.08 });
   MAT.trim = std(0x2b3442, { roughness: 0.6, metalness: 0.12 });
   MAT.glass = std(0x9fd4f2, { roughness: 0.24, metalness: 0.2 });
   MAT.tyre = std(0x12161d, { roughness: 0.96, flatShading: false });
@@ -2085,10 +2335,15 @@ function buildFlameGroup() {
 }
 
 /** original low-poly coupe: authored as primitives, baked per material */
-function buildCarMesh() {
+/** bodyMat/bodyDarkMat default to the shared, live-recolorable MAT.body/
+ *  MAT.bodyDark (the player's own car, and the menu's idle preview) — but
+ *  spectate's mesh passes its own dedicated clones instead, because it
+ *  shows someone else's recorded run and must never pick up whatever
+ *  color the *viewer* currently has equipped (see boot()). */
+function buildCarMesh(bodyMat, bodyDarkMat) {
   const g = new THREE.Group();
   const P = new PartSet();
-  const B = MAT.body, D = MAT.bodyDark, T = MAT.trim, G = MAT.glass;
+  const B = bodyMat || MAT.body, D = bodyDarkMat || MAT.bodyDark, T = MAT.trim, G = MAT.glass;
   P.add(T, [1.74, 0.14, 3.46], [0, -0.18, 0]);                      // floor pan
   P.add(B, [1.98, 0.34, 3.62], [0, 0.02, 0]);                       // main hull
   P.add(B, [1.82, 0.22, 1.00], [0, 0.06, 1.48], [deg(-5), 0, 0]);    // nose
@@ -4385,7 +4640,7 @@ const UI = {
   toastT: 0,
   show(id) {
     ['menu', 'select', 'boards', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'raceReveal', 'raceBetween']
+     'raceReveal', 'raceBetween', 'garage']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
   },
@@ -4597,6 +4852,93 @@ const UI = {
       body.querySelectorAll('.watchBtn').forEach((b) => b.addEventListener('click', () =>
         Game.spectate(b.dataset.course, b.dataset.uid)));
     }
+  },
+
+  /** Redraws the whole garage screen from CarColor's current state — safe
+   *  to call after every purchase/equip since it just re-reads that state,
+   *  the same pattern boards() already uses for its own live data. */
+  garage() {
+    const slot = Game.garageSlot;
+    const swatchStyle = (c) => 'background:' + hslCss(c.h, c.s, c.l);
+    $('gSwatchPrimary').setAttribute('style', swatchStyle(CarColor.primary));
+    $('gSwatchSecondary').setAttribute('style', swatchStyle(CarColor.secondary));
+    $('gSlotPrimary').classList.toggle('on', slot === 'primary');
+    $('gSlotSecondary').classList.toggle('on', slot === 'secondary');
+    $('gActiveSlotName').textContent = slot.toUpperCase();
+    $('gCredits').textContent = Cloud.on ? (Cloud.credits || 0) : 'offline';
+    $('gBuyHue').disabled = !Cloud.on;
+    $('gBuySatLight').disabled = !Cloud.on;
+    $('gBuyMsg').textContent = Cloud.on ? '' : 'Sign in to buy colors — offline mode keeps whatever you already unlocked, but can\'t spend credits.';
+
+    const owned = $('gOwned');
+    $('gUnlockedCount').textContent = '(' + CarColor.unlocked.length + ')';
+    $('gOwnedEmpty').hidden = CarColor.unlocked.length > 0;
+    owned.innerHTML = '';
+    CarColor.unlocked.forEach((c) => {
+      const b = document.createElement('button');
+      b.className = 'garageColorBtn';
+      const equipped = (slot === 'primary' ? CarColor.primary : CarColor.secondary);
+      if (equipped.h === c.h && equipped.s === c.s && equipped.l === c.l) b.classList.add('equipped');
+      b.style.background = hslCss(c.h, c.s, c.l);
+      b.title = 'h' + c.h + ' s' + c.s + '% l' + c.l + '%';
+      b.addEventListener('click', () => Game.equipCarColor(c));
+      owned.appendChild(b);
+    });
+  },
+
+  /** Plays a short "which cell did we land on" reveal over the 16x16 grid
+   *  the pack was drawn from, then calls onDone. Purely presentational —
+   *  the color itself was already rolled before this runs; this just
+   *  shows where in the grid it came from. */
+  garageReveal(pack, slot, color, onDone) {
+    const box = $('gRollBox'), grid = $('gRollGrid'), result = $('gRollResult');
+    box.hidden = false;
+    grid.innerHTML = '';
+    let hitIndex;
+    const cells = [];
+    if (pack === 'hue') {
+      for (let i = 0; i < 256; i++) {
+        const h = i * (360 / 256);
+        cells.push(hslCss(h, 65, 55));
+      }
+      hitIndex = Math.round(color.h / (360 / 256)) % 256;
+    } else {
+      const hue = color.h;
+      for (let row = 0; row < 16; row++) {
+        for (let col = 0; col < 16; col++) {
+          const s = 10 + col * (90 / 15), l = 10 + row * (80 / 15);
+          cells.push(hslCss(hue, s, l));
+        }
+      }
+      const col = Math.round((color.s - 10) / (90 / 15));
+      const row = Math.round((color.l - 10) / (80 / 15));
+      hitIndex = row * 16 + col;
+    }
+    cells.forEach((bg, i) => {
+      const d = document.createElement('div');
+      d.className = 'cell';
+      d.style.background = bg;
+      grid.appendChild(d);
+    });
+    result.textContent = 'Rolling…';
+    // A quick flicker across a handful of random cells before landing on
+    // the real one makes the "blind pack" framing readable at a glance,
+    // instead of the result just appearing with no sense of a draw.
+    const cellEls = grid.children;
+    let ticks = 0;
+    const maxTicks = 14;
+    const timer = setInterval(() => {
+      for (const el of cellEls) el.classList.remove('hit');
+      const show = ticks < maxTicks - 1 ? Math.floor(Math.random() * cellEls.length) : hitIndex;
+      cellEls[show].classList.add('hit');
+      ticks++;
+      if (ticks >= maxTicks) {
+        clearInterval(timer);
+        result.innerHTML = 'Landed on <b>h' + Math.round(color.h) + ' s' + color.s + '% l' + color.l +
+          '%</b> — added to your colors and equipped on ' + slot + '.';
+        if (onDone) onDone();
+      }
+    }, 80);
   }
 };
 function escapeHtml(s) {
@@ -4646,6 +4988,7 @@ const Game = {
   _startingCountdownFor: null, _startingRaceFor: null,
   _joinedRaceId: null, _joinedEntry: null,
   boardsUnwatch: null,
+  garageSlot: 'primary',
 
   boot() {
     buildMaterials();
@@ -4659,8 +5002,12 @@ const Game = {
     this.marks = new SkidMarks(App.scene, 900);
     // a full-detail, fully opaque car used only when spectating someone
     // else's recorded run — the translucent ghost mesh is deliberately
-    // simplified and reads poorly as the main subject of a replay
-    const specBuilt = buildCarMesh();
+    // simplified and reads poorly as the main subject of a replay. Uses
+    // its own cloned materials, fixed at the default red, rather than
+    // MAT.body/MAT.bodyDark: those two are repainted live to whatever the
+    // *viewer* has equipped (see CarColor.apply), and a spectated run is
+    // someone else's car, not the viewer's.
+    const specBuilt = buildCarMesh(MAT.body.clone(), MAT.bodyDark.clone());
     this.specMesh = specBuilt.group;
     this.specFlame = specBuilt.flame;
     this.specFlameLights = specBuilt.flameLights;
@@ -4716,7 +5063,7 @@ const Game = {
     } else {
       $('boot').hidden = true;
       UI.who(null);
-      this.toMenu();
+      CarColor.load().then(() => this.toMenu());
     }
     return true;
   },
@@ -4788,6 +5135,9 @@ const Game = {
     } catch (e) {
       console.warn('Skyframe: could not read the leaderboards', e && e.message);
       UI.toast('Could not load leaderboards or credits — check your connection and try again.');
+    }
+    if (this.confirmedUid !== user.uid) {
+      try { await CarColor.load(); } catch (e) { console.warn('Skyframe: could not load car colors', e && e.message); }
     }
     this.confirmedUid = user.uid;
     UI.who(Cloud.name(), Records.credits);
@@ -5070,6 +5420,12 @@ const Game = {
     $('bCourses').addEventListener('click', () => this.toSelect());
     $('bBoards').addEventListener('click', () => this.toBoards());
     $('bSettings').addEventListener('click', () => this.toSettings());
+    $('bGarage').addEventListener('click', () => this.toGarage());
+    $('bGarageBack').addEventListener('click', () => this.toMenu());
+    $('gSlotPrimary').addEventListener('click', () => this.setGarageSlot('primary'));
+    $('gSlotSecondary').addEventListener('click', () => this.setGarageSlot('secondary'));
+    $('gBuyHue').addEventListener('click', () => this.buyCarColorPack('hue'));
+    $('gBuySatLight').addEventListener('click', () => this.buyCarColorPack('satlight'));
     $('bSetBack').addEventListener('click', () => this.toMenu());
     $('bSelBack').addEventListener('click', () => this.toMenu());
     $('bBoardBack').addEventListener('click', () => this.toMenu());
@@ -5526,6 +5882,46 @@ const Game = {
     $('setOfflineRule').hidden = Cloud.on;
     UI.show('settings');
     this.flushPendingAuth();
+  },
+
+  toGarage() {
+    this.state = 'garage'; this.running = false;
+    Sound.stopEngine();
+    this.garageSlot = 'primary';
+    $('gRollBox').hidden = true;
+    UI.garage();
+    UI.show('garage');
+    this.flushPendingAuth();
+  },
+
+  setGarageSlot(slot) {
+    this.garageSlot = slot;
+    $('gRollBox').hidden = true;
+    $('gBuyMsg').textContent = '';
+    UI.garage();
+  },
+
+  equipCarColor(color) {
+    CarColor.equip(this.garageSlot, color).catch((e) =>
+      console.warn('Skyframe: could not save equipped color', e && e.message));
+    UI.garage();
+  },
+
+  /** Buys one pack, then plays the reveal animation before re-rendering —
+   *  the color is already rolled and saved by the time the animation
+   *  starts, so a player closing the garage mid-animation never loses it. */
+  async buyCarColorPack(pack) {
+    if (!Cloud.on || !Cloud.user) { $('gBuyMsg').textContent = 'Sign in to buy colors.'; return; }
+    $('gBuyHue').disabled = true; $('gBuySatLight').disabled = true;
+    $('gBuyMsg').textContent = '';
+    try {
+      const color = await CarColor.buy(pack, this.garageSlot);
+      UI.who(Cloud.name(), Records.credits);
+      UI.garageReveal(pack, this.garageSlot, color, () => UI.garage());
+    } catch (e) {
+      $('gBuyMsg').textContent = e.message || 'Could not buy that color.';
+    }
+    $('gBuyHue').disabled = false; $('gBuySatLight').disabled = false;
   },
 
   /** Joins whichever race is currently open, from the menu's lobby card —

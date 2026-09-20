@@ -12,6 +12,15 @@ service cloud.firestore {
     function myProfile() {
       return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
     }
+    // {h: 0-360, s: 0-100, l: 0-100} — the shape every car color is stored
+    // in, whether it came from the hue pack or the saturation/brightness
+    // pack, so equipping one is always the same simple field-copy.
+    function isHsl(c) {
+      return c.keys().hasOnly(['h', 's', 'l'])
+        && c.h is number && c.h >= 0 && c.h <= 360
+        && c.s is number && c.s >= 0 && c.s <= 100
+        && c.l is number && c.l >= 0 && c.l <= 100;
+    }
 
     // config/invite holds the current invite code. No player may ever read it —
     // that is what makes the claims/{uid} check below meaningful.
@@ -112,6 +121,12 @@ service cloud.firestore {
     //   {uid}_{anything}_adjust  an admin manually setting a player's
     //                            balance from the panel — any sign, any
     //                            size, purely at admin discretion.
+    //   {uid}_{anything}_color   buying a car-color pack — always exactly
+    //                            delta==-10, repeatable like _grind. The
+    //                            resulting color itself is a client-rolled
+    //                            random pick, written separately to
+    //                            carCustomization/{uid} — same trust level
+    //                            as everything else self-reported here.
     match /creditEvents/{docId} {
       allow get, list: if signedIn() &&
         (resource.data.uid == request.auth.uid || isAdmin());
@@ -124,6 +139,8 @@ service cloud.firestore {
           || (docId == request.auth.uid + '_' + request.resource.data.raceId + '_buyin'
             && request.resource.data.delta is number
             && request.resource.data.delta < 0 && request.resource.data.delta > -1000000)
+          || (docId.matches(request.auth.uid + '_.+_color')
+            && request.resource.data.delta == -10)
         ))
         || (signedIn() && docId.matches('.+_' + request.resource.data.raceId + '_payout')
             && request.resource.data.delta is number
@@ -131,6 +148,28 @@ service cloud.firestore {
         || (isAdmin() && docId.matches(request.resource.data.uid + '_.+_adjust')
             && request.resource.data.delta is number);
       allow update, delete: if false;
+    }
+
+    // One document per player: every color they've unlocked (each bought
+    // for 10 credits, see creditEvents' _color shape above) plus which two
+    // are currently equipped. HSL rather than RGB so the two color-pack
+    // shapes (a straight hue pick, and a saturation/brightness pick around
+    // an existing hue) are both simple, exact range checks. The actual
+    // random roll happens client-side — same trust level as a lap time or
+    // a credits-grind completion, nothing here to cheaply verify server-
+    // side, and nothing worth cheating (a color has no gameplay effect).
+    match /carCustomization/{uid} {
+      allow get: if signedIn();
+      allow list: if isAdmin();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.unlocked is list
+        && request.resource.data.unlocked.size() <= 500
+        && request.resource.data.primary is map
+        && request.resource.data.secondary is map
+        && isHsl(request.resource.data.primary)
+        && isHsl(request.resource.data.secondary);
+      allow delete: if false;
     }
 
     // Doc id "{uid}_{courseId}". Ghosts are read by anyone racing that run, but
