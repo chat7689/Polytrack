@@ -254,15 +254,23 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
   background:rgba(0,0,0,.2);text-align:center}
 .garageGrid{display:grid;grid-template-columns:repeat(16,1fr);gap:1px;max-width:320px;
   margin:0 auto 12px;aspect-ratio:1/1;border:1px solid var(--rule)}
-.garageGrid .cell{width:100%;height:100%}
+.garageGrid .cell{width:100%;height:100%;position:relative}
 .garageGrid .cell.hit{outline:2px solid #fff;outline-offset:-2px;position:relative;z-index:1}
 .garageRollResult{font-size:13px;color:var(--dim)}
 .garageRollResult b{color:var(--ink)}
-.garageOwned{display:flex;flex-wrap:wrap;gap:10px}
-.garageColorBtn{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.25);
-  cursor:pointer;padding:0;transition:transform .12s,border-color .12s;box-shadow:inset 0 0 5px rgba(0,0,0,.3)}
-.garageColorBtn:hover{transform:scale(1.1)}
-.garageColorBtn.equipped{border-color:#fff;box-shadow:0 0 0 2px var(--aqua),inset 0 0 5px rgba(0,0,0,.3)}
+.garageSelectGrid{cursor:default}
+.garageSelectGrid .cell.locked{cursor:default}
+.garageSelectGrid .cell.unlocked{cursor:pointer}
+.garageSelectGrid .cell.unlocked:hover{outline:1px solid rgba(255,255,255,.6);outline-offset:-1px;z-index:1}
+.garageSelectGrid .cell.equipped{outline:2px solid #fff;outline-offset:-2px;z-index:2;box-shadow:0 0 6px rgba(255,255,255,.8)}
+.garageSelectGrid .cell.locked::before,.garageSelectGrid .cell.locked::after{
+  content:'';position:absolute;left:10%;top:47%;width:80%;height:2px;background:#fff;
+  box-shadow:0 1px 0 #000,0 -1px 0 #000}
+.garageSelectGrid .cell.locked::before{transform:rotate(45deg)}
+.garageSelectGrid .cell.locked::after{transform:rotate(-45deg)}
+.garagePreviewWrap{width:100%;height:180px;margin-bottom:18px;border:1px solid var(--rule);
+  border-radius:3px;background:radial-gradient(120% 140% at 50% 20%,#1a2740,#0b1220);overflow:hidden}
+.garagePreviewWrap canvas{width:100%;height:100%;display:block}
 </style>
 </head>
 <body>
@@ -537,11 +545,15 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
 
   <div class="layer" id="garage" hidden>
     <div class="scrim"></div>
-    <div class="panel" style="width:min(640px,94vw)">
+    <div class="panel" style="width:min(720px,94vw)">
       <h2 class="big">Garage</h2>
-      <p class="lede" style="margin-bottom:22px">Paint your car. Every color starts locked — spend 10
+      <p class="lede" style="margin-bottom:18px">Paint your car. Every color starts locked — spend 10
         credits on a pack and get back one random color from it, no picking. Once you own a color it's
         yours to put on either slot, any time, for free.</p>
+
+      <div class="garagePreviewWrap">
+        <canvas id="gPreviewCanvas"></canvas>
+      </div>
 
       <div class="row" style="gap:18px;margin-bottom:20px">
         <button class="garageSlot" id="gSlotPrimary" data-slot="primary">
@@ -569,12 +581,16 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
         <div class="garageRollResult" id="gRollResult"></div>
       </div>
 
-      <h3 style="font-size:13px;font-weight:600;margin:18px 0 10px">
-        YOUR COLORS <span class="dim" id="gUnlockedCount"></span>
-      </h3>
-      <div class="garageOwned" id="gOwned"></div>
-      <p class="lede" id="gOwnedEmpty" style="font-size:12.5px" hidden>No colors unlocked yet — buy a
-        pack above to get your first one.</p>
+      <h3 style="font-size:13px;font-weight:600;margin:18px 0 6px">HUE</h3>
+      <p class="lede" style="font-size:12px;margin-bottom:8px">Every hue you own, for either slot —
+        click one to put it on <span id="gHueSlotName">primary</span>. Locked hues are crossed out.</p>
+      <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
+
+      <h3 style="font-size:13px;font-weight:600;margin:20px 0 6px">SATURATION / BRIGHTNESS</h3>
+      <p class="lede" style="font-size:12px;margin-bottom:8px">Variants of <span id="gSatLightSlotName">primary</span>'s
+        current hue — saturation runs left to right, brightness bottom to top. Locked squares are
+        crossed out.</p>
+      <div class="garageGrid garageSelectGrid" id="gSatLightGrid"></div>
 
       <div class="rule"></div>
       <div class="row">
@@ -948,12 +964,25 @@ const CarColor = {
    *  shows once, deduped by value here. */
   has(c) { return this.unlocked.some((u) => u.h === c.h && u.s === c.s && u.l === c.l); },
 
+  // Fixed s/l the whole hue grid is drawn at, and the s/l step tables the
+  // sat/brightness grid is drawn at — shared by every place that needs to
+  // go from a grid cell to a color or back (rolling, the purchase reveal,
+  // and the permanent selection grids), so all three always agree on
+  // exactly which cell any given color sits in.
+  HUE_S: 65, HUE_L: 55,
+  hueAt(cell) { return Math.round(cell * (360 / 256)); },
+  hueCellOf(h) { return Math.round(h / (360 / 256)) % 256; },
+  satAt(col) { return Math.round(10 + col * (90 / 15)); },
+  lightAt(row) { return Math.round(10 + row * (80 / 15)); },
+  satColOf(s) { return Math.round((s - 10) / (90 / 15)); },
+  lightRowOf(l) { return Math.round((l - 10) / (80 / 15)); },
+
   /** hue pack: one of exactly 256 hues (a 16x16 grid), fixed at a vivid,
    *  legible saturation/lightness so every roll reads as a clear color
    *  rather than something washed out or near-black. */
   rollHue() {
     const cell = Math.floor(Math.random() * 256);
-    return { h: Math.round(cell * (360 / 256)), s: 65, l: 55 };
+    return { h: this.hueAt(cell), s: this.HUE_S, l: this.HUE_L };
   },
 
   /** saturation/brightness pack: one of 256 cells (16 saturation steps x
@@ -964,9 +993,7 @@ const CarColor = {
   rollSatLight(slot) {
     const hue = (slot === 'secondary' ? this.secondary : this.primary).h;
     const col = Math.floor(Math.random() * 16), row = Math.floor(Math.random() * 16);
-    const s = Math.round(10 + col * (90 / 15));
-    const l = Math.round(10 + row * (80 / 15));
-    return { h: hue, s, l };
+    return { h: hue, s: this.satAt(col), l: this.lightAt(row) };
   },
 
   /** spends 10 credits, rolls the requested pack, adds the result to the
@@ -4635,6 +4662,71 @@ const App = {
   render() { this.renderer.render(this.scene, this.camera); }
 };
 
+/**
+ * A small, fully separate Three.js scene just for the Garage's rotating
+ * car preview — its own renderer bound to its own canvas, never touching
+ * App's main scene or render loop. The car mesh is built with no material
+ * overrides, so it uses the same shared MAT.body/MAT.bodyDark every other
+ * "the player's own car" mesh uses (see buildCarMesh) — CarColor.apply()
+ * repainting those two materials on every equip/buy is all this preview
+ * ever needs to pick up the change, exactly like the menu's own idle car.
+ * Only renders while the garage screen is open (start()/stop()), so it
+ * costs nothing the rest of the time.
+ */
+const GaragePreview = {
+  renderer: null, scene: null, camera: null, car: null, running: false, angle: 0,
+
+  ensureBuilt() {
+    if (this.renderer) return;
+    const canvas = $('gPreviewCanvas');
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(32, 1, 0.5, 50);
+    this.camera.position.set(0, 1.9, 7.2);
+    this.camera.lookAt(0, 0.35, 0);
+
+    const key = new THREE.DirectionalLight(0xfff6e8, 1.4);
+    key.position.set(4, 6, 4);
+    this.scene.add(key);
+    this.scene.add(new THREE.AmbientLight(0xaac4e0, 0.65));
+    const rim = new THREE.DirectionalLight(0x6fa8ff, 0.5);
+    rim.position.set(-5, 3, -4);
+    this.scene.add(rim);
+
+    this.car = buildCarMesh().group;
+    this.car.rotation.y = deg(200);
+    this.scene.add(this.car);
+    addEventListener('resize', () => { if (this.running) this.resize(); });
+  },
+
+  resize() {
+    const canvas = $('gPreviewCanvas');
+    const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+  },
+
+  start() {
+    this.ensureBuilt();
+    this.resize();
+    this.running = true;
+    const loop = () => {
+      if (!this.running) return;
+      this.angle += 0.008;
+      this.car.rotation.y = deg(200) + this.angle;
+      this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  },
+
+  stop() { this.running = false; }
+};
+
 /* ---------------------------------------------------------------- 11. ui */
 const UI = {
   toastT: 0,
@@ -4859,31 +4951,66 @@ const UI = {
    *  the same pattern boards() already uses for its own live data. */
   garage() {
     const slot = Game.garageSlot;
+    const equipped = slot === 'primary' ? CarColor.primary : CarColor.secondary;
     const swatchStyle = (c) => 'background:' + hslCss(c.h, c.s, c.l);
     $('gSwatchPrimary').setAttribute('style', swatchStyle(CarColor.primary));
     $('gSwatchSecondary').setAttribute('style', swatchStyle(CarColor.secondary));
     $('gSlotPrimary').classList.toggle('on', slot === 'primary');
     $('gSlotSecondary').classList.toggle('on', slot === 'secondary');
     $('gActiveSlotName').textContent = slot.toUpperCase();
+    $('gHueSlotName').textContent = slot;
+    $('gSatLightSlotName').textContent = slot;
     $('gCredits').textContent = Cloud.on ? (Cloud.credits || 0) : 'offline';
     $('gBuyHue').disabled = !Cloud.on;
     $('gBuySatLight').disabled = !Cloud.on;
     $('gBuyMsg').textContent = Cloud.on ? '' : 'Sign in to buy colors — offline mode keeps whatever you already unlocked, but can\'t spend credits.';
 
-    const owned = $('gOwned');
-    $('gUnlockedCount').textContent = '(' + CarColor.unlocked.length + ')';
-    $('gOwnedEmpty').hidden = CarColor.unlocked.length > 0;
-    owned.innerHTML = '';
-    CarColor.unlocked.forEach((c) => {
-      const b = document.createElement('button');
-      b.className = 'garageColorBtn';
-      const equipped = (slot === 'primary' ? CarColor.primary : CarColor.secondary);
-      if (equipped.h === c.h && equipped.s === c.s && equipped.l === c.l) b.classList.add('equipped');
-      b.style.background = hslCss(c.h, c.s, c.l);
-      b.title = 'h' + c.h + ' s' + c.s + '% l' + c.l + '%';
-      b.addEventListener('click', () => Game.equipCarColor(c));
-      owned.appendChild(b);
+    // HUE grid: 256 cells, one per hue, at the pack's own fixed s/l — a
+    // hue you own reads as unlocked here regardless of which slot/hue is
+    // currently active, since a hue-pack color isn't tied to anything.
+    this.renderGarageGrid($('gHueGrid'), 256, (i) => {
+      const h = CarColor.hueAt(i);
+      const color = { h, s: CarColor.HUE_S, l: CarColor.HUE_L };
+      const owned = CarColor.unlocked.find((u) => u.h === h && u.s === CarColor.HUE_S && u.l === CarColor.HUE_L);
+      const isEquipped = equipped.h === h && equipped.s === CarColor.HUE_S && equipped.l === CarColor.HUE_L;
+      return { bg: hslCss(h, CarColor.HUE_S, CarColor.HUE_L), owned: !!owned, equipped: isEquipped, color };
     });
+
+    // SATURATION/BRIGHTNESS grid: 256 cells at the ACTIVE SLOT's current
+    // hue — a cell only reads as unlocked if a color with that exact hue
+    // AND that exact saturation/lightness has been rolled, so switching
+    // slots (or hues) changes which cells in this same grid show as owned.
+    const hue = equipped.h;
+    this.renderGarageGrid($('gSatLightGrid'), 256, (i) => {
+      const col = i % 16, row = Math.floor(i / 16);
+      const s = CarColor.satAt(col), l = CarColor.lightAt(row);
+      const color = { h: hue, s, l };
+      const owned = CarColor.unlocked.find((u) => u.h === hue && u.s === s && u.l === l);
+      const isEquipped = equipped.h === hue && equipped.s === s && equipped.l === l;
+      return { bg: hslCss(hue, s, l), owned: !!owned, equipped: isEquipped, color };
+    });
+  },
+
+  /** Shared renderer for both persistent selection grids: cellFn(i) must
+   *  return {bg, owned, equipped, color} for cell i of 256. Locked cells
+   *  get the black/white X and no click handler; unlocked cells are
+   *  clickable to equip on the currently active garage slot for free. */
+  renderGarageGrid(grid, count, cellFn) {
+    grid.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const { bg, owned, equipped, color } = cellFn(i);
+      const d = document.createElement('div');
+      d.className = 'cell ' + (owned ? 'unlocked' : 'locked');
+      if (equipped) d.className += ' equipped';
+      d.style.background = bg;
+      if (owned) {
+        d.title = 'h' + color.h + ' s' + color.s + '% l' + color.l + '%';
+        d.addEventListener('click', () => Game.equipCarColor(color));
+      } else {
+        d.title = 'Locked';
+      }
+      grid.appendChild(d);
+    }
   },
 
   /** Plays a short "which cell did we land on" reveal over the 16x16 grid
@@ -4897,22 +5024,14 @@ const UI = {
     let hitIndex;
     const cells = [];
     if (pack === 'hue') {
-      for (let i = 0; i < 256; i++) {
-        const h = i * (360 / 256);
-        cells.push(hslCss(h, 65, 55));
-      }
-      hitIndex = Math.round(color.h / (360 / 256)) % 256;
+      for (let i = 0; i < 256; i++) cells.push(hslCss(CarColor.hueAt(i), CarColor.HUE_S, CarColor.HUE_L));
+      hitIndex = CarColor.hueCellOf(color.h);
     } else {
       const hue = color.h;
       for (let row = 0; row < 16; row++) {
-        for (let col = 0; col < 16; col++) {
-          const s = 10 + col * (90 / 15), l = 10 + row * (80 / 15);
-          cells.push(hslCss(hue, s, l));
-        }
+        for (let col = 0; col < 16; col++) cells.push(hslCss(hue, CarColor.satAt(col), CarColor.lightAt(row)));
       }
-      const col = Math.round((color.s - 10) / (90 / 15));
-      const row = Math.round((color.l - 10) / (80 / 15));
-      hitIndex = row * 16 + col;
+      hitIndex = CarColor.lightRowOf(color.l) * 16 + CarColor.satColOf(color.s);
     }
     cells.forEach((bg, i) => {
       const d = document.createElement('div');
@@ -5826,6 +5945,7 @@ const Game = {
     Sound.stopEngine();
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
     this.stopWatchingBoards();
+    GaragePreview.stop();
     UI.show('menu');
     this.flushPendingAuth();
   },
@@ -5891,6 +6011,7 @@ const Game = {
     $('gRollBox').hidden = true;
     UI.garage();
     UI.show('garage');
+    GaragePreview.start();
     this.flushPendingAuth();
   },
 
