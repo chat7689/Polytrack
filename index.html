@@ -1845,6 +1845,28 @@ const Cloud = {
     const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_color';
     await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: -10 });
     this.credits -= 10;
+  },
+
+  /**
+   * Appends one row to the admin-only run history: every campaign finish,
+   * credits-run finish, and race attempt, with an exact server timestamp.
+   * Deliberately fire-and-forget from every call site — this is pure
+   * telemetry for the admin panel, so a slow or failed write here must
+   * never delay or interrupt the player's own result screen. raceId is
+   * only present for kind:'race', letting the admin panel line a run back
+   * up to the specific race it happened in.
+   */
+  async logRun(courseId, kind, timeMs, raceId) {
+    if (!this.on || !this.user) return;
+    try {
+      const { fsMod } = this.fb;
+      const doc = {
+        uid: this.user.uid, displayName: this.name(), courseId, kind,
+        timeMs: Math.round(timeMs), createdAt: fsMod.serverTimestamp()
+      };
+      if (raceId) doc.raceId = raceId;
+      await fsMod.addDoc(fsMod.collection(this.db, 'runLog'), doc);
+    } catch (e) { console.warn('Skyframe: could not log run', e && e.message); }
   }
 };
 const CREDITS_PER_CLEAR = 100;
@@ -6148,6 +6170,9 @@ const Game = {
       console.warn('Skyframe: could not record race attempt', e && e.message);
       UI.toast('Could not save that attempt — check your connection.');
     }
+    if (this.lobby && this.lobby.courseId) {
+      Cloud.logRun(this.lobby.courseId, 'race', timeSec * 1000, raceId);
+    }
     const mine = this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
     const attemptsUsed = mine ? (mine.attempts || []).length + 1 : 1;
     this.state = 'raceBetween';
@@ -6203,6 +6228,7 @@ const Game = {
     this.state = 'result';
     Sound.stopEngine();
     Sound.finish(false);
+    Cloud.logRun(this.id(), 'creditsrun', this.time * 1000);
     $('rKick').textContent = 'Credits run';
     $('rName').textContent = LEVELS[this.levelIndex].name;
     $('rTime').textContent = formatTime(this.time);
@@ -6242,6 +6268,7 @@ const Game = {
     const prevBest = Records.best(id);
     const firstClear = !Records.cleared(id);
     const res = Records.submit(id, this.time);
+    Cloud.logRun(id, 'campaign', this.time * 1000);
     if (Cloud.on && Cloud.user && !Cloud.banned() && (!prevBest || this.time < prevBest)) {
       Cloud.pushBest(id, this.time, this.rec, firstClear).then(() => {
         // the award is granted by its document id, so it lands exactly once

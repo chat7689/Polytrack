@@ -50,6 +50,22 @@ tr.banned td.name{text-decoration:line-through}
 .msg.err{color:var(--ember)} .msg.ok{color:var(--aqua)}
 .hide{display:none}
 small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;line-height:1.5}
+select{font:14px var(--mono);color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
+  border-radius:3px;padding:10px 12px;width:200px;max-width:100%;transition:border-color .14s}
+select:focus{outline:none;border-color:var(--aqua)}
+.statGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+.statTile{background:rgba(255,255,255,.03);border:1px solid var(--rule);border-radius:3px;
+  padding:14px 16px}
+.statTile .n{font-family:var(--mono);font-size:22px;color:var(--aqua);letter-spacing:-.01em}
+.statTile .l{font-size:11px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.06em;
+  margin-top:4px}
+.chartGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.chartBox{background:rgba(255,255,255,.02);border:1px solid var(--rule);border-radius:3px;
+  padding:14px 16px}
+.chartBox h4{font-size:12px;font-weight:600;color:var(--dim);margin-bottom:10px;
+  text-transform:uppercase;letter-spacing:.05em}
+.chartBox svg{width:100%;height:auto;display:block;overflow:visible}
+.chartBox .empty{font-size:12.5px;color:var(--dimmer);padding:20px 0;text-align:center}
 </style>
 </head>
 <body>
@@ -120,6 +136,47 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
       <small class="hint">Times are reported by the browser and are not verified. If one looks
         impossible, delete it — and ban the account if it keeps happening.</small>
     </div>
+
+    <h2>STATISTICS</h2>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:4px">
+        <p class="note" style="margin-bottom:0">Built from the run history below (up to
+          <span id="statRunCount">0</span> most recent runs).</p>
+        <button id="btnStatsReload">Reload</button>
+      </div>
+      <div class="statGrid" id="statTiles"></div>
+      <div class="chartGrid" id="statCharts"></div>
+    </div>
+
+    <h2>RUN HISTORY <span id="runCount" style="color:var(--dimmer);font-weight:400"></span></h2>
+    <div class="card">
+      <div class="row" style="margin-bottom:14px">
+        <div><label for="runFilterKind">Kind</label>
+          <select id="runFilterKind">
+            <option value="">All</option>
+            <option value="campaign">Campaign</option>
+            <option value="creditsrun">Credits run</option>
+            <option value="race">Race</option>
+          </select>
+        </div>
+        <div><label for="runFilterCourse">Course</label>
+          <select id="runFilterCourse"><option value="">All</option></select>
+        </div>
+        <div><label for="runFilterDriver">Driver contains</label>
+          <input type="text" id="runFilterDriver" placeholder="username"></div>
+        <button id="btnRunFilter">Apply</button>
+        <button id="btnRunReload">Reload latest 500</button>
+      </div>
+      <table>
+        <thead><tr><th>When</th><th>Driver</th><th>Course</th><th>Kind</th>
+          <th style="text-align:right">Time</th></tr></thead>
+        <tbody id="runRows"></tbody>
+      </table>
+      <div class="msg" id="runMsg"></div>
+      <small class="hint">Every campaign finish, credits run, and race attempt is logged here the
+        instant it happens, exact server timestamp included. This is telemetry only — times here are
+        not verified any more than the TIMES table above is.</small>
+    </div>
   </div>
 </div>
 
@@ -147,7 +204,7 @@ const { initializeApp } = await import(SDK + 'firebase-app.js');
 const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
   await import(SDK + 'firebase-auth.js');
 const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection,
-        getDocs, query, where, writeBatch } = await import(SDK + 'firebase-firestore.js');
+        getDocs, query, where, writeBatch, orderBy, limit } = await import(SDK + 'firebase-firestore.js');
 
 const $ = (id) => document.getElementById(id);
 const app = initializeApp(CONFIG);
@@ -160,6 +217,16 @@ const fmt = (ms) => {
   return m + ':' + String(s).padStart(2, '0') + '.' +
     String(Math.floor((t % 1) * 100)).padStart(2, '0');
 };
+/** exact local date + time down to the second, for the run history table —
+ *  a relative "3 minutes ago" is useless once the admin is looking back
+ *  further than a few minutes, and this is meant to have exact timestamps. */
+const fmtWhen = (d) => {
+  if (!d || !isFinite(d.getTime())) return '—';
+  const pad = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
+    pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+};
+const KIND_LABEL = { campaign: 'Campaign', creditsrun: 'Credits run', race: 'Race' };
 
 /** Firebase's own error codes are either too vague ("invalid-credential"
  *  covers both a wrong email and a wrong password, by design, so a bad
@@ -216,8 +283,21 @@ onAuthStateChanged(auth, async (user) => {
   $('cardAuth').classList.add('hide');
   $('panel').classList.remove('hide');
   say('authMsg', '');
+  populateCourseFilter();
   await loadAll();
+  await loadRunLog();
 });
+
+function populateCourseFilter() {
+  const sel = $('runFilterCourse');
+  if (sel.options.length > 1) return; // already populated
+  COURSES.forEach((name, i) => {
+    const o = document.createElement('option');
+    o.value = 'c' + (i + 1);
+    o.textContent = name;
+    sel.appendChild(o);
+  });
+}
 
 $('btnRandom').addEventListener('click', () => {
   const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -257,9 +337,11 @@ async function loadAll() {
     profs.forEach((d) => players.push({ uid: d.id, ...d.data() }));
     const byUid = {};
     players.forEach((p) => { byUid[p.uid] = p; p.credits = 0; p.courses = 0; });
+    creditRowsForStats = [];
     credits.forEach((d) => {
       const v = d.data();
       if (byUid[v.uid] && typeof v.delta === 'number') byUid[v.uid].credits += v.delta;
+      if (typeof v.delta === 'number') creditRowsForStats.push(v);
     });
     const rows = [];
     bests.forEach((d) => {
@@ -322,6 +404,248 @@ async function loadAll() {
   } catch (e) {
     say('pMsg', e.message, 'err');
   }
+}
+
+/* ------------------------------------------------------------ run history
+   Every run (campaign finish, credits run, race attempt) is logged by the
+   player's own client the instant it ends — see Cloud.logRun in the game
+   itself. This panel just reads that collection back: latest 500 by
+   default (this is a free-tier project — one unbounded query would burn
+   through the daily read quota fast once there's real history), with an
+   optional filter re-query for a narrower slice. Also the source data for
+   the STATISTICS charts below, so both sections share one in-memory copy
+   rather than each issuing their own queries. */
+let runRowsRaw = [];
+let creditRowsForStats = [];
+
+// Always fetches the same latest-500-by-createdAt window (a single-field
+// orderBy, so it needs no composite index) and applies every filter
+// client-side on that window — kind/course/driver are all cheap equality
+// or substring checks over at most 500 rows. A server-side where() on
+// kind or courseId together with this orderBy would need a composite
+// index Firestore has never been asked to build for this project, and
+// filtering an already-small, already-fetched window client-side avoids
+// that entirely rather than provisioning one.
+async function loadRunLog(filters) {
+  say('runMsg', 'Loading…');
+  try {
+    const snap = await getDocs(query(collection(db, 'runLog'), orderBy('createdAt', 'desc'), limit(500)));
+    let rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+    if (filters && filters.kind) rows = rows.filter((r) => r.kind === filters.kind);
+    if (filters && filters.courseId) rows = rows.filter((r) => r.courseId === filters.courseId);
+    if (filters && filters.driver) {
+      const needle = filters.driver.toLowerCase();
+      rows = rows.filter((r) => (r.displayName || '').toLowerCase().includes(needle));
+    }
+    runRowsRaw = rows;
+    renderRunRows();
+    renderStats();
+    say('runMsg', '');
+  } catch (e) {
+    say('runMsg', e.message, 'err');
+  }
+}
+
+function renderRunRows() {
+  $('runCount').textContent = '(' + runRowsRaw.length + ')';
+  const tb = $('runRows');
+  tb.innerHTML = '';
+  for (const r of runRowsRaw) {
+    const when = r.createdAt && typeof r.createdAt.toDate === 'function' ? r.createdAt.toDate() : null;
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="mono">' + fmtWhen(when) + '</td>' +
+      '<td>' + esc(r.displayName || '—') + '</td>' +
+      '<td>' + esc(courseName(r.courseId)) + '</td>' +
+      '<td><span class="pill">' + esc(KIND_LABEL[r.kind] || r.kind) + '</span></td>' +
+      '<td class="mono" style="text-align:right">' + fmt(r.timeMs) + '</td>';
+    tb.appendChild(tr);
+  }
+}
+
+$('btnRunReload').addEventListener('click', () => {
+  $('runFilterKind').value = ''; $('runFilterCourse').value = ''; $('runFilterDriver').value = '';
+  loadRunLog();
+});
+$('btnRunFilter').addEventListener('click', () => {
+  loadRunLog({
+    kind: $('runFilterKind').value || null,
+    courseId: $('runFilterCourse').value || null,
+    driver: $('runFilterDriver').value.trim() || null
+  });
+});
+
+/* ------------------------------------------------------------ statistics
+   Every chart and tile here is computed client-side from runRowsRaw (the
+   same up-to-500-row window the run history table shows) — no separate
+   queries, no charting library. Charts are plain inline SVG: a handful of
+   rects/lines is simpler than pulling in a dependency for bar/line charts
+   this small, and it matches the rest of this page having zero JS
+   dependencies beyond the Firebase SDK itself. */
+$('btnStatsReload').addEventListener('click', () => loadRunLog());
+
+function renderStats() {
+  const rows = runRowsRaw;
+  $('statRunCount').textContent = rows.length;
+  const tiles = $('statTiles');
+  const charts = $('statCharts');
+  tiles.innerHTML = '';
+  charts.innerHTML = '';
+  if (!rows.length) {
+    tiles.innerHTML = '<div class="statTile"><div class="n">0</div><div class="l">runs</div></div>';
+    charts.innerHTML = '<div class="chartBox"><div class="empty">No runs logged yet.</div></div>';
+    return;
+  }
+
+  const uniqDrivers = new Set(rows.map((r) => r.uid)).size;
+  const uniqCourses = new Set(rows.map((r) => r.courseId)).size;
+  const byKind = {};
+  rows.forEach((r) => { byKind[r.kind] = (byKind[r.kind] || 0) + 1; });
+  const avgTime = rows.reduce((s, r) => s + (r.timeMs || 0), 0) / rows.length;
+  const fastest = rows.reduce((best, r) => (!best || r.timeMs < best.timeMs) ? r : best, null);
+  const now = Date.now();
+  const last24h = rows.filter((r) => tsMillis(r.createdAt) > now - 86400000).length;
+
+  const tile = (n, l) => {
+    const d = document.createElement('div');
+    d.className = 'statTile';
+    d.innerHTML = '<div class="n">' + n + '</div><div class="l">' + esc(l) + '</div>';
+    tiles.appendChild(d);
+  };
+  tile(rows.length, 'runs shown');
+  tile(uniqDrivers, 'distinct drivers');
+  tile(uniqCourses + ' / ' + COURSES.length, 'courses driven');
+  tile(last24h, 'runs in last 24h');
+  tile(fmt(avgTime), 'average time');
+  tile(fastest ? fmt(fastest.timeMs) : '—', 'fastest time shown');
+
+  const chartBox = (title, svg) => {
+    const d = document.createElement('div');
+    d.className = 'chartBox';
+    d.innerHTML = '<h4>' + esc(title) + '</h4>' + svg;
+    charts.appendChild(d);
+  };
+
+  chartBox('Runs by kind', barChart(
+    Object.keys(KIND_LABEL).map((k) => ({ label: KIND_LABEL[k], value: byKind[k] || 0 }))
+  ));
+
+  const byCourseCount = {};
+  rows.forEach((r) => { byCourseCount[r.courseId] = (byCourseCount[r.courseId] || 0) + 1; });
+  const topCourses = Object.entries(byCourseCount)
+    .sort((a, b) => b[1] - a[1]).slice(0, 10)
+    .map(([cid, n]) => ({ label: courseName(cid), value: n }));
+  chartBox('Top 10 courses by run count', barChart(topCourses, true));
+
+  const byDriverCount = {};
+  rows.forEach((r) => { byDriverCount[r.displayName || r.uid] = (byDriverCount[r.displayName || r.uid] || 0) + 1; });
+  const topDrivers = Object.entries(byDriverCount)
+    .sort((a, b) => b[1] - a[1]).slice(0, 10)
+    .map(([name, n]) => ({ label: name, value: n }));
+  chartBox('Top 10 drivers by run count', barChart(topDrivers, true));
+
+  // Runs per day, oldest to newest, over however many days the loaded
+  // window actually spans (bounded by the 500-row fetch above).
+  const byDay = {};
+  rows.forEach((r) => {
+    const ms = tsMillis(r.createdAt);
+    if (!ms) return;
+    const day = new Date(ms).toISOString().slice(0, 10);
+    byDay[day] = (byDay[day] || 0) + 1;
+  });
+  const days = Object.keys(byDay).sort();
+  chartBox('Runs per day', lineChart(days.map((d) => ({ label: d.slice(5), value: byDay[d] }))));
+
+  // Credit flow, all-time (every creditEvents row, fetched once by
+  // loadAll() into creditRowsForStats). creditEvents has no timestamp
+  // field of its own — it predates this run-log feature and never needed
+  // one — so this can only total earned vs spent overall, not chart it
+  // over time the way the run-based charts above can.
+  if (creditRowsForStats.length) {
+    const earned = creditRowsForStats.filter((v) => v.delta > 0).reduce((s, v) => s + v.delta, 0);
+    const spent = creditRowsForStats.filter((v) => v.delta < 0).reduce((s, v) => s - v.delta, 0);
+    chartBox('Credits earned vs spent (all time)', barChart([
+      { label: 'Earned', value: Math.round(earned) },
+      { label: 'Spent', value: Math.round(spent) }
+    ]));
+  }
+
+  // Average time per course, for the courses actually present in this window.
+  const timesByCourse = {};
+  rows.forEach((r) => {
+    (timesByCourse[r.courseId] = timesByCourse[r.courseId] || []).push(r.timeMs);
+  });
+  const avgByCourse = Object.entries(timesByCourse)
+    .map(([cid, times]) => ({ label: courseName(cid), value: Math.round(times.reduce((s, t) => s + t, 0) / times.length) }))
+    .sort((a, b) => a.value - b.value).slice(0, 10);
+  chartBox('Fastest average time — top 10 courses', barChart(avgByCourse, true, (v) => fmt(v)));
+}
+
+function tsMillis(v) {
+  if (!v) return 0;
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (typeof v.seconds === 'number') return v.seconds * 1000;
+  return 0;
+}
+
+/** Minimal horizontal or vertical bar chart as inline SVG. `horizontal`
+ *  draws labelled rows (better for long course/driver names); otherwise a
+ *  simple vertical column chart. `fmtVal` formats the value label. */
+function barChart(data, horizontal, fmtVal) {
+  const fv = fmtVal || ((v) => String(v));
+  if (!data.length || data.every((d) => !d.value)) return '<div class="empty">No data yet.</div>';
+  const max = Math.max(...data.map((d) => d.value), 1);
+  if (horizontal) {
+    const rowH = 24, gap = 6, W = 460, labelW = 140;
+    const H = data.length * (rowH + gap);
+    let bars = '';
+    data.forEach((d, i) => {
+      const y = i * (rowH + gap);
+      const w = Math.max(2, (d.value / max) * (W - labelW - 50));
+      bars += '<text x="0" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#8798b5">' +
+        esc(String(d.label).slice(0, 20)) + '</text>' +
+        '<rect x="' + labelW + '" y="' + y + '" width="' + w + '" height="' + rowH + '" rx="2" fill="#3ddbb8" opacity="0.85"/>' +
+        '<text x="' + (labelW + w + 6) + '" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#eaf0f8">' +
+        esc(fv(d.value)) + '</text>';
+    });
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '">' + bars + '</svg>';
+  }
+  const barW = 28, gap = 10, W = data.length * (barW + gap), H = 160, baseY = 130;
+  let bars = '';
+  data.forEach((d, i) => {
+    const x = i * (barW + gap);
+    const h = (d.value / max) * (baseY - 10);
+    bars += '<rect x="' + x + '" y="' + (baseY - h) + '" width="' + barW + '" height="' + h +
+      '" rx="2" fill="#f2733f" opacity="0.85"/>' +
+      '<text x="' + (x + barW / 2) + '" y="' + (baseY - h - 6) + '" font-size="11" fill="#eaf0f8" text-anchor="middle">' +
+      esc(fv(d.value)) + '</text>' +
+      '<text x="' + (x + barW / 2) + '" y="' + (baseY + 16) + '" font-size="10" fill="#8798b5" text-anchor="middle">' +
+      esc(String(d.label).slice(0, 8)) + '</text>';
+  });
+  return '<svg viewBox="0 0 ' + Math.max(W, 100) + ' ' + (H) + '">' + bars + '</svg>';
+}
+
+/** Minimal line chart as inline SVG — used for the runs-per-day trend. */
+function lineChart(data) {
+  if (!data.length) return '<div class="empty">No data yet.</div>';
+  const W = 460, H = 160, padL = 24, padB = 20, padT = 14;
+  const max = Math.max(...data.map((d) => d.value), 1);
+  const stepX = data.length > 1 ? (W - padL - 10) / (data.length - 1) : 0;
+  const y = (v) => padT + (1 - v / max) * (H - padT - padB);
+  const points = data.map((d, i) => (padL + i * stepX) + ',' + y(d.value)).join(' ');
+  let dots = '', labels = '';
+  data.forEach((d, i) => {
+    const x = padL + i * stepX;
+    dots += '<circle cx="' + x + '" cy="' + y(d.value) + '" r="2.5" fill="#3ddbb8"/>';
+    if (i === 0 || i === data.length - 1 || i % Math.ceil(data.length / 6) === 0) {
+      labels += '<text x="' + x + '" y="' + (H - 4) + '" font-size="9" fill="#8798b5" text-anchor="middle">' +
+        esc(d.label) + '</text>';
+    }
+  });
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '">' +
+    '<polyline points="' + points + '" fill="none" stroke="#f2733f" stroke-width="2"/>' +
+    dots + labels + '</svg>';
 }
 
 /**

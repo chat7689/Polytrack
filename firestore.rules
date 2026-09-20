@@ -172,6 +172,29 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Append-only history of every run anyone ever finishes — campaign,
+    // credits-run, or a race attempt — written by the player's own client
+    // the moment that run ends, purely for the admin panel's run history
+    // and statistics. Same trust level as everything else self-reported
+    // here (a lap time, a credits-grind completion): nothing server-side
+    // can verify a claimed timeMs actually happened, so this is moderated
+    // after the fact like the rest, not enforced at write time. Never
+    // readable by players themselves — there is no player-facing feature
+    // that needs it, and it would otherwise let one player enumerate
+    // every other player's entire play history.
+    match /runLog/{docId} {
+      allow get, list: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.kind in ['campaign', 'creditsrun', 'race']
+        && request.resource.data.courseId is string
+        && request.resource.data.timeMs is number
+        && request.resource.data.timeMs > 0 && request.resource.data.timeMs < 600000
+        && request.resource.data.displayName is string
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if false;
+    }
+
     // Doc id "{uid}_{courseId}". Ghosts are read by anyone racing that run, but
     // only their owner can write one, and samples are capped so a malicious
     // client can't burn the free-tier 1 GiB storage quota with one write.
