@@ -1818,13 +1818,12 @@ function buildMaterials() {
   // reading as facets.
   // Asphalt tones read as tarmac rather than concrete: darker, cooler, and
   // slightly less saturated than the original pale grey/tan, so the track
-  // reads as a real driving surface against the terrain and the curbs/rail
+  // reads as a real driving surface against the terrain and the curbs
   // pop with more contrast against it.
   MAT.deck = std(0x35383e, { roughness: 0.88, metalness: 0 });
   MAT.deckAlt = std(0x3d372c, { roughness: 0.9, metalness: 0 });
   MAT.curb = std(0xe8544c, { roughness: 0.78 });
   MAT.curbAlt = std(0xf6f7f9, { roughness: 0.82 });
-  MAT.rail = std(0xf1f4f7, { roughness: 0.8, side: THREE.DoubleSide });
   MAT.truss = std(0x8492a1, { roughness: 0.95 });
   MAT.pier = std(0xa7b3bf, { roughness: 0.97 });
   MAT.bank = std(0x7fb968, { roughness: 1 });          // grass embankment
@@ -2843,7 +2842,6 @@ class TrackBuilder {
         grip: o.grip === undefined ? 1 : o.grip,
         curb: o.curbs !== false && w > 4,
         dash: o.dash !== false && w >= 9.5,
-        rail: o.rail || null,
         chev: (o.chev && i % 2 === 0) ? o.chev : 0,
         pier: this.n % this.pierEvery === 0,
         pad: !!o.pad
@@ -2914,7 +2912,7 @@ class TrackBuilder {
       const ease = profile((i + 0.5) / segs);
       this.h += segArc / 2;
       this.slab(chord, rise, {
-        w: o.w, roll: bank * ease, rail: o.rail, grip: o.grip,
+        w: o.w, roll: bank * ease, grip: o.grip,
         chev: (i % 3 === 0) ? chev : 0, dash: o.dash
       });
       this.h += segArc / 2;
@@ -3046,7 +3044,7 @@ function buildCourse(data, scene, world) {
   const M = {
     deck: new MeshBuilder(), alt: new MeshBuilder(), pad: new MeshBuilder(),
     curb: new MeshBuilder(), curbAlt: new MeshBuilder(),
-    side: new MeshBuilder(), dash: new MeshBuilder(), rail: new MeshBuilder(),
+    side: new MeshBuilder(), dash: new MeshBuilder(),
     bank: new MeshBuilder()
   };
   const chevs = [];
@@ -3135,17 +3133,6 @@ function buildCourse(data, scene, world) {
           edge(p0, x0, u0, 0.18, lift), edge(p0, x0, u0, -0.18, lift),
           edge(p1, x1, u1, -0.18, lift), edge(p1, x1, u1, 0.18, lift));
       }
-      if (s.rail) {
-        const sides = s.rail === 'both' ? [1, -1] : [s.rail === 'left' ? 1 : -1];
-        for (const sx of sides) {
-          const b0 = edge(p0, x0, u0, sx * (hw0 + 0.14), 0.05);
-          const b1 = edge(p1, x1, u1, sx * (hw1 + 0.14), 0.05);
-          const t0 = V().copy(b0).addScaledVector(u0, 0.95);
-          const t1 = V().copy(b1).addScaledVector(u1, 0.95);
-          M.rail.quad(b0, b1, t1, t0);
-          world.addQuad(b0, b1, t1, t0, 1, 0.6, true);
-        }
-      }
       // Cap the open ends of every strip. Without a cap the front face of a
       // landing ramp is not a surface at all, so a car that comes up short
       // drives straight into the inside of the deck.
@@ -3187,7 +3174,6 @@ function buildCourse(data, scene, world) {
   addMesh(M.side, MAT.side, false);
   addMesh(M.bank, MAT.bank, true);
   addMesh(M.dash, MAT.dash, false);
-  addMesh(M.rail, MAT.rail, true);
 
   const inst = (list, mat) => {
     if (!list.length) return;
@@ -3392,7 +3378,7 @@ const LEVELS = [
       b.landing(20, -8, { w: 11 });
       b.straight(26, { w: 9 });
       b.curve(30, -104, { bank: 16, chev: 1 });
-      b.straight(34, { w: 7, rail: 'both' });
+      b.straight(34, { w: 7 });
       b.straight(30);
       b.gate('finish');
       b.straight(26, { w: 13 });
@@ -3562,7 +3548,7 @@ const LEVELS = [
       b.landing(26, -10, { w: 15 });
       b.straight(30, { w: 8 });
       b.bumps(3, 9, 1.1, { w: 8 });
-      b.straight(34, { w: 6.5, rail: 'right' });
+      b.straight(34, { w: 6.5 });
       b.curve(32, 70, { bank: 16, w: 8, chev: 1 });
       b.straight(38, { w: 7 });
       b.gate('finish');
@@ -3690,15 +3676,15 @@ const LEVELS = [
   },
   {
     name: 'Needle Pass', tier: 2,
-    blurb: 'A narrow cut between two rises. Rails both sides — no room to drift wide here.',
+    blurb: 'A narrow cut between two rises — no room to drift wide here.',
     build() {
       const b = new TrackBuilder({ width: 8 });
       b.pad(20, 13);
       b.straight(40, { w: 10 });
       b.curve(34, 70, { bank: 13, chev: 1 });
-      b.straight(50, { w: 7, rail: 'both' });
+      b.straight(50, { w: 7 });
       b.curve(30, -84, { bank: 14, chev: 1 });
-      b.straight(40, { w: 7.5, rail: 'both' });
+      b.straight(40, { w: 7.5 });
       b.straight(30, { w: 10 });
       b.gate('finish');
       b.straight(28, { w: 14 });
@@ -3707,13 +3693,13 @@ const LEVELS = [
   },
   {
     name: 'Kettle Bowl', tier: 3,
-    blurb: 'A full banked bowl that spirals you down almost a full turn. Trust the wall.',
+    blurb: 'A long banked bowl that spirals you halfway round. Trust the wall.',
     build() {
       const b = new TrackBuilder({ width: 11 });
       b.pad(20, 15);
       b.straight(44);
       b.slope(30, 8);
-      b.curve(36, 260, { bank: 20, rise: -9, chev: 1 });
+      b.curve(36, 160, { bank: 20, rise: -9, chev: 1 });
       b.straight(30);
       b.slope(24, -3);
       b.curve(40, 76, { bank: 13, chev: 1 });
@@ -3869,7 +3855,7 @@ const LEVELS = [
       b.pad(20, 13);
       b.straight(36, { w: 9 });
       b.curve(28, 80, { bank: 12, w: 7, chev: 1 });
-      b.straight(50, { w: 6.5, rail: 'both' });
+      b.straight(50, { w: 6.5 });
       b.slope(26, 6, { w: 6.5 });
       b.curve(30, 130, { bank: 20, w: 9, chev: 1 });
       b.straight(30, { w: 7 });
