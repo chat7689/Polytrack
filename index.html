@@ -77,8 +77,14 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
    select, the race lobby, even mid-HUD) rather than only wherever a
    screen happens to have room to print it. Hidden only while signed out
    or offline, where a credit balance has no meaning. */
-.creditBadge{position:absolute;top:16px;right:18px;z-index:40;display:flex;align-items:baseline;
-  gap:6px;padding:8px 14px;background:rgba(7,11,24,.78);border:1px solid rgba(255,207,92,.4);
+/* Docked below the top-left course-name HUD block (.hud-tl), not the top
+   corners themselves — every top corner and top-center is already spoken
+   for during actual driving (course name, the clock, speed/gear/boost),
+   and this is the one nearby spot that's clear on the driving HUD as well
+   as on every menu/garage/boards screen, where .hud-tl is simply absent
+   and this just reads as an ordinary top-left badge. */
+.creditBadge{position:absolute;top:76px;left:24px;z-index:40;display:flex;align-items:baseline;
+  gap:6px;padding:7px 13px;background:rgba(7,11,24,.78);border:1px solid rgba(255,207,92,.4);
   border-radius:999px;font-family:var(--mono);pointer-events:none;
   box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
 .creditBadge[hidden]{display:none}
@@ -91,6 +97,17 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   100%{transform:scale(1)}
 }
 .creditBadge.bump{animation:creditPop .5s ease-out}
+
+/* Floating name tag over a ghost car — positioned every frame from its
+   world position projected to screen space (see Game.updateGhostTag).
+   translate(-50%,-100%) anchors it by its bottom-center point, which is
+   the pixel the projection math targets, so the tag always sits just
+   above the car regardless of its own text width. */
+.ghostTag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);
+  padding:3px 9px;background:rgba(7,11,24,.75);border:1px solid rgba(61,219,184,.5);
+  border-radius:999px;font-family:var(--mono);font-size:11px;color:var(--aqua);
+  white-space:nowrap;pointer-events:none;z-index:20;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.ghostTag[hidden]{display:none}
 
 /* ---------- spectate ---------- */
 .specTop{position:absolute;top:20px;left:24px;right:24px;display:flex;justify-content:space-between;
@@ -218,42 +235,43 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
 .result .row{margin-top:26px}
 #fatal .panel{max-width:580px} #fatal h2{font-size:25px;margin-bottom:12px;letter-spacing:-.02em}
 
-/* Credits-run payoff: a coin pops in with a spin-and-settle, a ring of
-   sparks bursts outward behind it, and a "+1" floats up and fades — all
-   pure CSS so it costs nothing to run and needs no asset. Fires once per
-   successful award (see Game.playCreditBurst); an unsuccessful award
-   (offline, write failed) never triggers this, matching how the sub-text
-   already only says "+1 credit" on genuine success. */
+/* Credits-run payoff: a coin pops in with a single clean spin-and-settle,
+   a soft ring of sparks eases outward behind it, and a "+1" rises and
+   fades — all pure CSS so it costs nothing to run and needs no asset.
+   Kept to one full rotation and a gentle overshoot rather than several
+   spins, so it reads as one smooth, deliberate motion instead of a flurry
+   of separate ones. Fires once per successful award (see
+   Game.playCreditBurst); an unsuccessful award (offline, write failed)
+   never triggers this, matching how the sub-text already only says
+   "+1 credit" on genuine success. */
 .creditBurst{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
   width:0;height:0;pointer-events:none;z-index:5}
 .creditBurst[hidden]{display:none}
 .creditBurst .coin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);
-  width:64px;height:64px;line-height:64px;text-align:center;border-radius:50%;
+  width:60px;height:60px;line-height:60px;text-align:center;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#ffe9a8,var(--signal) 60%,#c9930d 100%);
-  color:#3a2704;font-size:28px;font-weight:700;box-shadow:0 0 0 3px rgba(255,207,92,.35),
-  0 10px 30px rgba(255,207,92,.5);animation:creditCoinPop 1.1s cubic-bezier(.2,1.4,.4,1) forwards}
+  color:#3a2704;font-size:26px;font-weight:700;box-shadow:0 0 0 3px rgba(255,207,92,.3),
+  0 10px 26px rgba(255,207,92,.45);animation:creditCoinPop .8s cubic-bezier(.25,1.15,.4,1) forwards}
 @keyframes creditCoinPop{
-  0%{transform:translate(-50%,-50%) scale(0) rotateY(0deg)}
-  55%{transform:translate(-50%,-50%) scale(1.15) rotateY(720deg)}
-  75%{transform:translate(-50%,-50%) scale(0.95) rotateY(760deg)}
-  100%{transform:translate(-50%,-50%) scale(1) rotateY(800deg)}
+  0%{transform:translate(-50%,-50%) scale(0) rotateY(0deg);opacity:0}
+  12%{opacity:1}
+  70%{transform:translate(-50%,-50%) scale(1.08) rotateY(380deg)}
+  100%{transform:translate(-50%,-50%) scale(1) rotateY(360deg)}
 }
 .creditBurst .plusOne{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  font-family:var(--mono);font-size:22px;font-weight:700;color:var(--signal);opacity:0;
-  text-shadow:0 2px 12px rgba(255,207,92,.6);animation:creditPlusFloat 1.3s ease-out .25s forwards}
+  font-family:var(--mono);font-size:21px;font-weight:700;color:var(--signal);opacity:0;
+  text-shadow:0 2px 10px rgba(255,207,92,.55);animation:creditPlusFloat 1s ease-out .2s forwards}
 @keyframes creditPlusFloat{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}
-  25%{opacity:1;transform:translate(-50%,-70%) scale(1.1)}
-  100%{opacity:0;transform:translate(-50%,-160%) scale(1)}
+  0%{opacity:0;transform:translate(-50%,-45%) scale(.7)}
+  30%{opacity:1;transform:translate(-50%,-80%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-150%) scale(1)}
 }
-.creditBurst::before,.creditBurst::after{content:'';position:absolute;left:50%;top:50%;
-  width:8px;height:8px;border-radius:50%;background:var(--signal);opacity:0}
-.creditBurst .spark{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;
-  background:var(--signal);box-shadow:0 0 6px 1px rgba(255,207,92,.8);opacity:0;
-  animation:creditSpark .7s ease-out .1s forwards}
+.creditBurst .spark{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;
+  background:var(--signal);box-shadow:0 0 6px 1px rgba(255,207,92,.7);opacity:0;
+  animation:creditSpark .6s ease-out forwards}
 @keyframes creditSpark{
-  0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) scale(1)}
-  100%{opacity:0;transform:translate(-50%,-50%) var(--sparkTo) scale(.3)}
+  0%{opacity:.9;transform:translate(-50%,-50%) translate(0,0) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-50%) var(--sparkTo) scale(.4)}
 }
 #fatal p{color:var(--dim);font-size:14px;line-height:1.65}
 .gate{width:min(430px,94vw);padding:34px 34px 30px}
@@ -357,6 +375,8 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
   <div class="creditBadge" id="creditBadge" hidden>
     <span class="ic">◆</span><b id="creditBadgeAmt">0</b><small>credits</small>
   </div>
+
+  <div id="ghostTags"></div>
 
   <div class="layer" id="hud" hidden>
     <div class="hud">
@@ -573,6 +593,11 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
       <p class="lede" style="margin-bottom:20px" id="boardNote">Times are kept on this device.</p>
       <div class="tabs" id="boardTabs"></div>
       <div id="boardBody"></div>
+      <div class="row" id="boardMultiBar" hidden style="margin-top:10px;gap:8px">
+        <span class="lede" id="boardMultiCount" style="margin:0;flex:1">0 selected</span>
+        <button class="ghost small" id="bBoardRaceSel">Race checked</button>
+        <button class="ghost small" id="bBoardWatchSel">Watch checked</button>
+      </div>
       <div class="rule"></div>
       <div class="row">
         <button class="ghost" id="bBoardBack">Back to title</button>
@@ -624,9 +649,9 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
     <div class="scrim"></div>
     <div class="panel" style="width:min(720px,94vw)">
       <h2 class="big">Garage</h2>
-      <p class="lede" style="margin-bottom:18px">Paint your car. Every color starts locked — spend 10
-        credits on a pack and get back one random color from it, no picking. Once you own a color it's
-        yours to put on either slot, any time, for free.</p>
+      <p class="lede" style="margin-bottom:18px">1. Pick Primary or Secondary below. 2. Buy a pack for
+        10 credits — you get back one random color from it, no picking. Once a color is yours, click it
+        any time to put it on either slot for free.</p>
 
       <div class="garagePreviewWrap">
         <canvas id="gPreviewCanvas"></canvas>
@@ -878,11 +903,17 @@ const Records = {
     if (Cloud.on && Cloud.profile) return Cloud.name();
     return (this.data.driver || 'Driver').slice(0, 14);
   },
-  /** replace the cache with what the server holds */
+  /** replace the cache with what the server holds. Merges cleared/myBests
+   *  rather than fully overwriting them: a course this device already
+   *  believes is cleared (from a run that finished locally but hasn't
+   *  necessarily been confirmed pushed yet — see pushBest's own retry)
+   *  must never regress back to "not cleared" just because a pull raced
+   *  ahead of that push finishing server-side. boards is fine to replace
+   *  outright — it is never this device's own authority on anything. */
   hydrate(remote) {
     this.data.boards = remote.boards || {};
-    this.data.cleared = remote.cleared || {};
-    this.data.myBests = remote.myBests || {};
+    this.data.cleared = Object.assign({}, this.data.cleared, remote.cleared || {});
+    this.data.myBests = Object.assign({}, this.data.myBests, remote.myBests || {});
     Cloud.credits = remote.credits || 0;
   },
   // Credits only ever mean anything once signed in — this is a thin
@@ -899,11 +930,18 @@ const Records = {
     this.save();
   },
 
-  /** best-run replay: a flat array of 7 numbers (position + quaternion) per sample */
+  /** best-run replay: a flat array of 8 numbers (position + quaternion +
+   *  input bits) per sample. Rejects a saved ghost containing any
+   *  non-finite value — the same check Cloud.fetchGhost() already applies
+   *  to a downloaded ghost, applied here too so a ghost saved locally
+   *  before recordGhost() started guarding against a non-finite physics
+   *  frame (see recordGhost) can never render as scattered garbage
+   *  geometry instead of simply not showing up. */
   ghost(id) {
     const g = this.data.ghosts && this.data.ghosts[id];
-    return (g && Array.isArray(g.s) && g.s.length >= GHOST_STRIDE * 2
-      && g.s.length % GHOST_STRIDE === 0) ? g : null;
+    if (!g || !Array.isArray(g.s) || g.s.length < GHOST_STRIDE * 2 || g.s.length % GHOST_STRIDE !== 0) return null;
+    for (let i = 0; i < g.s.length; i++) if (!isFinite(g.s[i])) return null;
+    return g;
   },
   setGhost(id, time, samples) {
     if (!this.data.ghosts) this.data.ghosts = {};
@@ -1929,6 +1967,24 @@ const Cloud = {
    */
   async pushBest(courseId, timeSec, ghostSamples, firstClear) {
     if (!this.on || !this.user || this.banned()) return;
+    // A signed-in player's real username must never be overwritten with
+    // the 'Driver' fallback name() falls back to when this.profile hasn't
+    // (re)loaded yet — that fallback exists for genuinely-offline/no-
+    // account play, not for a signed-in account caught in a momentary
+    // profile-reload gap (a token refresh, a brief network hiccup). This
+    // used to happen silently: setDoc fully replaces the bests document,
+    // so one push at the wrong moment permanently stamped 'Driver' onto
+    // an otherwise-real leaderboard row. Retry the profile load a couple
+    // of times with a short pause rather than ever writing the fallback.
+    if (!this.profile || !this.profile.displayName) {
+      for (let attempt = 0; attempt < 3 && (!this.profile || !this.profile.displayName); attempt++) {
+        await new Promise((r) => setTimeout(r, 400));
+        try { await this.loadProfile(); } catch (e) { /* still not loaded — try again or give up below */ }
+      }
+      if (!this.profile || !this.profile.displayName) {
+        throw new Error('Your profile has not finished loading — try again in a moment.');
+      }
+    }
     const { fsMod } = this.fb;
     const uid = this.user.uid;
     const id = uid + '_' + courseId;
@@ -1982,6 +2038,26 @@ const Cloud = {
         secondary: d.secondary || fallback.secondary,
         isNew: false
       };
+    } catch (e) { return fallback; }
+  },
+
+  /** the equipped primary/secondary colors of ANY player, by uid — used
+   *  to paint a ghost/spectated car in that player's own colors instead
+   *  of a fixed placeholder. Falls back to the same default red pair a
+   *  brand new account would have if that player has never customized
+   *  anything (or the read fails), so a ghost always renders in some
+   *  sensible color rather than not at all. carCustomization/{uid} is get-
+   *  readable by any signed-in user (not just its owner) precisely for
+   *  this — see firestore.rules. */
+  async fetchCarColorsOf(uid) {
+    const fallback = { primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 } };
+    if (!this.on || !uid) return fallback;
+    try {
+      const { fsMod } = this.fb;
+      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'carCustomization', uid));
+      if (!snap.exists()) return fallback;
+      const d = snap.data();
+      return { primary: d.primary || fallback.primary, secondary: d.secondary || fallback.secondary };
     } catch (e) { return fallback; }
   },
 
@@ -5051,20 +5127,24 @@ const UI = {
   playCreditBurst(amount) {
     const box = $('creditBurst');
     box.querySelectorAll('.spark').forEach((s) => s.remove());
-    const n = 14;
+    // Evenly spaced around the ring (not randomized angles) reads as one
+    // clean burst rather than a scattered flurry; a small random distance
+    // and a short, tight delay window is enough variation to still feel
+    // organic without looking messy.
+    const n = 10;
     for (let i = 0; i < n; i++) {
       const s = document.createElement('div');
       s.className = 'spark';
-      const ang = (i / n) * Math.PI * 2 + (Math.random() * 0.4 - 0.2);
-      const dist = 70 + Math.random() * 50;
+      const ang = (i / n) * Math.PI * 2;
+      const dist = 46 + Math.random() * 18;
       s.style.setProperty('--sparkTo', (Math.cos(ang) * dist).toFixed(1) + 'px, ' + (Math.sin(ang) * dist).toFixed(1) + 'px');
-      s.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
+      s.style.animationDelay = (0.15 + Math.random() * 0.06).toFixed(2) + 's';
       box.appendChild(s);
     }
     $('creditBurstAmt').textContent = '+' + amount;
     // Force a reflow before un-hiding so the CSS animations (which run
     // once, on element creation/visibility) restart cleanly even if this
-    // fires again before the previous run's 1.3s has fully finished.
+    // fires again before the previous run's ~1s has fully finished.
     box.hidden = true;
     void box.offsetWidth;
     box.hidden = false;
@@ -5115,6 +5195,9 @@ const UI = {
     });
   },
   boardTab: 'all',
+  // uids checked via the leaderboard's multi-select checkboxes, keyed by
+  // courseId so a selection on one course's tab doesn't leak into another.
+  boardSel: {},
   boards() {
     const tabs = $('boardTabs');
     tabs.innerHTML = '';
@@ -5155,12 +5238,23 @@ const UI = {
       return;
     }
     const showActions = Cloud.on;
-    let h = '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Time</th>' +
+    const sel = Game.boardSel[this.boardTab] || (Game.boardSel[this.boardTab] = new Set());
+    // a uid can vanish from the board (e.g. after Records.wipe or a re-pull) —
+    // drop any stale selections so the count/checkboxes never lie
+    const liveUids = new Set(list.map((e) => e.uid).filter(Boolean));
+    for (const uid of [...sel]) if (!liveUids.has(uid)) sel.delete(uid);
+    let h = '<table><thead><tr>' + (showActions ? '<th></th>' : '') + '<th></th><th>Driver</th>' +
+      '<th style="text-align:right">Time</th>' +
       '<th style="text-align:right">Set</th>' + (showActions ? '<th></th>' : '') +
       '</tr></thead><tbody>';
     list.forEach((e, i) => {
       const when = new Date(e.d);
-      h += '<tr class="' + (e.n === me ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td>' +
+      h += '<tr class="' + (e.n === me ? 'me' : '') + '">';
+      if (showActions) {
+        h += '<td>' + (e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
+          (sel.has(e.uid) ? ' checked' : '') + '>' : '') + '</td>';
+      }
+      h += '<td class="r">' + (i + 1) + '</td><td>' +
         escapeHtml(e.n) + '</td><td class="t">' + formatTime(e.t) + '</td><td class="d">' +
         (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td>';
       if (showActions && e.uid) {
@@ -5180,7 +5274,21 @@ const UI = {
         Game.raceGhostOf(b.dataset.course, b.dataset.uid)));
       body.querySelectorAll('.watchBtn').forEach((b) => b.addEventListener('click', () =>
         Game.spectate(b.dataset.course, b.dataset.uid)));
+      body.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
+        if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
+        this.updateBoardMultiBar();
+      }));
     }
+    this.updateBoardMultiBar();
+  },
+
+  /** shows/hides the "Race checked / Watch checked" bar under the board
+   *  and keeps its count in sync with the current tab's checkbox Set. */
+  updateBoardMultiBar() {
+    const sel = Game.boardSel[Game.boardTab];
+    const n = sel ? sel.size : 0;
+    $('boardMultiBar').hidden = n < 1;
+    $('boardMultiCount').textContent = n + (n === 1 ? ' selected' : ' selected');
   },
 
   /** Redraws the whole garage screen from CarColor's current state — safe
@@ -5314,13 +5422,21 @@ function escapeHtml(s) {
 const GHOST_HZ = 20;
 const GHOST_STRIDE = 8;                      // pos.xyz, quat.xyzw, input bits
 const GHOST_MAX = GHOST_STRIDE * GHOST_HZ * 300;   // 300 s ceiling per recording
+const SPEC_POOL_SIZE = 5;   // extra watched cars beyond the one the camera follows
 
 /** throttle/brake/steer/boost/handbrake packed into one small integer so the
  *  replay stream can show what keys were held without recording every frame */
-function packInputBits(inp) {
+/** boosting must be the car's own authoritative this.boosting flag, not
+ *  raw inp.boost — inp.boost is just "is the boost key currently held",
+ *  true even with an empty tank or while braking, neither of which
+ *  actually ignites the flame on the live car (see Vehicle.step's own
+ *  boostLeft/vFwd checks). Recording the raw key state here used to let a
+ *  ghost replay show its flame lit on a frame where the real run never
+ *  actually boosted — a purely cosmetic desync, but a visible one. */
+function packInputBits(inp, boosting) {
   return (inp.throttle ? 1 : 0) | (inp.brake ? 2 : 0) |
     (inp.steer < 0 ? 4 : 0) | (inp.steer > 0 ? 8 : 0) |
-    (inp.boost ? 16 : 0) | (inp.handbrake ? 32 : 0);
+    (boosting ? 16 : 0) | (inp.handbrake ? 32 : 0);
 }
 const _gq1 = new THREE.Quaternion(), _gq2 = new THREE.Quaternion();
 const _gp = new THREE.Vector3();
@@ -5339,7 +5455,7 @@ const Game = {
   lastGear: 0, wasBoosting: false,
   startPose: { pos: new THREE.Vector3(), heading: 0 },
   accum: 0, clock: 0, pathIdx: 0,
-  ghostOverride: null, ghostOverrideName: null,
+  ghostOverride: null, ghostOverrideName: null, ghostOverrideCourse: null,
   spec: null,
   confirmedUid: null, authPending: false,
   lobby: null, lobbyEntries: [], lobbyUnwatch: null,
@@ -5347,7 +5463,7 @@ const Game = {
   _startingCountdownFor: null, _startingRaceFor: null,
   _joinedRaceId: null, _joinedEntry: null,
   boardsUnwatch: null,
-  garageSlot: 'primary',
+  garageSlot: 'primary', _garageRolling: false,
 
   boot() {
     buildMaterials();
@@ -5359,14 +5475,18 @@ const Game = {
     this.ghostMesh = buildGhostMesh();
     App.scene.add(this.ghostMesh);
     this.marks = new SkidMarks(App.scene, 900);
-    // a full-detail, fully opaque car used only when spectating someone
-    // else's recorded run — the translucent ghost mesh is deliberately
-    // simplified and reads poorly as the main subject of a replay. Uses
-    // its own cloned materials, fixed at the default red, rather than
-    // MAT.body/MAT.bodyDark: those two are repainted live to whatever the
-    // *viewer* has equipped (see CarColor.apply), and a spectated run is
-    // someone else's car, not the viewer's.
-    const specBuilt = buildCarMesh(MAT.body.clone(), MAT.bodyDark.clone());
+    // A full-detail car, translucent and tinted to whichever OTHER
+    // player's run is currently loaded (see Game.paintCarAs) — used for
+    // both spectating a recorded run and racing against someone else's
+    // ghost. Uses its own cloned materials rather than MAT.body/
+    // MAT.bodyDark directly: those two are repainted live to whatever the
+    // *viewer* has equipped (see CarColor.apply), and this mesh is always
+    // someone else's car, never the viewer's own.
+    this.specBodyMat = MAT.body.clone();
+    this.specBodyDarkMat = MAT.bodyDark.clone();
+    this.specBodyMat.transparent = this.specBodyDarkMat.transparent = true;
+    this.specBodyMat.depthWrite = this.specBodyDarkMat.depthWrite = false;
+    const specBuilt = buildCarMesh(this.specBodyMat, this.specBodyDarkMat);
     this.specMesh = specBuilt.group;
     this.specFlame = specBuilt.flame;
     this.specFlameLights = specBuilt.flameLights;
@@ -5376,6 +5496,25 @@ const Game = {
     this.specMesh.userData.flameAmt = 0;
     this.specMesh.visible = false;
     App.scene.add(this.specMesh);
+    // Extra meshes for watching several recorded runs side by side (the
+    // leaderboard's checkbox selection — see Game.spectateMany). specMesh
+    // above always carries whichever one the camera is actually following;
+    // these are the rest, capped at a small pool built once here rather
+    // than created/destroyed per watch session.
+    this.extraSpecMeshes = [];
+    for (let k = 0; k < SPEC_POOL_SIZE; k++) {
+      const bodyMat = MAT.body.clone(), darkMat = MAT.bodyDark.clone();
+      bodyMat.transparent = darkMat.transparent = true;
+      bodyMat.depthWrite = darkMat.depthWrite = false;
+      const built = buildCarMesh(bodyMat, darkMat);
+      built.group.userData.flame = built.flame;
+      built.group.userData.flameLights = built.flameLights;
+      built.group.userData.flamePhase = 0;
+      built.group.userData.flameAmt = 0;
+      built.group.visible = false;
+      App.scene.add(built.group);
+      this.extraSpecMeshes.push({ mesh: built.group, bodyMat, darkMat, tag: null });
+    }
 
     this.data = LEVELS.map((lv, i) => {
       try {
@@ -5794,6 +5933,14 @@ const Game = {
     $('bCreditsRun').addEventListener('click', () => this.toCreditsRun());
     $('bCreditsRunAgain').addEventListener('click', () => this.toCreditsRun());
     $('bCreditsRunBack').addEventListener('click', () => this.toMenu());
+    $('bBoardRaceSel').addEventListener('click', () => {
+      const sel = [...(this.boardSel[this.boardTab] || [])];
+      this.raceGhostOfMany(this.boardTab, sel);
+    });
+    $('bBoardWatchSel').addEventListener('click', () => {
+      const sel = [...(this.boardSel[this.boardTab] || [])];
+      this.spectateMany(this.boardTab, sel);
+    });
     $('bBoardWipe').addEventListener('click', () => {
       Records.wipe();
       UI.boards();
@@ -5906,11 +6053,23 @@ const Game = {
       }
       return false;
     }
+    // ghostOverride/ghostOverrideName (set by raceGhostOf/raceGhostOfMany)
+    // are deliberately kept across reloads of the SAME course — restarting
+    // the run or clicking "drive again" after finishing both call back into
+    // startLevel/loadLevel for that course, and the player should keep
+    // racing whichever person(s) they picked until they actually leave (see
+    // toSelect/toMenu, which clear it explicitly) or move on to a different
+    // course (a race-so-and-so pairing is per-course, so it doesn't carry
+    // over to "Next course"). Compared against ghostOverrideCourse (set
+    // alongside ghostOverride itself), NOT the outgoing levelIndex — the
+    // override is always set for the course you're about to load, so
+    // comparing to the course you're leaving would wipe it on its very
+    // first use.
+    if (this.ghostOverride && this.ghostOverrideCourse !== i) { this.ghostOverride = null; this.ghostOverrideName = null; }
     this.levelIndex = i;
     this.rec = [];
     this.ghostData = this.ghostOverride || Records.ghost('c' + (i + 1));
-    this.ghostOverrideName = this.ghostOverride ? this.ghostOverrideName : null;
-    this.ghostOverride = null;
+    if (!this.ghostOverride) this.ghostOverrideName = null;
     if (this.ghostMesh) this.ghostMesh.visible = false;
     this.pathIdx = 0;
     this.buildGhostProgress();
@@ -6010,12 +6169,31 @@ const Game = {
     // say something instead of quietly bailing out.
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     UI.toast('Loading ghost…');
-    const g = await Cloud.fetchGhost(courseId, uid);
+    const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, uid), Cloud.fetchCarColorsOf(uid)]);
     if (!g) { UI.toast('That run has no ghost data.'); return; }
     const row = (Records.board(courseId) || []).find((e) => e.uid === uid);
     this.ghostOverride = g;
     this.ghostOverrideName = (row && row.n) || 'that driver';
+    this.ghostOverrideCourse = idx;
+    this.paintCarAs(colors);
     this.startLevel(idx);
+  },
+
+  /** Race against several checked leaderboard entries at once. There is
+   *  still only one ghost car you actually race against lap to lap (the
+   *  chase-ghost mechanic is inherently one-vs-one), so with more than one
+   *  uid checked this picks the fastest of them — the toughest, most
+   *  meaningful target of the group — and races that one, same as clicking
+   *  Race on a single row. */
+  async raceGhostOfMany(courseId, uids) {
+    if (!uids || !uids.length) return;
+    if (uids.length === 1) return this.raceGhostOf(courseId, uids[0]);
+    const board = Records.board(courseId) || [];
+    const rows = uids.map((uid) => board.find((e) => e.uid === uid)).filter(Boolean);
+    if (!rows.length) { UI.toast('That run has no ghost data.'); return; }
+    rows.sort((a, b) => a.t - b.t);
+    UI.toast('Racing the fastest of ' + rows.length + ' selected — ' + rows[0].n);
+    return this.raceGhostOf(courseId, rows[0].uid);
   },
 
   /**
@@ -6033,7 +6211,7 @@ const Game = {
     // must never make this button look like it did nothing.
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     UI.toast('Loading run…');
-    const g = await Cloud.fetchGhost(courseId, uid);
+    const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, uid), Cloud.fetchCarColorsOf(uid)]);
     if (!g) { UI.toast('That run has no ghost data.'); return; }
     const row = (Records.board(courseId) || []).find((e) => e.uid === uid);
     if (!this.loadLevel(idx)) return;
@@ -6051,8 +6229,10 @@ const Game = {
     $('specScrub').value = '0';
     $('bSpecPlay').textContent = 'Pause';
     this.buildSpeedGraph(g);
+    this.paintCarAs(colors);
     this.specMesh.visible = true;
     this.ghostMesh.visible = false;
+    this.hideAllTags();
     this.syncSpectate(0);
     this.chase.snap(this.specRig(0));
     UI.show('spectate');
@@ -6164,12 +6344,106 @@ const Game = {
     this.chase.update(dt, rig);
     UI.specClock(this.spec.t);
     this.updateSpeedHead(this.spec.t);
+    if (this.spec.extra) this.syncExtraSpecs(this.spec.t);
+  },
+
+  /** Watching multiple checked players at once: the primary (first-checked)
+   *  run drives the existing single-run HUD (clock/scrub/speed graph) and
+   *  camera exactly like a normal spectate; every additional checked run
+   *  is purely a visual passenger — one of the spare extraSpecMeshes,
+   *  tinted to that player's real colors and tagged with their name,
+   *  played back against the SAME clock as the primary run (each one
+   *  simply clamped to its own length, since runs are rarely equal). No
+   *  new data/transport: still just each player's already-stored 20Hz
+   *  ghost samples, replayed side by side. */
+  syncExtraSpecs(t) {
+    const extra = this.spec.extra;
+    for (let k = 0; k < extra.length; k++) {
+      const rec = extra[k];
+      const slot = this.extraSpecMeshes[k];
+      const g = rec.data, s = g.s;
+      const n = s.length / GHOST_STRIDE;
+      const f = clamp(t * GHOST_HZ, 0, n - 1.001);
+      if (t > g.t) { // this run finished earlier than the primary — freeze it at the finish pose, no fake "still driving"
+        slot.mesh.visible = true;
+        this.updateGhostTag('watch' + k, true, slot.mesh, rec.name);
+        continue;
+      }
+      const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
+      slot.mesh.visible = true;
+      slot.mesh.position.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
+      _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
+      _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
+      slot.mesh.quaternion.copy(_gq1).slerp(_gq2, u);
+      setGhostFlame(slot.mesh, !!((s[a + 7] | 0) & 16), 1 / 60);
+      this.updateGhostTag('watch' + k, true, slot.mesh, rec.name);
+    }
+  },
+
+  /** Watch several checked players' runs on one course at once — the
+   *  leaderboard's checkbox selection feeds this. The first uid becomes
+   *  the "primary" run (drives the HUD/camera/scrub bar exactly like a
+   *  normal single spectate); the rest ride along visually via the spare
+   *  extraSpecMeshes pool, each painted in that player's real car colors
+   *  and labeled with a floating name tag so it's always clear whose
+   *  ghost is whose. */
+  async spectateMany(courseId, uids) {
+    if (!uids || !uids.length) return;
+    if (uids.length === 1) return this.spectate(courseId, uids[0]);
+    const idx = parseInt(courseId.slice(1), 10) - 1;
+    if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
+    const capped = uids.slice(0, 1 + SPEC_POOL_SIZE); // primary + however many spares exist
+    UI.toast('Loading runs…');
+    const board = Records.board(courseId) || [];
+    const nameOf = (uid) => (board.find((e) => e.uid === uid) || {}).n || 'that driver';
+    const loaded = await Promise.all(capped.map(async (uid) => {
+      const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, uid), Cloud.fetchCarColorsOf(uid)]);
+      return { uid, g, colors, name: nameOf(uid) };
+    }));
+    const primary = loaded[0];
+    if (!primary.g) { UI.toast('That run has no ghost data.'); return; }
+    const rest = loaded.slice(1).filter((r) => r.g);
+    if (!this.loadLevel(idx)) return;
+    this._specRig = null;
+    this.spec = {
+      data: primary.g, courseId, t: 0, playing: true,
+      name: primary.name, scrubbing: false,
+      extra: rest.map((r) => ({ data: r.g, name: r.name }))
+    };
+    this.state = 'spectate';
+    Sound.stopEngine();
+    $('specName').textContent = rest.length ? primary.name + ' (+' + rest.length + ' more)' : primary.name;
+    $('specCourse').textContent = LEVELS[idx].name + ' — ' + formatTime(primary.g.t);
+    $('specT1').textContent = formatTime(primary.g.t);
+    $('specScrub').max = String(Math.round(primary.g.t * 1000));
+    $('specScrub').value = '0';
+    $('bSpecPlay').textContent = 'Pause';
+    this.buildSpeedGraph(primary.g);
+    this.paintCarAs(primary.colors);
+    this.specMesh.visible = true;
+    this.ghostMesh.visible = false;
+    this.hideAllTags();
+    rest.forEach((r, k) => {
+      const slot = this.extraSpecMeshes[k];
+      slot.bodyMat.color.setHex(hslToHex(r.colors.primary.h, r.colors.primary.s, r.colors.primary.l));
+      slot.darkMat.color.setHex(hslToHex(r.colors.secondary.h, r.colors.secondary.s, r.colors.secondary.l));
+      slot.bodyMat.opacity = slot.darkMat.opacity = 0.55;
+      slot.mesh.visible = false;
+    });
+    // hide any spare meshes beyond what this watch session actually uses
+    for (let k = rest.length; k < this.extraSpecMeshes.length; k++) this.extraSpecMeshes[k].mesh.visible = false;
+    this.syncSpectate(0);
+    if (rest.length) this.syncExtraSpecs(0);
+    this.chase.snap(this.specRig(0));
+    UI.show('spectate');
   },
 
   exitSpectate() {
     this.spec = null;
     this.specMesh.visible = false;
     setGhostFlame(this.specMesh, false, 1);
+    this.extraSpecMeshes.forEach((slot) => { slot.mesh.visible = false; setGhostFlame(slot.mesh, false, 1); });
+    this.hideAllTags();
     this.toBoards();
   },
 
@@ -6183,6 +6457,9 @@ const Game = {
   toMenu() {
     this.state = 'menu'; this.running = false;
     Sound.stopEngine();
+    // Leaving to the menu ends any "racing so-and-so" session — otherwise
+    // it would silently resume next time any course is started.
+    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null;
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
     this.stopWatchingBoards();
     GaragePreview.stop();
@@ -6200,6 +6477,9 @@ const Game = {
   toSelect() {
     this.state = 'select'; this.running = false;
     Sound.stopEngine();
+    // Same reasoning as toMenu(): picking a different course from the list
+    // is a deliberate exit from "racing so-and-so" mode, not a restart of it.
+    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null;
     UI.courseList(this.playable, (i) => this.startLevel(i));
     UI.show('select');
     this.flushPendingAuth();
@@ -6255,6 +6535,7 @@ const Game = {
   },
 
   setGarageSlot(slot) {
+    if (this._garageRolling) return;
     this.garageSlot = slot;
     $('gBuyMsg').textContent = '';
     UI.garage();
@@ -6271,16 +6552,33 @@ const Game = {
    *  starts, so a player closing the garage mid-animation never loses it. */
   async buyCarColorPack(pack) {
     if (!Cloud.on || !Cloud.user) { $('gBuyMsg').textContent = 'Sign in to buy colors.'; return; }
+    // Guards the whole roll, not just the network call: renderGarageGrid()
+    // fully rebuilds a grid's DOM (innerHTML = ''), which would yank the
+    // cells out from under garageReveal()'s in-progress flicker if
+    // anything re-rendered the garage screen mid-roll — switching slots,
+    // or a second buy click landing before the first one's reveal has
+    // finished. Held until the reveal animation genuinely completes, not
+    // just until the purchase itself resolves.
+    if (this._garageRolling) return;
+    this._garageRolling = true;
     $('gBuyHue').disabled = true; $('gBuySatLight').disabled = true;
+    $('gSlotPrimary').disabled = true; $('gSlotSecondary').disabled = true;
     $('gBuyMsg').textContent = '';
     try {
       const color = await CarColor.buy(pack, this.garageSlot);
       UI.who(Cloud.name(), Records.credits);
-      UI.garageReveal(pack, this.garageSlot, color, () => UI.garage());
+      UI.garageReveal(pack, this.garageSlot, color, () => {
+        this._garageRolling = false;
+        $('gSlotPrimary').disabled = false; $('gSlotSecondary').disabled = false;
+        UI.garage();
+      });
+      return; // buttons re-enable inside the onDone callback above, once the roll actually finishes
     } catch (e) {
       $('gBuyMsg').textContent = e.message || 'Could not buy that color.';
     }
+    this._garageRolling = false;
     $('gBuyHue').disabled = false; $('gBuySatLight').disabled = false;
+    $('gSlotPrimary').disabled = false; $('gSlotSecondary').disabled = false;
   },
 
   /** Joins whichever race is currently open, from the menu's lobby card —
@@ -6561,8 +6859,22 @@ const Game = {
     const t1 = this.time, t0 = t1 - dt;
     const r2 = (v) => Math.round(v * 100) / 100;
     const r3 = (v) => Math.round(v * 1000) / 1000;
-    const bits = packInputBits(Input);
+    const bits = packInputBits(Input, this.car.boosting);
     const want = Math.floor(t1 * GHOST_HZ) + 1;
+    // The rigid body can (rarely) go non-finite for a single frame before
+    // stepPlay's own watchdog notices and restarts it (see "vehicle state
+    // went non-finite" below) — without this guard that one bad frame gets
+    // baked into the recording (a NaN position/quaternion), and a run that
+    // still goes on to finish saves that corrupted ghost permanently: every
+    // later replay of it renders garbled geometry in the ghost's own
+    // translucent color, since a NaN transform still has a material, just
+    // no sane vertex positions. Falling back to the last known-good sample
+    // keeps the recording (and the eventual save) clean either way.
+    if (!isFinite(p.x) || !isFinite(p.y) || !isFinite(p.z)
+      || !isFinite(q.x) || !isFinite(q.y) || !isFinite(q.z) || !isFinite(q.w)) {
+      p.copy(this.recPrevPos);
+      q.copy(this.recPrevQuat);
+    }
     while (this.rec.length / GHOST_STRIDE < want && this.rec.length < GHOST_MAX) {
       const tk = (this.rec.length / GHOST_STRIDE) / GHOST_HZ;
       const u = dt > 1e-6 ? clamp((tk - t0) / dt, 0, 1) : 1;
@@ -6577,26 +6889,103 @@ const Game = {
 
   updateGhost(dt) {
     const g = this.ghostData;
+    // Racing against a specific other player (this.ghostOverrideName set)
+    // uses the full-detail, translucent, that-player's-own-colors mesh
+    // (specMesh — see paintCarAs, set up in raceGhostOf) so it's
+    // immediately readable as "a real car, not mine, colored like theirs"
+    // and can carry the floating name tag legibly. Chasing your own best
+    // run has no "who is this" question to answer, so it keeps the
+    // simpler, fixed-blue placeholder mesh (ghostMesh) it always had.
+    const mesh = this.ghostOverrideName ? this.specMesh : this.ghostMesh;
+    const otherMesh = this.ghostOverrideName ? this.ghostMesh : this.specMesh;
+    otherMesh.visible = false;
     if (!g || !this.started) {
-      this.ghostMesh.visible = false;
-      setGhostFlame(this.ghostMesh, false, dt);
+      mesh.visible = false;
+      setGhostFlame(mesh, false, dt);
+      this.updateGhostTag('race', false);
       return;
     }
     const n = g.s.length / GHOST_STRIDE;
     const f = this.time * GHOST_HZ;
     if (f >= n - 1) {
-      this.ghostMesh.visible = false;
-      setGhostFlame(this.ghostMesh, false, dt);
+      mesh.visible = false;
+      setGhostFlame(mesh, false, dt);
+      this.updateGhostTag('race', false);
       return;
     }
     const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
-    this.ghostMesh.visible = true;
-    this.ghostMesh.position.set(
+    mesh.visible = true;
+    mesh.position.set(
       lerp(g.s[a], g.s[b], u), lerp(g.s[a + 1], g.s[b + 1], u), lerp(g.s[a + 2], g.s[b + 2], u));
     _gq1.set(g.s[a + 3], g.s[a + 4], g.s[a + 5], g.s[a + 6]);
     _gq2.set(g.s[b + 3], g.s[b + 4], g.s[b + 5], g.s[b + 6]);
-    this.ghostMesh.quaternion.copy(_gq1).slerp(_gq2, u);
-    setGhostFlame(this.ghostMesh, !!((g.s[a + 7] | 0) & 16), dt);
+    mesh.quaternion.copy(_gq1).slerp(_gq2, u);
+    // Bit 16 here is Vehicle.boosting at record time (see packInputBits),
+    // not just whether the boost key was held — so a ghost only ever
+    // shows its flame lit for the exact frames the real run actually had
+    // boost thrust applied, not for every frame the key was pressed.
+    setGhostFlame(mesh, !!((g.s[a + 7] | 0) & 16), dt);
+    // Only a ghost the player is deliberately racing against (via the
+    // leaderboard's Race button) is named — the player's own best-run
+    // ghost chasing itself has no "who is this" question to answer, so
+    // the tag stays hidden for that ordinary case.
+    this.updateGhostTag('race', !!this.ghostOverrideName, mesh, this.ghostOverrideName);
+  },
+
+  /** A small pool of floating name-tag DOM elements, created on first use
+   *  and reused by key ('race' for the race-against ghost, or a uid for
+   *  each car in a multi-watch session) rather than rebuilt every frame. */
+  ghostTagPool: {},
+  getTagEl(key) {
+    let el = this.ghostTagPool[key];
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'ghostTag';
+      el.hidden = true;
+      $('ghostTags').appendChild(el);
+      this.ghostTagPool[key] = el;
+    }
+    return el;
+  },
+  /** hides every pooled tag except (optionally) the ones whose keys are
+   *  in keepKeys — called once when entering/leaving a watch session so a
+   *  tag from a previous session can never linger on screen. */
+  hideAllTags(keepKeys) {
+    const keep = new Set(keepKeys || []);
+    for (const k in this.ghostTagPool) if (!keep.has(k)) this.ghostTagPool[k].hidden = true;
+  },
+
+  /** Positions (or hides) the floating name tag above a ghost/spectated
+   *  car — projects its world position to screen space each frame, the
+   *  same technique any 3D scene uses for a billboarded UI label. Hidden
+   *  whenever the mesh itself is hidden, off the back of the camera, or
+   *  there is simply no name to show (the player's own chase-ghost). */
+  updateGhostTag(key, show, mesh, name) {
+    const tag = this.getTagEl(key);
+    if (!show || !mesh || !name) { tag.hidden = true; return; }
+    const p = this._ghostTagV || (this._ghostTagV = new THREE.Vector3());
+    p.copy(mesh.position);
+    p.y += 1.35; // float just above the roofline, not through the middle of the car
+    p.project(App.camera);
+    if (p.z > 1) { tag.hidden = true; return; } // behind the camera — projected x/y are meaningless there
+    tag.hidden = false;
+    tag.style.left = ((p.x * 0.5 + 0.5) * innerWidth).toFixed(1) + 'px';
+    tag.style.top = ((1 - (p.y * 0.5 + 0.5)) * innerHeight).toFixed(1) + 'px';
+    tag.textContent = name;
+  },
+
+  /** Tints this.specBodyMat/specBodyDarkMat (the dedicated materials the
+   *  full-detail "someone else's car" mesh uses — see boot()) to a given
+   *  player's own equipped colors, at a fixed translucent opacity so it
+   *  always reads as a ghost/replay rather than a second solid car.
+   *  colors is whatever Cloud.fetchCarColorsOf(uid) resolved to; a failed
+   *  fetch already resolves to a sensible default there, so this never
+   *  needs its own fallback. */
+  paintCarAs(colors) {
+    const OPACITY = 0.55;
+    this.specBodyMat.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
+    this.specBodyDarkMat.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
+    this.specBodyMat.opacity = this.specBodyDarkMat.opacity = OPACITY;
   },
 
   updateProgress() {
