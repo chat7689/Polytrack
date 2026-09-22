@@ -102,12 +102,27 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
    world position projected to screen space (see Game.updateGhostTag).
    translate(-50%,-100%) anchors it by its bottom-center point, which is
    the pixel the projection math targets, so the tag always sits just
-   above the car regardless of its own text width. */
+   above the car regardless of its own text width. When several tags are
+   on screen at once (multi-watch) each one is additionally nudged along
+   a short leader line — see .ghostTagLine below and Game.layoutGhostTags
+   — so nearby cars' tags never simply pile on top of each other. */
 .ghostTag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);
-  padding:3px 9px;background:rgba(7,11,24,.75);border:1px solid rgba(61,219,184,.5);
+  padding:3px 9px;background:rgba(7,11,24,.8);border:1px solid rgba(61,219,184,.5);
   border-radius:999px;font-family:var(--mono);font-size:11px;color:var(--aqua);
-  white-space:nowrap;pointer-events:none;z-index:20;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  white-space:nowrap;pointer-events:none;z-index:20;text-shadow:0 1px 2px rgba(0,0,0,.6);
+  display:flex;align-items:baseline;gap:6px;transition:left .06s linear,top .06s linear}
 .ghostTag[hidden]{display:none}
+.ghostTag.active{border-color:var(--ember);color:var(--ink);background:rgba(242,115,63,.22)}
+.ghostTag .kmh{color:var(--dimmer);font-size:9.5px}
+.ghostTag .kmh b{color:inherit;font-weight:600}
+/* the thin line from a nudged tag back down to the car's actual screen
+   point — only drawn once a tag has been pushed off its natural spot to
+   avoid overlapping a neighbor (see Game.layoutGhostTags); an unmoved tag
+   draws no line at all, since its own position already makes the
+   connection obvious. */
+#ghostTagLines{position:absolute;inset:0;pointer-events:none;z-index:19;width:100%;height:100%}
+#ghostTagLines line{stroke:rgba(61,219,184,.45);stroke-width:1;stroke-dasharray:2 3}
+#ghostTagLines line.active{stroke:rgba(242,115,63,.55)}
 
 /* ---------- spectate ---------- */
 .specTop{position:absolute;top:20px;left:24px;right:24px;display:flex;justify-content:space-between;
@@ -115,6 +130,33 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 .specWho{font-size:16px;font-weight:600}
 .specWho small{display:block;font-size:11px;color:var(--dim);font-weight:400;
   font-family:var(--mono);letter-spacing:.1em;margin-top:2px}
+/* Top-right roster — one row per car in a multi-watch session, so it's
+   always clear who has what time without hunting for their tag on track.
+   Only shown once there is more than one car to list (see UI.specRoster);
+   a plain single-run spectate has nothing here, same as before. */
+#specRoster{position:absolute;top:74px;right:24px;width:200px;
+  background:rgba(7,11,24,.72);border:1px solid var(--rule-2);border-radius:10px;
+  padding:10px 12px;font-family:var(--mono);font-size:11.5px}
+#specRoster[hidden]{display:none}
+#specRoster .rHint{color:var(--dimmer);font-size:9.5px;margin-bottom:8px;letter-spacing:.04em}
+#specRoster .rRow{display:flex;align-items:baseline;gap:6px;padding:4px 0;cursor:default;
+  border-bottom:1px solid rgba(255,255,255,.04)}
+#specRoster .rRow:last-child{border-bottom:none}
+#specRoster .rRow.active .rName{color:var(--ember)}
+#specRoster .rDot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+#specRoster .rName{flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#specRoster .rSpeed{color:var(--dimmer);font-size:10px;min-width:38px;text-align:right}
+#specRoster .rTime{color:var(--aqua);min-width:52px;text-align:right}
+#specRoster .rTime.done{color:var(--signal)}
+/* which camera mode is active — cycled with the Left/Right arrow keys;
+   shown only during a multi-watch session (a single-run spectate has
+   only ever had the one follow camera, so there is nothing to cycle). */
+#specCamHint{position:absolute;bottom:118px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:10.5px;color:var(--dim);letter-spacing:.05em;
+  display:flex;align-items:center;gap:8px}
+#specCamHint[hidden]{display:none}
+#specCamHint b{color:var(--ink);font-weight:600}
+#specCamHint .arrows{color:var(--dimmer)}
 .keys{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
 .keys .k{width:34px;height:34px;border:1px solid var(--rule);display:flex;align-items:center;
   justify-content:center;font-family:var(--mono);font-size:12px;color:var(--dimmer);
@@ -391,6 +433,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
     <span class="ic">◆</span><b id="creditBadgeAmt">0</b><small>credits</small>
   </div>
 
+  <svg id="ghostTagLines"><g id="ghostTagLinesG"></g></svg>
   <div id="ghostTags"></div>
 
   <div class="layer" id="hud" hidden>
@@ -427,8 +470,15 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           <small id="specCourse">COURSE</small></div>
         <button class="ghost small" id="bSpecBack">Back to leaderboard</button>
       </div>
+      <div id="specRoster" hidden>
+        <div class="rHint">WATCHING <span id="specRosterCount">0</span></div>
+        <div id="specRosterList"></div>
+      </div>
       <div class="clock" id="specClock" style="position:absolute;top:20px;left:50%;
         transform:translateX(-50%)">0:00.00</div>
+      <div id="specCamHint" hidden>
+        <span class="arrows">◄ ►</span> camera: <b id="specCamName">Overview</b>
+      </div>
       <div class="keys" id="specKeys">
         <div class="k" data-k="handbrake">SH</div>
         <div class="k" data-k="left">A</div>
@@ -751,6 +801,10 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       <h2 id="rName">—</h2>
       <div class="bigtime" id="rTime">0:00.00</div>
       <div class="sub" id="rSub"></div>
+      <div class="mini" id="rRaceResult" hidden>
+        <div class="hd" id="rRaceResultHd">Race result</div>
+        <ol id="rRaceResultList"></ol>
+      </div>
       <div class="mini"><div class="hd" id="rBoardHd">Course leaderboard</div><ol id="rBoard"></ol></div>
       <div class="row" id="rCampaignRow">
         <button class="primary" id="bNext">Next course</button>
@@ -4698,6 +4752,56 @@ class ChaseCamera {
     this.look.copy(target);
     this.apply();
   }
+  /**
+   * The multi-watch "overview" camera mode: frames every given point (one
+   * per car currently in the session) from a raised, slowly-orbiting
+   * vantage, backing off exactly as far as the spread of cars needs so as
+   * many of them as possible stay on screen at once, tightening back in
+   * when they bunch up again. Distance/height are smoothed the same way
+   * the chase camera already smooths its own follow distance, so cars
+   * pulling apart or back together never causes a sudden camera snap.
+   */
+  frameAll(dt, points, time) {
+    if (!points.length) return;
+    this._a.set(0, 0, 0);
+    for (const p of points) this._a.add(p);
+    this._a.multiplyScalar(1 / points.length); // centroid
+    let spread = 0;
+    for (const p of points) spread = Math.max(spread, this._a.distanceTo(p));
+    const dist = clamp(24 + spread * 2.1, 26, 140);
+    const height = clamp(16 + spread * 1.1, 16, 90);
+    const ang = time * 0.06; // slow orbit — enough to read as "surveying the field", not dizzying
+    const wantPos = this._b.set(
+      this._a.x + Math.sin(ang) * dist, this._a.y + height, this._a.z + Math.cos(ang) * dist);
+    this.pos.x = smoothDamp(this.pos.x, wantPos.x, this.vel, 'x', 0.9, dt);
+    this.pos.y = smoothDamp(this.pos.y, wantPos.y, this.vel, 'y', 0.9, dt);
+    this.pos.z = smoothDamp(this.pos.z, wantPos.z, this.vel, 'z', 0.9, dt);
+    this.look.x = smoothDamp(this.look.x, this._a.x, this.lookVel, 'x', 0.6, dt);
+    this.look.y = smoothDamp(this.look.y, this._a.y, this.lookVel, 'y', 0.6, dt);
+    this.look.z = smoothDamp(this.look.z, this._a.z, this.lookVel, 'z', 0.6, dt);
+    const wantFov = clamp(CAM.fovBase + spread * 0.35, CAM.fovBase, CAM.fovBase + 22);
+    this.fov = lerp(this.fov, wantFov, approach(2, dt));
+    if (Math.abs(this.cam.fov - this.fov) > 0.05) { this.cam.fov = this.fov; this.cam.updateProjectionMatrix(); }
+    this.apply();
+  }
+  /** snaps frameAll's smoothed state straight to its target with no
+   *  interpolation — used the moment overview mode is (re)entered so it
+   *  never visibly flies in from wherever the camera happened to be. */
+  snapAll(points, time) {
+    this.vel.x = this.vel.y = this.vel.z = 0;
+    this.lookVel.x = this.lookVel.y = this.lookVel.z = 0;
+    if (points.length) {
+      this._a.set(0, 0, 0);
+      for (const p of points) this._a.add(p);
+      this._a.multiplyScalar(1 / points.length);
+      this.pos.copy(this._a).add(new THREE.Vector3(0, 40, 60));
+      this.look.copy(this._a);
+    }
+    this.fov = CAM.fovBase;
+    this.cam.fov = this.fov;
+    this.cam.updateProjectionMatrix();
+    this.frameAll(0.0001, points, time);
+  }
   apply() {
     this.cam.position.copy(this.pos);
     this.cam.up.set(0, 1, 0);
@@ -5107,6 +5211,97 @@ const UI = {
     if (!Game.spec || !Game.spec.scrubbing) $('specScrub').value = String(Math.round(t * 1000));
     $('specT0').textContent = formatTime(t);
   },
+
+  /** Positions every car's name tag AND, when two or more tags would
+   *  otherwise land close enough on screen to overlap, nudges the later
+   *  one down and draws a short dashed leader line back to its actual
+   *  car — "a calculated line to their gamertag" rather than a pile of
+   *  text. The algorithm: project every car's natural anchor point first,
+   *  sort left-to-right (matches how people read a cluster of labels),
+   *  then walk that order keeping a list of already-placed tag boxes —
+   *  any time a tag's natural spot would sit within one tag-height of an
+   *  already-placed one, push it straight down by one tag-height and try
+   *  again, repeating until it clears every earlier tag. That is a
+   *  vertical stack forming naturally under a tight cluster of cars,
+   *  exactly the "not all bunched together" ask, using only the two
+   *  numbers already at hand (screen position, and how tall a tag is). */
+  layoutGhostTags(cars, camIdx) {
+    const TAG_H = 26; // approx rendered height of one .ghostTag, incl. its own margin
+    const anchors = [];
+    cars.forEach((c, k) => {
+      const key = 'watch' + k;
+      const kmh = c.rig.speed * 3.6;
+      const anchor = Game.updateGhostTag(key, true, c.mesh, c.name,
+        { kmh, place: c.place, active: k === camIdx });
+      if (anchor) anchors.push({ key, x: anchor.x, y: anchor.y, k });
+    });
+    anchors.sort((a, b) => a.x - b.x);
+    const placed = [];
+    for (const a of anchors) {
+      let y = a.y;
+      // keep dropping this tag until it no longer overlaps any placed one
+      // (both close in x — within roughly a tag's own width — and in y)
+      let moved = true;
+      while (moved) {
+        moved = false;
+        for (const p of placed) {
+          if (Math.abs(p.x - a.x) < 70 && Math.abs(p.finalY - y) < TAG_H) { y = p.finalY + TAG_H; moved = true; }
+        }
+      }
+      placed.push({ x: a.x, finalY: y });
+      const tag = Game.getTagEl(a.key);
+      const nudged = Math.abs(y - a.y) > 1;
+      tag.style.top = y.toFixed(1) + 'px';
+      const line = Game.getTagLineEl(a.key);
+      if (nudged) {
+        line.style.display = '';
+        line.setAttribute('x1', a.x.toFixed(1)); line.setAttribute('y1', a.y.toFixed(1));
+        line.setAttribute('x2', a.x.toFixed(1)); line.setAttribute('y2', (y - 4).toFixed(1));
+        line.classList.toggle('active', a.k === camIdx);
+      } else {
+        line.style.display = 'none';
+      }
+    }
+  },
+
+  /** The top-right "who's racing and how fast" roster — one row per car
+   *  in the current watch session, showing its live km/h and its time
+   *  (a running "—" while still driving, its final time once finished,
+   *  with a placement number the moment enough runs have finished for
+   *  one to apply). Only shown for 2+ cars; a plain single-run spectate
+   *  has nothing useful to list here that specName/specT1 don't already
+   *  say. Clicking a row jumps the camera straight to that car, the same
+   *  as cycling Left/Right to it. */
+  specRoster(cars, camIdx) {
+    const el = $('specRoster');
+    if (cars.length < 2) { el.hidden = true; return; }
+    el.hidden = false;
+    $('specRosterCount').textContent = String(cars.length);
+    $('specRosterList').innerHTML = cars.map((c, k) => {
+      const kmh = Math.round(c.rig.speed * 3.6);
+      const timeStr = c.finished ? formatTime(c.data.t) : '—';
+      const dotColor = k === camIdx ? 'var(--ember)' : 'var(--aqua)';
+      return '<div class="rRow' + (k === camIdx ? ' active' : '') + '" data-k="' + k + '">' +
+        '<span class="rDot" style="background:' + dotColor + '"></span>' +
+        '<span class="rName">' + (c.place ? c.place + '. ' : '') + escapeHtml(c.name) + '</span>' +
+        '<span class="rSpeed">' + kmh + ' km/h</span>' +
+        '<span class="rTime' + (c.finished ? ' done' : '') + '">' + timeStr + '</span></div>';
+    }).join('');
+    $('specRosterList').querySelectorAll('.rRow').forEach((row) => {
+      row.style.pointerEvents = 'auto'; row.style.cursor = 'pointer';
+      row.addEventListener('click', () => Game.jumpSpecCamera(parseInt(row.dataset.k, 10)));
+    });
+  },
+
+  /** shows/hides the Left/Right camera-mode hint and names the active one
+   *  — hidden entirely for a plain single-run spectate, where there is
+   *  only ever the one camera and nothing to cycle. */
+  specCamMode(mode, followName) {
+    const el = $('specCamHint');
+    if (!Game.spec || Game.spec.cars.length < 2) { el.hidden = true; return; }
+    el.hidden = false;
+    $('specCamName').textContent = mode === 'overview' ? 'Overview' : followName;
+  },
   teleOn: true,
   toggleTele() {
     this.teleOn = !this.teleOn;
@@ -5497,6 +5692,19 @@ const Game = {
   startPose: { pos: new THREE.Vector3(), heading: 0 },
   accum: 0, clock: 0, pathIdx: 0,
   ghostOverride: null, ghostOverrideName: null, ghostOverrideCourse: null,
+  // Extra ghosts to race against beyond the primary (ghostOverride) one —
+  // set alongside it by raceGhostOfMany when more than one leaderboard row
+  // was checked, so "Race checked" really does race everyone checked, not
+  // just the fastest. Each entry is { g, name }; rendered through the same
+  // extraSpecMeshes pool spectateMany uses (racing and spectating are
+  // mutually exclusive states, so sharing the pool is safe). Cleared
+  // wherever ghostOverride itself is cleared (toMenu/toSelect/a different
+  // course), so it never outlives the pairing it belongs to.
+  extraGhosts: [],
+  // this.time the instant the player crossed the finish line this attempt
+  // (null until then) — used only to work out live race placements
+  // alongside the ghosts being raced; see updateRacePlacements.
+  finishedAtTime: null, _racePlaces: null,
   spec: null,
   confirmedUid: null, authPending: false,
   lobby: null, lobbyEntries: [], lobbyUnwatch: null,
@@ -6118,7 +6326,9 @@ const Game = {
     // override is always set for the course you're about to load, so
     // comparing to the course you're leaving would wipe it on its very
     // first use.
-    if (this.ghostOverride && this.ghostOverrideCourse !== i) { this.ghostOverride = null; this.ghostOverrideName = null; }
+    if (this.ghostOverride && this.ghostOverrideCourse !== i) {
+      this.ghostOverride = null; this.ghostOverrideName = null; this.extraGhosts = [];
+    }
     this.levelIndex = i;
     this.rec = [];
     this.ghostData = this.ghostOverride || Records.ghost('c' + (i + 1));
@@ -6207,7 +6417,29 @@ const Game = {
         ? 'Chasing ' + this.ghostOverrideName + ' — ' + formatTime(this.ghostData.t)
         : 'Chasing your best run — ' + formatTime(this.ghostData.t));
     }
+    this.setupExtraRaceGhosts();
+    this.finishedAtTime = null; // reset each attempt — see updateRacePlacements
     Sound.init(); Sound.resume(); Sound.startEngine();
+  },
+
+  /** Paints and shows a spare extraSpecMeshes slot for each of this.extraGhosts
+   *  (set by raceGhostOfMany when more than one leaderboard row was
+   *  checked) — same pool, same translucent-real-colors treatment, same
+   *  floating name tag as watching several people at once, just alongside
+   *  the player's own live driving instead of a replay. Hides every spare
+   *  slot beyond what this race actually uses, and hides all of them when
+   *  there are no extra ghosts (the common one-person-race case), so nothing
+   *  lingers from a previous multi-race once this one starts. */
+  setupExtraRaceGhosts() {
+    const extra = this.extraGhosts;
+    extra.forEach((r, k) => {
+      const slot = this.extraSpecMeshes[k];
+      slot.bodyMat.color.setHex(hslToHex(r.colors.primary.h, r.colors.primary.s, r.colors.primary.l));
+      slot.darkMat.color.setHex(hslToHex(r.colors.secondary.h, r.colors.secondary.s, r.colors.secondary.l));
+      slot.bodyMat.opacity = slot.darkMat.opacity = 0.55;
+      slot.mesh.visible = false; // shown per-frame in updateGhost once the run actually starts
+    });
+    for (let k = extra.length; k < this.extraSpecMeshes.length; k++) this.extraSpecMeshes[k].mesh.visible = false;
   },
 
   /** load someone else's stored run as the ghost for the next attempt on this
@@ -6232,21 +6464,41 @@ const Game = {
     this.startLevel(idx);
   },
 
-  /** Race against several checked leaderboard entries at once. There is
-   *  still only one ghost car you actually race against lap to lap (the
-   *  chase-ghost mechanic is inherently one-vs-one), so with more than one
-   *  uid checked this picks the fastest of them — the toughest, most
-   *  meaningful target of the group — and races that one, same as clicking
-   *  Race on a single row. */
+  /** Race against every checked leaderboard entry at once — the primary
+   *  (fastest of the checked) drives the progress-gap HUD (ghostData/
+   *  ghostOverride, same as a single-person race always has), and every
+   *  other checked run rides along as a real, named, translucent ghost
+   *  too, via the same extraSpecMeshes pool spectateMany uses (racing and
+   *  spectating never happen at the same time, so it's safe to share).
+   *  Capped at 1+SPEC_POOL_SIZE the same way watching several at once is,
+   *  since that pool is the hard limit on how many extra full-detail cars
+   *  can exist at once regardless of how many rows were checked. */
   async raceGhostOfMany(courseId, uids) {
     if (!uids || !uids.length) return;
     if (uids.length === 1) return this.raceGhostOf(courseId, uids[0]);
+    const idx = parseInt(courseId.slice(1), 10) - 1;
+    if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     const board = Records.board(courseId) || [];
     const rows = uids.map((uid) => board.find((e) => e.uid === uid)).filter(Boolean);
     if (!rows.length) { UI.toast('That run has no ghost data.'); return; }
     rows.sort((a, b) => a.t - b.t);
-    UI.toast('Racing the fastest of ' + rows.length + ' selected — ' + rows[0].n);
-    return this.raceGhostOf(courseId, rows[0].uid);
+    const capped = rows.slice(0, 1 + SPEC_POOL_SIZE);
+    UI.toast('Loading ' + capped.length + ' ghosts…');
+    const loaded = (await Promise.all(capped.map(async (row) => {
+      const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, row.uid), Cloud.fetchCarColorsOf(row.uid)]);
+      return { g, colors, name: row.n };
+    }))).filter((r) => r.g);
+    if (!loaded.length) { UI.toast('That run has no ghost data.'); return; }
+    const primary = loaded[0], rest = loaded.slice(1);
+    this.ghostOverride = primary.g;
+    this.ghostOverrideName = primary.name;
+    this.ghostOverrideCourse = idx;
+    this.paintCarAs(primary.colors);
+    this.extraGhosts = rest.map((r) => ({ g: r.g, name: r.name, colors: r.colors }));
+    UI.toast(rest.length
+      ? 'Racing ' + loaded.length + ' — chasing ' + primary.name + ' (+' + rest.length + ' more)'
+      : 'Racing ' + primary.name);
+    this.startLevel(idx);
   },
 
   /**
@@ -6258,38 +6510,10 @@ const Game = {
    * at frame rate. Watching a finished run, keys and all, is what is
    * actually deliverable without a realtime backend.
    */
-  async spectate(courseId, uid) {
-    const idx = parseInt(courseId.slice(1), 10) - 1;
-    // See the identical note in raceGhostOf — a course marked unplayable
-    // must never make this button look like it did nothing.
-    if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
-    UI.toast('Loading run…');
-    const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, uid), Cloud.fetchCarColorsOf(uid)]);
-    if (!g) { UI.toast('That run has no ghost data.'); return; }
-    const row = (Records.board(courseId) || []).find((e) => e.uid === uid);
-    if (!this.loadLevel(idx)) return;
-    this._specRig = null;
-    this.spec = {
-      data: g, courseId, t: 0, playing: true,
-      name: (row && row.n) || 'that driver', scrubbing: false
-    };
-    this.state = 'spectate';
-    Sound.stopEngine();
-    $('specName').textContent = this.spec.name;
-    $('specCourse').textContent = LEVELS[idx].name + ' — ' + formatTime(g.t);
-    $('specT1').textContent = formatTime(g.t);
-    $('specScrub').max = String(Math.round(g.t * 1000));
-    $('specScrub').value = '0';
-    $('bSpecPlay').textContent = 'Pause';
-    this.buildSpeedGraph(g);
-    this.paintCarAs(colors);
-    this.specMesh.visible = true;
-    this.ghostMesh.visible = false;
-    this.hideAllTags();
-    this.syncSpectate(0);
-    this.chase.snap(this.specRig(0));
-    UI.show('spectate');
-  },
+  /** Single-run spectate is just spectateMany with one uid — kept as its
+   *  own entry point since it's the common case from a leaderboard row's
+   *  own Watch button, but all the actual work lives in one place. */
+  async spectate(courseId, uid) { return this.spectateMany(courseId, [uid]); },
 
   /** a minimal object exposing exactly what ChaseCamera reads off a car */
   specRig() {
@@ -6307,7 +6531,10 @@ const Game = {
    * previous sample times GHOST_HZ, exactly what syncSpectate's rig.speed
    * computes per frame, just done once up front for the whole run instead
    * of frame by frame. No new data collection: this is entirely derived
-   * from samples already recorded and stored for the ghost itself.
+   * from samples already recorded and stored for the ghost itself. Always
+   * runs against the currently-followed car (the primary at first, or
+   * whichever car Left/Right switched to), so the graph/scrub bar always
+   * describes whoever the camera is actually locked onto.
    */
   buildSpeedGraph(g) {
     const s = g.s, n = s.length / GHOST_STRIDE;
@@ -6354,148 +6581,205 @@ const Game = {
     $('specSpeedNow').textContent = Math.round(sp.speeds[i] * 3.6) + ' km/h';
   },
 
-  /** pose the spectate mesh and camera rig at time t (seconds) into the run */
+  /**
+   * Poses every car in the session at time t and returns the camera rig
+   * for whichever one the chase camera should currently follow (or null
+   * in overview mode, where no single rig applies). Also fills in each
+   * car's live speed/placement, which both the name tags and the roster
+   * panel read straight off spec.cars afterward — computed once per
+   * frame here rather than separately in each display piece.
+   */
   syncSpectate(t) {
-    const g = this.spec.data, s = g.s;
-    const n = s.length / GHOST_STRIDE;
-    const f = clamp(t * GHOST_HZ, 0, n - 1.001);
-    const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
-    const rig = this.specRig();
-    const prevPos = rig.pos.clone();
-    rig.pos.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
-    this.specMesh.position.copy(rig.pos);
-    _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
-    _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
-    this.specMesh.quaternion.copy(_gq1).slerp(_gq2, u);
-    const fwd = this._specFwd || (this._specFwd = new THREE.Vector3());
-    fwd.set(0, 0, 1).applyQuaternion(this.specMesh.quaternion);
-    if (fwd.x * fwd.x + fwd.z * fwd.z > 0.06) rig.heading = Math.atan2(fwd.x, fwd.z);
-    rig.speed = rig._hasPos ? prevPos.distanceTo(rig.pos) * GHOST_HZ : 0;
-    rig._hasPos = true;
-    rig.vel.y = 0;
-    rig.grounded = true;
-    const bits = (s[a + 7] | 0);
-    rig.boosting = !!(bits & 16);
-    setGhostFlame(this.specMesh, rig.boosting, 1 / 60);
-    UI.specKeys(bits);
-    return rig;
+    const cars = this.spec.cars;
+    let followRig = null;
+    for (let k = 0; k < cars.length; k++) {
+      const c = cars[k];
+      const g = c.data, s = g.s;
+      const n = s.length / GHOST_STRIDE;
+      const finished = t >= g.t;
+      const f = clamp((finished ? g.t : t) * GHOST_HZ, 0, n - 1.001);
+      const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
+      const rig = c.rig;
+      const prevPos = rig.pos.clone();
+      rig.pos.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
+      c.mesh.position.copy(rig.pos);
+      _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
+      _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
+      c.mesh.quaternion.copy(_gq1).slerp(_gq2, u);
+      const fwd = this._specFwd || (this._specFwd = new THREE.Vector3());
+      fwd.set(0, 0, 1).applyQuaternion(c.mesh.quaternion);
+      if (fwd.x * fwd.x + fwd.z * fwd.z > 0.06) rig.heading = Math.atan2(fwd.x, fwd.z);
+      rig.speed = (rig._hasPos && !finished) ? prevPos.distanceTo(rig.pos) * GHOST_HZ : (finished ? 0 : rig.speed);
+      rig._hasPos = true;
+      rig.vel.y = 0;
+      rig.grounded = true;
+      const bits = finished ? 0 : (s[a + 7] | 0);
+      rig.boosting = !!(bits & 16);
+      setGhostFlame(c.mesh, rig.boosting, 1 / 60);
+      c.finished = finished;
+      if (k === this.spec.camIdx) { followRig = rig; UI.specKeys(bits); }
+    }
+    this.updatePlacements();
+    return followRig;
+  },
+
+  /** Recomputes each car's 1st/2nd/3rd... placement once enough of them
+   *  have finished for an order to mean anything — a car that hasn't
+   *  finished yet never gets a placement (there is nothing to rank it
+   *  against until it has a final time), and placements are simply by
+   *  finish time among those that have. Cheap enough (at most
+   *  1+SPEC_POOL_SIZE cars) to just redo in full every frame rather than
+   *  track incrementally. */
+  updatePlacements() {
+    const cars = this.spec.cars;
+    const finishedOrder = cars.filter((c) => c.finished).sort((a, b) => a.data.t - b.data.t);
+    for (const c of cars) c.place = null;
+    finishedOrder.forEach((c, i) => { c.place = i + 1; });
   },
 
   stepSpectate(dt) {
     if (Input.tapped('Escape')) { this.exitSpectate(); return; }
     if (Input.tapped('Space')) $('bSpecPlay').click();
     if (Input.tapped('KeyR')) $('bSpecRestart').click();
+    if (this.spec.cars.length > 1) {
+      if (Input.tapped('ArrowRight')) this.cycleSpecCamera(1);
+      if (Input.tapped('ArrowLeft')) this.cycleSpecCamera(-1);
+    }
     if (!this.spec.scrubbing && this.spec.playing) {
       this.spec.t += dt;
-      if (this.spec.t >= this.spec.data.t) {
-        this.spec.t = this.spec.data.t;
+      if (this.spec.t >= this.spec.longestT) {
+        this.spec.t = this.spec.longestT;
         this.spec.playing = false;
         $('bSpecPlay').textContent = 'Replay';
       }
     }
-    const rig = this.syncSpectate(this.spec.t);
-    this.chase.update(dt, rig);
+    const followRig = this.syncSpectate(this.spec.t);
+    if (this.spec.camMode === 'follow' && followRig) {
+      this.chase.update(dt, followRig);
+    } else {
+      const pts = this.spec.cars.map((c) => c.rig.pos);
+      this.chase.frameAll(dt, pts, this.spec.t);
+    }
     UI.specClock(this.spec.t);
     this.updateSpeedHead(this.spec.t);
-    if (this.spec.extra) this.syncExtraSpecs(this.spec.t);
+    UI.layoutGhostTags(this.spec.cars, this.spec.camIdx);
+    UI.specRoster(this.spec.cars, this.spec.camIdx);
   },
 
-  /** Watching multiple checked players at once: the primary (first-checked)
-   *  run drives the existing single-run HUD (clock/scrub/speed graph) and
-   *  camera exactly like a normal spectate; every additional checked run
-   *  is purely a visual passenger — one of the spare extraSpecMeshes,
-   *  tinted to that player's real colors and tagged with their name,
-   *  played back against the SAME clock as the primary run (each one
-   *  simply clamped to its own length, since runs are rarely equal). No
-   *  new data/transport: still just each player's already-stored 20Hz
-   *  ghost samples, replayed side by side. */
-  syncExtraSpecs(t) {
-    const extra = this.spec.extra;
-    for (let k = 0; k < extra.length; k++) {
-      const rec = extra[k];
-      const slot = this.extraSpecMeshes[k];
-      const g = rec.data, s = g.s;
-      const n = s.length / GHOST_STRIDE;
-      const f = clamp(t * GHOST_HZ, 0, n - 1.001);
-      if (t > g.t) { // this run finished earlier than the primary — freeze it at the finish pose, no fake "still driving"
-        slot.mesh.visible = true;
-        this.updateGhostTag('watch' + k, true, slot.mesh, rec.name);
-        continue;
-      }
-      const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
-      slot.mesh.visible = true;
-      slot.mesh.position.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
-      _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
-      _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
-      slot.mesh.quaternion.copy(_gq1).slerp(_gq2, u);
-      setGhostFlame(slot.mesh, !!((s[a + 7] | 0) & 16), 1 / 60);
-      this.updateGhostTag('watch' + k, true, slot.mesh, rec.name);
+  /** Left/Right arrow handling: -1/+1 cycles camIdx through -1 (overview)
+   *  then 0..cars.length-1 (each car, in the order they were checked),
+   *  wrapping both ends — so tapping the same direction repeatedly always
+   *  eventually comes back around rather than dead-ending. */
+  cycleSpecCamera(dir) {
+    const n = this.spec.cars.length;
+    let idx = this.spec.camIdx + dir;
+    if (idx < -1) idx = n - 1;
+    if (idx >= n) idx = -1;
+    this.setSpecCamera(idx);
+  },
+
+  /** Jump straight to camera idx (-1 for overview, or a specific car) —
+   *  used by both cycleSpecCamera above and clicking a roster row. */
+  jumpSpecCamera(idx) {
+    if (idx === this.spec.camIdx) return;
+    this.setSpecCamera(idx);
+  },
+
+  /** Shared "point the camera and HUD at idx" logic: -1 snaps the
+   *  overview camera to frame every car at once; a specific car index
+   *  re-points the HUD (name/time/speed graph/scrub) at that car's own
+   *  run, same as if it had been the one originally clicked, and snaps
+   *  the follow camera straight onto it. */
+  setSpecCamera(idx) {
+    this.spec.camIdx = idx;
+    this.spec.camMode = idx === -1 ? 'overview' : 'follow';
+    if (idx === -1) {
+      this.chase.snapAll(this.spec.cars.map((c) => c.rig.pos), this.spec.t);
+    } else {
+      const c = this.spec.cars[idx];
+      this.spec.data = c.data;
+      this.spec.name = c.name;
+      $('specName').textContent = c.name;
+      $('specT1').textContent = formatTime(c.data.t);
+      $('specScrub').max = String(Math.round(c.data.t * 1000));
+      this.buildSpeedGraph(c.data);
+      this.chase.snap(c.rig);
     }
+    UI.specCamMode(this.spec.camMode, idx === -1 ? null : this.spec.cars[idx].name);
   },
 
-  /** Watch several checked players' runs on one course at once — the
-   *  leaderboard's checkbox selection feeds this. The first uid becomes
-   *  the "primary" run (drives the HUD/camera/scrub bar exactly like a
-   *  normal single spectate); the rest ride along visually via the spare
-   *  extraSpecMeshes pool, each painted in that player's real car colors
-   *  and labeled with a floating name tag so it's always clear whose
-   *  ghost is whose. */
+  /** Watch one or several checked players' runs on one course at once —
+   *  both a single leaderboard row's own Watch button and the
+   *  leaderboard's "Watch all checked" bar feed this (spectate() above is
+   *  just this with a 1-uid array). The first uid becomes the initially-
+   *  followed car and drives the HUD's name/time/speed-graph, but with 2+
+   *  cars the session actually opens in overview mode (see camMode
+   *  below) — every car is painted in its own real, translucent colors
+   *  and labeled with a floating name tag, and Left/Right switches which
+   *  camera (overview, or locked onto any one car) is active. */
   async spectateMany(courseId, uids) {
     if (!uids || !uids.length) return;
-    if (uids.length === 1) return this.spectate(courseId, uids[0]);
     const idx = parseInt(courseId.slice(1), 10) - 1;
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     const capped = uids.slice(0, 1 + SPEC_POOL_SIZE); // primary + however many spares exist
-    UI.toast('Loading runs…');
+    UI.toast(capped.length > 1 ? 'Loading runs…' : 'Loading run…');
     const board = Records.board(courseId) || [];
     const nameOf = (uid) => (board.find((e) => e.uid === uid) || {}).n || 'that driver';
-    const loaded = await Promise.all(capped.map(async (uid) => {
+    const loaded = (await Promise.all(capped.map(async (uid) => {
       const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, uid), Cloud.fetchCarColorsOf(uid)]);
       return { uid, g, colors, name: nameOf(uid) };
-    }));
-    const primary = loaded[0];
-    if (!primary.g) { UI.toast('That run has no ghost data.'); return; }
-    const rest = loaded.slice(1).filter((r) => r.g);
+    }))).filter((r) => r.g);
+    if (!loaded.length) { UI.toast('That run has no ghost data.'); return; }
     if (!this.loadLevel(idx)) return;
     this._specRig = null;
+    const meshesFor = [this.specMesh, ...this.extraSpecMeshes.map((s) => s.mesh)];
+    const matsFor = [
+      { body: this.specBodyMat, dark: this.specBodyDarkMat },
+      ...this.extraSpecMeshes.map((s) => ({ body: s.bodyMat, dark: s.darkMat }))
+    ];
+    const cars = loaded.map((r, k) => ({
+      uid: r.uid, name: r.name, data: r.g, mesh: meshesFor[k], mats: matsFor[k],
+      rig: { pos: new THREE.Vector3(), heading: 0, speed: 0, boosting: false,
+        grounded: true, vel: { y: 0 }, _hasPos: false },
+      finished: false, place: null
+    }));
+    const longestT = Math.max(...cars.map((c) => c.data.t));
     this.spec = {
-      data: primary.g, courseId, t: 0, playing: true,
-      name: primary.name, scrubbing: false,
-      extra: rest.map((r) => ({ data: r.g, name: r.name }))
+      data: cars[0].data, courseId, t: 0, playing: true, longestT,
+      name: cars[0].name, scrubbing: false, cars,
+      camMode: cars.length > 1 ? 'overview' : 'follow', camIdx: cars.length > 1 ? -1 : 0
     };
     this.state = 'spectate';
     Sound.stopEngine();
-    $('specName').textContent = rest.length ? primary.name + ' (+' + rest.length + ' more)' : primary.name;
-    $('specCourse').textContent = LEVELS[idx].name + ' — ' + formatTime(primary.g.t);
-    $('specT1').textContent = formatTime(primary.g.t);
-    $('specScrub').max = String(Math.round(primary.g.t * 1000));
+    $('specName').textContent = cars.length > 1 ? cars[0].name + ' (+' + (cars.length - 1) + ' more)' : cars[0].name;
+    $('specCourse').textContent = LEVELS[idx].name + ' — ' + formatTime(cars[0].data.t);
+    $('specT1').textContent = formatTime(cars[0].data.t);
+    $('specScrub').max = String(Math.round(longestT * 1000));
     $('specScrub').value = '0';
     $('bSpecPlay').textContent = 'Pause';
-    this.buildSpeedGraph(primary.g);
-    this.paintCarAs(primary.colors);
-    this.specMesh.visible = true;
-    this.ghostMesh.visible = false;
+    this.buildSpeedGraph(cars[0].data);
     this.hideAllTags();
-    rest.forEach((r, k) => {
-      const slot = this.extraSpecMeshes[k];
-      slot.bodyMat.color.setHex(hslToHex(r.colors.primary.h, r.colors.primary.s, r.colors.primary.l));
-      slot.darkMat.color.setHex(hslToHex(r.colors.secondary.h, r.colors.secondary.s, r.colors.secondary.l));
-      slot.bodyMat.opacity = slot.darkMat.opacity = 0.55;
-      slot.mesh.visible = false;
+    cars.forEach((c, k) => {
+      const colors = loaded[k].colors;
+      c.mats.body.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
+      c.mats.dark.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
+      c.mats.body.opacity = c.mats.dark.opacity = 0.55;
+      c.mesh.visible = true;
     });
-    // hide any spare meshes beyond what this watch session actually uses
-    for (let k = rest.length; k < this.extraSpecMeshes.length; k++) this.extraSpecMeshes[k].mesh.visible = false;
+    // hide any spare meshes beyond what this session actually uses
+    for (let k = cars.length; k < meshesFor.length; k++) meshesFor[k].visible = false;
+    this.ghostMesh.visible = false;
     this.syncSpectate(0);
-    if (rest.length) this.syncExtraSpecs(0);
-    this.chase.snap(this.specRig(0));
+    UI.specRoster(cars, this.spec.camIdx);
+    UI.specCamMode(this.spec.camMode, this.spec.camMode === 'follow' ? cars[0].name : null);
+    if (this.spec.camMode === 'follow') this.chase.snap(cars[0].rig);
+    else this.chase.snapAll(cars.map((c) => c.rig.pos), 0);
     UI.show('spectate');
   },
 
   exitSpectate() {
+    if (this.spec) this.spec.cars.forEach((c) => { c.mesh.visible = false; setGhostFlame(c.mesh, false, 1); });
     this.spec = null;
-    this.specMesh.visible = false;
-    setGhostFlame(this.specMesh, false, 1);
-    this.extraSpecMeshes.forEach((slot) => { slot.mesh.visible = false; setGhostFlame(slot.mesh, false, 1); });
     this.hideAllTags();
     this.toBoards();
   },
@@ -6512,7 +6796,8 @@ const Game = {
     Sound.stopEngine();
     // Leaving to the menu ends any "racing so-and-so" session — otherwise
     // it would silently resume next time any course is started.
-    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null;
+    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
+    this.hideAllTags(); // a race's own name tags are DOM elements, not part of the 3D scene — they don't clear on their own
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
     this.stopWatchingBoards();
     GaragePreview.stop();
@@ -6532,7 +6817,8 @@ const Game = {
     Sound.stopEngine();
     // Same reasoning as toMenu(): picking a different course from the list
     // is a deliberate exit from "racing so-and-so" mode, not a restart of it.
-    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null;
+    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
+    this.hideAllTags();
     UI.courseList(this.playable, (i) => this.startLevel(i));
     UI.show('select');
     this.flushPendingAuth();
@@ -6831,9 +7117,40 @@ const Game = {
     }
   },
 
+  /**
+   * Standings for the result screen when the just-finished attempt was a
+   * race against one or more named ghosts — the player, the primary
+   * ghost (ghostData/ghostOverrideName), and every extraGhosts entry.
+   * Every ghost here is a fully pre-recorded run with an already-known
+   * total time (not a live simultaneous opponent), so there is no
+   * meaningful "DNF" case the way there would be in a real multiplayer
+   * race — the whole field's times are all equally knowable the instant
+   * the player's own run ends, and ranking is simply everyone's time,
+   * fastest first. Called from finishLevel() itself (see the comment
+   * there) since this is the one moment the usual per-frame
+   * updateRacePlacements never gets a chance to run.
+   */
+  buildRaceResult() {
+    const entries = [{ key: 'me', name: Records.driver(), t: this.time, isMe: true }];
+    if (this.ghostData) entries.push({ key: 'primary', name: this.ghostOverrideName, t: this.ghostData.t });
+    this.extraGhosts.forEach((r, k) => entries.push({ key: 'extra' + k, name: r.name, t: r.g.t }));
+    entries.sort((a, b) => a.t - b.t);
+    let place = 0;
+    return entries.map((e) => ({ ...e, place: ++place }));
+  },
+
   finishLevel() {
     this.running = false;
     this.state = 'result';
+    this.finishedAtTime = this.time;
+    // The finishing frame itself never gets another updateGhost() call (the
+    // driving HUD/tags are for state 'play', and state just flipped to
+    // 'result' above), so the moment-of-finish standings have to be
+    // computed here directly rather than relying on the usual per-frame
+    // updateRacePlacements — otherwise the player's own placement could
+    // never appear anywhere, only the ghosts'. Captured before anything
+    // below touches ghostData/ghostOverrideName for the *next* attempt.
+    const raceResult = this.ghostOverrideName ? this.buildRaceResult() : null;
     const id = this.id();
     const prevBest = Records.best(id);
     const firstClear = !Records.cleared(id);
@@ -6867,6 +7184,16 @@ const Game = {
       : (this.time < prevBest
         ? '<em>' + formatDelta(this.time - prevBest) + 's</em> on your previous best of ' + formatTime(prevBest) + '.'
         : formatDelta(this.time - prevBest) + 's off your best of ' + formatTime(prevBest) + '.');
+
+    if (raceResult) {
+      $('rRaceResult').hidden = false;
+      $('rRaceResultHd').textContent = raceResult.length > 2 ? 'Race result' : 'Head to head';
+      $('rRaceResultList').innerHTML = raceResult.map((e) =>
+        '<li class="' + (e.isMe ? 'me' : '') + '"><span>' + e.place + '. ' + escapeHtml(e.name) +
+        '</span><span>' + formatTime(e.t) + '</span></li>').join('');
+    } else {
+      $('rRaceResult').hidden = true;
+    }
 
     if (!prevBest || this.time < prevBest) Records.setGhost(id, this.time, this.rec);
     this.ghostMesh.visible = false;
@@ -6952,18 +7279,26 @@ const Game = {
     const mesh = this.ghostOverrideName ? this.specMesh : this.ghostMesh;
     const otherMesh = this.ghostOverrideName ? this.ghostMesh : this.specMesh;
     otherMesh.visible = false;
+    if (this.ghostOverrideName) this.updateRacePlacements();
     if (!g || !this.started) {
       mesh.visible = false;
       setGhostFlame(mesh, false, dt);
       this.updateGhostTag('race', false);
+      this.updateExtraRaceGhosts(dt);
       return;
     }
     const n = g.s.length / GHOST_STRIDE;
     const f = this.time * GHOST_HZ;
     if (f >= n - 1) {
-      mesh.visible = false;
+      // finished — freeze on the finish pose (rather than vanish) so its
+      // tag, now showing a placement, still has a car to float above.
+      const a = (n - 1) * GHOST_STRIDE;
+      mesh.visible = true;
+      mesh.position.set(g.s[a], g.s[a + 1], g.s[a + 2]);
       setGhostFlame(mesh, false, dt);
-      this.updateGhostTag('race', false);
+      this.updateGhostTag('race', !!this.ghostOverrideName, mesh, this.ghostOverrideName,
+        { kmh: 0, place: this._racePlaces && this._racePlaces.primary });
+      this.updateExtraRaceGhosts(dt);
       return;
     }
     const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
@@ -6982,49 +7317,160 @@ const Game = {
     // leaderboard's Race button) is named — the player's own best-run
     // ghost chasing itself has no "who is this" question to answer, so
     // the tag stays hidden for that ordinary case.
-    this.updateGhostTag('race', !!this.ghostOverrideName, mesh, this.ghostOverrideName);
+    const kmh = this._raceGhostSpeed(g, this.time) * 3.6;
+    this.updateGhostTag('race', !!this.ghostOverrideName, mesh, this.ghostOverrideName,
+      this.ghostOverrideName ? { kmh } : null);
+    this.updateExtraRaceGhosts(dt);
+  },
+
+  /**
+   * While racing one or more named ghosts (this.ghostOverrideName set),
+   * works out who has actually finished so far — the player included, at
+   * whatever this.time was the instant they crossed the line — and in
+   * what order, so each finished tag can show "1st"/"2nd"/etc. next to
+   * the name instead of just going quiet. Recomputed every frame it's
+   * relevant (at most a handful of entries, so trivial cost) rather than
+   * tracked incrementally, same reasoning as spectate's updatePlacements.
+   */
+  updateRacePlacements() {
+    const entries = [{ key: 'me', t: this.finishedAtTime }];
+    if (this.ghostData) entries.push({ key: 'primary', t: this.ghostData.t });
+    this.extraGhosts.forEach((r, k) => entries.push({ key: 'extra' + k, t: r.g.t }));
+    const finished = entries.filter((e) => e.t != null && (e.key === 'me' ? true : this.time >= e.t))
+      .sort((a, b) => a.t - b.t);
+    const places = {};
+    finished.forEach((e, i) => { places[e.key] = i + 1; });
+    this._racePlaces = places;
+  },
+
+  /** approximate live speed of a ghost at time t, the same distance-over-
+   *  one-sample-interval technique buildSpeedGraph/syncSpectate already
+   *  use, just evaluated for a single instant instead of the whole run —
+   *  cheap enough to call every frame for the handful of ghosts a race
+   *  ever has on screen at once. */
+  _raceGhostSpeed(g, t) {
+    const n = g.s.length / GHOST_STRIDE;
+    const f = clamp(t * GHOST_HZ, 0, n - 1.001);
+    const i = Math.max(0, Math.floor(f) - 1), a = i * GHOST_STRIDE, b = (i + 1) * GHOST_STRIDE;
+    if (b + 2 >= g.s.length) return 0;
+    const dx = g.s[b] - g.s[a], dy = g.s[b + 1] - g.s[a + 1], dz = g.s[b + 2] - g.s[a + 2];
+    return Math.hypot(dx, dy, dz) * GHOST_HZ;
+  },
+
+  /** Renders every ghost beyond the primary one during an actual race (as
+   *  opposed to a replay spectate) — same extraSpecMeshes pool, same
+   *  translucent real-colors treatment, same floating name tags, driven
+   *  by the player's own live race clock (this.time) instead of a
+   *  separately-scrubbed spectate clock, so every ghost in a multi-race
+   *  is always exactly in sync with the actual driving happening. */
+  updateExtraRaceGhosts(dt) {
+    const extra = this.extraGhosts;
+    for (let k = 0; k < extra.length; k++) {
+      const rec = extra[k];
+      const slot = this.extraSpecMeshes[k];
+      const g = rec.g, s = g.s, n = s.length / GHOST_STRIDE;
+      const key = 'racextra' + k;
+      if (!this.started) {
+        slot.mesh.visible = false;
+        setGhostFlame(slot.mesh, false, dt);
+        this.updateGhostTag(key, false);
+        continue;
+      }
+      const place = this._racePlaces && this._racePlaces['extra' + k];
+      if (this.time * GHOST_HZ >= n - 1) {
+        // finished — freeze on the finish pose, tag now shows its placement
+        // instead of just disappearing (see updateRacePlacements).
+        const a = (n - 1) * GHOST_STRIDE;
+        slot.mesh.visible = true;
+        slot.mesh.position.set(s[a], s[a + 1], s[a + 2]);
+        setGhostFlame(slot.mesh, false, dt);
+        this.updateGhostTag(key, true, slot.mesh, rec.name, { kmh: 0, place });
+        continue;
+      }
+      const f = this.time * GHOST_HZ;
+      const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
+      slot.mesh.visible = true;
+      slot.mesh.position.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
+      _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
+      _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
+      slot.mesh.quaternion.copy(_gq1).slerp(_gq2, u);
+      setGhostFlame(slot.mesh, !!((s[a + 7] | 0) & 16), dt);
+      const kmh = this._raceGhostSpeed(g, this.time) * 3.6;
+      this.updateGhostTag(key, true, slot.mesh, rec.name, { kmh, place });
+    }
   },
 
   /** A small pool of floating name-tag DOM elements, created on first use
-   *  and reused by key ('race' for the race-against ghost, or a uid for
-   *  each car in a multi-watch session) rather than rebuilt every frame. */
-  ghostTagPool: {},
+   *  and reused by key ('race' for the race-against ghost, or 'watchN'
+   *  for each car in a multi-watch session) rather than rebuilt every
+   *  frame. Each tag optionally has a matching leader-line <line> in
+   *  #ghostTagLinesG, keyed the same way, used only once layoutGhostTags
+   *  has to nudge a tag off its natural spot to avoid overlapping another. */
+  ghostTagPool: {}, ghostTagLinePool: {},
   getTagEl(key) {
     let el = this.ghostTagPool[key];
     if (!el) {
       el = document.createElement('div');
       el.className = 'ghostTag';
       el.hidden = true;
+      el.innerHTML = '<span class="tagName"></span><span class="kmh"><b></b> km/h</span>';
       $('ghostTags').appendChild(el);
       this.ghostTagPool[key] = el;
     }
     return el;
   },
-  /** hides every pooled tag except (optionally) the ones whose keys are
-   *  in keepKeys — called once when entering/leaving a watch session so a
-   *  tag from a previous session can never linger on screen. */
+  getTagLineEl(key) {
+    let el = this.ghostTagLinePool[key];
+    if (!el) {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      el.style.display = 'none';
+      $('ghostTagLinesG').appendChild(el);
+      this.ghostTagLinePool[key] = el;
+    }
+    return el;
+  },
+  /** hides every pooled tag/line except (optionally) the ones whose keys
+   *  are in keepKeys — called once when entering/leaving a watch session
+   *  so a tag from a previous session can never linger on screen. */
   hideAllTags(keepKeys) {
     const keep = new Set(keepKeys || []);
     for (const k in this.ghostTagPool) if (!keep.has(k)) this.ghostTagPool[k].hidden = true;
+    for (const k in this.ghostTagLinePool) if (!keep.has(k)) this.ghostTagLinePool[k].style.display = 'none';
   },
 
   /** Positions (or hides) the floating name tag above a ghost/spectated
    *  car — projects its world position to screen space each frame, the
    *  same technique any 3D scene uses for a billboarded UI label. Hidden
    *  whenever the mesh itself is hidden, off the back of the camera, or
-   *  there is simply no name to show (the player's own chase-ghost). */
-  updateGhostTag(key, show, mesh, name) {
+   *  there is simply no name to show (the player's own chase-ghost).
+   *  extra optionally carries { kmh, place, active } for the richer
+   *  multi-watch tags (see layoutGhostTags) — the single race-against-a-
+   *  ghost tag just omits it and gets the plain name-only tag it always
+   *  had. Returns the tag's own natural screen anchor point (before any
+   *  layoutGhostTags de-conflict nudging), or null if hidden, since the
+   *  caller needs that point either way (to draw a leader line from). */
+  updateGhostTag(key, show, mesh, name, extra) {
     const tag = this.getTagEl(key);
-    if (!show || !mesh || !name) { tag.hidden = true; return; }
+    if (!show || !mesh || !name) { tag.hidden = true; return null; }
     const p = this._ghostTagV || (this._ghostTagV = new THREE.Vector3());
     p.copy(mesh.position);
     p.y += 1.35; // float just above the roofline, not through the middle of the car
     p.project(App.camera);
-    if (p.z > 1) { tag.hidden = true; return; } // behind the camera — projected x/y are meaningless there
+    if (p.z > 1) { tag.hidden = true; return null; } // behind the camera — projected x/y are meaningless there
     tag.hidden = false;
-    tag.style.left = ((p.x * 0.5 + 0.5) * innerWidth).toFixed(1) + 'px';
-    tag.style.top = ((1 - (p.y * 0.5 + 0.5)) * innerHeight).toFixed(1) + 'px';
-    tag.textContent = name;
+    const x = (p.x * 0.5 + 0.5) * innerWidth, y = (1 - (p.y * 0.5 + 0.5)) * innerHeight;
+    tag.style.left = x.toFixed(1) + 'px';
+    tag.style.top = y.toFixed(1) + 'px';
+    tag.querySelector('.tagName').textContent = (extra && extra.place ? extra.place + '. ' : '') + name;
+    const kmhEl = tag.querySelector('.kmh');
+    if (extra && typeof extra.kmh === 'number') {
+      kmhEl.hidden = false;
+      kmhEl.querySelector('b').textContent = Math.round(extra.kmh);
+    } else {
+      kmhEl.hidden = true;
+    }
+    tag.classList.toggle('active', !!(extra && extra.active));
+    return { x, y };
   },
 
   /** Tints this.specBodyMat/specBodyDarkMat (the dedicated materials the
@@ -7184,7 +7630,10 @@ const Game = {
       if (this.car && this.course) this.chase.orbit(this.car.pos, this.clock);
     }
     if (this.state !== 'spectate' && this.car) App.aimLight(this.car.pos);
-    else if (this.state === 'spectate') App.aimLight(this.specMesh.position);
+    // chase.look already tracks whichever car (or, in overview mode, the
+    // centroid of all of them) the camera is actually pointed at, so this
+    // stays correct through camera-mode switches without its own case here.
+    else if (this.state === 'spectate') App.aimLight(this.chase.look);
     UI.tick(dt);
     Input.endFrame();
     App.render();
