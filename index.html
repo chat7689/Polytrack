@@ -662,8 +662,8 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         <span class="multiBarCount" id="boardMultiCount">0 selected</span>
         <span class="multiBarSpacer"></span>
         <button class="ghost small" id="bBoardClearSel">Clear</button>
-        <button class="ghost small" id="bBoardWatchSel">Watch all checked</button>
-        <button class="small" id="bBoardRaceSel">Race fastest checked</button>
+        <button class="ghost small" id="bBoardWatchSel">Watch checked</button>
+        <button class="small" id="bBoardRaceSel">Race checked</button>
       </div>
       <div class="rule"></div>
       <div class="row">
@@ -5239,13 +5239,25 @@ const UI = {
     const placed = [];
     for (const a of anchors) {
       let y = a.y;
-      // keep dropping this tag until it no longer overlaps any placed one
-      // (both close in x — within roughly a tag's own width — and in y)
+      // Keep dropping this tag until it no longer overlaps any placed one
+      // (both close in x — within roughly a tag's own width — and in y).
+      // Bumping to exactly p.finalY + TAG_H put the new y right on the
+      // boundary of the "< TAG_H" check below — floating-point rounding
+      // on that borderline case could make the very entry just cleared
+      // register as still-overlapping on the next pass, so y never
+      // actually escaped it and this looped forever (reproduced with as
+      // few as 10 cars clustered together on screen, which froze the tab
+      // solid). +0.5px of real clearance beyond TAG_H keeps every bump
+      // strictly, unambiguously past the check with no float-precision
+      // knife-edge, so this is now guaranteed to terminate — capped at
+      // placed.length iterations to begin with, so at most a few dozen
+      // even in the most crowded realistic case, not a real perf risk.
       let moved = true;
-      while (moved) {
+      let guard = 0;
+      while (moved && guard++ < placed.length + 4) {
         moved = false;
         for (const p of placed) {
-          if (Math.abs(p.x - a.x) < 70 && Math.abs(p.finalY - y) < TAG_H) { y = p.finalY + TAG_H; moved = true; }
+          if (Math.abs(p.x - a.x) < 70 && Math.abs(p.finalY - y) < TAG_H) { y = p.finalY + TAG_H + 0.5; moved = true; }
         }
       }
       placed.push({ x: a.x, finalY: y });
@@ -5467,10 +5479,16 @@ const UI = {
     // drop any stale selections so the count/checkboxes never lie
     const liveUids = new Set(list.map((e) => e.uid).filter(Boolean));
     for (const uid of [...sel]) if (!liveUids.has(uid)) sel.delete(uid);
+    // Race/Watch used to also live per-row here, but a checkbox + the
+    // "Race checked / Watch checked" bar underneath now covers every case
+    // a single row's own buttons used to (check just one row for a
+    // one-on-one race/watch, or several for a group one — Race checked
+    // races EVERY checked run, not just the fastest) — so the per-row
+    // buttons and their own "Vs." column are gone; checking a row is now
+    // the only way to pick who to race or watch.
     let h = '<table><thead><tr>' + (showActions ? '<th></th>' : '') + '<th></th><th>Driver</th>' +
       '<th style="text-align:right">Time</th>' +
-      '<th style="text-align:right">Set</th>' + (showActions ? '<th style="text-align:right">Vs.</th>' : '') +
-      '</tr></thead><tbody>';
+      '<th style="text-align:right">Set</th></tr></thead><tbody>';
     list.forEach((e, i) => {
       const when = new Date(e.d);
       const checked = e.uid && sel.has(e.uid);
@@ -5482,24 +5500,10 @@ const UI = {
       h += '<td class="r">' + (i + 1) + '</td><td>' +
         escapeHtml(e.n) + (e.n === me ? ' <small class="youTag">(you)</small>' : '') +
         '</td><td class="t">' + formatTime(e.t) + '</td><td class="d">' +
-        (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td>';
-      if (showActions && e.uid) {
-        h += '<td class="d" style="text-align:right;white-space:nowrap">' +
-          '<button class="ghost small raceBtn" data-uid="' + escapeHtml(e.uid) +
-          '" data-course="' + Game.boardTab + '" title="Race just this run">Race</button>' +
-          '<button class="ghost small watchBtn" data-uid="' + escapeHtml(e.uid) +
-          '" data-course="' + Game.boardTab + '" title="Watch just this run" style="margin-left:4px">Watch</button></td>';
-      } else if (showActions) {
-        h += '<td></td>';
-      }
-      h += '</tr>';
+        (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td></tr>';
     });
     body.innerHTML = h + '</tbody></table>';
     if (showActions) {
-      body.querySelectorAll('.raceBtn').forEach((b) => b.addEventListener('click', () =>
-        Game.raceGhostOf(b.dataset.course, b.dataset.uid)));
-      body.querySelectorAll('.watchBtn').forEach((b) => b.addEventListener('click', () =>
-        Game.spectate(b.dataset.course, b.dataset.uid)));
       body.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
         if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
         // Flip the row's own highlight immediately rather than waiting on a
@@ -5658,7 +5662,11 @@ function escapeHtml(s) {
 const GHOST_HZ = 20;
 const GHOST_STRIDE = 8;                      // pos.xyz, quat.xyzw, input bits
 const GHOST_MAX = GHOST_STRIDE * GHOST_HZ * 300;   // 300 s ceiling per recording
-const SPEC_POOL_SIZE = 5;   // extra watched cars beyond the one the camera follows
+// Extra watched/raced cars beyond the primary one — set to cover every
+// row a course's leaderboard can ever hold (Records.MAX) minus the
+// primary itself, so checking every row on a course never gets silently
+// truncated: whatever the player selects, that's who actually shows up.
+const SPEC_POOL_SIZE = 9;
 
 /** throttle/brake/steer/boost/handbrake packed into one small integer so the
  *  replay stream can show what keys were held without recording every frame */
@@ -6474,7 +6482,7 @@ const Game = {
    *  since that pool is the hard limit on how many extra full-detail cars
    *  can exist at once regardless of how many rows were checked. */
   async raceGhostOfMany(courseId, uids) {
-    if (!uids || !uids.length) return;
+    if (!uids || !uids.length) { UI.toast('Check at least one row first.'); return; }
     if (uids.length === 1) return this.raceGhostOf(courseId, uids[0]);
     const idx = parseInt(courseId.slice(1), 10) - 1;
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
@@ -6709,16 +6717,17 @@ const Game = {
   },
 
   /** Watch one or several checked players' runs on one course at once —
-   *  both a single leaderboard row's own Watch button and the
-   *  leaderboard's "Watch all checked" bar feed this (spectate() above is
-   *  just this with a 1-uid array). The first uid becomes the initially-
-   *  followed car and drives the HUD's name/time/speed-graph, but with 2+
-   *  cars the session actually opens in overview mode (see camMode
-   *  below) — every car is painted in its own real, translucent colors
-   *  and labeled with a floating name tag, and Left/Right switches which
+   *  the leaderboard's "Watch checked" bar feeds this with whatever uids
+   *  are checked (spectate() above is just this with a 1-uid array, for
+   *  code that wants a plain single-run watch without going through the
+   *  checkbox UI at all). The first uid becomes the initially-followed
+   *  car and drives the HUD's name/time/speed-graph, but with 2+ cars the
+   *  session actually opens in overview mode (see camMode below) — every
+   *  car is painted in its own real, translucent colors and labeled with
+   *  a floating name tag, and Left/Right switches which
    *  camera (overview, or locked onto any one car) is active. */
   async spectateMany(courseId, uids) {
-    if (!uids || !uids.length) return;
+    if (!uids || !uids.length) { UI.toast('Check at least one row first.'); return; }
     const idx = parseInt(courseId.slice(1), 10) - 1;
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     const capped = uids.slice(0, 1 + SPEC_POOL_SIZE); // primary + however many spares exist
