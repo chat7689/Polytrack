@@ -100,12 +100,15 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 
 /* Floating name tag over a ghost car — positioned every frame from its
    world position projected to screen space (see Game.updateGhostTag).
-   translate(-50%,-100%) anchors it by its bottom-center point, which is
-   the pixel the projection math targets, so the tag always sits just
-   above the car regardless of its own text width. When several tags are
-   on screen at once (multi-watch) each one is additionally nudged along
-   a short leader line — see .ghostTagLine below and Game.layoutGhostTags
-   — so nearby cars' tags never simply pile on top of each other. */
+   translate(-50%,-100%) anchors it by its bottom-center point. The tag
+   is always lifted well clear of the car itself (Game.TAG_LIFT) rather
+   than sitting right on its roofline, so the label never covers up the
+   car it's naming — connected back down to the car's real point by a
+   thin dashed leader line (#ghostTagLines below) that's always drawn,
+   not only when two tags happen to collide. When several tags are on
+   screen at once (multi-watch) a tag can be nudged even further to avoid
+   overlapping a neighbor — see Game.layoutGhostTags — and the line just
+   stretches to match, still anchored to the car either way. */
 .ghostTag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);
   padding:3px 9px;background:rgba(7,11,24,.8);border:1px solid rgba(61,219,184,.5);
   border-radius:999px;font-family:var(--mono);font-size:11px;color:var(--aqua);
@@ -115,14 +118,15 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 .ghostTag.active{border-color:var(--ember);color:var(--ink);background:rgba(242,115,63,.22)}
 .ghostTag .kmh{color:var(--dimmer);font-size:9.5px}
 .ghostTag .kmh b{color:inherit;font-weight:600}
-/* the thin line from a nudged tag back down to the car's actual screen
-   point — only drawn once a tag has been pushed off its natural spot to
-   avoid overlapping a neighbor (see Game.layoutGhostTags); an unmoved tag
-   draws no line at all, since its own position already makes the
-   connection obvious. */
+/* the leader line from a name tag back down to the car's actual screen
+   point, plus a small dot marking that exact point — drawn every frame a
+   tag is shown, since the tag now always floats away from the car rather
+   than sitting on it (see .ghostTag above). */
 #ghostTagLines{position:absolute;inset:0;pointer-events:none;z-index:19;width:100%;height:100%}
-#ghostTagLines line{stroke:rgba(61,219,184,.45);stroke-width:1;stroke-dasharray:2 3}
-#ghostTagLines line.active{stroke:rgba(242,115,63,.55)}
+#ghostTagLines line{stroke:rgba(61,219,184,.5);stroke-width:1.25;stroke-dasharray:2 3}
+#ghostTagLines line.active{stroke:rgba(242,115,63,.6)}
+#ghostTagLines circle{fill:rgba(61,219,184,.65)}
+#ghostTagLines circle.active{fill:rgba(242,115,63,.7)}
 
 /* ---------- spectate ---------- */
 .specTop{position:absolute;top:20px;left:24px;right:24px;display:flex;justify-content:space-between;
@@ -5231,9 +5235,14 @@ const UI = {
     cars.forEach((c, k) => {
       const key = 'watch' + k;
       const kmh = c.rig.speed * 3.6;
+      // updateGhostTag already lifts the tag Game.TAG_LIFT px above the
+      // car and draws the leader line down to it — this function only
+      // has to push a tag FURTHER when it would otherwise land on top of
+      // another already-lifted tag, and keep the line's near end pinned
+      // to the car's real point (carX/carY) even after that extra push.
       const anchor = Game.updateGhostTag(key, true, c.mesh, c.name,
         { kmh, place: c.place, active: k === camIdx });
-      if (anchor) anchors.push({ key, x: anchor.x, y: anchor.y, k });
+      if (anchor) anchors.push({ key, x: anchor.x, y: anchor.y, carX: anchor.carX, carY: anchor.carY, k });
     });
     anchors.sort((a, b) => a.x - b.x);
     const placed = [];
@@ -5262,17 +5271,18 @@ const UI = {
       }
       placed.push({ x: a.x, finalY: y });
       const tag = Game.getTagEl(a.key);
-      const nudged = Math.abs(y - a.y) > 1;
       tag.style.top = y.toFixed(1) + 'px';
+      // Redraw the leader line from the car's actual point (not the tag's
+      // pre-stack lift position) up to wherever the tag ended up after
+      // both the base TAG_LIFT and any extra collision-avoidance push —
+      // so it always visibly connects the two, however far apart they
+      // land, and the "farther away so they don't cover the car" lift
+      // still reads clearly even in a crowded stack.
       const line = Game.getTagLineEl(a.key);
-      if (nudged) {
-        line.style.display = '';
-        line.setAttribute('x1', a.x.toFixed(1)); line.setAttribute('y1', a.y.toFixed(1));
-        line.setAttribute('x2', a.x.toFixed(1)); line.setAttribute('y2', (y - 4).toFixed(1));
-        line.classList.toggle('active', a.k === camIdx);
-      } else {
-        line.style.display = 'none';
-      }
+      line.style.display = '';
+      line.setAttribute('x1', a.carX.toFixed(1)); line.setAttribute('y1', a.carY.toFixed(1));
+      line.setAttribute('x2', a.x.toFixed(1)); line.setAttribute('y2', (y + 10).toFixed(1));
+      line.classList.toggle('active', a.k === camIdx);
     }
   },
 
@@ -7412,10 +7422,10 @@ const Game = {
   /** A small pool of floating name-tag DOM elements, created on first use
    *  and reused by key ('race' for the race-against ghost, or 'watchN'
    *  for each car in a multi-watch session) rather than rebuilt every
-   *  frame. Each tag optionally has a matching leader-line <line> in
-   *  #ghostTagLinesG, keyed the same way, used only once layoutGhostTags
-   *  has to nudge a tag off its natural spot to avoid overlapping another. */
-  ghostTagPool: {}, ghostTagLinePool: {},
+   *  frame. Each tag has a matching leader-line <line> and anchor <circle>
+   *  in #ghostTagLinesG, keyed the same way, connecting it back to the
+   *  car's real screen point (see TAG_LIFT below). */
+  ghostTagPool: {}, ghostTagLinePool: {}, ghostTagDotPool: {},
   getTagEl(key) {
     let el = this.ghostTagPool[key];
     if (!el) {
@@ -7438,38 +7448,75 @@ const Game = {
     }
     return el;
   },
-  /** hides every pooled tag/line except (optionally) the ones whose keys
-   *  are in keepKeys — called once when entering/leaving a watch session
-   *  so a tag from a previous session can never linger on screen. */
+  /** the small dot marking exactly where on the car the leader line
+   *  starts, so the line reads as "pointing at this precise spot" rather
+   *  than just trailing off toward the car in general. */
+  getTagDotEl(key) {
+    let el = this.ghostTagDotPool[key];
+    if (!el) {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      el.setAttribute('r', '2.5');
+      el.style.display = 'none';
+      $('ghostTagLinesG').appendChild(el);
+      this.ghostTagDotPool[key] = el;
+    }
+    return el;
+  },
+  /** hides every pooled tag/line/dot except (optionally) the ones whose
+   *  keys are in keepKeys — called once when entering/leaving a watch
+   *  session so a tag from a previous session can never linger on screen. */
   hideAllTags(keepKeys) {
     const keep = new Set(keepKeys || []);
     for (const k in this.ghostTagPool) if (!keep.has(k)) this.ghostTagPool[k].hidden = true;
     for (const k in this.ghostTagLinePool) if (!keep.has(k)) this.ghostTagLinePool[k].style.display = 'none';
+    for (const k in this.ghostTagDotPool) if (!keep.has(k)) this.ghostTagDotPool[k].style.display = 'none';
   },
+
+  /** How far above a car's own screen point its name tag floats, in
+   *  pixels — clear of the car model itself (rather than sitting right on
+   *  the roofline) so the tag never covers up the car it's labeling. A
+   *  dashed leader line (see getTagLineEl) always runs from the car's
+   *  real anchor point up to the tag, exactly the way a map or diagram
+   *  labels a small icon with text set off to the side rather than
+   *  printed over it. */
+  TAG_LIFT: 42,
 
   /** Positions (or hides) the floating name tag above a ghost/spectated
    *  car — projects its world position to screen space each frame, the
-   *  same technique any 3D scene uses for a billboarded UI label. Hidden
-   *  whenever the mesh itself is hidden, off the back of the camera, or
-   *  there is simply no name to show (the player's own chase-ghost).
-   *  extra optionally carries { kmh, place, active } for the richer
-   *  multi-watch tags (see layoutGhostTags) — the single race-against-a-
-   *  ghost tag just omits it and gets the plain name-only tag it always
-   *  had. Returns the tag's own natural screen anchor point (before any
-   *  layoutGhostTags de-conflict nudging), or null if hidden, since the
-   *  caller needs that point either way (to draw a leader line from). */
+   *  same technique any 3D scene uses for a billboarded UI label, then
+   *  lifts the tag TAG_LIFT pixels further up so it floats clear of the
+   *  car instead of covering it, connected back down to the car's actual
+   *  point with a dashed leader line. Hidden whenever the mesh itself is
+   *  hidden, off the back of the camera, or there is simply no name to
+   *  show (the player's own chase-ghost). extra optionally carries
+   *  { kmh, place, active } for the richer multi-watch tags (see
+   *  layoutGhostTags) — the single race-against-a-ghost tag just omits it
+   *  and gets the plain name-only tag it always had. Returns both the
+   *  car's real screen point and the tag's own (pre-collision-stacking)
+   *  lifted position, since layoutGhostTags needs the former to keep
+   *  drawing the leader line from the right place once it nudges a tag
+   *  further still to avoid a neighbor. */
   updateGhostTag(key, show, mesh, name, extra) {
     const tag = this.getTagEl(key);
-    if (!show || !mesh || !name) { tag.hidden = true; return null; }
+    const line = this.getTagLineEl(key);
+    const dot = this.getTagDotEl(key);
+    if (!show || !mesh || !name) {
+      tag.hidden = true; line.style.display = 'none'; dot.style.display = 'none';
+      return null;
+    }
     const p = this._ghostTagV || (this._ghostTagV = new THREE.Vector3());
     p.copy(mesh.position);
-    p.y += 1.35; // float just above the roofline, not through the middle of the car
+    p.y += 1.35; // the car's own anchor point — just above the roofline, not through its middle
     p.project(App.camera);
-    if (p.z > 1) { tag.hidden = true; return null; } // behind the camera — projected x/y are meaningless there
+    if (p.z > 1) { // behind the camera
+      tag.hidden = true; line.style.display = 'none'; dot.style.display = 'none';
+      return null;
+    }
     tag.hidden = false;
-    const x = (p.x * 0.5 + 0.5) * innerWidth, y = (1 - (p.y * 0.5 + 0.5)) * innerHeight;
-    tag.style.left = x.toFixed(1) + 'px';
-    tag.style.top = y.toFixed(1) + 'px';
+    const carX = (p.x * 0.5 + 0.5) * innerWidth, carY = (1 - (p.y * 0.5 + 0.5)) * innerHeight;
+    const tagY = carY - this.TAG_LIFT;
+    tag.style.left = carX.toFixed(1) + 'px';
+    tag.style.top = tagY.toFixed(1) + 'px';
     tag.querySelector('.tagName').textContent = (extra && extra.place ? extra.place + '. ' : '') + name;
     const kmhEl = tag.querySelector('.kmh');
     if (extra && typeof extra.kmh === 'number') {
@@ -7478,8 +7525,22 @@ const Game = {
     } else {
       kmhEl.hidden = true;
     }
-    tag.classList.toggle('active', !!(extra && extra.active));
-    return { x, y };
+    const active = !!(extra && extra.active);
+    tag.classList.toggle('active', active);
+    // The leader line always runs from the car's real point up to the
+    // tag now (not just when two tags collide) — drawn here so a single,
+    // un-crowded watch/race still gets it; layoutGhostTags re-draws this
+    // same line's far end if it has to nudge the tag further for
+    // collision-avoidance, using carX/carY (returned below) as the
+    // anchor it starts from either way.
+    line.style.display = '';
+    line.setAttribute('x1', carX.toFixed(1)); line.setAttribute('y1', carY.toFixed(1));
+    line.setAttribute('x2', carX.toFixed(1)); line.setAttribute('y2', (tagY + 10).toFixed(1));
+    line.classList.toggle('active', active);
+    dot.style.display = '';
+    dot.setAttribute('cx', carX.toFixed(1)); dot.setAttribute('cy', carY.toFixed(1));
+    dot.classList.toggle('active', active);
+    return { x: carX, y: tagY, carX, carY };
   },
 
   /** Tints this.specBodyMat/specBodyDarkMat (the dedicated materials the
