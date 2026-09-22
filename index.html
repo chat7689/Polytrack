@@ -217,7 +217,22 @@ td.d{font-family:var(--mono);color:var(--dimmer);text-align:right;font-size:12px
 tr{transition:background .12s}
 tr:hover td{background:rgba(255,255,255,.02)}
 tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(--ember)}
+.youTag{color:var(--dimmer);font-weight:400}
+/* a checked leaderboard row — a cooler tint than .me's ember (own best),
+   distinct enough that "checked for multi race/watch" is never confused
+   with "this is my own time" when both happen to apply to the same row */
+tr.sel td{background:rgba(61,219,184,.08)}
+tr.sel td.r{color:var(--aqua)}
+input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .empty{color:var(--dim);font-size:13.5px;padding:22px 0;line-height:1.6}
+/* the "N selected — Watch all / Race fastest / Clear" bar under a course's
+   table — only ever shown once at least one row on THAT tab is checked
+   (see UI.updateBoardMultiBar), so it never sits there empty by default. */
+.multiBar{display:flex;align-items:center;gap:10px;margin:14px 0 -4px;padding:10px 14px;
+  background:rgba(61,219,184,.07);border:1px solid rgba(61,219,184,.25);border-radius:10px}
+.multiBar[hidden]{display:none}
+.multiBarCount{font-family:var(--mono);font-size:12.5px;color:var(--aqua);white-space:nowrap}
+.multiBarSpacer{flex:1}
 
 /* ---------- result ---------- */
 .result{width:min(520px,94vw);padding:36px 38px 32px}
@@ -593,10 +608,12 @@ tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(
       <p class="lede" style="margin-bottom:20px" id="boardNote">Times are kept on this device.</p>
       <div class="tabs" id="boardTabs"></div>
       <div id="boardBody"></div>
-      <div class="row" id="boardMultiBar" hidden style="margin-top:10px;gap:8px">
-        <span class="lede" id="boardMultiCount" style="margin:0;flex:1">0 selected</span>
-        <button class="ghost small" id="bBoardRaceSel">Race checked</button>
-        <button class="ghost small" id="bBoardWatchSel">Watch checked</button>
+      <div class="multiBar" id="boardMultiBar" hidden>
+        <span class="multiBarCount" id="boardMultiCount">0 selected</span>
+        <span class="multiBarSpacer"></span>
+        <button class="ghost small" id="bBoardClearSel">Clear</button>
+        <button class="ghost small" id="bBoardWatchSel">Watch all checked</button>
+        <button class="small" id="bBoardRaceSel">Race fastest checked</button>
       </div>
       <div class="rule"></div>
       <div class="row">
@@ -2007,11 +2024,16 @@ const Cloud = {
     }
   },
 
-  /** the fastest stored ghost on a course, for chasing someone else's run */
+  /** the fastest stored ghost on a course, for chasing someone else's run.
+   *  The this.fb destructure moved inside the try — this.on can flip true
+   *  for a frame or two around a sign-out/sign-in before this.fb itself is
+   *  (re)populated, and Race/Watch clicking straight into that gap used to
+   *  throw a raw, uncaught TypeError instead of the same "couldn't load
+   *  that run" failure every other lookup error already falls back to. */
   async fetchGhost(courseId, uid) {
     if (!this.on) return null;
-    const { fsMod } = this.fb;
     try {
+      const { fsMod } = this.fb;
       const snap = await fsMod.getDoc(fsMod.doc(this.db, 'ghosts', (uid || this.user.uid) + '_' + courseId));
       if (!snap.exists()) return null;
       const d = snap.data();
@@ -5194,18 +5216,27 @@ const UI = {
       wrap.appendChild(btn);
     });
   },
-  boardTab: 'all',
-  // uids checked via the leaderboard's multi-select checkboxes, keyed by
-  // courseId so a selection on one course's tab doesn't leak into another.
-  boardSel: {},
+  /**
+   * All leaderboard state (which tab, which uids are checked) lives on
+   * Game — the same place every other piece of "what is the player
+   * currently doing" state lives (garageSlot, ghostOverride, etc.) — and
+   * this screen only ever reads/writes it through Game, never keeps its
+   * own copy. That used to be split (a boardTab/boardSel pair duplicated
+   * on both UI and Game, only one of which was ever actually kept up to
+   * date) which is exactly what made clicking a course tab throw and
+   * silently leave the previous tab's table on screen: the click handler
+   * read Game.boardSel, which never existed, so the whole render crashed
+   * partway through, after the tab button's own highlight had already
+   * updated but before the table body did.
+   */
   boards() {
     const tabs = $('boardTabs');
     tabs.innerHTML = '';
     const mk = (key, label) => {
       const b = document.createElement('button');
-      b.className = 'tab' + (this.boardTab === key ? ' on' : '');
+      b.className = 'tab' + (Game.boardTab === key ? ' on' : '');
       b.textContent = label;
-      b.addEventListener('click', () => { this.boardTab = key; this.boards(); });
+      b.addEventListener('click', () => { Game.boardTab = key; this.boards(); });
       tabs.appendChild(b);
     };
     mk('all', 'Overall');
@@ -5213,56 +5244,56 @@ const UI = {
 
     const body = $('boardBody');
     const me = Records.driver();
-    if (this.boardTab === 'all') {
+    if (Game.boardTab === 'all') {
       const ids = LEVELS.map((l, i) => 'c' + (i + 1));
       const rows = Records.overall(ids);
-      if (!rows.length) {
-        body.innerHTML = '<p class="empty">No times yet. Clear a course and it will appear here.</p>';
-        return;
-      }
-      let h = '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Cleared</th>' +
-        '<th style="text-align:right">Total of bests</th></tr></thead><tbody>';
-      rows.forEach((r, i) => {
-        h += '<tr class="' + (r.n === me ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td>' +
-          escapeHtml(r.n) + '</td><td class="d">' + r.count + ' / ' + ids.length +
-          '</td><td class="t">' + formatTime(r.total) + '</td></tr>';
-      });
-      body.innerHTML = h + '</tbody></table>';
+      body.innerHTML = rows.length
+        ? '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Cleared</th>' +
+          '<th style="text-align:right">Total of bests</th></tr></thead><tbody>' +
+          rows.map((r, i) => '<tr class="' + (r.n === me ? 'me' : '') + '"><td class="r">' + (i + 1) +
+            '</td><td>' + escapeHtml(r.n) + '</td><td class="d">' + r.count + ' / ' + ids.length +
+            '</td><td class="t">' + formatTime(r.total) + '</td></tr>').join('') + '</tbody></table>'
+        : '<p class="empty">No times yet. Clear a course and it will appear here.</p>';
+      this.updateBoardMultiBar(); // Overall has no selection of its own — this just hides the bar
       return;
     }
-    const idx = parseInt(this.boardTab.slice(1), 10) - 1;
-    const list = Records.board(this.boardTab);
+
+    const idx = parseInt(Game.boardTab.slice(1), 10) - 1;
+    const list = Records.board(Game.boardTab);
     if (!list.length) {
-      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(LEVELS[idx].name) +
-        ' yet.</p>';
+      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(LEVELS[idx].name) + ' yet.' +
+        (Cloud.on ? ' Be the first to clear it.' : '') + '</p>';
+      this.updateBoardMultiBar();
       return;
     }
     const showActions = Cloud.on;
-    const sel = Game.boardSel[this.boardTab] || (Game.boardSel[this.boardTab] = new Set());
+    const sel = Game.boardSel[Game.boardTab] || (Game.boardSel[Game.boardTab] = new Set());
     // a uid can vanish from the board (e.g. after Records.wipe or a re-pull) —
     // drop any stale selections so the count/checkboxes never lie
     const liveUids = new Set(list.map((e) => e.uid).filter(Boolean));
     for (const uid of [...sel]) if (!liveUids.has(uid)) sel.delete(uid);
     let h = '<table><thead><tr>' + (showActions ? '<th></th>' : '') + '<th></th><th>Driver</th>' +
       '<th style="text-align:right">Time</th>' +
-      '<th style="text-align:right">Set</th>' + (showActions ? '<th></th>' : '') +
+      '<th style="text-align:right">Set</th>' + (showActions ? '<th style="text-align:right">Vs.</th>' : '') +
       '</tr></thead><tbody>';
     list.forEach((e, i) => {
       const when = new Date(e.d);
-      h += '<tr class="' + (e.n === me ? 'me' : '') + '">';
+      const checked = e.uid && sel.has(e.uid);
+      h += '<tr class="' + [(e.n === me ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
       if (showActions) {
         h += '<td>' + (e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
-          (sel.has(e.uid) ? ' checked' : '') + '>' : '') + '</td>';
+          (checked ? ' checked' : '') + '>' : '') + '</td>';
       }
       h += '<td class="r">' + (i + 1) + '</td><td>' +
-        escapeHtml(e.n) + '</td><td class="t">' + formatTime(e.t) + '</td><td class="d">' +
+        escapeHtml(e.n) + (e.n === me ? ' <small class="youTag">(you)</small>' : '') +
+        '</td><td class="t">' + formatTime(e.t) + '</td><td class="d">' +
         (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td>';
       if (showActions && e.uid) {
         h += '<td class="d" style="text-align:right;white-space:nowrap">' +
           '<button class="ghost small raceBtn" data-uid="' + escapeHtml(e.uid) +
-          '" data-course="' + this.boardTab + '" style="margin-right:4px">Race</button>' +
+          '" data-course="' + Game.boardTab + '" title="Race just this run">Race</button>' +
           '<button class="ghost small watchBtn" data-uid="' + escapeHtml(e.uid) +
-          '" data-course="' + this.boardTab + '">Watch</button></td>';
+          '" data-course="' + Game.boardTab + '" title="Watch just this run" style="margin-left:4px">Watch</button></td>';
       } else if (showActions) {
         h += '<td></td>';
       }
@@ -5276,19 +5307,29 @@ const UI = {
         Game.spectate(b.dataset.course, b.dataset.uid)));
       body.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
         if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
+        // Flip the row's own highlight immediately rather than waiting on a
+        // full re-render — feels instant and can't itself throw/derail the
+        // rest of the screen the way rebuilding the whole table would.
+        cb.closest('tr').classList.toggle('sel', cb.checked);
         this.updateBoardMultiBar();
       }));
     }
     this.updateBoardMultiBar();
   },
 
-  /** shows/hides the "Race checked / Watch checked" bar under the board
-   *  and keeps its count in sync with the current tab's checkbox Set. */
+  /** Keeps the "N selected — Race checked / Watch checked / Clear" bar in
+   *  sync with the current tab's checkbox Set. Called from every exit path
+   *  of boards() (including the empty-board and Overall-tab ones) so the
+   *  bar never keeps showing a stale count from whatever tab was open
+   *  before — a selection only ever applies to the course tab it was made
+   *  on (see Game.boardSel), so leaving that tab always means 0 relevant
+   *  here even if that tab's own Set still remembers its own picks. */
   updateBoardMultiBar() {
-    const sel = Game.boardSel[Game.boardTab];
+    const sel = Game.boardTab !== 'all' ? Game.boardSel[Game.boardTab] : null;
     const n = sel ? sel.size : 0;
     $('boardMultiBar').hidden = n < 1;
-    $('boardMultiCount').textContent = n + (n === 1 ? ' selected' : ' selected');
+    if (n < 1) return;
+    $('boardMultiCount').textContent = n + (n === 1 ? ' run selected' : ' runs selected');
   },
 
   /** Redraws the whole garage screen from CarColor's current state — safe
@@ -5464,6 +5505,13 @@ const Game = {
   _joinedRaceId: null, _joinedEntry: null,
   boardsUnwatch: null,
   garageSlot: 'primary', _garageRolling: false,
+  // Leaderboard screen state: which tab is open, and which uids are
+  // checked via the multi-select checkboxes — kept per-courseId so a
+  // selection made on one course's tab doesn't leak into another, and
+  // reset only by an explicit Clear (see the bBoardClearSel listener in
+  // wire()) or the automatic staleness pruning in UI.boards() (a uid that
+  // no longer appears on that course's board, e.g. after Records.wipe).
+  boardTab: 'all', boardSel: {},
 
   boot() {
     buildMaterials();
@@ -5940,6 +5988,11 @@ const Game = {
     $('bBoardWatchSel').addEventListener('click', () => {
       const sel = [...(this.boardSel[this.boardTab] || [])];
       this.spectateMany(this.boardTab, sel);
+    });
+    $('bBoardClearSel').addEventListener('click', () => {
+      const sel = this.boardSel[this.boardTab];
+      if (sel) sel.clear();
+      UI.boards();
     });
     $('bBoardWipe').addEventListener('click', () => {
       Records.wipe();
