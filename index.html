@@ -150,6 +150,9 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 #specRoster .rDot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
 #specRoster .rName{flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #specRoster .rSpeed{color:var(--dimmer);font-size:10px;min-width:38px;text-align:right}
+/* the extra per-row stat — a live "still driving" % through their own
+   run, or a finished car's gap behind the leader (see UI.specRoster) */
+#specRoster .rSub{color:var(--dimmer);font-size:9.5px;min-width:34px;text-align:right}
 #specRoster .rTime{color:var(--aqua);min-width:52px;text-align:right}
 #specRoster .rTime.done{color:var(--signal)}
 /* which camera mode is active — cycled with the Left/Right arrow keys;
@@ -161,6 +164,14 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 #specCamHint[hidden]{display:none}
 #specCamHint b{color:var(--ink);font-weight:600}
 #specCamHint .arrows{color:var(--dimmer)}
+/* only shown while the free-roam director camera (see ChaseCamera.
+   updateDirector) is actually active — the movement-key legend has
+   nothing useful to say in any other camera mode. */
+#specDirectorHint{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:9.5px;color:var(--dimmer);letter-spacing:.04em;
+  display:flex;align-items:center;gap:8px}
+#specDirectorHint[hidden]{display:none}
+#specDirectorHint span{color:var(--dim)}
 .keys{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
 .keys .k{width:34px;height:34px;border:1px solid var(--rule);display:flex;align-items:center;
   justify-content:center;font-family:var(--mono);font-size:12px;color:var(--dimmer);
@@ -245,6 +256,29 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 .bars{display:inline-flex;gap:3px;vertical-align:middle}
 .bars i{width:4px;height:9px;background:rgba(234,240,248,.18)}
 .bars i.on{background:var(--ember)}
+/* The special long course's card — visually set apart from the ordinary
+   tier progression (a warm gradient border/background instead of the
+   plain grey card) so it reads as the one course worth chasing outside
+   the normal 1-32 chain, on both the course list and (via the same
+   .special class) the menu's own dedicated button. */
+.card.special{border-color:rgba(255,207,92,.55);
+  background:linear-gradient(160deg,rgba(255,207,92,.09),rgba(242,115,63,.05))}
+.card.special:not([disabled]):hover{border-color:rgba(255,207,92,.85);
+  background:linear-gradient(160deg,rgba(255,207,92,.15),rgba(242,115,63,.08))}
+.specialBadge{color:var(--signal);letter-spacing:.1em;font-weight:600}
+/* the "#1: Name — time" line on a course card — see UI.courseLeaderLine.
+   Bumped up in size/prominence on .special specifically (see
+   .card.special .courseLeader below): being first on the long course is
+   meant to actually feel like something, not just another stat line. */
+.courseLeader{display:flex;align-items:baseline;gap:6px;margin-top:8px;font-size:12px;
+  color:var(--dim);font-family:var(--mono)}
+.courseLeader .crown{color:var(--signal);font-size:11px}
+.courseLeader b{color:var(--ink);font-family:var(--sans);font-weight:600;font-size:13px}
+.courseLeader .leaderTime{color:var(--aqua);margin-left:auto}
+.courseLeader.empty{color:var(--dimmer);font-style:italic}
+.card.special .courseLeader{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,207,92,.25)}
+.card.special .courseLeader b{font-size:16px;color:var(--signal);text-shadow:0 0 12px rgba(255,207,92,.4)}
+.card.special .courseLeader .leaderTime{font-size:13px}
 
 /* ---------- leaderboard ---------- */
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
@@ -349,6 +383,27 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .who[hidden]{display:none}
 .who b{color:var(--ink);font-weight:500}
 .who .cr{color:var(--signal)}
+/* The special long course's menu button — a full-width card rather than a
+   plain nav button, since the whole point is to make it stand out and
+   make being #1 on it feel worth chasing (see the request this was built
+   for). Shows the current leader right on the button, in large text —
+   sharing .specialBadge/.crown/.leaderTime with the matching course-card
+   treatment in courseList() so both places read as the same feature. */
+.specialCourseCard{display:block;width:100%;text-align:left;padding:16px 18px;margin-bottom:16px;
+  border:1px solid rgba(255,207,92,.45);border-radius:2px;cursor:pointer;font:inherit;color:inherit;
+  background:linear-gradient(160deg,rgba(255,207,92,.12),rgba(242,115,63,.06));
+  transition:border-color .15s,background .15s,transform .14s}
+.specialCourseCard:hover{border-color:rgba(255,207,92,.75);transform:translateY(-1px);
+  background:linear-gradient(160deg,rgba(255,207,92,.18),rgba(242,115,63,.09))}
+.specialCourseCard[hidden]{display:none}
+.specialCourseTop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.specialCourseName{font-size:17px;font-weight:600;letter-spacing:-.012em}
+.specialCourseLeader{display:flex;align-items:baseline;gap:7px;margin-top:9px;font-size:13px;
+  font-family:var(--mono);color:var(--dim)}
+.specialCourseLeader .crown{color:var(--signal);font-size:12px}
+.specialCourseLeader b{color:var(--signal);font-family:var(--sans);font-weight:700;font-size:18px;
+  text-shadow:0 0 14px rgba(255,207,92,.45)}
+.specialCourseLeader .leaderTime{color:var(--aqua);margin-left:auto}
 .race-lobby-card{padding:16px 18px;margin-bottom:22px;background:rgba(242,115,63,.08);
   border:1px solid rgba(242,115,63,.35);border-radius:2px}
 .race-lobby-card[hidden]{display:none}
@@ -423,6 +478,15 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .garagePreviewWrap{width:100%;height:180px;margin-bottom:18px;border:1px solid var(--rule);
   border-radius:3px;background:radial-gradient(120% 140% at 50% 20%,#1a2740,#0b1220);overflow:hidden}
 .garagePreviewWrap canvas{width:100%;height:100%;display:block}
+/* the free saturation/brightness sliders — plain range inputs styled to
+   match the rest of the garage rather than a custom drag surface, since
+   a native slider already gives keyboard/touch support for free and this
+   screen has no reason to reinvent that. */
+.garageSliderRow{margin-bottom:16px}
+.garageSliderRow label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim);
+  margin-bottom:6px;font-family:var(--mono)}
+.garageSliderRow label b{color:var(--aqua);font-weight:600}
+.garageSliderRow input[type=range]{width:100%;accent-color:var(--aqua);cursor:pointer}
 </style>
 </head>
 <body>
@@ -482,6 +546,9 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         transform:translateX(-50%)">0:00.00</div>
       <div id="specCamHint" hidden>
         <span class="arrows">◄ ►</span> camera: <b id="specCamName">Overview</b>
+      </div>
+      <div id="specDirectorHint" hidden>
+        <span>W A S D</span> move · <span>Shift</span> down · <span>Space</span> up
       </div>
       <div class="keys" id="specKeys">
         <div class="k" data-k="handbrake">SH</div>
@@ -598,12 +665,23 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           </table>
         </div>
       </div>
+      <button class="specialCourseCard" id="bSpecialCourse" hidden>
+        <div class="specialCourseTop">
+          <span class="specialBadge">★ THE LONG COURSE</span>
+          <span class="specialCourseName" id="specialCourseName">Endless Horizon</span>
+        </div>
+        <div class="specialCourseLeader" id="specialCourseLeaderWrap" hidden>
+          <span class="crown" id="specialCourseCrown">♛</span> <b id="specialCourseLeaderName">—</b>
+          <span class="leaderTime" id="specialCourseLeaderTime"></span>
+        </div>
+        <p class="lede" id="specialCourseNote" style="margin:6px 0 0;font-size:12px">Over three times
+          the length of Proving Ground, start to finish.</p>
+      </button>
       <div class="cols">
         <div>
           <div class="row">
             <button class="primary" id="bDrive">Start driving</button>
-            <button id="bCourses">Courses</button>
-            <button id="bBoards">Leaderboards</button>
+            <button id="bCourses">Courses &amp; leaderboards</button>
             <button id="bSettings">Settings</button>
           </div>
           <div class="row" style="margin-top:10px">
@@ -647,32 +725,34 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   <div class="layer" id="select" hidden>
     <div class="scrim"></div>
     <div class="panel">
-      <h2 class="big">Courses</h2>
-      <p class="lede" style="margin-bottom:22px">Clear one to open the next.</p>
-      <div class="courses" id="courseList"></div>
-      <div class="rule"></div>
-      <div class="row"><button class="ghost" id="bSelBack">Back to title</button></div>
-    </div>
-  </div>
-
-  <div class="layer" id="boards" hidden>
-    <div class="scrim"></div>
-    <div class="panel">
-      <h2 class="big">Leaderboards</h2>
-      <p class="lede" style="margin-bottom:20px" id="boardNote">Times are kept on this device.</p>
-      <div class="tabs" id="boardTabs"></div>
-      <div id="boardBody"></div>
-      <div class="multiBar" id="boardMultiBar" hidden>
-        <span class="multiBarCount" id="boardMultiCount">0 selected</span>
-        <span class="multiBarSpacer"></span>
-        <button class="ghost small" id="bBoardClearSel">Clear</button>
-        <button class="ghost small" id="bBoardWatchSel">Watch checked</button>
-        <button class="small" id="bBoardRaceSel">Race checked</button>
+      <h2 class="big">Courses &amp; leaderboards</h2>
+      <p class="lede" style="margin-bottom:14px" id="selectNote">Clear one to open the next. Times are
+        kept on this device.</p>
+      <div class="tabs" id="selectTabs">
+        <button class="tab on" id="bSelTabCourses" data-tab="courses">Courses</button>
+        <button class="tab" id="bSelTabBoards" data-tab="boards">Leaderboard</button>
       </div>
+
+      <div id="selectCoursesPane">
+        <div class="courses" id="courseList"></div>
+      </div>
+
+      <div id="selectBoardsPane" hidden>
+        <div class="tabs" id="boardTabs"></div>
+        <div id="boardBody"></div>
+        <div class="multiBar" id="boardMultiBar" hidden>
+          <span class="multiBarCount" id="boardMultiCount">0 selected</span>
+          <span class="multiBarSpacer"></span>
+          <button class="ghost small" id="bBoardClearSel">Clear</button>
+          <button class="ghost small" id="bBoardWatchSel">Watch checked</button>
+          <button class="small" id="bBoardRaceSel">Race checked</button>
+        </div>
+      </div>
+
       <div class="rule"></div>
       <div class="row">
-        <button class="ghost" id="bBoardBack">Back to title</button>
-        <button class="ghost" id="bBoardWipe">Clear all times</button>
+        <button class="ghost" id="bSelBack">Back to title</button>
+        <button class="ghost" id="bBoardWipe" hidden>Clear all times</button>
       </div>
     </div>
   </div>
@@ -720,9 +800,10 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
     <div class="scrim"></div>
     <div class="panel" style="width:min(720px,94vw)">
       <h2 class="big">Garage</h2>
-      <p class="lede" style="margin-bottom:18px">1. Pick Primary or Secondary below. 2. Buy a pack for
-        10 credits — you get back one random color from it, no picking. Once a color is yours, click it
-        any time to put it on either slot for free.</p>
+      <p class="lede" style="margin-bottom:18px">1. Pick Primary or Secondary below. 2. Buy a hue pack
+        for 10 credits — you get back one random hue, no picking. Once a hue is yours, click it any time
+        to put it on either slot for free. 3. Drag the sliders to push that hue's saturation and
+        brightness anywhere you like, any time, for free.</p>
 
       <div class="garagePreviewWrap">
         <canvas id="gPreviewCanvas"></canvas>
@@ -755,15 +836,17 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       </div>
       <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
 
-      <h3 style="font-size:13px;font-weight:600;margin:20px 0 6px">SATURATION / BRIGHTNESS</h3>
-      <p class="lede" style="font-size:12px;margin-bottom:8px">Variants of <span id="gSatLightSlotName">primary</span>'s
-        current hue — saturation runs left to right, brightness bottom to top.
-        <b class="aqua">Bright squares</b> are unlocked; <b class="dimx">crossed-out squares</b> are
-        still locked.</p>
-      <div class="row" style="margin-bottom:10px">
-        <button class="primary" id="gBuySatLight">Buy a saturation/brightness pack — 10 credits</button>
+      <h3 style="font-size:13px;font-weight:600;margin:20px 0 6px">SATURATION / BRIGHTNESS — FREE</h3>
+      <p class="lede" style="font-size:12px;margin-bottom:12px">Push <span id="gSatLightSlotName">primary</span>'s
+        current hue anywhere on this plane — no cost, no unlocking, any time.</p>
+      <div class="garageSliderRow">
+        <label for="gSatSlider">Saturation <b id="gSatVal">65%</b></label>
+        <input type="range" id="gSatSlider" min="0" max="100" value="65">
       </div>
-      <div class="garageGrid garageSelectGrid" id="gSatLightGrid"></div>
+      <div class="garageSliderRow">
+        <label for="gLightSlider">Brightness <b id="gLightVal">55%</b></label>
+        <input type="range" id="gLightSlider" min="0" max="100" value="55">
+      </div>
 
       <div class="rule"></div>
       <div class="row">
@@ -903,7 +986,7 @@ function fatal(title, body) {
   if (!el) return;
   $('fTitle').textContent = title;
   $('fBody').textContent = body;
-  ['menu', 'select', 'boards', 'hud', 'result', 'boot'].forEach((i) => {
+  ['menu', 'select', 'hud', 'result', 'boot'].forEach((i) => {
     const n = $(i); if (n) n.hidden = true;
   });
   el.hidden = false;
@@ -1140,10 +1223,25 @@ const CarColor = {
       await this.save();
       return;
     }
-    this.unlocked = remote.unlocked;
+    // Migrate an older save: `unlocked` used to be a list of full {h,s,l}
+    // objects (one per hue+saturation/brightness-pack cell separately
+    // unlocked); ownership is by hue alone now that saturation/brightness
+    // is a free slider, so collapse those old entries down to their hue
+    // cell indices (deduping — several old {h,s,l} objects could share
+    // the same hue). A save already in the new shape (plain numbers) is
+    // left untouched. Re-saved once so this migration only ever runs the
+    // one time per account.
+    let migrated = false;
+    const unlocked = remote.unlocked.map((u) => {
+      if (typeof u === 'number') return u;
+      migrated = true;
+      return this.hueCellOf(u.h);
+    });
+    this.unlocked = [...new Set(unlocked)];
     this.primary = remote.primary || { ...DEFAULT_PRIMARY };
     this.secondary = remote.secondary || { ...DEFAULT_SECONDARY };
     this.apply();
+    if (migrated) await this.save();
   },
 
   /** paints the live car materials — the menu's own idle car, and every
@@ -1166,122 +1264,96 @@ const CarColor = {
     }
   },
 
-  /** true color-equality check (not reference), used both to dedupe the
-   *  starter roll and to keep a purchased pack from ever landing on a
-   *  cell already owned (see rollHue/rollSatLight below). */
-  has(c) { return this.unlocked.some((u) => u.h === c.h && u.s === c.s && u.l === c.l); },
-
-  // Fixed s/l the whole hue grid is drawn at, and the s/l step tables the
-  // sat/brightness grid is drawn at — shared by every place that needs to
-  // go from a grid cell to a color or back (rolling, the purchase reveal,
-  // and the permanent selection grids), so all three always agree on
-  // exactly which cell any given color sits in.
+  // Fixed s/l the hue grid is drawn/rolled at — every hue-pack square is a
+  // vivid, legible reference shade so a roll always reads as a clear
+  // color, never washed out or near-black; the saturation/brightness
+  // slider (see setSatLight) is what actually lets a player push a hue
+  // away from this reference point afterward, for free.
   HUE_S: 65, HUE_L: 55,
   hueAt(cell) { return Math.round(cell * (360 / 256)); },
   hueCellOf(h) { return Math.round(h / (360 / 256)) % 256; },
-  satAt(col) { return Math.round(10 + col * (90 / 15)); },
-  lightAt(row) { return Math.round(10 + row * (80 / 15)); },
-  satColOf(s) { return Math.round((s - 10) / (90 / 15)); },
-  lightRowOf(l) { return Math.round((l - 10) / (80 / 15)); },
 
   /** every hue-grid cell index (0-255) this account does NOT yet own —
    *  the pool a hue-pack roll is actually drawn from, so a purchase can
-   *  never land on a square already unlocked. */
+   *  never land on a square already unlocked. Ownership of a hue is by
+   *  hue alone now (not hue+s+l): once a hue is unlocked, the free
+   *  saturation/brightness slider can move it anywhere, so there is only
+   *  ever one "owned" cell per hue rather than 256 separate s/l cells to
+   *  separately unlock underneath it. */
   lockedHueCells() {
-    const owned = new Set(this.unlocked
-      .filter((c) => c.s === this.HUE_S && c.l === this.HUE_L)
-      .map((c) => this.hueCellOf(c.h)));
+    const owned = new Set(this.unlocked.map((h) => this.hueCellOf(h)));
     const free = [];
     for (let i = 0; i < 256; i++) if (!owned.has(i)) free.push(i);
     return free;
   },
 
-  /** every sat/brightness-grid cell index (0-255) at the given hue this
-   *  account does NOT yet own. */
-  lockedSatLightCells(hue) {
-    const owned = new Set(this.unlocked
-      .filter((c) => c.h === hue)
-      .map((c) => this.lightRowOf(c.l) * 16 + this.satColOf(c.s)));
-    const free = [];
-    for (let i = 0; i < 256; i++) if (!owned.has(i)) free.push(i);
-    return free;
-  },
-
-  /** hue pack: one of the hue-grid cells not already owned, fixed at a
-   *  vivid, legible saturation/lightness so every roll reads as a clear
-   *  color rather than something washed out or near-black. Returns null
+  /** hue pack: one of the hue-grid cells not already owned. Returns null
    *  if every one of the 256 hues is already unlocked. */
   rollHue() {
     const free = this.lockedHueCells();
     if (!free.length) return null;
-    const cell = free[Math.floor(Math.random() * free.length)];
-    return { h: this.hueAt(cell), s: this.HUE_S, l: this.HUE_L };
+    return free[Math.floor(Math.random() * free.length)];
   },
 
-  /** saturation/brightness pack: one of the 256 cells (16 saturation
-   *  steps x 16 lightness steps) at the CURRENT hue of whichever slot is
-   *  being shopped for, excluding cells already owned at that hue — this
-   *  pack is about finding a more vivid or more muted, lighter or darker
-   *  version of a hue already owned, not a new hue. Returns null if every
-   *  cell at this hue is already unlocked. */
-  rollSatLight(slot) {
-    const hue = (slot === 'secondary' ? this.secondary : this.primary).h;
-    const free = this.lockedSatLightCells(hue);
-    if (!free.length) return null;
-    const cell = free[Math.floor(Math.random() * free.length)];
-    const col = cell % 16, row = Math.floor(cell / 16);
-    return { h: hue, s: this.satAt(col), l: this.lightAt(row) };
-  },
-
-  /** A brand-new account's one-time free pair: a random hue (exactly the
-   *  hue-pack's own pool/shape, so it's a square on that same grid) for
-   *  primary, and a random saturation/brightness variant of that same hue
-   *  for secondary — the same relationship a bought S/B pack always has
-   *  to whatever hue is current. Never produces a duplicate of itself
-   *  (the two rolls draw from different grids, and the second explicitly
-   *  excludes the first). */
+  /** A brand-new account's one-time free pair: a random hue for primary,
+   *  and a different random hue for secondary (re-rolled once on a
+   *  collision — 256 hues, so this practically never loops more than
+   *  once), both starting at the same reference saturation/brightness the
+   *  hue grid itself uses; the free slider is there from the very first
+   *  session if the player wants to push either one somewhere else. */
   rollStarterColors() {
-    const hueCell = Math.floor(Math.random() * 256);
-    const primary = { h: this.hueAt(hueCell), s: this.HUE_S, l: this.HUE_L };
-    const slCell = Math.floor(Math.random() * 256);
-    const col = slCell % 16, row = Math.floor(slCell / 16);
-    let secondary = { h: primary.h, s: this.satAt(col), l: this.lightAt(row) };
-    if (secondary.s === primary.s && secondary.l === primary.l) {
-      // the extremely unlikely case the S/B roll landed on the exact same
-      // s/l the hue pack always uses — nudge one step so the two starter
-      // colors are never literally identical.
-      secondary = { h: primary.h, s: this.satAt((col + 1) % 16), l: this.lightAt(row) };
-    }
-    return { unlocked: [primary, secondary], primary, secondary };
+    const pCell = Math.floor(Math.random() * 256);
+    let sCell = Math.floor(Math.random() * 256);
+    if (sCell === pCell) sCell = (sCell + 1 + Math.floor(Math.random() * 255)) % 256;
+    const primary = { h: this.hueAt(pCell), s: this.HUE_S, l: this.HUE_L };
+    const secondary = { h: this.hueAt(sCell), s: this.HUE_S, l: this.HUE_L };
+    return { unlocked: [this.hueCellOf(primary.h), this.hueCellOf(secondary.h)], primary, secondary };
   },
 
-  /** spends 10 credits, rolls the requested pack, adds the result to the
-   *  unlocked list, equips it immediately on the slot that was shopping,
-   *  and persists everything in one go. Throws (and spends nothing) if
-   *  payForColor itself rejects (not enough credits), or if the requested
-   *  pack has nothing left to roll (every square already owned) — checked
-   *  BEFORE spending, so a maxed-out pack can never charge for nothing. */
-  async buy(pack, slot) {
-    const wouldRoll = pack === 'hue' ? this.rollHue.bind(this) : () => this.rollSatLight(slot);
-    // Peek at whether this pack has anything left before spending — the
-    // real roll happens again after payment so the two calls can't drift
-    // (rollHue/rollSatLight are pure w.r.t. current state, so calling
-    // twice is safe and simpler than threading a precomputed pool through).
-    const pool = pack === 'hue' ? this.lockedHueCells()
-      : this.lockedSatLightCells((slot === 'secondary' ? this.secondary : this.primary).h);
-    if (!pool.length) throw new Error('Every color in that pack is already unlocked.');
+  /** spends 10 credits, rolls a hue pack, adds the result to the unlocked
+   *  list, equips it immediately on the slot that was shopping (at that
+   *  slot's CURRENT saturation/brightness, not reset to the pack's own
+   *  reference shade — the slider position is a player choice that a
+   *  fresh hue shouldn't quietly undo), and persists everything in one
+   *  go. Throws (and spends nothing) if payForColor itself rejects (not
+   *  enough credits), or if there is no hue left to roll (all 256
+   *  already owned) — checked BEFORE spending, so a maxed-out account can
+   *  never be charged for nothing. */
+  async buy(slot) {
+    const pool = this.lockedHueCells();
+    if (!pool.length) throw new Error('Every hue is already unlocked.');
     await Cloud.payForColor();
-    const color = pack === 'hue' ? this.rollHue() : this.rollSatLight(slot);
-    this.unlocked.push(color);
+    const cell = this.rollHue();
+    this.unlocked.push(cell);
+    const cur = slot === 'secondary' ? this.secondary : this.primary;
+    const color = { h: this.hueAt(cell), s: cur.s, l: cur.l };
     if (slot === 'secondary') this.secondary = color; else this.primary = color;
     this.apply();
     await this.save();
     return color;
   },
 
-  /** assigns an already-unlocked color to a slot, repaints immediately,
-   *  and persists the new equipped choice. */
-  async equip(slot, color) {
+  /** assigns an already-unlocked hue to a slot, keeping that slot's
+   *  current saturation/brightness (same reasoning as buy() above),
+   *  repaints immediately, and persists the new equipped choice. */
+  async equipHue(slot, hue) {
+    const cur = slot === 'secondary' ? this.secondary : this.primary;
+    const color = { h: hue, s: cur.s, l: cur.l };
+    if (slot === 'secondary') this.secondary = color; else this.primary = color;
+    this.apply();
+    await this.save();
+  },
+
+  /** the free saturation/brightness slider — sets a slot's s/l directly,
+   *  no cost, no ownership to check (only the HUE itself is gated behind
+   *  a pack; once you have it, you can push it anywhere on the
+   *  saturation/brightness plane for free). Clamped to the same 0-100
+   *  range the sliders themselves are built on. */
+  async setSatLight(slot, s, l) {
+    s = clamp(Math.round(s), 0, 100);
+    l = clamp(Math.round(l), 0, 100);
+    const cur = slot === 'secondary' ? this.secondary : this.primary;
+    const color = { h: cur.h, s, l };
     if (slot === 'secondary') this.secondary = color; else this.primary = color;
     this.apply();
     await this.save();
@@ -1713,7 +1785,7 @@ const Cloud = {
     const { fsMod } = this.fb;
     const uid = this.user.uid;
     const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_grind';
-    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: 1 });
+    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: 1, createdAt: fsMod.serverTimestamp() });
     this.credits += 1;
   },
 
@@ -1836,7 +1908,7 @@ const Cloud = {
       for (const e of entries) {
         batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: null, payout: e.buyIn });
         batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-          { uid: e.uid, raceId, delta: e.buyIn });
+          { uid: e.uid, raceId, delta: e.buyIn, createdAt: fsMod.serverTimestamp() });
       }
     } else {
       const d = pot / denom;
@@ -1844,7 +1916,7 @@ const Cloud = {
         const payout = d * (e.buyIn / e.placement);
         batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
         batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-          { uid: e.uid, raceId, delta: payout });
+          { uid: e.uid, raceId, delta: payout, createdAt: fsMod.serverTimestamp() });
       }
       // Non-finishing entrants stay unranked with no payout — their stake
       // was absorbed into the pot the finishers just split.
@@ -1877,7 +1949,7 @@ const Cloud = {
       uid, displayName: this.name(), buyIn, attempts: [], bestTimeMs: null
     });
     batch.set(fsMod.doc(this.db, 'creditEvents', uid + '_' + raceId + '_buyin'), {
-      uid, raceId, delta: -buyIn
+      uid, raceId, delta: -buyIn, createdAt: fsMod.serverTimestamp()
     });
     await batch.commit();
     this.credits -= buyIn;
@@ -2035,12 +2107,10 @@ const Cloud = {
   },
 
   /**
-   * Push a personal best. The bests document id is the player's own uid and the
-   * course, so nobody can write into anyone else's row, and the award event id
-   * is derived the same way, which makes the credit idempotent — claiming it
-   * twice is impossible rather than merely discouraged.
+   * Push a personal best. The bests document id is the player's own uid and
+   * the course, so nobody can write into anyone else's row.
    */
-  async pushBest(courseId, timeSec, ghostSamples, firstClear) {
+  async pushBest(courseId, timeSec, ghostSamples) {
     if (!this.on || !this.user || this.banned()) return;
     // A signed-in player's real username must never be overwritten with
     // the 'Driver' fallback name() falls back to when this.profile hasn't
@@ -2067,11 +2137,12 @@ const Cloud = {
       uid, courseId, displayName: this.name(), banned: false,
       timeMs: Math.round(timeSec * 1000), updatedMs: Date.now()
     });
-    if (firstClear) {
-      await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id + '_clear'), {
-        uid, courseId, delta: CREDITS_PER_CLEAR
-      });
-    }
+    // First-clearing a course no longer pays a credit bonus (see
+    // Game.finishLevel — firstClear is still computed and passed in for
+    // the result screen's own "first clean run" messaging, it just no
+    // longer triggers a creditEvents write here). Credits now only come
+    // from the credits-run grind and the special long course's own
+    // reward — see CREDITS_PER_CLEAR's own comment.
     if (ghostSamples && ghostSamples.length) {
       try {
         await fsMod.setDoc(fsMod.doc(this.db, 'ghosts', id), {
@@ -2163,7 +2234,7 @@ const Cloud = {
     const { fsMod } = this.fb;
     const uid = this.user.uid;
     const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_color';
-    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: -10 });
+    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: -10, createdAt: fsMod.serverTimestamp() });
     this.credits -= 10;
   },
 
@@ -2189,7 +2260,9 @@ const Cloud = {
     } catch (e) { console.warn('Skyframe: could not log run', e && e.message); }
   }
 };
-const CREDITS_PER_CLEAR = 100;
+// First-clearing a course used to pay CREDITS_PER_CLEAR (100) credits —
+// removed; see Game.finishLevel and Cloud.pushBest. Credits now come from
+// the credits-run grind (+1) and the special long course's own reward.
 
 /* --------------------------------------------- 4. physics world (triangles)
    The track is a swept ribbon, so collision is ray/triangle and
@@ -4628,6 +4701,62 @@ const LEVELS = [
       b.straight(26, { w: 13 });
       return b.build();
     }
+  },
+  // The special long course — deliberately outside the normal tier
+  // progression (tier: 'special', not 1-5) so it never blocks or is
+  // blocked by the ordinary "clear course N to open N+1" unlock chain;
+  // see Game's playable/course-list handling for how tier 'special' is
+  // treated as always-open instead. Verified at 3.29x Proving Ground's
+  // own measured path length (569.9m vs 1874.6m — see this session's
+  // course_check_lib.js/run_course_check.js verification script), built
+  // from the same 28-60m radius / <=22deg bank envelope every other
+  // course respects, with its finish gate placed past the 55% mark the
+  // same way every other course's is.
+  {
+    name: 'Endless Horizon', tier: 'special',
+    blurb: 'The long haul — over three times Proving Ground, start to finish. One run, no shortcuts.',
+    build() {
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(24, 16);
+      b.straight(84);
+      b.curve(52, 50, { bank: 10, chev: 1 });
+      b.straight(60);
+      b.curve(46, -64, { bank: 12, chev: 1 });
+      b.straight(72);
+      b.slope(36, 5);
+      b.straight(50);
+      b.curve(58, 58, { bank: 9, chev: 1 });
+      b.straight(64);
+      b.chicane(40, 46, { bank: 14, chev: 1 });
+      b.straight(56);
+      b.crest(30, 8);
+      b.straight(46);
+      b.curve(34, -96, { bank: 16, chev: 1 });
+      b.straight(58);
+      b.bumps(4, 10, 1.0);
+      b.straight(40);
+      b.curve(48, 70, { bank: 11, chev: 1 });
+      b.straight(70);
+      b.slope(32, -5);
+      b.straight(60);
+      b.curve(30, -110, { bank: 18, chev: 1 });
+      b.straight(50);
+      b.slope(34, 6);
+      b.straight(54);
+      b.curve(44, 84, { bank: 13, chev: 1 });
+      b.straight(66);
+      b.ramp(20, 11);
+      b.gap(26, -4);
+      b.landing(22, -9, { w: 13 });
+      b.straight(56);
+      b.curve(56, -52, { bank: 8, chev: 1 });
+      b.straight(60);
+      b.slope(30, -1.5);
+      b.straight(44);
+      b.gate('finish');
+      b.straight(40, { w: 16 });
+      return b.build();
+    }
   }
 ];
 
@@ -4653,7 +4782,8 @@ const CAM = {
   leash: 3.0, minDist: 4.0,
   yawGround: 6.5, yawAir: 3.0,
   lookLead: 1.9, lookLeadMax: 0.24,
-  fovBase: 64, fovSpeed: 6
+  fovBase: 64, fovSpeed: 6,
+  directorSpeed: 26   // free-roam director camera's fly speed, world units/sec
 };
 
 class ChaseCamera {
@@ -4805,6 +4935,62 @@ class ChaseCamera {
     this.cam.fov = this.fov;
     this.cam.updateProjectionMatrix();
     this.frameAll(0.0001, points, time);
+  }
+  /**
+   * The free-roam "director" mode: WASD+Shift/Space fly the camera itself
+   * around by hand (forward/back/strafe relative to where it's currently
+   * facing, Shift down / Space up in world space) while it keeps auto-
+   * aiming at the centroid of whichever cars are in the session — so
+   * "move around and watch the race" doesn't also require a separate
+   * mouse-look scheme just to keep something in frame. move is
+   * {x,y,z} in [-1,1] (x=strafe, y=up/down, z=forward/back) sampled once
+   * per frame by Game.stepSpectate from the held WASD/Shift/Space keys;
+   * this method only integrates it and re-aims, no input handling here.
+   */
+  updateDirector(dt, move, points) {
+    // forward/right in the camera's own current facing (its look direction
+    // projected flat), so "W" always means "into the screen" regardless of
+    // which way the camera has been flown so far — the same convention a
+    // free-fly/spectator camera in most games uses.
+    this._d.copy(this.look).sub(this.pos);
+    this._d.y = 0;
+    if (this._d.lengthSq() < 1e-6) this._d.set(0, 0, 1); else this._d.normalize();
+    const right = this._tmp.set(this._d.z, 0, -this._d.x); // 90° yaw of the flat forward vector
+    const speed = CAM.directorSpeed;
+    this.pos.addScaledVector(this._d, move.z * speed * dt);
+    this.pos.addScaledVector(right, move.x * speed * dt);
+    this.pos.y += move.y * speed * dt;
+    if (points && points.length) {
+      this._a.set(0, 0, 0);
+      for (const p of points) this._a.add(p);
+      this._a.multiplyScalar(1 / points.length);
+      this.look.x = smoothDamp(this.look.x, this._a.x, this.lookVel, 'x', 0.25, dt);
+      this.look.y = smoothDamp(this.look.y, this._a.y, this.lookVel, 'y', 0.25, dt);
+      this.look.z = smoothDamp(this.look.z, this._a.z, this.lookVel, 'z', 0.25, dt);
+    }
+    if (Math.abs(this.cam.fov - CAM.fovBase) > 0.05) {
+      this.cam.fov = this.fov = CAM.fovBase;
+      this.cam.updateProjectionMatrix();
+    }
+    this.apply();
+  }
+  /** drops the director camera in at a sensible starting point — behind
+   *  and above the centroid of the given points, already aimed at them —
+   *  rather than wherever some earlier mode happened to leave this.pos. */
+  snapDirector(points) {
+    this.vel.x = this.vel.y = this.vel.z = 0;
+    this.lookVel.x = this.lookVel.y = this.lookVel.z = 0;
+    if (points && points.length) {
+      this._a.set(0, 0, 0);
+      for (const p of points) this._a.add(p);
+      this._a.multiplyScalar(1 / points.length);
+      this.pos.copy(this._a).add(new THREE.Vector3(0, 12, 26));
+      this.look.copy(this._a);
+    }
+    this.fov = CAM.fovBase;
+    this.cam.fov = this.fov;
+    this.cam.updateProjectionMatrix();
+    this.apply();
   }
   apply() {
     this.cam.position.copy(this.pos);
@@ -5123,7 +5309,7 @@ const GaragePreview = {
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'boards', 'result', 'gate', 'banned', 'spectate', 'settings',
+    ['menu', 'select', 'result', 'gate', 'banned', 'spectate', 'settings',
      'raceReveal', 'raceBetween', 'garage']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
@@ -5294,19 +5480,39 @@ const UI = {
    *  has nothing useful to list here that specName/specT1 don't already
    *  say. Clicking a row jumps the camera straight to that car, the same
    *  as cycling Left/Right to it. */
-  specRoster(cars, camIdx) {
+  specRoster(cars, camIdx, t) {
     const el = $('specRoster');
     if (cars.length < 2) { el.hidden = true; return; }
     el.hidden = false;
     $('specRosterCount').textContent = String(cars.length);
+    // The leader is whichever finished car has the fastest total time
+    // (matches c.place===1); used to show every OTHER finished car's gap
+    // behind them — the one extra stat "more statistics on the screen"
+    // (the director-camera request) is asking for beyond speed/time/place
+    // already shown, cheap to derive from data already on each car.
+    const leader = cars.find((c) => c.place === 1);
     $('specRosterList').innerHTML = cars.map((c, k) => {
       const kmh = Math.round(c.rig.speed * 3.6);
-      const timeStr = c.finished ? formatTime(c.data.t) : '—';
       const dotColor = k === camIdx ? 'var(--ember)' : 'var(--aqua)';
+      let timeStr, subStr = '';
+      if (c.finished) {
+        timeStr = formatTime(c.data.t);
+        if (leader && c !== leader) subStr = '+' + formatDelta(c.data.t - leader.data.t) + 's';
+      } else {
+        // still driving — the one live number that actually means
+        // something for an unfinished run is how far through ITS OWN
+        // recorded length it currently is, since runs are rarely equal
+        // length and there is no shared "race distance" to compare
+        // against otherwise.
+        timeStr = formatTime(typeof t === 'number' ? t : 0);
+        const pct = c.data.t > 0 ? clamp(((typeof t === 'number' ? t : 0) / c.data.t) * 100, 0, 100) : 0;
+        subStr = Math.round(pct) + '%';
+      }
       return '<div class="rRow' + (k === camIdx ? ' active' : '') + '" data-k="' + k + '">' +
         '<span class="rDot" style="background:' + dotColor + '"></span>' +
         '<span class="rName">' + (c.place ? c.place + '. ' : '') + escapeHtml(c.name) + '</span>' +
         '<span class="rSpeed">' + kmh + ' km/h</span>' +
+        '<span class="rSub">' + subStr + '</span>' +
         '<span class="rTime' + (c.finished ? ' done' : '') + '">' + timeStr + '</span></div>';
     }).join('');
     $('specRosterList').querySelectorAll('.rRow').forEach((row) => {
@@ -5322,7 +5528,12 @@ const UI = {
     const el = $('specCamHint');
     if (!Game.spec || Game.spec.cars.length < 2) { el.hidden = true; return; }
     el.hidden = false;
-    $('specCamName').textContent = mode === 'overview' ? 'Overview' : followName;
+    $('specCamName').textContent = mode === 'overview' ? 'Overview'
+      : mode === 'director' ? 'Director (WASD + Shift/Space)' : followName;
+    // the movement-key legend only makes sense while actually flying the
+    // director camera around — every other mode's own controls are just
+    // the Left/Right cycle already shown in this same hint.
+    $('specDirectorHint').hidden = mode !== 'director';
   },
   teleOn: true,
   toggleTele() {
@@ -5408,6 +5619,9 @@ const UI = {
     });
   },
   bars(tier) {
+    // The special long course has no numeric tier (tier: 'special') — it
+    // sits outside the 1-5 progression entirely, so it gets its own badge
+    // in courseList() instead of a (meaningless) tier-bars readout here.
     let s = '<span class="bars">';
     for (let i = 0; i < 5; i++) s += '<i class="' + (i < tier ? 'on' : '') + '"></i>';
     return s + '</span>';
@@ -5417,21 +5631,75 @@ const UI = {
     wrap.innerHTML = '';
     LEVELS.forEach((lv, i) => {
       const id = 'c' + (i + 1);
-      const open = i === 0 || Records.cleared('c' + i);
+      const isSpecial = lv.tier === 'special';
+      // The special course is always open — it deliberately sits outside
+      // the "clear course N to open N+1" chain (see LEVELS' own comment
+      // above Endless Horizon), so it never depends on Records.cleared.
+      const open = isSpecial || i === 0 || Records.cleared('c' + i);
       const best = Records.best(id);
       const btn = document.createElement('button');
-      btn.className = 'card';
+      btn.className = 'card' + (isSpecial ? ' special' : '');
       if (!open || !playable[i]) btn.disabled = true;
+      // The first-place name (if anyone has cleared it yet) is worth
+      // showing right on the card for every course — but especially the
+      // special course, where being #1 is the whole point — so the same
+      // small "leader" line UI.boards() already builds per-course gets
+      // reused here rather than duplicated.
+      const leaderLine = this.courseLeaderLine(id);
       btn.innerHTML =
-        '<div class="idx">Course ' + (i + 1) + '</div>' +
+        '<div class="idx">' + (isSpecial ? 'SPECIAL' : 'Course ' + (i + 1)) + '</div>' +
         '<div class="ttl">' + lv.name + '</div>' +
         '<div class="desc">' + (playable[i] ? lv.blurb : 'This course failed to load and was skipped.') + '</div>' +
-        '<div class="foot"><span>' + this.bars(lv.tier) + '</span><span class="best">' +
+        leaderLine +
+        '<div class="foot"><span>' + (isSpecial ? '<span class="specialBadge">★ LONG COURSE</span>' : this.bars(lv.tier)) +
+        '</span><span class="best">' +
         (best ? formatTime(best) : (open ? 'no time' : 'locked')) + '</span></div>' +
         (Records.cleared(id) ? '<span class="done"></span>' : '');
       btn.addEventListener('click', () => onPick(i));
       wrap.appendChild(btn);
     });
+  },
+  /** the "#1: Name — time" line shown on a course card (courseList) —
+   *  one shared source so the card and the leaderboard tab always agree
+   *  on who's actually in first. An un-cleared course gets a quiet "be
+   *  the first" invitation instead of nothing, so an empty leaderboard
+   *  reads as an opportunity rather than a blank space. */
+  courseLeaderLine(id) {
+    const list = Records.board(id);
+    if (!list || !list.length) {
+      return '<div class="courseLeader empty">No one has cleared this yet — be the first!</div>';
+    }
+    const leader = list[0];
+    return '<div class="courseLeader"><span class="crown">♛</span> <b>' +
+      escapeHtml(leader.n) + '</b> <span class="leaderTime">' + formatTime(leader.t) + '</span></div>';
+  },
+  /** the menu's own special-long-course card — hidden entirely if the
+   *  course failed to build this session (idx === -1, same "never make a
+   *  broken course look clickable" rule every other course button
+   *  follows), otherwise always shown regardless of campaign progress
+   *  (see Game.specialCourseIndex/toSelect's isSpecial handling — this
+   *  course is deliberately outside the tier-unlock chain). Shows the
+   *  current #1 prominently, or an inviting "be the first" line instead
+   *  of nothing when nobody has set a time yet. */
+  specialCourseCard(idx) {
+    const btn = $('bSpecialCourse');
+    if (idx < 0) { btn.hidden = true; return; }
+    btn.hidden = false;
+    const lv = LEVELS[idx];
+    $('specialCourseName').textContent = lv.name;
+    const id = 'c' + (idx + 1);
+    const list = Records.board(id);
+    const wrap = $('specialCourseLeaderWrap');
+    wrap.hidden = false;
+    if (list && list.length) {
+      $('specialCourseCrown').hidden = false;
+      $('specialCourseLeaderName').textContent = list[0].n;
+      $('specialCourseLeaderTime').textContent = formatTime(list[0].t);
+    } else {
+      $('specialCourseCrown').hidden = true;
+      $('specialCourseLeaderName').textContent = 'No one has cleared this yet — be the first!';
+      $('specialCourseLeaderTime').textContent = '';
+    }
   },
   /**
    * All leaderboard state (which tab, which uids are checked) lives on
@@ -5557,38 +5825,29 @@ const UI = {
     $('gSatLightSlotName').textContent = slot;
     $('gCredits').textContent = Cloud.on ? (Cloud.credits || 0) : 'offline';
     const hueMaxed = CarColor.lockedHueCells().length === 0;
-    const slMaxed = CarColor.lockedSatLightCells(equipped.h).length === 0;
     $('gBuyHue').disabled = !Cloud.on || hueMaxed;
     $('gBuyHue').textContent = hueMaxed ? 'Every hue already unlocked' : 'Buy a hue pack — 10 credits';
-    $('gBuySatLight').disabled = !Cloud.on || slMaxed;
-    $('gBuySatLight').textContent = slMaxed ? 'Every variant of this hue already unlocked'
-      : 'Buy a saturation/brightness pack — 10 credits';
     $('gBuyMsg').textContent = Cloud.on ? '' : 'Sign in to buy colors — offline mode keeps whatever you already unlocked, but can\'t spend credits.';
 
-    // HUE grid: 256 cells, one per hue, at the pack's own fixed s/l — a
-    // hue you own reads as unlocked here regardless of which slot/hue is
-    // currently active, since a hue-pack color isn't tied to anything.
+    // HUE grid: 256 cells, one per hue, at the pack's own fixed reference
+    // s/l — a hue you own reads as unlocked here regardless of which
+    // slot/hue is currently active or what the sliders are set to, since
+    // ownership is of the hue alone now (see CarColor.lockedHueCells).
     this.renderGarageGrid($('gHueGrid'), 256, (i) => {
       const h = CarColor.hueAt(i);
-      const color = { h, s: CarColor.HUE_S, l: CarColor.HUE_L };
-      const owned = CarColor.unlocked.find((u) => u.h === h && u.s === CarColor.HUE_S && u.l === CarColor.HUE_L);
-      const isEquipped = equipped.h === h && equipped.s === CarColor.HUE_S && equipped.l === CarColor.HUE_L;
-      return { bg: hslCss(h, CarColor.HUE_S, CarColor.HUE_L), owned: !!owned, equipped: isEquipped, color };
+      const owned = CarColor.unlocked.includes(i);
+      const isEquipped = CarColor.hueCellOf(equipped.h) === i;
+      return { bg: hslCss(h, CarColor.HUE_S, CarColor.HUE_L), owned, equipped: isEquipped, color: { h } };
     });
 
-    // SATURATION/BRIGHTNESS grid: 256 cells at the ACTIVE SLOT's current
-    // hue — a cell only reads as unlocked if a color with that exact hue
-    // AND that exact saturation/lightness has been rolled, so switching
-    // slots (or hues) changes which cells in this same grid show as owned.
-    const hue = equipped.h;
-    this.renderGarageGrid($('gSatLightGrid'), 256, (i) => {
-      const col = i % 16, row = Math.floor(i / 16);
-      const s = CarColor.satAt(col), l = CarColor.lightAt(row);
-      const color = { h: hue, s, l };
-      const owned = CarColor.unlocked.find((u) => u.h === hue && u.s === s && u.l === l);
-      const isEquipped = equipped.h === hue && equipped.s === s && equipped.l === l;
-      return { bg: hslCss(hue, s, l), owned: !!owned, equipped: isEquipped, color };
-    });
+    // The free saturation/brightness sliders always reflect the ACTIVE
+    // SLOT's current values — switching slots (gSlotPrimary/Secondary)
+    // re-renders this whole screen, which re-reads them here, so there is
+    // never a stale slider position left over from the other slot.
+    $('gSatSlider').value = String(equipped.s);
+    $('gLightSlider').value = String(equipped.l);
+    $('gSatVal').textContent = equipped.s + '%';
+    $('gLightVal').textContent = equipped.l + '%';
   },
 
   /** Shared renderer for both persistent selection grids: cellFn(i) must
@@ -5604,29 +5863,26 @@ const UI = {
       if (equipped) d.className += ' equipped';
       d.style.background = bg;
       if (owned) {
-        d.title = 'Unlocked — h' + color.h + ' s' + color.s + '% l' + color.l + '%. Click to equip.';
-        d.addEventListener('click', () => Game.equipCarColor(color));
+        d.title = 'Unlocked — hue ' + color.h + '°. Click to equip (keeps your current saturation/brightness).';
+        d.addEventListener('click', () => Game.equipCarHue(color.h));
       } else {
-        d.title = 'Locked — buy a pack above for a chance at this one.';
+        d.title = 'Locked — buy a hue pack above for a chance at this one.';
       }
       grid.appendChild(d);
     }
   },
 
   /** Plays the "which square did we land on" reveal directly on the real,
-   *  already-rendered selection grid (gHueGrid or gSatLightGrid) instead
-   *  of a separate throwaway one — the flicker only ever lands on squares
-   *  this account doesn't already own (excludedCells / the pool the roll
-   *  actually drew from), so it can never tease a square that was already
-   *  unlocked. Ends by turning the winning square from locked to
-   *  unlocked-with-a-pulse in place, then calls onDone once the pulse
-   *  finishes, by which point garage() has already been re-rendered
-   *  underneath so the rest of the grid (and the other grid, and the
-   *  swatches/preview) all reflect the purchase too. */
-  garageReveal(pack, slot, color, onDone) {
-    const grid = pack === 'hue' ? $('gHueGrid') : $('gSatLightGrid');
-    const hitIndex = pack === 'hue' ? CarColor.hueCellOf(color.h)
-      : CarColor.lightRowOf(color.l) * 16 + CarColor.satColOf(color.s);
+   *  already-rendered hue grid instead of a separate throwaway one — the
+   *  flicker only ever lands on squares this account doesn't already own,
+   *  so it can never tease a square that was already unlocked. Ends by
+   *  turning the winning square from locked to unlocked-with-a-pulse in
+   *  place, then calls onDone once the pulse finishes, by which point
+   *  garage() has already been re-rendered underneath so the rest of the
+   *  grid (and the swatches/preview/sliders) all reflect the purchase. */
+  garageReveal(slot, color, onDone) {
+    const grid = $('gHueGrid');
+    const hitIndex = CarColor.hueCellOf(color.h);
     const cellEls = grid.children;
     if (!cellEls.length || !cellEls[hitIndex]) { if (onDone) onDone(); return; }
     // Flicker only across squares still locked at the moment the roll
@@ -5651,8 +5907,7 @@ const UI = {
         cellEls[hitIndex].classList.remove('rolling');
         cellEls[hitIndex].classList.remove('locked');
         cellEls[hitIndex].classList.add('unlocked', 'justUnlocked');
-        $('gBuyMsg').textContent = 'Unlocked h' + Math.round(color.h) + ' s' + color.s + '% l' + color.l +
-          '% — equipped on ' + slot + '.';
+        $('gBuyMsg').textContent = 'Unlocked hue ' + Math.round(color.h) + '° — equipped on ' + slot + '.';
         setTimeout(() => { if (onDone) onDone(); }, 550);
       }
     }, 70);
@@ -6126,7 +6381,7 @@ const Game = {
     // set flushPendingAuth uses, minus the states that already mean
     // "already in this race's sequence" (raceBetween is handled by its
     // own explicit "Next attempt" button instead, not by this force).
-    const lockable = ['menu', 'select', 'boards', 'settings'].includes(this.state);
+    const lockable = ['menu', 'select', 'settings'].includes(this.state);
     if (!lockable) return;
     this.enterRaceReveal();
   },
@@ -6189,18 +6444,25 @@ const Game = {
       if (i < 0) i = this.data.findIndex(Boolean);
       this.startLevel(i);
     });
-    $('bCourses').addEventListener('click', () => this.toSelect());
-    $('bBoards').addEventListener('click', () => this.toBoards());
+    $('bCourses').addEventListener('click', () => this.toSelect('courses'));
+    $('bSpecialCourse').addEventListener('click', () => {
+      const idx = this.specialCourseIndex();
+      if (idx >= 0) this.startLevel(idx);
+    });
+    $('bSelTabCourses').addEventListener('click', () => this.setSelectTab('courses'));
+    $('bSelTabBoards').addEventListener('click', () => this.setSelectTab('boards'));
     $('bSettings').addEventListener('click', () => this.toSettings());
     $('bGarage').addEventListener('click', () => this.toGarage());
     $('bGarageBack').addEventListener('click', () => this.toMenu());
     $('gSlotPrimary').addEventListener('click', () => this.setGarageSlot('primary'));
     $('gSlotSecondary').addEventListener('click', () => this.setGarageSlot('secondary'));
-    $('gBuyHue').addEventListener('click', () => this.buyCarColorPack('hue'));
-    $('gBuySatLight').addEventListener('click', () => this.buyCarColorPack('satlight'));
+    $('gBuyHue').addEventListener('click', () => this.buyCarColorPack());
+    $('gSatSlider').addEventListener('input', () =>
+      this.setGarageSatLight($('gSatSlider').value, $('gLightSlider').value));
+    $('gLightSlider').addEventListener('input', () =>
+      this.setGarageSatLight($('gSatSlider').value, $('gLightSlider').value));
     $('bSetBack').addEventListener('click', () => this.toMenu());
     $('bSelBack').addEventListener('click', () => this.toMenu());
-    $('bBoardBack').addEventListener('click', () => this.toMenu());
     $('bLobbyJoin').addEventListener('click', () => this.joinCurrentRace());
     $('bLobbyDrive').addEventListener('click', () => this.enterRaceReveal());
     $('bRevealGo').addEventListener('click', () => this.driveRaceAttempt());
@@ -6478,6 +6740,10 @@ const Game = {
     this.ghostOverride = g;
     this.ghostOverrideName = (row && row.n) || 'that driver';
     this.ghostOverrideCourse = idx;
+    // A previous multi-race (raceGhostOfMany) could have left extraGhosts
+    // populated — without clearing it here, racing just one person after
+    // racing several would keep the old extra ghosts tagging along too.
+    this.extraGhosts = [];
     this.paintCarAs(colors);
     this.startLevel(idx);
   },
@@ -6657,7 +6923,13 @@ const Game = {
 
   stepSpectate(dt) {
     if (Input.tapped('Escape')) { this.exitSpectate(); return; }
-    if (Input.tapped('Space')) $('bSpecPlay').click();
+    // Space doubles as the director camera's "fly up" key while that mode
+    // is active — WASD+Shift+Space are all continuously-held movement
+    // there, not one-shot commands, so play/pause has to come from the
+    // on-screen button instead of the Space shortcut for that one mode
+    // (R still restarts either way; it isn't a director-camera key).
+    const inDirector = this.spec.camMode === 'director';
+    if (!inDirector && Input.tapped('Space')) $('bSpecPlay').click();
     if (Input.tapped('KeyR')) $('bSpecRestart').click();
     if (this.spec.cars.length > 1) {
       if (Input.tapped('ArrowRight')) this.cycleSpecCamera(1);
@@ -6672,47 +6944,65 @@ const Game = {
       }
     }
     const followRig = this.syncSpectate(this.spec.t);
+    const pts = this.spec.cars.map((c) => c.rig.pos);
     if (this.spec.camMode === 'follow' && followRig) {
       this.chase.update(dt, followRig);
+    } else if (inDirector) {
+      const d = Input.down;
+      const move = {
+        x: (d.has('KeyD') ? 1 : 0) - (d.has('KeyA') ? 1 : 0),
+        z: (d.has('KeyW') ? 1 : 0) - (d.has('KeyS') ? 1 : 0),
+        y: (d.has('Space') ? 1 : 0) - (d.has('ShiftLeft') || d.has('ShiftRight') ? 1 : 0)
+      };
+      this.chase.updateDirector(dt, move, pts);
     } else {
-      const pts = this.spec.cars.map((c) => c.rig.pos);
       this.chase.frameAll(dt, pts, this.spec.t);
     }
     UI.specClock(this.spec.t);
     this.updateSpeedHead(this.spec.t);
     UI.layoutGhostTags(this.spec.cars, this.spec.camIdx);
-    UI.specRoster(this.spec.cars, this.spec.camIdx);
+    UI.specRoster(this.spec.cars, this.spec.camIdx, this.spec.t);
   },
 
-  /** Left/Right arrow handling: -1/+1 cycles camIdx through -1 (overview)
-   *  then 0..cars.length-1 (each car, in the order they were checked),
-   *  wrapping both ends — so tapping the same direction repeatedly always
-   *  eventually comes back around rather than dead-ending. */
+  /** Left/Right arrow handling: -1/+1 cycles camIdx through -2 (director),
+   *  -1 (overview), then 0..cars.length-1 (each car, in the order they
+   *  were checked), wrapping both ends — so tapping the same direction
+   *  repeatedly always eventually comes back around rather than dead-
+   *  ending. The director camera only ever appears in this cycle once
+   *  there are 2+ cars to actually go watch (stepSpectate's own caller
+   *  already gates arrow-key handling the same way), matching every
+   *  other multi-watch-only camera feature (overview, the roster, the
+   *  camera-mode hint). */
   cycleSpecCamera(dir) {
     const n = this.spec.cars.length;
     let idx = this.spec.camIdx + dir;
-    if (idx < -1) idx = n - 1;
-    if (idx >= n) idx = -1;
+    if (idx < -2) idx = n - 1;
+    if (idx >= n) idx = -2;
     this.setSpecCamera(idx);
   },
 
-  /** Jump straight to camera idx (-1 for overview, or a specific car) —
-   *  used by both cycleSpecCamera above and clicking a roster row. */
+  /** Jump straight to camera idx (-2 for director, -1 for overview, or a
+   *  specific car) — used by both cycleSpecCamera above and clicking a
+   *  roster row. */
   jumpSpecCamera(idx) {
     if (idx === this.spec.camIdx) return;
     this.setSpecCamera(idx);
   },
 
-  /** Shared "point the camera and HUD at idx" logic: -1 snaps the
-   *  overview camera to frame every car at once; a specific car index
-   *  re-points the HUD (name/time/speed graph/scrub) at that car's own
-   *  run, same as if it had been the one originally clicked, and snaps
-   *  the follow camera straight onto it. */
+  /** Shared "point the camera and HUD at idx" logic: -2 drops the free-
+   *  roam director camera in near the field; -1 snaps the overview
+   *  camera to frame every car at once; a specific car index re-points
+   *  the HUD (name/time/speed graph/scrub) at that car's own run, same
+   *  as if it had been the one originally clicked, and snaps the follow
+   *  camera straight onto it. */
   setSpecCamera(idx) {
     this.spec.camIdx = idx;
-    this.spec.camMode = idx === -1 ? 'overview' : 'follow';
-    if (idx === -1) {
-      this.chase.snapAll(this.spec.cars.map((c) => c.rig.pos), this.spec.t);
+    this.spec.camMode = idx === -2 ? 'director' : (idx === -1 ? 'overview' : 'follow');
+    const pts = () => this.spec.cars.map((c) => c.rig.pos);
+    if (idx === -2) {
+      this.chase.snapDirector(pts());
+    } else if (idx === -1) {
+      this.chase.snapAll(pts(), this.spec.t);
     } else {
       const c = this.spec.cars[idx];
       this.spec.data = c.data;
@@ -6723,7 +7013,7 @@ const Game = {
       this.buildSpeedGraph(c.data);
       this.chase.snap(c.rig);
     }
-    UI.specCamMode(this.spec.camMode, idx === -1 ? null : this.spec.cars[idx].name);
+    UI.specCamMode(this.spec.camMode, idx >= 0 ? this.spec.cars[idx].name : null);
   },
 
   /** Watch one or several checked players' runs on one course at once —
@@ -6800,7 +7090,7 @@ const Game = {
     if (this.spec) this.spec.cars.forEach((c) => { c.mesh.visible = false; setGhostFlame(c.mesh, false, 1); });
     this.spec = null;
     this.hideAllTags();
-    this.toBoards();
+    this.toSelect('boards'); // back to the leaderboard tab specifically — the run just watched came from there
   },
 
   /** applies a sign-out/ban/etc. that arrived while a run or replay was in
@@ -6821,49 +7111,76 @@ const Game = {
     this.stopWatchingBoards();
     GaragePreview.stop();
     UI.show('menu');
+    UI.specialCourseCard(this.specialCourseIndex());
     this.flushPendingAuth();
   },
+  /** the special long course's LEVELS index, or -1 if it somehow isn't
+   *  present/playable — looked up by its tier marker rather than a fixed
+   *  index so nothing else in the file has to know or care where in the
+   *  array it sits. */
+  specialCourseIndex() {
+    const idx = LEVELS.findIndex((l) => l.tier === 'special');
+    return (idx >= 0 && this.playable[idx]) ? idx : -1;
+  },
   /** tears down the live boards subscription — called from toMenu() since
-   *  that is the one place every path away from the boards screen passes
+   *  that is the one place every path away from this screen passes
    *  through (the "watch this run" button leads to spectate, but exiting
-   *  spectate returns to toBoards() again, so the subscription should
+   *  spectate returns to toSelect() again, so the subscription should
    *  survive that round trip rather than restarting for no reason). */
   stopWatchingBoards() {
     if (this.boardsUnwatch) { this.boardsUnwatch(); this.boardsUnwatch = null; }
   },
-  toSelect() {
+  /**
+   * Courses and Leaderboards used to be two separate screens; they're one
+   * now (one "back to title", one panel, a tab strip switching which pane
+   * is visible) since a course and its own leaderboard are naturally the
+   * same subject — picking a course and checking who's fastest on it are
+   * the same errand, not two different ones. selectTab ('courses' or
+   * 'boards') is the only new piece of state; everything each pane
+   * already did (UI.courseList / UI.boards, the live watchBoards
+   * subscription) is unchanged, just shown/hidden together under one
+   * screen instead of switched between via two separate nav buttons.
+   */
+  selectTab: 'courses',
+  toSelect(tab) {
     this.state = 'select'; this.running = false;
     Sound.stopEngine();
     // Same reasoning as toMenu(): picking a different course from the list
     // is a deliberate exit from "racing so-and-so" mode, not a restart of it.
     this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
     this.hideAllTags();
-    UI.courseList(this.playable, (i) => this.startLevel(i));
+    this.setSelectTab(tab || this.selectTab);
     UI.show('select');
     this.flushPendingAuth();
-  },
-  toBoards() {
-    this.state = 'boards'; this.running = false;
-    Sound.stopEngine();
-    $('boardNote').textContent = Cloud.on
-      ? 'Shared leaderboards, one table per course, updating live. Race or watch anyone\'s best run.'
-      : 'Times are kept on this device, one table per course. ' +
-        'Change the driver name on the title screen to share the machine.';
-    UI.boards();
-    UI.show('boards');
-    this.flushPendingAuth();
-    // Live-updates the boards screen with no reload needed — started once
-    // per visit (harmless to call again: watchBoards() only ever runs one
-    // onSnapshot per call, and the previous one was already torn down by
-    // toMenu() on the way out, or was never started in local/offline mode).
+    // Live-updates the leaderboard pane with no reload needed — started
+    // once per visit regardless of which tab is showing right now (the
+    // player can switch to the boards tab later without leaving this
+    // screen), and harmless to call again: watchBoards() only ever runs
+    // one onSnapshot per call, and the previous one was already torn down
+    // by toMenu() on the way out, or was never started in local/offline
+    // mode.
     if (Cloud.on && !this.boardsUnwatch) {
       this.boardsUnwatch = Cloud.watchBoards((remote) => {
         Records.data.boards = remote.boards;
         Records.data.cleared = remote.cleared;
         Records.data.myBests = remote.myBests;
-        if (this.state === 'boards') UI.boards();
+        if (this.state === 'select') { UI.courseList(this.playable, (i) => this.startLevel(i)); UI.boards(); }
       });
     }
+  },
+  setSelectTab(tab) {
+    this.selectTab = tab === 'boards' ? 'boards' : 'courses';
+    const onBoards = this.selectTab === 'boards';
+    $('bSelTabCourses').classList.toggle('on', !onBoards);
+    $('bSelTabBoards').classList.toggle('on', onBoards);
+    $('selectCoursesPane').hidden = onBoards;
+    $('selectBoardsPane').hidden = !onBoards;
+    $('bBoardWipe').hidden = !onBoards;
+    $('selectNote').textContent = onBoards
+      ? (Cloud.on ? 'Shared leaderboards, one table per course, updating live. Race or watch anyone\'s best run.'
+        : 'Times are kept on this device, one table per course. Change the driver name on the title screen to share the machine.')
+      : 'Clear one to open the next.';
+    if (onBoards) UI.boards(); else UI.courseList(this.playable, (i) => this.startLevel(i));
   },
 
   toSettings() {
@@ -6899,19 +7216,19 @@ const Game = {
     UI.garage();
   },
 
-  equipCarColor(color) {
-    CarColor.equip(this.garageSlot, color).catch((e) =>
-      console.warn('Skyframe: could not save equipped color', e && e.message));
+  equipCarHue(hue) {
+    CarColor.equipHue(this.garageSlot, hue).catch((e) =>
+      console.warn('Skyframe: could not save equipped hue', e && e.message));
     UI.garage();
   },
 
-  /** Buys one pack, then plays the reveal animation before re-rendering —
-   *  the color is already rolled and saved by the time the animation
+  /** Buys a hue pack, then plays the reveal animation before re-rendering —
+   *  the hue is already rolled and saved by the time the animation
    *  starts, so a player closing the garage mid-animation never loses it. */
-  async buyCarColorPack(pack) {
+  async buyCarColorPack() {
     if (!Cloud.on || !Cloud.user) { $('gBuyMsg').textContent = 'Sign in to buy colors.'; return; }
     // Guards the whole roll, not just the network call: renderGarageGrid()
-    // fully rebuilds a grid's DOM (innerHTML = ''), which would yank the
+    // fully rebuilds the grid's DOM (innerHTML = ''), which would yank the
     // cells out from under garageReveal()'s in-progress flicker if
     // anything re-rendered the garage screen mid-roll — switching slots,
     // or a second buy click landing before the first one's reveal has
@@ -6919,24 +7236,42 @@ const Game = {
     // just until the purchase itself resolves.
     if (this._garageRolling) return;
     this._garageRolling = true;
-    $('gBuyHue').disabled = true; $('gBuySatLight').disabled = true;
+    $('gBuyHue').disabled = true;
     $('gSlotPrimary').disabled = true; $('gSlotSecondary').disabled = true;
     $('gBuyMsg').textContent = '';
     try {
-      const color = await CarColor.buy(pack, this.garageSlot);
+      const color = await CarColor.buy(this.garageSlot);
       UI.who(Cloud.name(), Records.credits);
-      UI.garageReveal(pack, this.garageSlot, color, () => {
+      UI.garageReveal(this.garageSlot, color, () => {
         this._garageRolling = false;
         $('gSlotPrimary').disabled = false; $('gSlotSecondary').disabled = false;
         UI.garage();
       });
       return; // buttons re-enable inside the onDone callback above, once the roll actually finishes
     } catch (e) {
-      $('gBuyMsg').textContent = e.message || 'Could not buy that color.';
+      $('gBuyMsg').textContent = e.message || 'Could not buy that hue.';
     }
     this._garageRolling = false;
-    $('gBuyHue').disabled = false; $('gBuySatLight').disabled = false;
+    $('gBuyHue').disabled = false;
     $('gSlotPrimary').disabled = false; $('gSlotSecondary').disabled = false;
+  },
+
+  /** The free saturation/brightness sliders — called on every 'input'
+   *  event (live drag), no credits, no ownership gate. Debounced saves
+   *  would be nice but not required: CarColor.setSatLight already only
+   *  writes local state + a fire-and-forget save, and a rapid drag simply
+   *  fires several saves in a row, the last of which wins — acceptable
+   *  for a free-tier project where this is by far the lightest-weight
+   *  write in the whole app. */
+  setGarageSatLight(s, l) {
+    CarColor.setSatLight(this.garageSlot, s, l).catch((e) =>
+      console.warn('Skyframe: could not save saturation/brightness', e && e.message));
+    const equipped = this.garageSlot === 'primary' ? CarColor.primary : CarColor.secondary;
+    $('gSatVal').textContent = equipped.s + '%';
+    $('gLightVal').textContent = equipped.l + '%';
+    const swatchStyle = (c) => 'background:' + hslCss(c.h, c.s, c.l);
+    $('gSwatchPrimary').setAttribute('style', swatchStyle(CarColor.primary));
+    $('gSwatchSecondary').setAttribute('style', swatchStyle(CarColor.secondary));
   },
 
   /** Joins whichever race is currently open, from the menu's lobby card —
@@ -7176,12 +7511,7 @@ const Game = {
     const res = Records.submit(id, this.time);
     Cloud.logRun(id, 'campaign', this.time * 1000);
     if (Cloud.on && Cloud.user && !Cloud.banned() && (!prevBest || this.time < prevBest)) {
-      Cloud.pushBest(id, this.time, this.rec, firstClear).then(() => {
-        // the award is granted by its document id, so it lands exactly once
-        if (firstClear) {
-          Cloud.credits += CREDITS_PER_CLEAR;
-          Records.credits = Cloud.credits;
-        }
+      Cloud.pushBest(id, this.time, this.rec).then(() => {
         UI.who(Cloud.name(), Records.credits);
       }).catch((e) => {
         console.warn('Skyframe: could not publish the time', e && e.message);

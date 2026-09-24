@@ -148,6 +148,32 @@ select:focus{outline:none;border-color:var(--aqua)}
       <div class="chartGrid" id="statCharts"></div>
     </div>
 
+    <h2>EVERY COURSE, BROKEN DOWN</h2>
+    <div class="card">
+      <p class="note" style="margin-bottom:14px">One row per course — not just a top-10 slice — built
+        from the same run-history window as STATISTICS above, plus each course's own live leaderboard
+        (the <code>bests</code> collection) for its all-time record regardless of window size.</p>
+      <table>
+        <thead><tr><th>Course</th><th style="text-align:right">Runs shown</th>
+          <th style="text-align:right">Distinct drivers</th><th style="text-align:right">Average</th>
+          <th style="text-align:right">Median</th><th style="text-align:right">All-time record</th></tr></thead>
+        <tbody id="courseStatsRows"></tbody>
+      </table>
+    </div>
+
+    <h2>EVERY DRIVER, BROKEN DOWN</h2>
+    <div class="card">
+      <p class="note" style="margin-bottom:14px">One row per driver who has appeared in the loaded run
+        history window — courses cleared is their all-time count from <code>bests</code>, everything
+        else is scoped to the runs currently loaded below.</p>
+      <table>
+        <thead><tr><th>Driver</th><th style="text-align:right">Runs shown</th>
+          <th style="text-align:right">Courses cleared</th><th style="text-align:right">Race attempts</th>
+          <th style="text-align:right">Credits</th><th style="text-align:right">Last seen</th></tr></thead>
+        <tbody id="driverStatsRows"></tbody>
+      </table>
+    </div>
+
     <h2>RUN HISTORY <span id="runCount" style="color:var(--dimmer);font-weight:400"></span></h2>
     <div class="card">
       <div class="row" style="margin-bottom:14px">
@@ -191,20 +217,23 @@ const CONFIG = {
   appId: '1:928788678841:web:12475f136c4acd28887368'
 };
 const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-const CREDIT_PER_CLEAR = 100;
+// First-clearing a course used to pay a 100-credit bonus (this constant
+// tracked that figure for display purposes, though nothing here actually
+// read it) — removed from the game itself; credits now only come from
+// the credits-run grind and the special long course's own reward.
 const COURSES = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron',
                  'Stepping Stones','The Wall','Dust Line','Filament','Skyline',
                  'Causeway','Millrace','Foxglove','Grainfield','Harrow Cut',
                  'Tallow Ridge','Needle Pass','Kettle Bowl','Splinter Row','Blackwater',
                  'Anvil Yard','Cinder Loop','Longshadow','Furrow','Gallows Reach',
                  'Slate Vault','Pilot Light','Wraith Line','Ironclad','Deadfall',
-                 'Hollow Bend','Last Ember'];
+                 'Hollow Bend','Last Ember','Endless Horizon'];
 
 const { initializeApp } = await import(SDK + 'firebase-app.js');
 const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
   await import(SDK + 'firebase-auth.js');
 const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection,
-        getDocs, query, where, writeBatch, orderBy, limit } = await import(SDK + 'firebase-firestore.js');
+        getDocs, query, where, writeBatch, orderBy, limit, serverTimestamp } = await import(SDK + 'firebase-firestore.js');
 
 const $ = (id) => document.getElementById(id);
 const app = initializeApp(CONFIG);
@@ -349,6 +378,8 @@ async function loadAll() {
       rows.push({ id: d.id, ...v });
       if (byUid[v.uid]) byUid[v.uid].courses++;
     });
+    bestsRowsForStats = rows;
+    playersForStats = players;
 
     players.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
     $('pCount').textContent = '(' + players.length + ')';
@@ -417,6 +448,8 @@ async function loadAll() {
    rather than each issuing their own queries. */
 let runRowsRaw = [];
 let creditRowsForStats = [];
+let bestsRowsForStats = [];   // every bests doc, from loadAll() — the all-time record per course
+let playersForStats = [];     // every profile, from loadAll() — for the driver breakdown table's credits/name lookup
 
 // Always fetches the same latest-500-by-createdAt window (a single-field
 // orderBy, so it needs no composite index) and applies every filter
@@ -495,6 +528,8 @@ function renderStats() {
   if (!rows.length) {
     tiles.innerHTML = '<div class="statTile"><div class="n">0</div><div class="l">runs</div></div>';
     charts.innerHTML = '<div class="chartBox"><div class="empty">No runs logged yet.</div></div>';
+    renderCourseStatsTable(rows);
+    renderDriverStatsTable(rows);
     return;
   }
 
@@ -506,6 +541,10 @@ function renderStats() {
   const fastest = rows.reduce((best, r) => (!best || r.timeMs < best.timeMs) ? r : best, null);
   const now = Date.now();
   const last24h = rows.filter((r) => tsMillis(r.createdAt) > now - 86400000).length;
+  const lastHour = rows.filter((r) => tsMillis(r.createdAt) > now - 3600000).length;
+  const races = rows.filter((r) => r.kind === 'race').length;
+  const earnedAll = creditRowsForStats.filter((v) => v.delta > 0).reduce((s, v) => s + v.delta, 0);
+  const spentAll = creditRowsForStats.filter((v) => v.delta < 0).reduce((s, v) => s - v.delta, 0);
 
   const tile = (n, l) => {
     const d = document.createElement('div');
@@ -516,9 +555,13 @@ function renderStats() {
   tile(rows.length, 'runs shown');
   tile(uniqDrivers, 'distinct drivers');
   tile(uniqCourses + ' / ' + COURSES.length, 'courses driven');
+  tile(lastHour, 'runs in last hour');
   tile(last24h, 'runs in last 24h');
+  tile(races, 'race attempts shown');
   tile(fmt(avgTime), 'average time');
   tile(fastest ? fmt(fastest.timeMs) : '—', 'fastest time shown');
+  tile(Math.round(earnedAll), 'credits earned (all time)');
+  tile(Math.round(spentAll), 'credits spent (all time)');
 
   const chartBox = (title, svg) => {
     const d = document.createElement('div');
@@ -557,11 +600,24 @@ function renderStats() {
   const days = Object.keys(byDay).sort();
   chartBox('Runs per day', lineChart(days.map((d) => ({ label: d.slice(5), value: byDay[d] }))));
 
+  // Activity by hour of day (0-23, server/browser-local time, summed
+  // across every day in the loaded window) — shows when the machine
+  // actually gets played, independent of which specific day.
+  const byHour = new Array(24).fill(0);
+  rows.forEach((r) => {
+    const ms = tsMillis(r.createdAt);
+    if (!ms) return;
+    byHour[new Date(ms).getHours()]++;
+  });
+  chartBox('Runs by hour of day', barChart(
+    byHour.map((v, h) => ({ label: String(h).padStart(2, '0'), value: v }))
+  ));
+
   // Credit flow, all-time (every creditEvents row, fetched once by
-  // loadAll() into creditRowsForStats). creditEvents has no timestamp
-  // field of its own — it predates this run-log feature and never needed
-  // one — so this can only total earned vs spent overall, not chart it
-  // over time the way the run-based charts above can.
+  // loadAll() into creditRowsForStats) as a total, AND — now that every
+  // creditEvents write includes its own createdAt — a running balance
+  // over time, so a sudden spend/earn spike is visible at a glance
+  // instead of only as a single all-time number.
   if (creditRowsForStats.length) {
     const earned = creditRowsForStats.filter((v) => v.delta > 0).reduce((s, v) => s + v.delta, 0);
     const spent = creditRowsForStats.filter((v) => v.delta < 0).reduce((s, v) => s - v.delta, 0);
@@ -569,6 +625,28 @@ function renderStats() {
       { label: 'Earned', value: Math.round(earned) },
       { label: 'Spent', value: Math.round(spent) }
     ]));
+
+    const timed = creditRowsForStats.filter((v) => tsMillis(v.createdAt) > 0)
+      .sort((a, b) => tsMillis(a.createdAt) - tsMillis(b.createdAt));
+    if (timed.length) {
+      const byDayDelta = {};
+      timed.forEach((v) => {
+        const day = new Date(tsMillis(v.createdAt)).toISOString().slice(0, 10);
+        byDayDelta[day] = (byDayDelta[day] || 0) + v.delta;
+      });
+      let running = 0;
+      const balanceDays = Object.keys(byDayDelta).sort();
+      const balancePoints = balanceDays.map((d) => {
+        running += byDayDelta[d];
+        return { label: d.slice(5), value: Math.round(running) };
+      });
+      chartBox('Net credit balance over time (sum of all events, ' + timed.length +
+        ' with a timestamp)', lineChart(balancePoints));
+    } else {
+      chartBox('Net credit balance over time', '<div class="empty">No timestamped credit events yet — ' +
+        'this chart fills in as new credit events happen (older ones were written before timestamps ' +
+        'were added).</div>');
+    }
   }
 
   // Average time per course, for the courses actually present in this window.
@@ -580,6 +658,93 @@ function renderStats() {
     .map(([cid, times]) => ({ label: courseName(cid), value: Math.round(times.reduce((s, t) => s + t, 0) / times.length) }))
     .sort((a, b) => a.value - b.value).slice(0, 10);
   chartBox('Fastest average time — top 10 courses', barChart(avgByCourse, true, (v) => fmt(v)));
+
+  renderCourseStatsTable(rows);
+  renderDriverStatsTable(rows);
+}
+
+/** One row per course (every one, not a top-10 slice) — run count and
+ *  distinct-driver count and average/median time from the currently
+ *  loaded run-history window, plus the all-time record from bests
+ *  (bestsRowsForStats, loaded once by loadAll() — independent of the
+ *  run-history window's own 500-row cap, so the record shown here is
+ *  never wrong just because an old record run has aged out of the
+ *  window). Courses with no runs at all in either source are still
+ *  listed, with dashes, so this always covers the full course list. */
+function renderCourseStatsTable(rows) {
+  const byCourse = {};
+  rows.forEach((r) => {
+    (byCourse[r.courseId] = byCourse[r.courseId] || { times: [], drivers: new Set() });
+    byCourse[r.courseId].times.push(r.timeMs);
+    byCourse[r.courseId].drivers.add(r.uid);
+  });
+  const recordByCourse = {};
+  bestsRowsForStats.forEach((b) => {
+    if (b.banned) return;
+    const cur = recordByCourse[b.courseId];
+    if (!cur || b.timeMs < cur.timeMs) recordByCourse[b.courseId] = b;
+  });
+  const tb = $('courseStatsRows');
+  tb.innerHTML = '';
+  for (let i = 0; i < COURSES.length; i++) {
+    const cid = 'c' + (i + 1);
+    const stat = byCourse[cid];
+    const record = recordByCourse[cid];
+    let avg = '—', median = '—';
+    if (stat && stat.times.length) {
+      const sorted = stat.times.slice().sort((a, b) => a - b);
+      avg = fmt(sorted.reduce((s, t) => s + t, 0) / sorted.length);
+      const mid = Math.floor(sorted.length / 2);
+      median = fmt(sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2);
+    }
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + esc(COURSES[i]) + '</td>' +
+      '<td class="mono" style="text-align:right">' + (stat ? stat.times.length : 0) + '</td>' +
+      '<td class="mono" style="text-align:right">' + (stat ? stat.drivers.size : 0) + '</td>' +
+      '<td class="mono" style="text-align:right">' + avg + '</td>' +
+      '<td class="mono" style="text-align:right">' + median + '</td>' +
+      '<td class="mono" style="text-align:right">' +
+      (record ? fmt(record.timeMs) + ' — ' + esc(record.displayName || '—') : '—') + '</td>';
+    tb.appendChild(tr);
+  }
+}
+
+/** One row per driver who appears in the currently loaded run-history
+ *  window (not the full player list — a driver who has never run
+ *  anything in this window has nothing to show here beyond what the
+ *  PLAYERS card above already lists). Courses-cleared and credits come
+ *  from the all-time playersForStats data (loaded once by loadAll()),
+ *  matched by uid; everything else is scoped to the window like the rest
+ *  of this section. */
+function renderDriverStatsTable(rows) {
+  const byDriver = {};
+  rows.forEach((r) => {
+    const key = r.uid || r.displayName || '—';
+    (byDriver[key] = byDriver[key] || { name: r.displayName || '—', runs: 0, races: 0, lastMs: 0 });
+    byDriver[key].runs++;
+    if (r.kind === 'race') byDriver[key].races++;
+    const ms = tsMillis(r.createdAt);
+    if (ms > byDriver[key].lastMs) byDriver[key].lastMs = ms;
+  });
+  const playerByUid = {};
+  playersForStats.forEach((p) => { playerByUid[p.uid] = p; });
+  const entries = Object.entries(byDriver).sort((a, b) => b[1].runs - a[1].runs);
+  const tb = $('driverStatsRows');
+  tb.innerHTML = '';
+  for (const [uid, d] of entries) {
+    const p = playerByUid[uid];
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + esc(d.name) + '</td>' +
+      '<td class="mono" style="text-align:right">' + d.runs + '</td>' +
+      '<td class="mono" style="text-align:right">' + (p ? p.courses + ' / ' + COURSES.length : '—') + '</td>' +
+      '<td class="mono" style="text-align:right">' + d.races + '</td>' +
+      '<td class="mono" style="text-align:right">' + (p ? p.credits : '—') + '</td>' +
+      '<td class="mono" style="text-align:right">' + (d.lastMs ? fmtWhen(new Date(d.lastMs)) : '—') + '</td>';
+    tb.appendChild(tr);
+  }
+  if (!entries.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="mono" style="color:var(--dimmer)">No runs in the loaded window.</td></tr>';
+  }
 }
 
 function tsMillis(v) {
@@ -692,7 +857,7 @@ async function setCredits(p) {
     const delta = target - live;
     if (delta === 0) { say('pMsg', 'Already at ' + target + ' credits.', 'ok'); return; }
     const id = p.uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_adjust';
-    await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, note: 'admin set to ' + target });
+    await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, note: 'admin set to ' + target, createdAt: serverTimestamp() });
     await loadAll();
     say('pMsg', (p.displayName || 'Player') + ' now has ' + target + ' credits.', 'ok');
   } catch (e) { say('pMsg', e.message, 'err'); }
