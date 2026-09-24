@@ -272,6 +272,10 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
    meant to actually feel like something, not just another stat line. */
 .courseLeader{display:flex;align-items:baseline;gap:6px;margin-top:8px;font-size:12px;
   color:var(--dim);font-family:var(--mono)}
+/* the [hidden] attribute is toggled on this element (courseDetail's
+   cdEmpty) — an author display:flex rule otherwise beats the UA
+   stylesheet's [hidden]{display:none}, so it must be spelled out here. */
+.courseLeader[hidden]{display:none}
 .courseLeader .crown{color:var(--signal);font-size:11px}
 .courseLeader b{color:var(--ink);font-family:var(--sans);font-weight:600;font-size:13px}
 .courseLeader .leaderTime{color:var(--aqua);margin-left:auto}
@@ -665,6 +669,19 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           </table>
         </div>
       </div>
+      <div class="race-lobby-card" id="overallLeaderCard" hidden>
+        <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <b style="font-size:14px">Overall #1</b>
+          <span class="leaderTime" id="overallLeaderTime"></span>
+        </div>
+        <div class="row" style="align-items:center;flex-wrap:nowrap">
+          <div class="garagePreviewWrap" style="width:120px;height:90px;flex:none;margin-bottom:0">
+            <canvas id="overallLeaderCanvas"></canvas>
+          </div>
+          <p class="lede" style="margin:0;font-size:13px"><b id="overallLeaderName">—</b> — fastest across
+            every course combined.</p>
+        </div>
+      </div>
       <button class="specialCourseCard" id="bSpecialCourse" hidden>
         <div class="specialCourseTop">
           <span class="specialBadge">★ THE LONG COURSE</span>
@@ -753,6 +770,37 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       <div class="row">
         <button class="ghost" id="bSelBack">Back to title</button>
         <button class="ghost" id="bBoardWipe" hidden>Clear all times</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="courseDetail" hidden>
+    <div class="scrim"></div>
+    <div class="panel">
+      <h2 class="big" id="cdName">Course</h2>
+      <div class="foot" style="margin-bottom:10px"><span id="cdTierBadge"></span><span class="best" id="cdBest"></span></div>
+      <p class="lede" style="margin-bottom:16px" id="cdBlurb"></p>
+      <div class="cols">
+        <div>
+          <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">LEADERBOARD</h3>
+          <table id="cdTable" style="margin-bottom:6px">
+            <thead><tr><th>#</th><th>Driver</th><th style="text-align:right">Time</th></tr></thead>
+            <tbody id="cdRows"></tbody>
+          </table>
+          <div class="courseLeader empty" id="cdEmpty" hidden>No one has cleared this yet — be the first!</div>
+        </div>
+        <div class="help">
+          <h3 style="font-size:13px;font-weight:600;margin-bottom:10px" id="cdLeaderHeading">FIRST PLACE</h3>
+          <div class="garagePreviewWrap">
+            <canvas id="cdCarCanvas"></canvas>
+          </div>
+          <p class="lede" id="cdLeaderNote" style="margin-top:8px;font-size:12.5px"></p>
+        </div>
+      </div>
+      <div class="rule"></div>
+      <div class="row">
+        <button class="ghost" id="bCdBack">Back to courses</button>
+        <button class="primary" id="bCdDrive">Start driving</button>
       </div>
     </div>
   </div>
@@ -974,11 +1022,39 @@ function formatTime(t) {
   if (!isFinite(t) || t < 0) t = 0;
   const m = Math.floor(t / 60);
   const s = Math.floor(t % 60);
-  const c = Math.floor((t % 1) * 100);
-  return m + ':' + String(s).padStart(2, '0') + '.' + String(c).padStart(2, '0');
+  // round, not floor: t%1 is a float division artifact (e.g. 62345/1000 can
+  // land on 62.34499999999886), so flooring would show .344 for a run that
+  // is genuinely .345 — round() recovers the intended millisecond. The
+  // %1000 guards the (rare) case rounding pushes it up to a full 1000.
+  const ms = Math.round((t % 1) * 1000) % 1000;
+  return m + ':' + String(s).padStart(2, '0') + '.' + String(ms).padStart(3, '0');
 }
 function formatDelta(d) {
   return (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(2);
+}
+/**
+ * Times used to be recorded and displayed only to the hundredth of a
+ * second; formatTime() now shows milliseconds, so any time that is still
+ * an exact multiple of 10ms is indistinguishable from a genuinely-precise
+ * one that just happens to land on a round number, EXCEPT that a whole
+ * board of old entries would otherwise show a run of suspiciously round
+ * ".x0" times. Bumping every such time by +9ms (not +10ms \u2014 a legacy time
+ * recorded as "1:02.30" really happened somewhere in [1:02.295, 1:02.305),
+ * i.e. its rounded-off true value was likely a few ms above the truncated
+ * display value the old hundredths-only recorder kept, and lands it just
+ * inside that old bucket) makes old entries display distinctly from any
+ * newly-set, genuinely millisecond-precise time without changing which
+ * runs rank ahead of which (adding a fixed 9ms to every legacy time
+ * preserves their relative order against each other) and without ever
+ * making a legacy time look faster than it was recorded. Idempotent within
+ * a session isn't required since this only ever runs once per raw record
+ * as it's loaded off disk/Firestore, never on a time already run through
+ * it in memory.
+ */
+function migrateLegacyTime(t) {
+  if (typeof t !== 'number' || !isFinite(t)) return t;
+  const ms = Math.round(t * 1000);
+  return (ms % 10 === 0) ? (ms + 9) / 1000 : t;
 }
 
 function fatal(title, body) {
@@ -1043,8 +1119,16 @@ const Records = {
         if (p && typeof p === 'object') {
           this.data.driver = typeof p.driver === 'string' ? p.driver.slice(0, 14) : '';
           this.data.boards = (p.boards && typeof p.boards === 'object') ? p.boards : {};
+          for (const k in this.data.boards) {
+            const list = this.data.boards[k];
+            if (Array.isArray(list)) list.forEach((e) => { if (e && typeof e.t === 'number') e.t = migrateLegacyTime(e.t); });
+          }
           this.data.cleared = (p.cleared && typeof p.cleared === 'object') ? p.cleared : {};
           this.data.ghosts = (p.ghosts && typeof p.ghosts === 'object') ? p.ghosts : {};
+          for (const k in this.data.ghosts) {
+            const g = this.data.ghosts[k];
+            if (g && typeof g.t === 'number') g.t = migrateLegacyTime(g.t);
+          }
         }
       } catch (e) { console.warn('Skyframe: stored records were unreadable, starting fresh'); }
     }
@@ -1144,13 +1228,19 @@ const Records = {
     return { rank, best: this.best(id), prevBest };
   },
 
-  /** aggregate standings: courses cleared desc, then total of bests asc */
+  /**
+   * Aggregate standings: courses cleared desc, then total of bests asc.
+   * Keyed by uid (falling back to name only for entries with no uid, i.e.
+   * local/offline-mode boards) rather than display name, so two different
+   * accounts that happen to share a display name never get merged into one
+   * row. Each returned row carries a uid so callers (e.g. the overall #1
+   * car preview) can look up that specific player's car colors. */
   overall(courseIds) {
     const per = {};
     for (const id of courseIds) {
       for (const e of this.board(id)) {
-        const k = e.n;
-        if (!per[k]) per[k] = { n: k, count: 0, total: 0, seen: {} };
+        const k = e.uid || ('name:' + e.n);
+        if (!per[k]) per[k] = { n: e.n, uid: e.uid || null, count: 0, total: 0, seen: {} };
         if (per[k].seen[id] === undefined || e.t < per[k].seen[id]) per[k].seen[id] = e.t;
       }
     }
@@ -1159,7 +1249,7 @@ const Records = {
       const r = per[k];
       let count = 0, total = 0;
       for (const id in r.seen) { count++; total += r.seen[id]; }
-      rows.push({ n: r.n, count, total });
+      rows.push({ n: r.n, uid: r.uid, count, total });
     }
     rows.sort((a, b) => (b.count - a.count) || (a.total - b.total));
     return rows;
@@ -2051,12 +2141,13 @@ const Cloud = {
     snap.forEach((d) => {
       const r = d.data();
       if (!r || typeof r.timeMs !== 'number' || !r.courseId) return;
+      const t = migrateLegacyTime(r.timeMs / 1000);
       (boards[r.courseId] = boards[r.courseId] || []).push({
-        n: r.displayName || 'Driver', t: r.timeMs / 1000, d: r.updatedMs || 0, uid: r.uid
+        n: r.displayName || 'Driver', t, d: r.updatedMs || 0, uid: r.uid
       });
       if (r.uid === this.user.uid) {
         cleared[r.courseId] = true;
-        myBests[r.courseId] = r.timeMs / 1000;
+        myBests[r.courseId] = t;
       }
     });
     for (const k in boards) {
@@ -2090,12 +2181,13 @@ const Cloud = {
       snap.forEach((d) => {
         const r = d.data();
         if (!r || typeof r.timeMs !== 'number' || !r.courseId) return;
+        const t = migrateLegacyTime(r.timeMs / 1000);
         (boards[r.courseId] = boards[r.courseId] || []).push({
-          n: r.displayName || 'Driver', t: r.timeMs / 1000, d: r.updatedMs || 0, uid: r.uid
+          n: r.displayName || 'Driver', t, d: r.updatedMs || 0, uid: r.uid
         });
         if (this.user && r.uid === this.user.uid) {
           cleared[r.courseId] = true;
-          myBests[r.courseId] = r.timeMs / 1000;
+          myBests[r.courseId] = t;
         }
       });
       for (const k in boards) {
@@ -2169,7 +2261,7 @@ const Cloud = {
       const s = String(d.samples || '').split(',').map(Number);
       if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
         || s.some((v) => !isFinite(v))) return null;
-      return { t: d.timeMs / 1000, s };
+      return { t: migrateLegacyTime(d.timeMs / 1000), s };
     } catch (e) { return null; }
   },
 
@@ -3893,7 +3985,18 @@ function buildCourse(data, scene, world) {
   // Scenery: two instanced meshes for the whole course, placed from a seeded
   // generator so a given course looks identical every single load. Candidates
   // are rejected unless they clear the centreline by more than any deck plus
-  // its embankment could reach.
+  // its embankment could reach — PROP_CLEARANCE is that minimum distance
+  // from the CENTRELINE, not the track edge, so it has to cover the widest
+  // deck this game ever builds (20m, i.e. a 10m half-width) plus its
+  // embankment skirt plus the biggest prop's own footprint, with real
+  // margin left over — 25 previously left as little as ~15m of true
+  // clearance at the widest points and tallest props, which read as
+  // sitting right at the edge of (or briefly behind) the deck on a wide
+  // banked curve; 46 leaves a comfortable buffer even there. The random
+  // placement radius (rad, below) is bumped to match so candidates are
+  // drawn from a ring that's actually centred outside this new minimum
+  // rather than mostly rejected by clearOf().
+  const PROP_CLEARANCE = 46;
   const props = { tree: [], rock: [] };
   let seed = 0x9e3779b9;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
@@ -3911,12 +4014,12 @@ function buildCourse(data, scene, world) {
   if (pathPts.length > 1) {
     const pm = new THREE.Matrix4(), pq = new THREE.Quaternion();
     const pp = new THREE.Vector3(), ps = new THREE.Vector3();
-    for (let n = 0; n < 900 && props.tree.length + props.rock.length < 420; n++) {
+    for (let n = 0; n < 1400 && props.tree.length + props.rock.length < 420; n++) {
       const anchor = pathPts[Math.floor(rnd() * pathPts.length)];
       const ang = rnd() * Math.PI * 2;
-      const rad = 26 + rnd() * 70;
+      const rad = PROP_CLEARANCE + rnd() * 90;
       const x = anchor[0] + Math.cos(ang) * rad, z = anchor[2] + Math.sin(ang) * rad;
-      if (!clearOf(x, z, 25)) continue;
+      if (!clearOf(x, z, PROP_CLEARANCE)) continue;
       const tree = rnd() < 0.72;
       const h = tree ? 5 + rnd() * 7 : 0.8 + rnd() * 1.6;
       pp.set(x, GROUND_Y + h / 2, z);
@@ -5305,11 +5408,96 @@ const GaragePreview = {
   stop() { this.running = false; }
 };
 
+/**
+ * Factory for a small rotating 3D car preview showing a SPECIFIC other
+ * player's car in their own equipped colors — the same visual idea as
+ * GaragePreview, but that one always renders the viewer's own live-
+ * repainted MAT.body/MAT.bodyDark. Here each instance clones its own body
+ * materials (same base params buildMaterials() gives MAT.body/bodyDark)
+ * so painting one player's car can never bleed into the viewer's own car
+ * or into any other preview instance. paint(colors) takes exactly what
+ * Cloud.fetchCarColorsOf(uid) resolves to, matching the proven
+ * Game.paintCarAs() pattern already used for spectate/race ghosts.
+ * Call once per <canvas> that needs its own independent widget.
+ */
+function makePlayerCarPreview(canvasId) {
+  return {
+    canvasId, renderer: null, scene: null, camera: null, car: null,
+    bodyMat: null, darkMat: null, running: false, angle: 0,
+
+    ensureBuilt() {
+      if (this.renderer) return;
+      const canvas = $(this.canvasId);
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+      this.renderer.outputEncoding = THREE.sRGBEncoding;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(32, 1, 0.5, 50);
+      this.camera.position.set(0, 1.9, 7.2);
+      this.camera.lookAt(0, 0.35, 0);
+
+      const key = new THREE.DirectionalLight(0xfff6e8, 1.4);
+      key.position.set(4, 6, 4);
+      this.scene.add(key);
+      this.scene.add(new THREE.AmbientLight(0xaac4e0, 0.65));
+      const rim = new THREE.DirectionalLight(0x6fa8ff, 0.5);
+      rim.position.set(-5, 3, -4);
+      this.scene.add(rim);
+
+      this.bodyMat = MAT.body.clone();
+      this.darkMat = MAT.bodyDark.clone();
+      this.car = buildCarMesh(this.bodyMat, this.darkMat).group;
+      this.car.rotation.y = deg(200);
+      this.scene.add(this.car);
+      addEventListener('resize', () => { if (this.running) this.resize(); });
+    },
+
+    /** colors is whatever Cloud.fetchCarColorsOf(uid) resolved to. */
+    paint(colors) {
+      this.ensureBuilt();
+      this.bodyMat.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
+      this.darkMat.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
+    },
+
+    resize() {
+      const canvas = $(this.canvasId);
+      const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
+      this.renderer.setSize(w, h, false);
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+    },
+
+    start() {
+      this.ensureBuilt();
+      this.resize();
+      this.running = true;
+      const loop = () => {
+        if (!this.running) return;
+        this.angle += 0.008;
+        this.car.rotation.y = deg(200) + this.angle;
+        this.renderer.render(this.scene, this.camera);
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    },
+
+    stop() { this.running = false; }
+  };
+}
+// Two independent instances: the main menu's overall-#1 widget, and the
+// per-course detail page's #1-for-this-course widget. Kept separate so
+// navigating detail -> menu -> a different course's detail never has one
+// widget's paint() call race the other's, and so leaving either screen can
+// stop just its own render loop without touching the other's.
+const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
+const courseDetailPreview = makePlayerCarPreview('cdCarCanvas');
+
 /* ---------------------------------------------------------------- 11. ui */
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'result', 'gate', 'banned', 'spectate', 'settings',
+    ['menu', 'select', 'courseDetail', 'result', 'gate', 'banned', 'spectate', 'settings',
      'raceReveal', 'raceBetween', 'garage']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
@@ -5673,6 +5861,40 @@ const UI = {
     return '<div class="courseLeader"><span class="crown">♛</span> <b>' +
       escapeHtml(leader.n) + '</b> <span class="leaderTime">' + formatTime(leader.t) + '</span></div>';
   },
+  /**
+   * Renders the per-course detail page: name/blurb/tier, the full
+   * leaderboard table for just this course, and the #1 row's name/time
+   * next to the 3D car widget (courseDetailPreview — Game.toCourseDetail
+   * is the one that actually starts it and paints the leader's colors
+   * once Cloud.fetchCarColorsOf resolves; this function only ever touches
+   * static DOM/text so it can be called synchronously and re-called on
+   * live board updates without re-fetching colors every time).
+   */
+  courseDetail(i) {
+    const lv = LEVELS[i];
+    const id = 'c' + (i + 1);
+    const isSpecial = lv.tier === 'special';
+    $('cdName').textContent = lv.name;
+    $('cdBlurb').textContent = lv.blurb;
+    $('cdTierBadge').innerHTML = isSpecial ? '<span class="specialBadge">★ LONG COURSE</span>' : this.bars(lv.tier);
+    const best = Records.best(id);
+    $('cdBest').textContent = best ? 'Your best: ' + formatTime(best) : 'no time yet';
+    const list = Records.board(id);
+    const rows = $('cdRows');
+    rows.innerHTML = '';
+    $('cdEmpty').hidden = !!(list && list.length);
+    (list || []).forEach((e, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + (idx + 1) + '</td><td>' + escapeHtml(e.n) + '</td>' +
+        '<td style="text-align:right">' + formatTime(e.t) + '</td>';
+      rows.appendChild(tr);
+    });
+    const hasLeader = list && list.length;
+    $('cdLeaderHeading').textContent = hasLeader ? 'FIRST PLACE' : 'BE THE FIRST';
+    $('cdLeaderNote').textContent = hasLeader
+      ? list[0].n + ' — ' + formatTime(list[0].t)
+      : 'No one has cleared this course yet.';
+  },
   /** the menu's own special-long-course card — hidden entirely if the
    *  course failed to build this session (idx === -1, same "never make a
    *  broken course look clickable" rule every other course button
@@ -5700,6 +5922,25 @@ const UI = {
       $('specialCourseLeaderName').textContent = 'No one has cleared this yet — be the first!';
       $('specialCourseLeaderTime').textContent = '';
     }
+  },
+  /** The main menu's "overall #1 across every course" 3D car widget — hidden
+   *  entirely until at least one row exists (Records.overall() returns
+   *  nothing until someone has cleared at least one course). Fetches that
+   *  player's equipped colors by uid and paints them onto the shared
+   *  overallLeaderPreview widget; a row with no uid (a local/offline board
+   *  entry recorded before any account existed) still shows the name and
+   *  time but keeps the widget in its default color rather than guessing. */
+  async overallLeaderCard() {
+    const card = $('overallLeaderCard');
+    const rows = Records.overall(LEVELS.map((lv, i) => 'c' + (i + 1)));
+    if (!rows.length) { card.hidden = true; overallLeaderPreview.stop(); return; }
+    card.hidden = false;
+    const top = rows[0];
+    $('overallLeaderName').textContent = top.n;
+    $('overallLeaderTime').textContent = top.count + '/' + LEVELS.length + ' cleared';
+    overallLeaderPreview.start();
+    const colors = await Cloud.fetchCarColorsOf(top.uid);
+    overallLeaderPreview.paint(colors);
   },
   /**
    * All leaderboard state (which tab, which uids are checked) lives on
@@ -6463,6 +6704,8 @@ const Game = {
       this.setGarageSatLight($('gSatSlider').value, $('gLightSlider').value));
     $('bSetBack').addEventListener('click', () => this.toMenu());
     $('bSelBack').addEventListener('click', () => this.toMenu());
+    $('bCdBack').addEventListener('click', () => this.toSelect('courses'));
+    $('bCdDrive').addEventListener('click', () => this.startLevel(this.courseDetailIndex));
     $('bLobbyJoin').addEventListener('click', () => this.joinCurrentRace());
     $('bLobbyDrive').addEventListener('click', () => this.enterRaceReveal());
     $('bRevealGo').addEventListener('click', () => this.driveRaceAttempt());
@@ -7110,8 +7353,10 @@ const Game = {
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
     this.stopWatchingBoards();
     GaragePreview.stop();
+    courseDetailPreview.stop();
     UI.show('menu');
     UI.specialCourseCard(this.specialCourseIndex());
+    UI.overallLeaderCard();
     this.flushPendingAuth();
   },
   /** the special long course's LEVELS index, or -1 if it somehow isn't
@@ -7149,6 +7394,7 @@ const Game = {
     // is a deliberate exit from "racing so-and-so" mode, not a restart of it.
     this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
     this.hideAllTags();
+    courseDetailPreview.stop();
     this.setSelectTab(tab || this.selectTab);
     UI.show('select');
     this.flushPendingAuth();
@@ -7164,7 +7410,7 @@ const Game = {
         Records.data.boards = remote.boards;
         Records.data.cleared = remote.cleared;
         Records.data.myBests = remote.myBests;
-        if (this.state === 'select') { UI.courseList(this.playable, (i) => this.startLevel(i)); UI.boards(); }
+        if (this.state === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
       });
     }
   },
@@ -7180,7 +7426,37 @@ const Game = {
       ? (Cloud.on ? 'Shared leaderboards, one table per course, updating live. Race or watch anyone\'s best run.'
         : 'Times are kept on this device, one table per course. Change the driver name on the title screen to share the machine.')
       : 'Clear one to open the next.';
-    if (onBoards) UI.boards(); else UI.courseList(this.playable, (i) => this.startLevel(i));
+    if (onBoards) UI.boards(); else UI.courseList(this.playable, (i) => this.toCourseDetail(i));
+  },
+
+  /**
+   * The course-select card's onPick target: instead of jumping straight
+   * into driving, this opens a dedicated page for that one course showing
+   * its own leaderboard table and a rotating 3D model of its current #1
+   * player's car (Cloud.fetchCarColorsOf by that row's uid — see
+   * Records.board()/pull(), which already attaches uid to every row from
+   * Firestore). "Start driving" on that page is the only thing that
+   * actually calls startLevel(i) now. Locked/unplayable courses never
+   * reach here (courseList() already disables their button), so this can
+   * assume i is always safe to load.
+   */
+  courseDetailIndex: -1,
+  async toCourseDetail(i) {
+    this.state = 'courseDetail'; this.running = false;
+    this.courseDetailIndex = i;
+    Sound.stopEngine();
+    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
+    this.hideAllTags();
+    UI.show('courseDetail');
+    UI.courseDetail(i);
+    this.flushPendingAuth();
+    courseDetailPreview.start();
+    const id = this.id(i);
+    const list = Records.board(id);
+    // A row with no uid (local/offline board entry) leaves the widget in
+    // its default color rather than guessing whose car it is.
+    const colors = (list && list.length && list[0].uid) ? await Cloud.fetchCarColorsOf(list[0].uid) : null;
+    if (colors && this.state === 'courseDetail' && this.courseDetailIndex === i) courseDetailPreview.paint(colors);
   },
 
   toSettings() {
