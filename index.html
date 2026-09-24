@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Skyframe — elevated stunt driving</title>
+<title>aiPolytrack — elevated stunt driving</title>
 <style>
 :root{
   --void:#bcdff2; --void-2:#0e1630; --horizon:#38597f;
@@ -585,7 +585,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
     <div class="scrim"></div>
     <div class="panel gate">
       <h2 id="gateTitle">Sign in</h2>
-      <p class="note" id="gateNote">Skyframe is invite-only. Sign in to load your times.</p>
+      <p class="note" id="gateNote">aiPolytrack is invite-only. Sign in to load your times.</p>
       <label class="fld" for="gUser">Username</label>
       <input type="text" id="gUser" maxlength="14" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
       <label class="fld" for="gPass">Password</label>
@@ -606,7 +606,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
     <div class="scrim"></div>
     <div class="panel gate">
       <h2>This account is suspended</h2>
-      <p class="note">Your access to Skyframe has been withdrawn, so times and credits are
+      <p class="note">Your access to aiPolytrack has been withdrawn, so times and credits are
         locked. If you think that is a mistake, speak to whoever runs this server.</p>
       <div class="row"><button id="bnOut">Sign out</button></div>
     </div>
@@ -621,7 +621,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           <rect x="7.5" y="18.5" width="9" height="4.5" fill="#3ddbb8"/>
           <circle cx="10" cy="24" r="1.8" fill="#eaf0f8"/><circle cx="15.5" cy="24" r="1.8" fill="#eaf0f8"/>
         </svg>
-        <h1>Sky<span>frame</span></h1>
+        <h1>ai<span>Polytrack</span></h1>
       </div>
       <div class="who" id="who" hidden>
         <span>driver <b id="whoName">—</b></span>
@@ -787,7 +787,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
             <thead><tr><th>#</th><th>Driver</th><th style="text-align:right">Time</th></tr></thead>
             <tbody id="cdRows"></tbody>
           </table>
-          <div class="courseLeader empty" id="cdEmpty" hidden>No one has cleared this yet — be the first!</div>
+          <div class="courseLeader empty" id="cdEmpty" hidden>Empty board. Set a time.</div>
         </div>
         <div class="help">
           <h3 style="font-size:13px;font-weight:600;margin-bottom:10px" id="cdLeaderHeading">FIRST PLACE</h3>
@@ -960,7 +960,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   <div class="layer" id="fatal" hidden>
     <div class="scrim"></div>
     <div class="panel">
-      <h2 id="fTitle">This browser can't run Skyframe</h2>
+      <h2 id="fTitle">This browser can't run aiPolytrack</h2>
       <p id="fBody"></p>
     </div>
   </div>
@@ -969,7 +969,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* ==========================================================================
-   SKYFRAME — elevated stunt driving
+   AIPOLYTRACK — elevated stunt driving
    Original work. Every mesh, material, course layout, UI element and sound is
    generated at runtime from primitives; the only dependency is Three.js.
 
@@ -1070,7 +1070,7 @@ function fatal(title, body) {
 
 if (typeof THREE === 'undefined') {
   fatal('Three.js did not load',
-    'Skyframe needs the Three.js library. Check your connection, or put a local copy of ' +
+    'aiPolytrack needs the Three.js library. Check your connection, or put a local copy of ' +
     'three.min.js beside index.html and point the script tag at it.');
   return;
 }
@@ -1078,7 +1078,7 @@ try {
   const probe = document.createElement('canvas');
   if (!(probe.getContext('webgl') || probe.getContext('experimental-webgl'))) throw 0;
 } catch (e) {
-  fatal("This browser can't run Skyframe",
+  fatal("This browser can't run aiPolytrack",
     'WebGL is unavailable or switched off. Turn on hardware acceleration, or try another ' +
     'desktop browser.');
   return;
@@ -1130,7 +1130,7 @@ const Records = {
             if (g && typeof g.t === 'number') g.t = migrateLegacyTime(g.t);
           }
         }
-      } catch (e) { console.warn('Skyframe: stored records were unreadable, starting fresh'); }
+      } catch (e) { console.warn('aiPolytrack: stored records were unreadable, starting fresh'); }
     }
   },
 
@@ -1499,7 +1499,7 @@ const Input = {
    speed comes from a pink-noise tyre bed gated on speed. A separate screech
    layer opens up when the tyres actually exceed their friction budget, so
    the audio is driven by the physics rather than faked.                    */
-/** deterministic pseudo-random source: nothing in Skyframe is left to chance,
+/** deterministic pseudo-random source: nothing in aiPolytrack is left to chance,
     so even the noise textures are reproducible run to run */
 let _seed = 20260912;
 function rand() {
@@ -1789,7 +1789,7 @@ const Cloud = {
       return true;
     } catch (e) {
       this.error = 'Could not load Firebase: ' + (e && e.message ? e.message : e);
-      console.warn('Skyframe:', this.error);
+      console.warn('aiPolytrack:', this.error);
       return false;
     }
   },
@@ -2241,7 +2241,7 @@ const Cloud = {
           uid, courseId, timeMs: Math.round(timeSec * 1000),
           samples: ghostSamples.join(',')
         });
-      } catch (e) { console.warn('Skyframe: ghost upload skipped', e && e.message); }
+      } catch (e) { console.warn('aiPolytrack: ghost upload skipped', e && e.message); }
     }
   },
 
@@ -2349,7 +2349,7 @@ const Cloud = {
       };
       if (raceId) doc.raceId = raceId;
       await fsMod.addDoc(fsMod.collection(this.db, 'runLog'), doc);
-    } catch (e) { console.warn('Skyframe: could not log run', e && e.message); }
+    } catch (e) { console.warn('aiPolytrack: could not log run', e && e.message); }
   }
 };
 // First-clearing a course used to pay CREDITS_PER_CLEAR (100) credits —
@@ -5540,7 +5540,7 @@ const UI = {
     $('gateTitle').textContent = creating ? 'Create an account' : 'Sign in';
     $('gateNote').textContent = creating
       ? 'You need an invite code from whoever runs this server.'
-      : 'Skyframe is invite-only. Sign in to load your times.';
+      : 'aiPolytrack is invite-only. Sign in to load your times.';
     $('gNewFields').hidden = !creating;
     $('gGo').textContent = creating ? 'Create account' : 'Sign in';
     $('gToggle').textContent = creating ? 'Sign in instead' : 'Create an account';
@@ -5849,13 +5849,12 @@ const UI = {
   },
   /** the "#1: Name — time" line shown on a course card (courseList) —
    *  one shared source so the card and the leaderboard tab always agree
-   *  on who's actually in first. An un-cleared course gets a quiet "be
-   *  the first" invitation instead of nothing, so an empty leaderboard
-   *  reads as an opportunity rather than a blank space. */
+   *  on who's actually in first. An un-cleared course just shows an
+   *  empty-board note instead of nothing. */
   courseLeaderLine(id) {
     const list = Records.board(id);
     if (!list || !list.length) {
-      return '<div class="courseLeader empty">No one has cleared this yet — be the first!</div>';
+      return '<div class="courseLeader empty">Empty board.</div>';
     }
     const leader = list[0];
     return '<div class="courseLeader"><span class="crown">♛</span> <b>' +
@@ -5890,10 +5889,10 @@ const UI = {
       rows.appendChild(tr);
     });
     const hasLeader = list && list.length;
-    $('cdLeaderHeading').textContent = hasLeader ? 'FIRST PLACE' : 'BE THE FIRST';
+    $('cdLeaderHeading').textContent = hasLeader ? 'FIRST PLACE' : 'NO TIMES YET';
     $('cdLeaderNote').textContent = hasLeader
       ? list[0].n + ' — ' + formatTime(list[0].t)
-      : 'No one has cleared this course yet.';
+      : 'Empty board on this course.';
   },
   /** the menu's own special-long-course card — hidden entirely if the
    *  course failed to build this session (idx === -1, same "never make a
@@ -5901,8 +5900,8 @@ const UI = {
    *  follows), otherwise always shown regardless of campaign progress
    *  (see Game.specialCourseIndex/toSelect's isSpecial handling — this
    *  course is deliberately outside the tier-unlock chain). Shows the
-   *  current #1 prominently, or an inviting "be the first" line instead
-   *  of nothing when nobody has set a time yet. */
+   *  current #1 prominently, or an empty-board note when nobody has set
+   *  a time yet. */
   specialCourseCard(idx) {
     const btn = $('bSpecialCourse');
     if (idx < 0) { btn.hidden = true; return; }
@@ -5919,7 +5918,7 @@ const UI = {
       $('specialCourseLeaderTime').textContent = formatTime(list[0].t);
     } else {
       $('specialCourseCrown').hidden = true;
-      $('specialCourseLeaderName').textContent = 'No one has cleared this yet — be the first!';
+      $('specialCourseLeaderName').textContent = 'Empty board.';
       $('specialCourseLeaderTime').textContent = '';
     }
   },
@@ -5987,8 +5986,7 @@ const UI = {
     const idx = parseInt(Game.boardTab.slice(1), 10) - 1;
     const list = Records.board(Game.boardTab);
     if (!list.length) {
-      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(LEVELS[idx].name) + ' yet.' +
-        (Cloud.on ? ' Be the first to clear it.' : '') + '</p>';
+      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(LEVELS[idx].name) + ' yet.</p>';
       this.updateBoardMultiBar();
       return;
     }
@@ -6292,7 +6290,7 @@ const Game = {
         if (!d.valid) throw new Error('no finish gate or no usable decking');
         return d;
       } catch (err) {
-        console.warn('Skyframe: course ' + (i + 1) + ' rejected —', err && err.message);
+        console.warn('aiPolytrack: course ' + (i + 1) + ' rejected —', err && err.message);
         return null;
       }
     });
@@ -6323,7 +6321,7 @@ const Game = {
           this.state = 'gate';
           Cloud.watch((user, profile) => this.onAuth(user, profile));
         } else {
-          if (!ok) console.warn('Skyframe:', Cloud.error);
+          if (!ok) console.warn('aiPolytrack:', Cloud.error);
           UI.who(null);
           this.toMenu();
         }
@@ -6401,11 +6399,11 @@ const Game = {
     try {
       Records.hydrate(await Cloud.pull());
     } catch (e) {
-      console.warn('Skyframe: could not read the leaderboards', e && e.message);
+      console.warn('aiPolytrack: could not read the leaderboards', e && e.message);
       UI.toast('Could not load leaderboards or credits — check your connection and try again.');
     }
     if (this.confirmedUid !== user.uid) {
-      try { await CarColor.load(); } catch (e) { console.warn('Skyframe: could not load car colors', e && e.message); }
+      try { await CarColor.load(); } catch (e) { console.warn('aiPolytrack: could not load car colors', e && e.message); }
     }
     this.confirmedUid = user.uid;
     UI.who(Cloud.name(), Records.credits);
@@ -6489,7 +6487,7 @@ const Game = {
       if (!this._settlingRace || this._settlingRace !== race.id) {
         this._settlingRace = race.id;
         Cloud.settleRace(race.id, this.lobbyEntries)
-          .catch((e) => console.warn('Skyframe: could not settle race', e && e.message))
+          .catch((e) => console.warn('aiPolytrack: could not settle race', e && e.message))
           .finally(() => { this._settlingRace = null; });
       }
     } else if (race.state === 'settled') {
@@ -6828,7 +6826,7 @@ const Game = {
     try {
       this.course = buildCourse(this.data[i], App.scene, this.world);
     } catch (err) {
-      console.error('Skyframe: failed to build course', i + 1, err);
+      console.error('aiPolytrack: failed to build course', i + 1, err);
       this.playable[i] = false;
       this.course = null;
       if (!silent) {
@@ -7494,7 +7492,7 @@ const Game = {
 
   equipCarHue(hue) {
     CarColor.equipHue(this.garageSlot, hue).catch((e) =>
-      console.warn('Skyframe: could not save equipped hue', e && e.message));
+      console.warn('aiPolytrack: could not save equipped hue', e && e.message));
     UI.garage();
   },
 
@@ -7541,7 +7539,7 @@ const Game = {
    *  write in the whole app. */
   setGarageSatLight(s, l) {
     CarColor.setSatLight(this.garageSlot, s, l).catch((e) =>
-      console.warn('Skyframe: could not save saturation/brightness', e && e.message));
+      console.warn('aiPolytrack: could not save saturation/brightness', e && e.message));
     const equipped = this.garageSlot === 'primary' ? CarColor.primary : CarColor.secondary;
     $('gSatVal').textContent = equipped.s + '%';
     $('gLightVal').textContent = equipped.l + '%';
@@ -7650,7 +7648,7 @@ const Game = {
     try {
       await Cloud.recordRaceAttempt(raceId, Math.round(timeSec * 1000));
     } catch (e) {
-      console.warn('Skyframe: could not record race attempt', e && e.message);
+      console.warn('aiPolytrack: could not record race attempt', e && e.message);
       UI.toast('Could not save that attempt — check your connection.');
     }
     if (this.lobby && this.lobby.courseId) {
@@ -7741,7 +7739,7 @@ const Game = {
       UI.playCreditBurst(1);
       Sound.creditWin();
     } catch (e) {
-      console.warn('Skyframe: could not award the credits-run credit', e && e.message);
+      console.warn('aiPolytrack: could not award the credits-run credit', e && e.message);
       $('rSub').textContent = 'Could not award the credit — check your connection and try again.';
       UI.toast('Could not save that credit — check your connection.');
     }
@@ -7790,7 +7788,7 @@ const Game = {
       Cloud.pushBest(id, this.time, this.rec).then(() => {
         UI.who(Cloud.name(), Records.credits);
       }).catch((e) => {
-        console.warn('Skyframe: could not publish the time', e && e.message);
+        console.warn('aiPolytrack: could not publish the time', e && e.message);
         // A silent failure here means the run looks saved (this device
         // still shows it) but the shared leaderboard never got it — tell
         // the player rather than let them find out days later that a
@@ -8217,7 +8215,7 @@ const Game = {
     let steps = 0;
     while (this.accum >= H && steps < 18) {
       if (!this.car.step(H, this.world, input)) {
-        console.warn('Skyframe: vehicle state went non-finite, restarting');
+        console.warn('aiPolytrack: vehicle state went non-finite, restarting');
         this.restartRun('Restarted');
         this.accum = 0;
         break;
@@ -8327,7 +8325,7 @@ function loop(now) {
   try {
     Game.frame(dt);
   } catch (err) {
-    console.error('Skyframe: frame error', err);
+    console.error('aiPolytrack: frame error', err);
     fatal('Something went wrong mid-run',
       'The game hit an unexpected error and stopped. Reload to start again; the browser ' +
       'console has the details.');
@@ -8340,7 +8338,7 @@ Records.load().catch(() => {}).then(() => {
     if (Game.boot()) requestAnimationFrame(loop);
   } catch (err) {
     console.error(err);
-    fatal("Skyframe couldn't start",
+    fatal("aiPolytrack couldn't start",
       'Initialisation failed: ' + (err && err.message ? err.message : 'unknown error') + '.');
   }
 });
