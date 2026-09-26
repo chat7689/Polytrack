@@ -79,7 +79,8 @@ Go to **Settings → Bring in the Firebase data**, pick the file from step 1,
 and click **Import**. It takes a few seconds per few thousand records.
 
 - Pressing Import again is safe. Nothing is doubled, and a faster time is
-  never replaced by a slower one.
+  never replaced by a slower one. Trophies you've changed since, and
+  players you've deleted, stay as you left them.
 - Your own account from step 6 is matched to your old Firebase account by
   username, so your old times, credits and trophies land on it.
 - The old admin passcode (for deleting accounts) comes across with the

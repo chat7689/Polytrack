@@ -122,11 +122,13 @@ create table if not exists public.race_entries (
   primary key (race_id, uid)
 );
 
--- Firebase uid -> the placeholder id its data lives under until claimed
+-- Firebase uid -> the placeholder id its data lives under until claimed.
+-- deleted: the admin removed that player, so importing again leaves them out
 create table if not exists public.legacy_ids (
   old_uid text primary key,
   new_id uuid not null unique default gen_random_uuid()
 );
+alter table public.legacy_ids add column if not exists deleted boolean not null default false;
 
 -- ----------------------------------------------------------------- helpers
 
@@ -507,7 +509,7 @@ begin
   update public.season_awards set data = (
     select coalesce(jsonb_object_agg(key, value), '{}') from jsonb_each(data) where value ->> 'uid' is distinct from p_uid::text);
   delete from public.profiles where id = p_uid; get diagnostics added = row_count; n := n + added;
-  delete from public.legacy_ids where new_id = p_uid;
+  update public.legacy_ids set deleted = true where new_id = p_uid;
   begin delete from auth.users where id = p_uid; exception when others then null; end;
   return n;
 end $$;
@@ -532,6 +534,7 @@ begin
   n := 0;
   for r in select * from jsonb_array_elements(coalesce(p -> 'profiles', '[]')) loop
     if coalesce(r ->> 'id', '') = '' or coalesce(r ->> 'displayName', '') = '' then continue; end if;
+    if exists (select 1 from public.legacy_ids where old_uid = r ->> 'id' and deleted) then continue; end if;
     select new_id into id_of from public.legacy_ids where old_uid = r ->> 'id';
     if id_of is null then
       -- already back under a new login? then that login is who this is
@@ -552,7 +555,7 @@ begin
 
   n := 0;
   for r in select * from jsonb_array_elements(coalesce(p -> 'bests', '[]')) loop
-    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid';
+    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid' and not deleted;
     if id_of is null or (r ->> 'timeMs') is null then continue; end if;
     insert into public.bests (uid, course_id, display_name, banned, time_ms, updated_ms)
     values (id_of, r ->> 'courseId', coalesce(r ->> 'displayName', 'Driver'), coalesce((r ->> 'banned')::boolean, false),
@@ -566,7 +569,7 @@ begin
 
   n := 0;
   for r in select * from jsonb_array_elements(coalesce(p -> 'ghosts', '[]')) loop
-    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid';
+    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid' and not deleted;
     if id_of is null or coalesce(r ->> 'samples', '') = '' or length(r ->> 'samples') >= 400000 then continue; end if;
     insert into public.ghosts (uid, course_id, time_ms, samples, v)
     values (id_of, r ->> 'courseId', round((r ->> 'timeMs')::numeric)::integer, r ->> 'samples', coalesce((r ->> 'v')::smallint, 1))
@@ -579,7 +582,7 @@ begin
 
   n := 0;
   for r in select * from jsonb_array_elements(coalesce(p -> 'creditEvents', '[]')) loop
-    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid';
+    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid' and not deleted;
     if id_of is null or jsonb_typeof(r -> 'delta') <> 'number' then continue; end if;
     insert into public.credit_events (uid, delta, kind, race_id, note, legacy_id, created_at)
     values (id_of, (r ->> 'delta')::numeric,
@@ -593,7 +596,7 @@ begin
 
   n := 0;
   for r in select * from jsonb_array_elements(coalesce(p -> 'carCustomization', '[]')) loop
-    select new_id into id_of from public.legacy_ids where old_uid = coalesce(r ->> 'uid', r ->> 'id');
+    select new_id into id_of from public.legacy_ids where old_uid = coalesce(r ->> 'uid', r ->> 'id') and not deleted;
     if id_of is null or not public.valid_hsl(r -> 'primary') or not public.valid_hsl(r -> 'secondary') then continue; end if;
     -- A player who signed up before the import already has starter
     -- colours: their old ones join the list and are put back on the car.
@@ -613,7 +616,7 @@ begin
 
   n := 0;
   for r in select * from jsonb_array_elements(coalesce(p -> 'adminNotes', '[]')) loop
-    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'id';
+    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'id' and not deleted;
     if id_of is null or coalesce(r ->> 'realName', '') = '' then continue; end if;
     insert into public.admin_notes (uid, real_name) values (id_of, r ->> 'realName') on conflict (uid) do nothing;
     get diagnostics added = row_count; n := n + added;
@@ -622,7 +625,7 @@ begin
 
   n := 0;
   for r in select * from jsonb_array_elements(coalesce(p -> 'runLog', '[]')) loop
-    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid';
+    select new_id into id_of from public.legacy_ids where old_uid = r ->> 'uid' and not deleted;
     if id_of is null then continue; end if;
     insert into public.run_log (uid, display_name, kind, course_id, outcome, time_ms, data, legacy_id, created_at)
     values (id_of, r ->> 'displayName', r ->> 'kind', r ->> 'courseId', r ->> 'outcome',
@@ -634,13 +637,15 @@ begin
   end loop;
   counts := counts || jsonb_build_object('runLog', n);
 
-  -- season awards: each placing's uid mapped to its new id
+  -- season awards: each placing's uid mapped to its new id (a deleted
+  -- player's place is left out)
   for r in select * from jsonb_array_elements(coalesce(p -> 'seasonAwards', '[]')) loop
     insert into public.season_awards (season, data)
     select r ->> 'id', coalesce(jsonb_object_agg(k, v || jsonb_build_object('uid',
              coalesce((select new_id::text from public.legacy_ids where old_uid = v ->> 'uid'), v ->> 'uid'))), '{}')
       from jsonb_each(r - 'id') as t(k, v) where jsonb_typeof(v) = 'object'
-    on conflict (season) do update set data = excluded.data;
+        and not exists (select 1 from public.legacy_ids d where d.old_uid = v ->> 'uid' and d.deleted)
+    on conflict (season) do nothing;                 -- trophies changed since the first import stay
   end loop;
 
   if p ? 'invite' and coalesce(p -> 'invite' ->> 'code', '') <> '' then
