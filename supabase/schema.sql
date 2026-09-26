@@ -234,6 +234,14 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- Whether a name belongs to a player from before the move who has not
+-- signed up again yet, so the sign-in page can tell them to (their old
+-- password is not here). Asked before anyone is signed in.
+create or replace function public.returning_player(p_name text) returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select exists (select 1 from public.profiles where legacy and lower(display_name) = lower(trim(coalesce(p_name, ''))))
+$$;
+
 -- ------------------------------------------------------------- times
 
 -- A best only ever gets faster. Returns {improved:false, serverMs} when
@@ -703,6 +711,7 @@ grant usage, select on all sequences in schema public to authenticated;
 -- functions: signed-in players only (each one checks its own rules)
 revoke execute on all functions in schema public from public, anon;
 grant execute on all functions in schema public to authenticated;
+grant execute on function public.returning_player(text) to anon;
 
 -- ------------------------------------------------------------- live updates
 -- The game follows these tables as they change (leaderboards, balances,

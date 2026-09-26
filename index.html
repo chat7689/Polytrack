@@ -2137,7 +2137,22 @@ const Cloud = {
   async signIn(username, pass) {
     this.error = '';
     const { data, error } = await this.sb.auth.signInWithPassword({ email: usernameToEmail(username), password: pass });
-    if (error) throw cloudError(error);
+    if (error) {
+      const e = cloudError(error);
+      // someone from before the move signing in with their old login: it
+      // is not here, but their times are, waiting for them to sign up again
+      if (e.code === 'auth/invalid-credential') {
+        let back = false;
+        try { back = await this.rpc('returning_player', { p_name: username }); } catch (x) { /* just say it didn't match */ }
+        if (back) {
+          const r = new Error('Welcome back! Since the game moved servers, create your account again with the same ' +
+            'username (any password, no invite code needed) and your times, credits and colours come with it.');
+          r.code = 'auth/returning';
+          throw r;
+        }
+      }
+      throw e;
+    }
     this.user = this.wrapUser(data.user);
     try { await this.loadProfile(); } catch (e) { this.error = e.message; }
   },
@@ -6994,7 +7009,7 @@ const UI = {
     this.creating = creating;
     $('gateTitle').textContent = creating ? 'Create an account' : 'Sign in';
     $('gateNote').textContent = creating
-      ? 'You need an invite code from whoever runs this server.'
+      ? 'You need an invite code from whoever runs this server. Played before? Use your old username — no code needed.'
       : 'aiPolytrack is invite-only. Sign in to load your times.';
     $('gNewFields').hidden = !creating;
     $('gGo').textContent = creating ? 'Create account' : 'Sign in';
@@ -8224,6 +8239,9 @@ const Game = {
         // finished writing (or loading) the profile.
         await this.onAuth(Cloud.user, Cloud.profile);
       } catch (e) {
+        // a returning player is taken straight to "Create an account",
+        // with what they typed still filled in
+        if (e && e.code === 'auth/returning' && !UI.creating) UI.gateMode(true);
         UI.gateError(this.authMessage(e));
       }
       Cloud.busy = false;
