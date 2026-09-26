@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>aiPolytrack — Season 2</title>
+<title>aiPolytrack — Season 1</title>
 <style>
 :root{
   --void:#bcdff2; --void-2:#0e1630; --horizon:#38597f;
@@ -107,7 +107,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
 .creditBadge[hidden]{display:none}
 /* the main menu already shows the balance in its top-right account box */
-body[data-screen=menu] .creditBadge{display:none}
+body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge{display:none}
 .creditBadge b{color:#7fe3ff;font-size:15px;font-weight:700}
 .creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
 @keyframes creditPop{
@@ -148,8 +148,14 @@ body[data-screen=menu] .creditBadge{display:none}
 #ghostTagLines circle.active{fill:rgba(242,115,63,.7)}
 
 /* ---------- spectate ---------- */
-.specTop{position:absolute;top:20px;left:24px;right:24px;display:flex;justify-content:space-between;
-  align-items:flex-start;gap:16px}
+/* name | clock | back: three columns, so a long name or a narrow window
+   squeezes them side by side instead of piling them on top of each other */
+.specTop{position:absolute;top:20px;left:24px;right:24px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:start;gap:16px}
+.specTop .specWho{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.specTop .clock{text-align:center}
+.specTop #bSpecBack{justify-self:end}
+@media (max-width:640px){.specTop{left:12px;right:12px;gap:8px}.specTop .clock{font-size:22px}}
 .specWho{font-size:16px;font-weight:600}
 .specWho small{display:block;font-size:11px;color:var(--dim);font-weight:400;
   font-family:var(--mono);letter-spacing:.1em;margin-top:2px}
@@ -177,7 +183,7 @@ body[data-screen=menu] .creditBadge{display:none}
 /* which camera mode is active — cycled with the Left/Right arrow keys;
    shown only during a multi-watch session (a single-run spectate has
    only ever had the one follow camera, so there is nothing to cycle). */
-#specCamHint{position:absolute;bottom:118px;left:50%;transform:translateX(-50%);
+#specCamHint{
   font-family:var(--mono);font-size:10.5px;color:var(--dim);letter-spacing:.05em;
   display:flex;align-items:center;gap:8px}
 #specCamHint[hidden]{display:none}
@@ -186,7 +192,7 @@ body[data-screen=menu] .creditBadge{display:none}
 /* only shown while the free-roam director camera (see ChaseCamera.
    updateDirector) is actually active — the movement-key legend has
    nothing useful to say in any other camera mode. */
-#specDirectorHint{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);
+#specDirectorHint{
   font-family:var(--mono);font-size:9.5px;color:var(--dimmer);letter-spacing:.04em;
   display:flex;align-items:center;gap:8px}
 #specDirectorHint[hidden]{display:none}
@@ -197,23 +203,37 @@ body[data-screen=menu] .creditBadge{display:none}
   background:rgba(8,20,38,.5);transition:background .1s,color .1s,border-color .1s}
 .keys .k.on{color:#1d0a02;background:var(--signal);border-color:var(--signal)}
 .keys .k.boost.on{background:var(--ember);border-color:var(--ember);color:#1d0a02}
-.specBar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:min(70vw,520px);
-  display:flex;align-items:center;gap:10px}
+.specBar{width:100%;display:flex;align-items:center;gap:10px}
 .specBar input[type=range]{flex:1;accent-color:var(--ember)}
 .specBar span{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
-.specCtl{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;
-  pointer-events:auto}
+.specCtl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;align-items:center;pointer-events:auto}
 .specCtl button{background:rgba(7,11,24,.75)}
 .rateBtns{display:flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-left:6px}
 .rateBtns button{border:0;border-radius:0;padding:5px 9px;font-size:12px;font-family:var(--mono);color:var(--dim)}
 .rateBtns button.on{background:var(--ember);color:#1d0a02}
 #spectate .specBar,#spectate .specTop button{pointer-events:auto}
+/* One column at the bottom, top to bottom: camera hints, the inputs being
+   pressed, the speed graph, the timeline, then the buttons. Each takes the
+   room it needs, so nothing is placed on top of anything else. */
+.specDock{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(calc(100vw - 32px),560px);
+  display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.specDock .keys{position:static;transform:none}
+.specDock .keys .k{width:30px;height:28px;font-size:11px}
 /* ---------- compare ---------- */
 #spectate.comparing .specGraph,#spectate.comparing #specRoster{display:none}
-#spectate.comparing .specCtl,#spectate.comparing .specBar,#spectate.comparing .keys,#spectate.comparing #specCamHint,
-#spectate.comparing #specDirectorHint{left:calc((100vw - 460px) / 2)}
-#spectate.comparing .clock{left:calc((100vw - 460px) / 2) !important}
-#cmpPanel{position:absolute;top:0;right:0;bottom:0;width:460px;overflow-y:auto;padding:16px 16px 30px;
+#spectate.comparing .specDock{left:calc((100vw - 460px) / 2);width:min(calc(100vw - 460px - 32px),560px)}
+/* the compare map sits under the name, clear of the top bar */
+#spectate.comparing .specTop{right:484px}
+/* too narrow for a side panel: the comparison becomes a scrolling strip
+   under the top bar, and the controls keep the full width at the bottom */
+@media (max-width:900px){
+  #spectate.comparing .specTop{right:12px}
+  #spectate.comparing #cmpPanel{top:64px;left:8px;right:8px;width:auto;bottom:auto;
+    max-height:max(120px,calc(100vh - 64px - 190px));border:1px solid var(--rule);border-radius:8px}
+  #spectate.comparing #cmpMap{display:none}
+  #spectate.comparing .specDock{left:50%;width:min(calc(100vw - 32px),560px)}
+}
+#cmpPanel{position:absolute;top:0;right:0;bottom:0;width:460px;overflow-y:auto;padding:16px 16px 30px;z-index:25;
   background:rgba(7,11,24,.86);border-left:1px solid var(--rule);pointer-events:auto;font-size:12.5px}
 #cmpPanel[hidden],#cmpMap[hidden]{display:none}
 .cmpHead{display:flex;align-items:baseline;gap:10px;font-size:17px;font-weight:700;margin-bottom:10px}
@@ -263,8 +283,7 @@ body[data-screen=menu] .creditBadge{display:none}
   border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:11.5px;color:var(--ink);white-space:nowrap}
 .chartTip[hidden]{display:none}
 .cmpBtn{border-color:rgba(88,210,255,.6)!important;color:#7fe3ff}
-.specGraph{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:min(70vw,520px);
-  height:40px;display:flex;align-items:center;gap:10px}
+.specGraph{width:100%;height:40px;display:flex;align-items:center;gap:10px}
 .specGraph svg{flex:1;height:40px;background:rgba(7,11,24,.45);border:1px solid var(--rule);
   border-radius:2px}
 .specGraphLabel{font-family:var(--mono);font-size:12px;color:var(--aqua);white-space:nowrap;
@@ -557,7 +576,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .garageSliderRow label b{color:var(--aqua);font-weight:600}
 .garageSliderRow input[type=range]{width:100%;accent-color:var(--aqua);cursor:pointer}
 
-/* ---------- season 2 menu ---------- */
+/* ---------- season menu ---------- */
 .menuPanel{width:min(1440px,95vw);padding:40px 48px 36px}
 .widePanel{width:min(1320px,94vw)}
 .garageCols{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:start}
@@ -758,51 +777,53 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       <div class="specTop">
         <div class="specWho"><span id="specName">—</span>
           <small id="specCourse">COURSE</small></div>
+        <div class="clock" id="specClock">0:00.000</div>
         <button class="ghost small" id="bSpecBack">Back to leaderboard</button>
       </div>
       <div id="specRoster" hidden>
         <div class="rHint">WATCHING <span id="specRosterCount">0</span></div>
         <div id="specRosterList"></div>
       </div>
-      <div class="clock" id="specClock" style="position:absolute;top:20px;left:50%;
-        transform:translateX(-50%)">0:00.000</div>
-      <div id="specCamHint" hidden>
-        <span class="arrows">◄ ►</span> camera: <b id="specCamName">Overview</b>
-      </div>
-      <div id="specDirectorHint" hidden>
-        <span>W A S D</span> move · <span>Shift</span> down · <span>Space</span> up
-      </div>
-      <div class="keys" id="specKeys">
-        <div class="k" data-k="handbrake">SH</div>
-        <div class="k" data-k="left">A</div>
-        <div class="k" data-k="throttle">W</div>
-        <div class="k" data-k="right">D</div>
-        <div class="k" data-k="brake">S</div>
-        <div class="k boost" data-k="boost">SPC</div>
-      </div>
-      <div class="specCtl">
-        <button class="small" id="bSpecStop" title="Stop and go back to the start">■ Stop</button>
-        <button class="small" id="bSpecPlay">⏸ Pause</button>
-        <button class="ghost small" id="bSpecRestart" hidden>Restart</button>
-        <div class="rateBtns" id="specRates">
-          <button data-rate="0.25">0.25×</button><button data-rate="0.5">0.5×</button><button data-rate="1" class="on">1×</button>
-          <button data-rate="2">2×</button><button data-rate="4">4×</button>
-        </div>
-      </div>
       <div id="cmpPanel" hidden></div>
       <div id="cmpMap" hidden></div>
       <div class="cmpDistTag" id="cmpDistTag" hidden></div>
-      <div class="specGraph">
-        <svg id="specSpeedSvg" viewBox="0 0 300 40" preserveAspectRatio="none">
-          <path id="specSpeedPath" d="" fill="none" stroke="#3ddbb8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-          <line id="specSpeedHead" x1="0" y1="0" x2="0" y2="40" stroke="#f2733f" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-        </svg>
-        <span class="specGraphLabel" id="specSpeedNow">0 km/h</span>
-      </div>
-      <div class="specBar">
-        <span id="specT0">0:00</span>
-        <input type="range" id="specScrub" min="0" max="1000" value="0">
-        <span id="specT1">0:00</span>
+      <!-- the playback controls, stacked bottom-centre so none can cover another -->
+      <div class="specDock" id="specDock">
+        <div id="specCamHint" hidden>
+          <span class="arrows">◄ ►</span> camera: <b id="specCamName">Overview</b>
+        </div>
+        <div id="specDirectorHint" hidden>
+          <span>W A S D</span> move · <span>Shift</span> down · <span>Space</span> up
+        </div>
+        <div class="keys" id="specKeys">
+          <div class="k" data-k="handbrake">SH</div>
+          <div class="k" data-k="left">A</div>
+          <div class="k" data-k="throttle">W</div>
+          <div class="k" data-k="right">D</div>
+          <div class="k" data-k="brake">S</div>
+          <div class="k boost" data-k="boost">SPC</div>
+        </div>
+        <div class="specGraph">
+          <svg id="specSpeedSvg" viewBox="0 0 300 40" preserveAspectRatio="none">
+            <path id="specSpeedPath" d="" fill="none" stroke="#3ddbb8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+            <line id="specSpeedHead" x1="0" y1="0" x2="0" y2="40" stroke="#f2733f" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <span class="specGraphLabel" id="specSpeedNow">0 km/h</span>
+        </div>
+        <div class="specBar">
+          <span id="specT0">0:00</span>
+          <input type="range" id="specScrub" min="0" max="1000" value="0">
+          <span id="specT1">0:00</span>
+        </div>
+        <div class="specCtl">
+          <button class="small" id="bSpecStop" title="Stop and go back to the start">■ Stop</button>
+          <button class="small" id="bSpecPlay">⏸ Pause</button>
+          <button class="ghost small" id="bSpecRestart" hidden>Restart</button>
+          <div class="rateBtns" id="specRates">
+            <button data-rate="0.25">0.25×</button><button data-rate="0.5">0.5×</button><button data-rate="1" class="on">1×</button>
+            <button data-rate="2">2×</button><button data-rate="4">4×</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -849,7 +870,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
             <circle cx="10" cy="24" r="1.8" fill="#eaf0f8"/><circle cx="15.5" cy="24" r="1.8" fill="#eaf0f8"/>
           </svg>
           <h1>ai<span>Polytrack</span></h1>
-          <span class="seasonTag">SEASON 2</span>
+          <span class="seasonTag">SEASON 1</span>
         </div>
         <div class="who" id="who" hidden>
           <span><b id="whoName">—</b></span>
@@ -885,7 +906,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 
         <aside class="menuSide">
           <div class="leaderCard" id="overallLeaderCard" hidden>
-            <div class="lcHead"><span class="lcKick">SEASON 2 LEADER</span><span class="leaderTime" id="overallLeaderTime"></span></div>
+            <div class="lcHead"><span class="lcKick">SEASON 1 LEADER</span><span class="leaderTime" id="overallLeaderTime"></span></div>
             <div class="lcBody">
               <div class="garagePreviewWrap lcCar"><canvas id="overallLeaderCanvas"></canvas></div>
               <div class="lcName"><span class="crown">♛</span> <b id="overallLeaderName">—</b></div>
@@ -1254,8 +1275,9 @@ function formatDelta(d) {
  */
 function migrateLegacyTime(t, courseId) {
   if (typeof t !== 'number' || !isFinite(t)) return t;
-  // Only Season 1 maps ever had hundredths timing. Season 2 was timed to
-  // the millisecond from day one, where a time ending in 0 is just a time
+  // Only the old archived maps (c1..c33) ever had hundredths timing. This
+  // season was timed to the millisecond from day one, where a time ending
+  // in 0 is just a time
   // (converting those showed and ranked one run in ten 9 ms slow).
   if (!/^c\d+$/.test(courseId || '')) return t;
   const ms = Math.round(t * 1000);
@@ -2453,7 +2475,7 @@ const Cloud = {
   },
 
   /**
-   * The session's live leaderboard (Season 2 maps): one full read, then
+   * The session's live leaderboard (this season's maps): one full read, then
    * only the rows that change arrive. After a dropped connection comes
    * back, the whole board is read again so nothing missed stays missing.
    */
@@ -2536,20 +2558,6 @@ const Cloud = {
     if (this.boardsUnsub) { this.boardsUnsub(); this.boardsUnsub = null; }
   },
 
-  /** this player's own times on the archived Season 1 maps (for the
-   *  engraving on a Season 1 trophy) — read only when one is shown */
-  async fetchMySeason1() {
-    if (!this.on || !this.user) return null;
-    try {
-      const rows = await this.q(this.sb.from('bests').select('course_id, time_ms').eq('uid', this.user.uid));
-      let count = 0, total = 0;
-      for (const r of rows) {
-        if (/^c\d+$/.test(r.course_id || '') && typeof r.time_ms === 'number') { count++; total += migrateLegacyTime(r.time_ms / 1000, r.course_id); }
-      }
-      return count ? { count, total } : null;
-    } catch (e) { return null; }
-  },
-
   /**
    * Push a personal best and its ghost in one step. The server keeps only
    * ever the faster time, and says what it has when this run is not faster.
@@ -2624,21 +2632,6 @@ const Cloud = {
     if (this.ghostError === 'load') return 'Could not load that run. ' + (this.ghostErrorText || '');
     if (this.ghostError === 'damaged') return 'That run\'s ghost is damaged, so it can\'t be raced or watched.';
     return 'That run was saved without a ghost (its upload failed), so it can\'t be raced or watched.';
-  },
-
-  /** the admin-awarded Season 1 podium: { gold, silver, bronze } of { uid, name } */
-  async fetchSeasonAwards() {
-    if (!this.on || !this.user) return null;
-    const key = 'aipolytrack.awards.' + this.user.uid;
-    try {
-      const row = await this.q(this.sb.from('season_awards').select('data').eq('season', 's1').maybeSingle());
-      const data = (row && row.data) || {};
-      try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) { /* storage blocked */ }
-      return data;
-    } catch (e) {
-      console.warn('aiPolytrack: could not read season awards', e && e.message);
-      try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (x) { return null; }
-    }
   },
 
   /** this player's saved car colors, or the default red/dark-red pair if
@@ -3183,10 +3176,10 @@ const CAR = {
   downforce: 3.4,        // ~5400 N at 40 m/s: grip grows with speed
   antiRollFront: 12000, antiRollRear: 9000,
   gravity: 13.5,          // heavier than Earth: jumps arc quickly, no float
-  mu: 2.42,
+  mu: 2.66,              // 10% more than before: the tyres let go less in corners
   // Only a little grip lost as load rises, so weight transfer mid-corner
   // doesn't snap the rear loose.
-  muLoadSens: 0.08, loadRef: 3020,
+  muLoadSens: 0.06, loadRef: 3020,
   rearGrip: 1.12,         // rear axle slightly grippier: stable, never oversteers
   rollCentre: 0.75,       // fraction of the tyre-to-CoM lever removed from lateral force
   // Stability assist (the car goes where it points): bleeds off sideways
@@ -4917,13 +4910,13 @@ function disposeCourse(course, scene) {
 }
 
 /* --------------------------------------------------------- 8. course data
-   Season 2: sixteen courses in four sections of four. Sections exist so
+   This season: sixteen courses in four sections of four. Sections exist so
    each has its own smaller overall winner; they share no theme.
    Every course is built on the terrain (embankments down to the grass,
    nowhere to fall), banked turns pivot on their inside edge, and no
    course puts two big opposite turns back to back (TrackBuilder enforces
    it). Steep banks are for carrying speed, not for braking into.       */
-const SEASON = 2;
+const SEASON = 1;
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
 const LEVELS = [
   // ---------------------------------------------------------- Section A
@@ -6012,34 +6005,22 @@ const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
 const courseDetailPreview = makePlayerCarPreview('cdCarCanvas');
 
 /**
- * Which trophies the signed-in (or local) driver holds right now. Map and
- * section and Season 2 placings are live — computed from the current
- * leaderboards every time, so losing a podium spot loses the trophy.
- * Season 1 placings are awarded by the admin (seasonAwards/s1), one
- * driver per place.
+ * Which trophies the signed-in (or local) driver holds right now. Every one
+ * is live — computed from the current leaderboards each time — so beating
+ * someone's time takes their trophy, and losing a podium spot loses it.
  */
 const PLACE = ['1st', '2nd', '3rd'];
-const PLACE_TITLE = ['Champion', 'Runner-up', 'Third place'];
 const Trophies = {
-  compute(awards, s1) {
+  compute() {
     const uid = Cloud.user && Cloud.user.uid;
     const me = Records.driver();
     const mine = (e) => (uid && e.uid) ? e.uid === uid : (!uid && e.n === me);
     const out = [];
-    if (awards && uid) {
-      ['gold', 'silver', 'bronze'].forEach((p, k) => {
-        const a = awards[p];
-        if (a && a.uid === uid) {
-          out.push({ kind: 'season', tier: k, size: 3, title: 'Season 1 ' + PLACE_TITLE[k], sub: 'Final standings',
-            plaque: 'SEASON 1', time: s1 ? s1.total : null, note: s1 ? s1.count + ' maps' : '' });
-        }
-      });
-    }
     const ov = Records.overall(COURSE_IDS);
     const r = ov.findIndex(mine);
     if (r >= 0 && r < 3) {
-      out.push({ kind: 'season', tier: r, size: 3, title: 'Season 2 ' + PLACE[r] + ' place', sub: 'Current overall standings',
-        plaque: 'SEASON 2', time: ov[r].total, note: ov[r].count + '/' + COURSE_IDS.length + ' maps' });
+      out.push({ kind: 'season', tier: r, size: 3, title: 'Season ' + SEASON + ' · ' + PLACE[r] + ' place', sub: 'Current overall standings',
+        plaque: 'SEASON ' + SEASON, time: ov[r].total, note: ov[r].count + '/' + COURSE_IDS.length + ' maps' });
     }
     SECTIONS.forEach((name, sec) => {
       const st = Records.overall(sectionIds(sec));
@@ -7753,7 +7734,7 @@ const Game = {
   // reset only by an explicit Clear (see the bBoardClearSel listener in
   // wire()) or the automatic staleness pruning in UI.boards() (a uid that
   // no longer appears on that course's board, e.g. after Records.wipe).
-  boardTab: 'all', boardSel: {}, boardShow: {}, cdShow: 10, seasonAwards: null,
+  boardTab: 'all', boardSel: {}, boardShow: {}, cdShow: 10,
 
   boot() {
     buildMaterials();
@@ -7920,7 +7901,6 @@ const Game = {
       Records.resetSession();
       if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
       Cloud.stopBoards(); Cloud.stopAdjust();
-      this.seasonAwards = null; this.s1Mine = null;
       this.lobby = null; this.lobbyEntries = [];
       UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate';
       if (knownGoodUid) UI.gateError('You were signed out. Sign in again.');
@@ -7989,7 +7969,6 @@ const Game = {
     UI.who(Cloud.name(), Records.credits);
     this.onBoardsChanged();
     if (this.state === 'garage') UI.garage();
-    Cloud.fetchSeasonAwards().then((a) => { this.seasonAwards = a; if (this.state === 'menu') this.trophyTileText(); });
     if (!ok) this.scheduleCloudRetry(uid);
   },
 
@@ -9022,7 +9001,7 @@ const Game = {
     Sound.stopEngine();
     UI.show('trophies');
     const draw = () => {
-      const list = Trophies.compute(this.seasonAwards, this.s1Mine);
+      const list = Trophies.compute();
       UI.trophyList(list);
       if (!Cloud.on) $('trophyCreditNum').textContent = '—';   // signed in, the room counts it up
       TrophyRoom.start({ credits: Cloud.on ? Records.credits : 0, counter: Cloud.on, trophies: list });
@@ -9035,16 +9014,11 @@ const Game = {
         const c = await Cloud.sumCredits();
         if (c !== Records.credits) { Cloud.credits = c; UI.who(Cloud.name(), Records.credits); }
       } catch (e) { /* keep the balance from sign-in */ }
-      this.seasonAwards = await Cloud.fetchSeasonAwards();
-      const a = this.seasonAwards, uid = Cloud.user && Cloud.user.uid;
-      if (a && uid && ['gold', 'silver', 'bronze'].some((k) => a[k] && a[k].uid === uid) && !this.s1Mine) {
-        this.s1Mine = await Cloud.fetchMySeason1();
-      }
       if (this.state === 'trophies') draw();
     }
   },
   trophyTileText() {
-    const n = Trophies.compute(this.seasonAwards, this.s1Mine).length;
+    const n = Trophies.compute().length;
     $('tileTrophies').textContent = n ? n + (n === 1 ? ' trophy' : ' trophies') : 'your awards';
   },
   toMenu() {
@@ -9073,7 +9047,7 @@ const Game = {
     else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
     else if (s === 'result') this.renderResultBoard();
     else if (s === 'trophies') {
-      const list = Trophies.compute(this.seasonAwards, this.s1Mine);
+      const list = Trophies.compute();
       UI.trophyList(list);
       TrophyRoom.start({ credits: Cloud.on ? Records.credits : 0, counter: Cloud.on, trophies: list });
     }
