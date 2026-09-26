@@ -39,7 +39,25 @@ service cloud.firestore {
         && request.resource.data.code is string
         && request.resource.data.code ==
              get(/databases/$(database)/documents/config/invite).data.code;
-      allow read, update, delete: if false;
+      allow read, update: if false;
+      // deleting an account from the admin panel removes its claim too
+      allow delete: if isAdmin();
+    }
+
+    // Tombstone written when the admin deletes an account. A deleted account
+    // can never create a profile again, and the game reads this to tell
+    // that player plainly what happened.
+    match /deleted/{uid} {
+      allow get: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    // Admin-awarded season podiums, e.g. seasonAwards/s1 =
+    // { gold: {uid, name}, silver: {uid, name}, bronze: {uid, name} } —
+    // one document per season, so there is exactly one of each place.
+    match /seasonAwards/{season} {
+      allow get, list: if signedIn();
+      allow write: if isAdmin();
     }
 
     match /profiles/{uid} {
@@ -49,12 +67,13 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() >= 1
         && request.resource.data.displayName.size() <= 14
-        && request.resource.data.banned == false;
+        && request.resource.data.banned == false
+        && !exists(/databases/$(database)/documents/deleted/$(uid));
       // displayName is fixed to the username at signup and never editable —
       // only an admin may touch a profile after creation (banning).
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned']);
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // Doc id must be "{uid}_{courseId}" so a player can only ever hold their own
@@ -147,7 +166,8 @@ service cloud.firestore {
             && request.resource.data.delta >= 0 && request.resource.data.delta < 1000000)
         || (isAdmin() && docId.matches(request.resource.data.uid + '_.+_adjust')
             && request.resource.data.delta is number);
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // One document per player: every color they've unlocked (each bought
@@ -169,12 +189,12 @@ service cloud.firestore {
         && request.resource.data.secondary is map
         && isHsl(request.resource.data.primary)
         && isHsl(request.resource.data.secondary);
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
-    // Append-only history of every run anyone ever finishes — campaign,
-    // credits-run, or a race attempt — written by the player's own client
-    // the moment that run ends, purely for the admin panel's run history
+    // Append-only history of every attempt — campaign, credits-run or race,
+    // finished, restarted or cut short (outcome) — written by the player's
+    // own client the moment that attempt ends, purely for the admin panel's run history
     // and statistics. Same trust level as everything else self-reported
     // here (a lap time, a credits-grind completion): nothing server-side
     // can verify a claimed timeMs actually happened, so this is moderated
@@ -191,8 +211,11 @@ service cloud.firestore {
         && request.resource.data.timeMs is number
         && request.resource.data.timeMs > 0 && request.resource.data.timeMs < 600000
         && request.resource.data.displayName is string
-        && request.resource.data.createdAt is timestamp;
-      allow update, delete: if false;
+        && request.resource.data.createdAt is timestamp
+        && (!request.resource.data.keys().hasAny(['outcome'])
+            || request.resource.data.outcome in ['finished', 'restarted', 'terminated']);
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // Doc id "{uid}_{courseId}". Ghosts are read by anyone racing that run, but
@@ -317,7 +340,7 @@ service cloud.firestore {
                    .hasOnly(['placement', 'payout'])
               && get(/databases/$(database)/documents/races/$(raceId)).data.state == 'running'
               && request.time >= get(/databases/$(database)/documents/races/$(raceId)).data.endsAt;
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
     }
 

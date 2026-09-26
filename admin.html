@@ -5,78 +5,101 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>aiPolytrack — admin</title>
 <style>
-:root{--bg:#0b1220;--panel:#111b30;--ink:#eaf0f8;--dim:#8798b5;--dimmer:#5b6a86;
-  --ember:#f2733f;--aqua:#3ddbb8;--signal:#ffcf5c;--rule:rgba(234,240,248,.13);
+:root{--bg:#0b1220;--panel:#111b30;--panel2:#0e172a;--ink:#eaf0f8;--dim:#8798b5;--dimmer:#5b6a86;
+  --ember:#f2733f;--aqua:#3ddbb8;--signal:#ffcf5c;--rule:rgba(234,240,248,.13);--rule2:rgba(234,240,248,.07);
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:radial-gradient(120% 100% at 50% -10%,#131f38,var(--bg));color:var(--ink);
-  font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif;padding:36px 28px 60px;min-height:100vh}
-.wrap{max-width:920px;margin:0 auto}
-h1{font-size:30px;letter-spacing:-.03em;margin-bottom:4px}
+  font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:100vh}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 24px 60px}
+h1{font-size:24px;letter-spacing:-.03em}
 h1 span{color:var(--ember)}
-h2{font-size:14px;letter-spacing:.1em;color:var(--ember);margin:30px 0 12px;font-weight:600}
-p.note{color:var(--dim);font-size:13px;margin-bottom:20px}
-.card{background:var(--panel);border:1px solid var(--rule);padding:20px 22px;margin-bottom:16px;
-  border-radius:4px;box-shadow:0 12px 32px rgba(3,7,18,.35)}
+h2{font-size:13px;letter-spacing:.1em;color:var(--ember);margin:26px 0 10px;font-weight:600;text-transform:uppercase}
+h2:first-child{margin-top:0}
+p.note{color:var(--dim);font-size:13px;margin-bottom:14px}
+.card{background:var(--panel);border:1px solid var(--rule);padding:18px 20px;margin-bottom:16px;
+  border-radius:8px;box-shadow:0 12px 32px rgba(3,7,18,.35)}
 label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px}
-input{font:14px var(--mono);color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
-  border-radius:3px;padding:10px 12px;width:260px;max-width:100%;transition:border-color .14s}
-input:focus{outline:none;border-color:var(--aqua)}
-button{font:14px inherit;color:var(--ink);background:transparent;border:1px solid var(--rule);
-  border-radius:3px;padding:10px 16px;cursor:pointer;transition:background .14s,border-color .14s,transform .08s}
+input,select{font:14px var(--mono);color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
+  border-radius:5px;padding:9px 11px;width:240px;max-width:100%;transition:border-color .14s}
+input:focus,select:focus{outline:none;border-color:var(--aqua)}
+select{width:190px}
+button{font:13.5px inherit;color:var(--ink);background:transparent;border:1px solid var(--rule);
+  border-radius:5px;padding:9px 14px;cursor:pointer;transition:background .14s,border-color .14s}
 button:hover{background:rgba(234,240,248,.07)}
-button:active{transform:scale(.98)}
-button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;font-weight:600;
-  box-shadow:0 6px 16px rgba(242,115,63,.25)}
+button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;font-weight:600}
 button.primary:hover{background:#ff8a58;border-color:#ff8a58}
-button.danger{border-color:rgba(242,115,63,.5);color:var(--ember)}
-button.danger:hover{background:rgba(242,115,63,.1)}
+button.danger{border-color:rgba(242,115,63,.55);color:var(--ember)}
+button.danger:hover{background:rgba(242,115,63,.12)}
+button.small{padding:5px 9px;font-size:12px}
 button:disabled{opacity:.4;cursor:not-allowed}
 .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:11px;color:var(--dimmer);font-weight:500;padding:0 10px 8px 0;
-  border-bottom:1px solid var(--rule)}
-td{padding:9px 10px 9px 0;border-bottom:1px solid rgba(234,240,248,.06);vertical-align:middle}
-tr{transition:background .12s}
-tr:hover td{background:rgba(255,255,255,.02)}
-td.mono{font-family:var(--mono);font-size:12px;color:var(--dim)}
+th{text-align:left;font-size:11px;color:var(--dimmer);font-weight:500;padding:0 10px 8px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--rule2);vertical-align:middle}
+tbody tr:hover td{background:rgba(255,255,255,.025)}
+td.mono,.mono{font-family:var(--mono);font-size:12px;color:var(--dim)}
+td.r,th.r{text-align:right}
 tr.banned td{color:var(--dimmer)}
-tr.banned td.name{text-decoration:line-through}
-.pill{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border:1px solid var(--rule);
-  border-radius:999px;color:var(--dim)}
+tr.banned td.name b{text-decoration:line-through}
+tr.click{cursor:pointer}
+.pill{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border:1px solid var(--rule);border-radius:999px;color:var(--dim);white-space:nowrap}
 .pill.on{border-color:var(--ember);color:var(--ember)}
+.pill.fin{border-color:rgba(61,219,184,.5);color:var(--aqua)}
+.pill.rst{border-color:rgba(255,207,92,.5);color:var(--signal)}
+.pill.trm{border-color:rgba(242,115,63,.5);color:var(--ember)}
 .code{font-family:var(--mono);font-size:22px;color:var(--aqua);letter-spacing:.04em}
-.msg{font-size:13px;margin-top:12px;min-height:1.4em}
+.msg{font-size:13px;margin-top:10px;min-height:1.3em}
 .msg.err{color:var(--ember)} .msg.ok{color:var(--aqua)}
-.hide{display:none}
+.hide{display:none!important}
 small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;line-height:1.5}
-select{font:14px var(--mono);color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
-  border-radius:3px;padding:10px 12px;width:200px;max-width:100%;transition:border-color .14s}
-select:focus{outline:none;border-color:var(--aqua)}
-.statGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:22px}
-.statTile{background:rgba(255,255,255,.03);border:1px solid var(--rule);border-radius:3px;
-  padding:14px 16px}
-.statTile .n{font-family:var(--mono);font-size:22px;color:var(--aqua);letter-spacing:-.01em}
-.statTile .l{font-size:11px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.06em;
-  margin-top:4px}
-.chartGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
-.chartBox{background:rgba(255,255,255,.02);border:1px solid var(--rule);border-radius:3px;
-  padding:14px 16px}
-.chartBox h4{font-size:12px;font-weight:600;color:var(--dim);margin-bottom:10px;
-  text-transform:uppercase;letter-spacing:.05em}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--rule);padding-bottom:12px}
+.nav a{color:var(--dim);text-decoration:none;padding:8px 13px;border-radius:6px;font-size:13.5px;border:1px solid transparent}
+.nav a:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+.nav a.on{color:var(--ink);border-color:var(--ember);background:rgba(242,115,63,.12)}
+.who{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.statGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.statTile{background:rgba(255,255,255,.03);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
+.statTile .n{font-family:var(--mono);font-size:21px;color:var(--aqua)}
+.statTile .l{font-size:10.5px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.chartGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+.chartBox{background:rgba(255,255,255,.02);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
+.chartBox h4{font-size:11.5px;font-weight:600;color:var(--dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
 .chartBox svg{width:100%;height:auto;display:block;overflow:visible}
-.chartBox .empty{font-size:12.5px;color:var(--dimmer);padding:20px 0;text-align:center}
+.empty{font-size:12.5px;color:var(--dimmer);padding:16px 0;text-align:center}
+.tableWrap{overflow-x:auto}
+.detail{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;margin-top:12px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 16px;font-size:12.5px}
+.kv div span{display:block;font-size:10.5px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.05em}
+.kv div b{font-family:var(--mono);font-weight:500}
+.award{display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule2)}
+.medal{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;
+  font-weight:800;color:#1d0a02;margin-right:8px;vertical-align:middle}
+.gold{background:radial-gradient(circle at 35% 30%,#fff2b8,#ffcf5c 55%,#b8860b)}
+.silver{background:radial-gradient(circle at 35% 30%,#fff,#c9d3e0 55%,#7d8a9c)}
+.bronze{background:radial-gradient(circle at 35% 30%,#ffd2a8,#d08a52 55%,#7a4a22)}
+.modalBack{position:fixed;inset:0;background:rgba(3,7,18,.7);display:flex;align-items:center;justify-content:center;z-index:50}
+.modal{background:var(--panel);border:1px solid rgba(242,115,63,.5);border-radius:10px;padding:22px 24px;width:min(460px,92vw)}
+.modal h3{font-size:18px;margin-bottom:8px}
+.bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--aqua)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>ai<span>Polytrack</span> admin</h1>
-  <p class="note">Invite codes, accounts and bans. This page is public — everything it can do is
-    enforced by Firestore rules against your admin uid, so loading it as anyone else shows nothing.</p>
+  <div class="topbar">
+    <h1>ai<span>Polytrack</span> admin</h1>
+    <div class="row" id="whoRow" style="align-items:center">
+      <span class="who" id="whoami"></span>
+      <button class="small hide" id="btnOut">Sign out</button>
+    </div>
+  </div>
 
   <!-- sign in -->
-  <div class="card" id="cardAuth">
-    <h2 style="margin-top:0">SIGN IN</h2>
+  <div class="card" id="cardAuth" style="max-width:640px">
+    <h2>Sign in</h2>
     <div class="row">
       <div><label for="email">Email</label><input type="email" id="email"></div>
       <div><label for="pass">Password</label><input type="password" id="pass"></div>
@@ -89,125 +112,178 @@ select:focus{outline:none;border-color:var(--aqua)}
   </div>
 
   <div id="panel" class="hide">
-    <div class="card">
-      <div class="row" style="justify-content:space-between">
-        <div>signed in as <b id="whoami" style="font-family:var(--mono)"></b></div>
-        <button id="btnOut">Sign out</button>
+    <nav class="nav" id="nav">
+      <a href="#overview" data-page="overview">Overview</a>
+      <a href="#players" data-page="players">Players</a>
+      <a href="#runs" data-page="runs">Run history</a>
+      <a href="#times" data-page="times">Times</a>
+      <a href="#seasons" data-page="seasons">Seasons &amp; trophies</a>
+      <a href="#settings" data-page="settings">Settings</a>
+    </nav>
+
+    <!-- OVERVIEW -->
+    <section class="page" id="page-overview">
+      <div class="spread" style="margin-bottom:12px">
+        <p class="note" style="margin:0">Season 2 at a glance. Run numbers come from the latest
+          <span id="ovRunWindow">0</span> logged attempts.</p>
+        <button id="btnOvReload">Reload</button>
       </div>
-    </div>
-
-    <h2>INVITE CODE</h2>
-    <div class="card">
-      <p class="note" style="margin-bottom:14px">Anyone creating an account must type this. Players
-        already signed up are unaffected when you change it.</p>
-      <div class="code" id="curCode">—</div>
-      <div class="row" style="margin-top:16px">
-        <div><label for="newCode">New code</label><input type="text" id="newCode"></div>
-        <button id="btnRandom">Generate</button>
-        <button class="primary" id="btnSaveCode">Set code</button>
+      <div class="statGrid" id="ovTiles"></div>
+      <div class="chartGrid" id="ovCharts"></div>
+      <h2>Every map</h2>
+      <div class="card tableWrap">
+        <table>
+          <thead><tr><th>Map</th><th class="r">Attempts</th><th class="r">Finished</th><th class="r">Finish rate</th>
+            <th class="r">Restarts</th><th class="r">Drivers</th><th class="r">Median finish</th><th class="r">Record</th></tr></thead>
+          <tbody id="ovCourses"></tbody>
+        </table>
       </div>
-      <div class="msg" id="codeMsg"></div>
-      <small class="hint">Keep it long. Rules are evaluated server-side, so a short code could be
-        guessed by repeated sign-up attempts, and each attempt spends your daily write quota.</small>
-    </div>
+    </section>
 
-    <h2>PLAYERS <span id="pCount" style="color:var(--dimmer);font-weight:400"></span></h2>
-    <div class="card">
-      <table>
-        <thead><tr><th>Driver</th><th>Status</th><th>Credits</th><th>Courses</th>
-          <th style="text-align:right">Actions</th></tr></thead>
-        <tbody id="players"></tbody>
-      </table>
-      <div class="msg" id="pMsg"></div>
-      <div class="row" style="margin-top:14px"><button id="btnReload">Reload</button></div>
-      <small class="hint">There is no way to reset a player's password from here — usernames map
-        to a private address that can't receive email, and setting someone else's password needs a
-        server this project doesn't have. If someone is truly locked out, ban this row and have them
-        sign up again under a new username; their old times and credits stay here, unreachable.</small>
-    </div>
-
-    <h2>TIMES</h2>
-    <div class="card">
-      <table>
-        <thead><tr><th>Course</th><th>Driver</th><th style="text-align:right">Time</th>
-          <th style="text-align:right"></th></tr></thead>
-        <tbody id="times"></tbody>
-      </table>
-      <small class="hint">Times are reported by the browser and are not verified. If one looks
-        impossible, delete it — and ban the account if it keeps happening.</small>
-    </div>
-
-    <h2>STATISTICS</h2>
-    <div class="card">
-      <div class="row" style="justify-content:space-between;margin-bottom:4px">
-        <p class="note" style="margin-bottom:0">Built from the run history below (up to
-          <span id="statRunCount">0</span> most recent runs).</p>
-        <button id="btnStatsReload">Reload</button>
+    <!-- PLAYERS -->
+    <section class="page hide" id="page-players">
+      <div class="spread" style="margin-bottom:12px">
+        <input type="text" id="pSearch" placeholder="Search name or uid">
+        <div class="row"><span class="mono" id="pCount"></span><button id="btnReload">Reload</button></div>
       </div>
-      <div class="statGrid" id="statTiles"></div>
-      <div class="chartGrid" id="statCharts"></div>
-    </div>
+      <div class="card tableWrap">
+        <table>
+          <thead><tr><th>Driver</th><th>Status</th><th class="r">Credits</th><th class="r">S2 maps</th>
+            <th class="r">Attempts</th><th>Last seen</th><th>Trophies</th><th class="r">Actions</th></tr></thead>
+          <tbody id="players"></tbody>
+        </table>
+        <div class="msg" id="pMsg"></div>
+      </div>
+      <div class="detail hide" id="playerDetail"></div>
+      <small class="hint">Passwords can't be reset from here (usernames map to a private address with no inbox).
+        Deleting an account erases every document tied to it and blocks it from ever signing up again; the
+        username itself stays taken.</small>
+    </section>
 
-    <h2>EVERY COURSE, BROKEN DOWN</h2>
-    <div class="card">
-      <p class="note" style="margin-bottom:14px">One row per course — not just a top-10 slice — built
-        from the same run-history window as STATISTICS above, plus each course's own live leaderboard
-        (the <code>bests</code> collection) for its all-time record regardless of window size.</p>
-      <table>
-        <thead><tr><th>Course</th><th style="text-align:right">Runs shown</th>
-          <th style="text-align:right">Distinct drivers</th><th style="text-align:right">Average</th>
-          <th style="text-align:right">Median</th><th style="text-align:right">All-time record</th></tr></thead>
-        <tbody id="courseStatsRows"></tbody>
-      </table>
-    </div>
-
-    <h2>EVERY DRIVER, BROKEN DOWN</h2>
-    <div class="card">
-      <p class="note" style="margin-bottom:14px">One row per driver who has appeared in the loaded run
-        history window — courses cleared is their all-time count from <code>bests</code>, everything
-        else is scoped to the runs currently loaded below.</p>
-      <table>
-        <thead><tr><th>Driver</th><th style="text-align:right">Runs shown</th>
-          <th style="text-align:right">Courses cleared</th><th style="text-align:right">Race attempts</th>
-          <th style="text-align:right">Credits</th><th style="text-align:right">Last seen</th></tr></thead>
-        <tbody id="driverStatsRows"></tbody>
-      </table>
-    </div>
-
-    <h2>RUN HISTORY <span id="runCount" style="color:var(--dimmer);font-weight:400"></span></h2>
-    <div class="card">
-      <div class="row" style="margin-bottom:14px">
-        <div><label for="runFilterKind">Kind</label>
-          <select id="runFilterKind">
-            <option value="">All</option>
-            <option value="campaign">Campaign</option>
-            <option value="creditsrun">Credits run</option>
-            <option value="race">Race</option>
-          </select>
+    <!-- RUN HISTORY -->
+    <section class="page hide" id="page-runs">
+      <div class="card">
+        <div class="row">
+          <div><label for="rfKind">Kind</label>
+            <select id="rfKind"><option value="">All</option><option value="campaign">Campaign</option>
+              <option value="creditsrun">Credit run</option><option value="race">Race</option></select></div>
+          <div><label for="rfOutcome">Outcome</label>
+            <select id="rfOutcome"><option value="">All</option><option value="finished">Finished</option>
+              <option value="restarted">Restarted</option><option value="terminated">Ended early</option></select></div>
+          <div><label for="rfCourse">Map</label><select id="rfCourse"><option value="">All</option></select></div>
+          <div><label for="rfDriver">Driver</label><input type="text" id="rfDriver" placeholder="name" style="width:150px"></div>
+          <div><label for="rfWhen">When</label>
+            <select id="rfWhen" style="width:140px"><option value="">Any time</option><option value="3600000">Last hour</option>
+              <option value="86400000">Last 24h</option><option value="604800000">Last 7 days</option></select></div>
+          <div><label for="rfLimit">Load</label>
+            <select id="rfLimit" style="width:110px"><option>500</option><option>1500</option><option>3000</option></select></div>
+          <button class="primary" id="btnRunApply">Apply</button>
+          <button id="btnRunCsv">Export CSV</button>
         </div>
-        <div><label for="runFilterCourse">Course</label>
-          <select id="runFilterCourse"><option value="">All</option></select>
-        </div>
-        <div><label for="runFilterDriver">Driver contains</label>
-          <input type="text" id="runFilterDriver" placeholder="username"></div>
-        <button id="btnRunFilter">Apply</button>
-        <button id="btnRunReload">Reload latest 500</button>
       </div>
-      <table>
-        <thead><tr><th>When</th><th>Driver</th><th>Course</th><th>Kind</th>
-          <th style="text-align:right">Time</th></tr></thead>
-        <tbody id="runRows"></tbody>
-      </table>
-      <div class="msg" id="runMsg"></div>
-      <small class="hint">Every campaign finish, credits run, and race attempt is logged here the
-        instant it happens, exact server timestamp included. This is telemetry only — times here are
-        not verified any more than the TIMES table above is.</small>
+      <div class="statGrid" id="runTiles"></div>
+      <div class="card tableWrap">
+        <table>
+          <thead><tr><th>When</th><th>Driver</th><th>Map</th><th>Kind</th><th>Outcome</th><th class="r">Time</th>
+            <th>Progress</th><th class="r">Top mph</th><th class="r">Boost</th><th class="r">Grass</th><th class="r">#</th></tr></thead>
+          <tbody id="runRows"></tbody>
+        </table>
+        <div class="msg" id="runMsg"></div>
+      </div>
+      <div class="detail hide" id="runDetail"></div>
+    </section>
+
+    <!-- TIMES -->
+    <section class="page hide" id="page-times">
+      <div class="card">
+        <div class="row" style="margin-bottom:12px">
+          <div><label for="tSeason">Season</label>
+            <select id="tSeason"><option value="2">Season 2</option><option value="1">Season 1 (archive)</option></select></div>
+          <div><label for="tCourse">Map</label><select id="tCourse"></select></div>
+          <button id="btnTimesReload">Reload</button>
+        </div>
+        <div class="tableWrap">
+          <table>
+            <thead><tr><th>#</th><th>Driver</th><th class="r">Time</th><th>Set</th><th class="r"></th></tr></thead>
+            <tbody id="times"></tbody>
+          </table>
+        </div>
+        <small class="hint">Times are reported by the browser and not verified. Delete anything impossible,
+          and ban the account if it keeps happening.</small>
+      </div>
+    </section>
+
+    <!-- SEASONS -->
+    <section class="page hide" id="page-seasons">
+      <h2>Season 1 trophies</h2>
+      <div class="card">
+        <p class="note">One gold, one silver and one bronze. They show in that player's trophy room.</p>
+        <div id="awardRows"></div>
+        <div class="msg" id="awardMsg"></div>
+      </div>
+      <div class="chartGrid">
+        <div class="card" style="margin:0">
+          <h2>Season 1 final standings</h2>
+          <p class="note">All 33 Season 1 maps: most maps cleared, then lowest total of bests.</p>
+          <div class="tableWrap"><table><thead><tr><th>#</th><th>Driver</th><th class="r">Maps</th><th class="r">Total</th><th></th></tr></thead>
+            <tbody id="s1Standings"></tbody></table></div>
+        </div>
+        <div class="card" style="margin:0">
+          <h2>Season 2 live standings</h2>
+          <p class="note">Automatic. Top 3 get Season 2 trophies in their trophy room.</p>
+          <div class="tableWrap"><table><thead><tr><th>#</th><th>Driver</th><th class="r">Maps</th><th class="r">Total</th></tr></thead>
+            <tbody id="s2Standings"></tbody></table></div>
+          <h2>Section leaders</h2>
+          <div id="s2Sections"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page hide" id="page-settings">
+      <h2>Invite code</h2>
+      <div class="card">
+        <p class="note">Anyone signing up must type this. Changing it doesn't affect existing players.</p>
+        <div class="code" id="curCode">—</div>
+        <div class="row" style="margin-top:14px">
+          <div><label for="newCode">New code</label><input type="text" id="newCode"></div>
+          <button id="btnRandom">Generate</button>
+          <button class="primary" id="btnSaveCode">Set code</button>
+        </div>
+        <div class="msg" id="codeMsg"></div>
+      </div>
+      <h2>Admin passcode</h2>
+      <div class="card">
+        <p class="note" id="pcState">Needed to delete accounts.</p>
+        <div class="row">
+          <div id="pcOldWrap"><label for="pcOld">Current passcode</label><input type="password" id="pcOld"></div>
+          <div><label for="pcNew">New passcode</label><input type="password" id="pcNew"></div>
+          <div><label for="pcNew2">Repeat</label><input type="password" id="pcNew2"></div>
+          <button class="primary" id="btnPcSave">Save passcode</button>
+        </div>
+        <div class="msg" id="pcMsg"></div>
+        <small class="hint">Stored only as a salted SHA-256 hash in config/admin, which only admins can read.</small>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modalBack hide" id="delModal">
+  <div class="modal">
+    <h3>Delete <span id="delName"></span>?</h3>
+    <p class="note">Erases their profile, times, ghosts, credits, colors, run history, race entries and
+      trophies, and blocks the account from ever signing up again. This can't be undone.</p>
+    <label for="delPass">Admin passcode</label>
+    <input type="password" id="delPass" style="width:100%">
+    <div class="msg" id="delMsg"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button id="btnDelCancel">Cancel</button>
+      <button class="danger" id="btnDelGo">Delete account</button>
     </div>
   </div>
 </div>
 
 <script type="module">
-// Paste the same config you put in the game.
 const CONFIG = {
   apiKey: 'AIzaSyAeDQFyJvnV9TiVQMnhX6PkcPkXoXzhm-I',
   authDomain: 'polytrack-918a0.firebaseapp.com',
@@ -217,608 +293,268 @@ const CONFIG = {
   appId: '1:928788678841:web:12475f136c4acd28887368'
 };
 const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-// First-clearing a course used to pay a 100-credit bonus (this constant
-// tracked that figure for display purposes, though nothing here actually
-// read it) — removed from the game itself; credits now only come from
-// the credits-run grind and the special long course's own reward.
-const COURSES = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron',
-                 'Stepping Stones','The Wall','Dust Line','Filament','Skyline',
-                 'Causeway','Millrace','Foxglove','Grainfield','Harrow Cut',
-                 'Tallow Ridge','Needle Pass','Kettle Bowl','Splinter Row','Blackwater',
-                 'Anvil Yard','Cinder Loop','Longshadow','Furrow','Gallows Reach',
-                 'Slate Vault','Pilot Light','Wraith Line','Ironclad','Deadfall',
-                 'Hollow Bend','Last Ember','Endless Horizon'];
+
+// Season 1 (archived) and Season 2 (current) map lists — ids match the game.
+const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Stepping Stones','The Wall',
+  'Dust Line','Filament','Skyline','Causeway','Millrace','Foxglove','Grainfield','Harrow Cut','Tallow Ridge',
+  'Needle Pass','Kettle Bowl','Splinter Row','Blackwater','Anvil Yard','Cinder Loop','Longshadow','Furrow',
+  'Gallows Reach','Slate Vault','Pilot Light','Wraith Line','Ironclad','Deadfall','Hollow Bend','Last Ember',
+  'Endless Horizon'].map((name, i) => ({ id: 'c' + (i + 1), name }));
+const S2 = ['Launch Pad','Coastline','Redline Bank','Hopscotch','Quarry Run','Stormwall','Glass Mile',
+  'Switchyard','High Wire','Thunder Bowl','Drop Zone','Corkscrew Ridge','Velocity','Knife Edge','Sky Harbor',
+  'Apex Predator'].map((name, i) => ({ id: 's2c' + (i + 1), name, sec: Math.floor(i / 4),
+    tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
+const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
+const COURSE_NAME = {};
+S1.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (S1)'; });
+S2.forEach((c) => { COURSE_NAME[c.id] = c.tag + ' ' + c.name; });
 
 const { initializeApp } = await import(SDK + 'firebase-app.js');
 const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
   await import(SDK + 'firebase-auth.js');
-const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection,
-        getDocs, query, where, writeBatch, orderBy, limit, serverTimestamp } = await import(SDK + 'firebase-firestore.js');
+const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, writeBatch,
+  orderBy, limit, serverTimestamp, deleteField } = await import(SDK + 'firebase-firestore.js');
 
 const $ = (id) => document.getElementById(id);
 const app = initializeApp(CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const say = (el, text, kind) => { $(el).textContent = text; $(el).className = 'msg ' + (kind || ''); };
-const courseName = (id) => COURSES[parseInt(String(id).slice(1), 10) - 1] || id;
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const courseName = (id) => COURSE_NAME[id] || id || '—';
+// Older runs were only ever timed to the hundredth; the game shows those with +9 ms.
+const legacyMs = (ms) => (Math.round(ms) % 10 === 0 ? ms + 9 : ms);
 const fmt = (ms) => {
+  if (!isFinite(ms)) return '—';
   const t = ms / 1000, m = Math.floor(t / 60), s = Math.floor(t % 60);
-  return m + ':' + String(s).padStart(2, '0') + '.' +
-    String(Math.floor((t % 1) * 100)).padStart(2, '0');
+  return m + ':' + String(s).padStart(2, '0') + '.' + String(Math.round((t % 1) * 1000) % 1000).padStart(3, '0');
 };
-/** exact local date + time down to the second, for the run history table —
- *  a relative "3 minutes ago" is useless once the admin is looking back
- *  further than a few minutes, and this is meant to have exact timestamps. */
-const fmtWhen = (d) => {
-  if (!d || !isFinite(d.getTime())) return '—';
-  const pad = (n) => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
-    pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+const tsMillis = (v) => !v ? 0 : typeof v.toMillis === 'function' ? v.toMillis() : typeof v.seconds === 'number' ? v.seconds * 1000 : 0;
+const pad = (n) => String(n).padStart(2, '0');
+const fmtWhen = (ms) => {
+  if (!ms) return '—';
+  const d = new Date(ms);
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' +
+    pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 };
-const KIND_LABEL = { campaign: 'Campaign', creditsrun: 'Credits run', race: 'Race' };
+const ago = (ms) => {
+  if (!ms) return '—';
+  const s = (Date.now() - ms) / 1000;
+  if (s < 90) return Math.round(s) + 's ago';
+  if (s < 5400) return Math.round(s / 60) + 'm ago';
+  if (s < 129600) return Math.round(s / 3600) + 'h ago';
+  return Math.round(s / 86400) + 'd ago';
+};
+const KIND = { campaign: 'Campaign', creditsrun: 'Credit run', race: 'Race' };
+const OUTCOME = { finished: ['Finished', 'fin'], restarted: ['Restarted', 'rst'], terminated: ['Ended early', 'trm'] };
+const REASON = { restart: 'pressed R', offtrack: 'off the track', stuck: 'stuck', fell: 'fell', error: 'physics reset',
+  menu: 'quit to menu', closed: 'closed the page', finished: 'crossed the line' };
+const outcomeOf = (r) => r.outcome || 'finished';
 
-/** Firebase's own error codes are either too vague ("invalid-credential"
- *  covers both a wrong email and a wrong password, by design, so a bad
- *  actor can't use the message to tell which one they got right) or too
- *  technical to act on. Translate the ones an admin will actually hit. */
+/* ---------------------------------------------------------------- auth */
 function authErrorMessage(e) {
   const c = (e && e.code) || '';
-  if (c.indexOf('invalid-credential') >= 0 || c.indexOf('wrong-password') >= 0
-    || c.indexOf('user-not-found') >= 0) {
-    return 'That email and password do not match. If you forgot the password, use the reset link below.';
-  }
-  if (c.indexOf('invalid-email') >= 0) return 'That is not a valid email address.';
-  if (c.indexOf('too-many-requests') >= 0) return 'Too many attempts — wait a few minutes and try again.';
-  if (c.indexOf('user-disabled') >= 0) return 'That account has been disabled in Firebase Auth.';
-  if (c.indexOf('network') >= 0) return 'No connection to Firebase — check your internet connection.';
+  if (/invalid-credential|wrong-password|user-not-found/.test(c)) return 'That email and password do not match.';
+  if (c.includes('invalid-email')) return 'That is not a valid email address.';
+  if (c.includes('too-many-requests')) return 'Too many attempts — wait a few minutes.';
+  if (c.includes('network')) return 'No connection to Firebase.';
   return (e && e.message) || 'Something went wrong.';
 }
-
 $('btnIn').addEventListener('click', async () => {
   say('authMsg', 'Working…');
   $('resetRow').style.display = 'none';
-  try {
-    await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value);
-  } catch (e) {
-    say('authMsg', authErrorMessage(e), 'err');
-    $('resetRow').style.display = '';
-  }
+  try { await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value); }
+  catch (e) { say('authMsg', authErrorMessage(e), 'err'); $('resetRow').style.display = ''; }
 });
+$('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnIn').click(); });
 $('btnReset').addEventListener('click', async () => {
   const email = $('email').value.trim();
   if (!email) { say('authMsg', 'Type the email address first.', 'err'); return; }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    say('authMsg', 'Password reset email sent to ' + email + ' — check your inbox.', 'ok');
-  } catch (e) { say('authMsg', authErrorMessage(e), 'err'); }
+  try { await sendPasswordResetEmail(auth, email); say('authMsg', 'Reset email sent to ' + email + '.', 'ok'); }
+  catch (e) { say('authMsg', authErrorMessage(e), 'err'); }
 });
 $('btnOut').addEventListener('click', () => signOut(auth));
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    $('panel').classList.add('hide');
-    $('cardAuth').classList.remove('hide');
+    $('panel').classList.add('hide'); $('cardAuth').classList.remove('hide');
+    $('btnOut').classList.add('hide'); $('whoami').textContent = '';
     return;
   }
-  $('whoami').textContent = user.email + '  ·  ' + user.uid;
-  // the rules decide whether this account is the admin; try an admin-only read
-  try {
-    await getDoc(doc(db, 'config', 'invite'));
-  } catch (e) {
-    say('authMsg', 'That account is not the admin. Put its uid in firestore.rules.', 'err');
-    await signOut(auth);
-    return;
-  }
+  try { await getDoc(doc(db, 'config', 'invite')); }
+  catch (e) { say('authMsg', 'That account is not an admin (its uid must be in firestore.rules).', 'err'); await signOut(auth); return; }
+  $('whoami').textContent = user.email;
+  $('btnOut').classList.remove('hide');
   $('cardAuth').classList.add('hide');
   $('panel').classList.remove('hide');
   say('authMsg', '');
-  populateCourseFilter();
+  fillCourseSelects();
+  route();
   await loadAll();
-  await loadRunLog();
+  await loadRuns();
 });
 
-function populateCourseFilter() {
-  const sel = $('runFilterCourse');
-  if (sel.options.length > 1) return; // already populated
-  COURSES.forEach((name, i) => {
-    const o = document.createElement('option');
-    o.value = 'c' + (i + 1);
-    o.textContent = name;
-    sel.appendChild(o);
-  });
+/* --------------------------------------------------------------- pages */
+const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'settings'];
+function route() {
+  const page = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+  PAGES.forEach((p) => $('page-' + p).classList.toggle('hide', p !== page));
+  document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.page === page));
+  if (page === 'settings') loadSettings();
+}
+addEventListener('hashchange', route);
+
+function fillCourseSelects() {
+  const rc = $('rfCourse');
+  if (rc.options.length === 1) {
+    const g2 = document.createElement('optgroup'); g2.label = 'Season 2';
+    S2.forEach((c) => g2.appendChild(new Option(c.tag + ' ' + c.name, c.id)));
+    const g1 = document.createElement('optgroup'); g1.label = 'Season 1';
+    S1.forEach((c) => g1.appendChild(new Option(c.name, c.id)));
+    rc.appendChild(g2); rc.appendChild(g1);
+  }
+  fillTimesCourse();
+}
+function fillTimesCourse() {
+  const list = $('tSeason').value === '1' ? S1 : S2;
+  const sel = $('tCourse');
+  sel.innerHTML = '';
+  list.forEach((c) => sel.appendChild(new Option(c.tag ? c.tag + ' ' + c.name : c.name, c.id)));
 }
 
-$('btnRandom').addEventListener('click', () => {
-  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let out = '';
-  const buf = new Uint32Array(16);
-  crypto.getRandomValues(buf);
-  for (let i = 0; i < 16; i++) out += abc[buf[i] % abc.length];
-  $('newCode').value = out.slice(0, 5) + '-' + out.slice(5, 10) + '-' + out.slice(10, 16);
-});
-
-$('btnSaveCode').addEventListener('click', async () => {
-  const code = $('newCode').value.trim();
-  if (code.length < 8) { say('codeMsg', 'Use at least 8 characters.', 'err'); return; }
-  try {
-    await setDoc(doc(db, 'config', 'invite'), { code });
-    $('curCode').textContent = code;
-    $('newCode').value = '';
-    say('codeMsg', 'Invite code updated.', 'ok');
-  } catch (e) { say('codeMsg', e.message, 'err'); }
-});
-
-$('btnReload').addEventListener('click', loadAll);
+/* ----------------------------------------------------------- data load */
+let players = [], byUid = {}, bests = [], creditRows = [], runs = [], awards = {};
 
 async function loadAll() {
   say('pMsg', 'Loading…');
   try {
-    const inv = await getDoc(doc(db, 'config', 'invite'));
-    $('curCode').textContent = inv.exists() ? inv.data().code : 'not set — set one below';
-
-    const [profs, bests, credits] = await Promise.all([
+    const [inv, profs, bs, ce, aw] = await Promise.all([
+      getDoc(doc(db, 'config', 'invite')),
       getDocs(collection(db, 'profiles')),
       getDocs(collection(db, 'bests')),
-      getDocs(collection(db, 'creditEvents'))
+      getDocs(collection(db, 'creditEvents')),
+      getDoc(doc(db, 'seasonAwards', 's1'))
     ]);
-
-    const players = [];
-    profs.forEach((d) => players.push({ uid: d.id, ...d.data() }));
-    const byUid = {};
-    players.forEach((p) => { byUid[p.uid] = p; p.credits = 0; p.courses = 0; });
-    creditRowsForStats = [];
-    credits.forEach((d) => {
+    $('curCode').textContent = inv.exists() ? inv.data().code : 'not set';
+    awards = aw.exists() ? aw.data() : {};
+    players = []; byUid = {};
+    profs.forEach((d) => { const p = { uid: d.id, ...d.data(), credits: 0, s2: 0, s1: 0, runs: 0, lastMs: 0 }; players.push(p); byUid[p.uid] = p; });
+    creditRows = [];
+    ce.forEach((d) => {
       const v = d.data();
-      if (byUid[v.uid] && typeof v.delta === 'number') byUid[v.uid].credits += v.delta;
-      if (typeof v.delta === 'number') creditRowsForStats.push(v);
+      if (typeof v.delta !== 'number') return;
+      creditRows.push(v);
+      if (byUid[v.uid]) byUid[v.uid].credits += v.delta;
     });
-    const rows = [];
-    bests.forEach((d) => {
-      const v = d.data();
-      rows.push({ id: d.id, ...v });
-      if (byUid[v.uid]) byUid[v.uid].courses++;
+    players.forEach((p) => { p.credits = Math.floor(p.credits + 1e-9); });
+    bests = [];
+    bs.forEach((d) => {
+      const v = { id: d.id, ...d.data() };
+      bests.push(v);
+      const p = byUid[v.uid];
+      if (p) { if (String(v.courseId).startsWith('s2')) p.s2++; else p.s1++; }
     });
-    bestsRowsForStats = rows;
-    playersForStats = players;
-
-    players.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
-    $('pCount').textContent = '(' + players.length + ')';
-    const tb = $('players');
-    tb.innerHTML = '';
-    for (const p of players) {
-      const tr = document.createElement('tr');
-      if (p.banned) tr.className = 'banned';
-      tr.innerHTML =
-        '<td class="name"><b>' + esc(p.displayName || '—') + '</b><br>' +
-          '<span class="mono">' + p.uid + '</span></td>' +
-        '<td><span class="pill' + (p.banned ? ' on' : '') + '">' +
-          (p.banned ? 'banned' : 'active') + '</span></td>' +
-        '<td class="mono">' + p.credits + '</td>' +
-        '<td class="mono">' + p.courses + ' / ' + COURSES.length + '</td>' +
-        '<td style="text-align:right"></td>';
-      const cell = tr.lastElementChild;
-      const setCr = document.createElement('button');
-      setCr.textContent = 'Set credits';
-      setCr.style.marginRight = '6px';
-      setCr.addEventListener('click', () => setCredits(p));
-      cell.appendChild(setCr);
-      const ban = document.createElement('button');
-      ban.textContent = p.banned ? 'Unban' : 'Ban';
-      if (!p.banned) ban.className = 'danger';
-      ban.addEventListener('click', () => setBanned(p, !p.banned));
-      cell.appendChild(ban);
-      tb.appendChild(tr);
-    }
-
-    rows.sort((a, b) => a.courseId === b.courseId
-      ? a.timeMs - b.timeMs : String(a.courseId).localeCompare(String(b.courseId)));
-    const tt = $('times');
-    tt.innerHTML = '';
-    for (const r of rows) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + esc(courseName(r.courseId)) + '</td>' +
-        '<td>' + esc(r.displayName || '—') + (r.banned ? ' <span class="pill on">hidden</span>' : '') + '</td>' +
-        '<td class="mono" style="text-align:right">' + fmt(r.timeMs) + '</td>' +
-        '<td style="text-align:right"></td>';
-      const del = document.createElement('button');
-      del.textContent = 'Delete';
-      del.className = 'danger';
-      del.addEventListener('click', async () => {
-        if (!confirm('Delete this time?')) return;
-        await deleteDoc(doc(db, 'bests', r.id));
-        await loadAll();
-      });
-      tr.lastElementChild.appendChild(del);
-      tt.appendChild(tr);
-    }
+    renderPlayers();
+    renderTimes();
+    renderSeasons();
     say('pMsg', '');
-  } catch (e) {
-    say('pMsg', e.message, 'err');
-  }
+  } catch (e) { say('pMsg', e.message, 'err'); }
 }
 
-/* ------------------------------------------------------------ run history
-   Every run (campaign finish, credits run, race attempt) is logged by the
-   player's own client the instant it ends — see Cloud.logRun in the game
-   itself. This panel just reads that collection back: latest 500 by
-   default (this is a free-tier project — one unbounded query would burn
-   through the daily read quota fast once there's real history), with an
-   optional filter re-query for a narrower slice. Also the source data for
-   the STATISTICS charts below, so both sections share one in-memory copy
-   rather than each issuing their own queries. */
-let runRowsRaw = [];
-let creditRowsForStats = [];
-let bestsRowsForStats = [];   // every bests doc, from loadAll() — the all-time record per course
-let playersForStats = [];     // every profile, from loadAll() — for the driver breakdown table's credits/name lookup
-
-// Always fetches the same latest-500-by-createdAt window (a single-field
-// orderBy, so it needs no composite index) and applies every filter
-// client-side on that window — kind/course/driver are all cheap equality
-// or substring checks over at most 500 rows. A server-side where() on
-// kind or courseId together with this orderBy would need a composite
-// index Firestore has never been asked to build for this project, and
-// filtering an already-small, already-fetched window client-side avoids
-// that entirely rather than provisioning one.
-async function loadRunLog(filters) {
+async function loadRuns() {
   say('runMsg', 'Loading…');
   try {
-    const snap = await getDocs(query(collection(db, 'runLog'), orderBy('createdAt', 'desc'), limit(500)));
-    let rows = [];
-    snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-    if (filters && filters.kind) rows = rows.filter((r) => r.kind === filters.kind);
-    if (filters && filters.courseId) rows = rows.filter((r) => r.courseId === filters.courseId);
-    if (filters && filters.driver) {
-      const needle = filters.driver.toLowerCase();
-      rows = rows.filter((r) => (r.displayName || '').toLowerCase().includes(needle));
-    }
-    runRowsRaw = rows;
-    renderRunRows();
-    renderStats();
+    const n = parseInt($('rfLimit').value, 10) || 500;
+    const snap = await getDocs(query(collection(db, 'runLog'), orderBy('createdAt', 'desc'), limit(n)));
+    runs = [];
+    snap.forEach((d) => runs.push({ id: d.id, ...d.data(), ms: tsMillis(d.data().createdAt) }));
+    players.forEach((p) => { p.runs = 0; p.lastMs = 0; });
+    runs.forEach((r) => { const p = byUid[r.uid]; if (p) { p.runs++; if (r.ms > p.lastMs) p.lastMs = r.ms; } });
+    renderPlayers();
+    renderRuns();
+    renderOverview();
     say('runMsg', '');
-  } catch (e) {
-    say('runMsg', e.message, 'err');
-  }
+  } catch (e) { say('runMsg', e.message, 'err'); }
 }
+$('btnReload').addEventListener('click', async () => { await loadAll(); await loadRuns(); });
+$('btnOvReload').addEventListener('click', async () => { await loadAll(); await loadRuns(); });
 
-function renderRunRows() {
-  $('runCount').textContent = '(' + runRowsRaw.length + ')';
-  const tb = $('runRows');
+/* ------------------------------------------------------------ standings */
+/** cleared count desc, then total of bests asc — same rule as the game */
+function standings(ids) {
+  const set = new Set(ids), per = {};
+  bests.forEach((b) => {
+    if (b.banned || !set.has(b.courseId) || typeof b.timeMs !== 'number') return;
+    const k = b.uid;
+    const p = per[k] || (per[k] = { uid: k, name: b.displayName || '—', count: 0, total: 0 });
+    p.count++; p.total += legacyMs(b.timeMs);
+  });
+  return Object.values(per).sort((a, b) => (b.count - a.count) || (a.total - b.total));
+}
+const trophyText = (uid) => ['gold', 'silver', 'bronze'].filter((p) => awards[p] && awards[p].uid === uid)
+  .map((p) => '<span class="medal ' + p + '" style="width:20px;height:20px;font-size:10px">S1</span>').join('');
+
+/* -------------------------------------------------------------- players */
+$('pSearch').addEventListener('input', renderPlayers);
+function renderPlayers() {
+  const q = $('pSearch').value.trim().toLowerCase();
+  const list = players.filter((p) => !q || (p.displayName || '').toLowerCase().includes(q) || p.uid.toLowerCase().includes(q))
+    .sort((a, b) => (b.lastMs - a.lastMs) || (a.displayName || '').localeCompare(b.displayName || ''));
+  $('pCount').textContent = list.length + ' of ' + players.length + ' players';
+  const tb = $('players');
   tb.innerHTML = '';
-  for (const r of runRowsRaw) {
-    const when = r.createdAt && typeof r.createdAt.toDate === 'function' ? r.createdAt.toDate() : null;
+  for (const p of list) {
     const tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td class="mono">' + fmtWhen(when) + '</td>' +
-      '<td>' + esc(r.displayName || '—') + '</td>' +
-      '<td>' + esc(courseName(r.courseId)) + '</td>' +
-      '<td><span class="pill">' + esc(KIND_LABEL[r.kind] || r.kind) + '</span></td>' +
-      '<td class="mono" style="text-align:right">' + fmt(r.timeMs) + '</td>';
+    tr.className = 'click' + (p.banned ? ' banned' : '');
+    tr.innerHTML = '<td class="name"><b>' + esc(p.displayName || '—') + '</b><br><span class="mono">' + esc(p.uid) + '</span></td>' +
+      '<td><span class="pill' + (p.banned ? ' on' : '') + '">' + (p.banned ? 'banned' : 'active') + '</span></td>' +
+      '<td class="mono r">' + p.credits + '</td><td class="mono r">' + p.s2 + ' / ' + S2.length + '</td>' +
+      '<td class="mono r">' + p.runs + '</td><td class="mono" title="' + fmtWhen(p.lastMs) + '">' + ago(p.lastMs) + '</td>' +
+      '<td>' + (trophyText(p.uid) || '<span class="mono">—</span>') + '</td><td class="r" style="white-space:nowrap"></td>';
+    const cell = tr.lastElementChild;
+    const btn = (label, cls, fn) => {
+      const b = document.createElement('button'); b.className = 'small ' + (cls || ''); b.textContent = label;
+      b.style.marginLeft = '6px';
+      b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+      cell.appendChild(b);
+    };
+    btn('Credits', '', () => setCredits(p));
+    btn(p.banned ? 'Unban' : 'Ban', p.banned ? '' : 'danger', () => setBanned(p, !p.banned));
+    btn('Delete', 'danger', () => openDelete(p));
+    tr.addEventListener('click', () => showPlayer(p));
     tb.appendChild(tr);
   }
+  if (!list.length) tb.innerHTML = '<tr><td colspan="8" class="empty">No players match.</td></tr>';
+}
+function showPlayer(p) {
+  const el = $('playerDetail');
+  const mine = bests.filter((b) => b.uid === p.uid);
+  const myRuns = runs.filter((r) => r.uid === p.uid);
+  const fin = myRuns.filter((r) => outcomeOf(r) === 'finished').length;
+  const rows = S2.map((c) => {
+    const b = mine.find((x) => x.courseId === c.id);
+    const board = bests.filter((x) => x.courseId === c.id && !x.banned).sort((x, y) => x.timeMs - y.timeMs);
+    const rank = b ? board.findIndex((x) => x.uid === p.uid) + 1 : 0;
+    return '<tr><td>' + esc(c.tag + ' ' + c.name) + '</td><td class="mono r">' + (b ? fmt(legacyMs(b.timeMs)) : '—') +
+      '</td><td class="mono r">' + (rank ? '#' + rank + ' of ' + board.length : '—') + '</td></tr>';
+  }).join('');
+  el.innerHTML = '<div class="spread"><h2 style="margin:0">' + esc(p.displayName) + '</h2><button class="small" id="pdClose">Close</button></div>' +
+    '<div class="kv" style="margin:12px 0">' +
+    '<div><span>uid</span><b>' + esc(p.uid) + '</b></div><div><span>credits</span><b>' + p.credits + '</b></div>' +
+    '<div><span>season 2 maps</span><b>' + p.s2 + ' / ' + S2.length + '</b></div><div><span>season 1 maps</span><b>' + p.s1 + ' / ' + S1.length + '</b></div>' +
+    '<div><span>attempts loaded</span><b>' + myRuns.length + '</b></div><div><span>finished</span><b>' + fin + '</b></div>' +
+    '<div><span>last seen</span><b>' + fmtWhen(p.lastMs) + '</b></div><div><span>status</span><b>' + (p.banned ? 'banned' : 'active') + '</b></div>' +
+    '</div><div class="tableWrap"><table><thead><tr><th>Season 2 map</th><th class="r">Best</th><th class="r">Rank</th></tr></thead><tbody>' +
+    rows + '</tbody></table></div>' +
+    '<div class="row" style="margin-top:12px"><button class="small" id="pdRuns">See their runs</button></div>';
+  el.classList.remove('hide');
+  $('pdClose').addEventListener('click', () => el.classList.add('hide'));
+  $('pdRuns').addEventListener('click', () => { $('rfDriver').value = p.displayName || ''; location.hash = '#runs'; renderRuns(); });
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-$('btnRunReload').addEventListener('click', () => {
-  $('runFilterKind').value = ''; $('runFilterCourse').value = ''; $('runFilterDriver').value = '';
-  loadRunLog();
-});
-$('btnRunFilter').addEventListener('click', () => {
-  loadRunLog({
-    kind: $('runFilterKind').value || null,
-    courseId: $('runFilterCourse').value || null,
-    driver: $('runFilterDriver').value.trim() || null
-  });
-});
-
-/* ------------------------------------------------------------ statistics
-   Every chart and tile here is computed client-side from runRowsRaw (the
-   same up-to-500-row window the run history table shows) — no separate
-   queries, no charting library. Charts are plain inline SVG: a handful of
-   rects/lines is simpler than pulling in a dependency for bar/line charts
-   this small, and it matches the rest of this page having zero JS
-   dependencies beyond the Firebase SDK itself. */
-$('btnStatsReload').addEventListener('click', () => loadRunLog());
-
-function renderStats() {
-  const rows = runRowsRaw;
-  $('statRunCount').textContent = rows.length;
-  const tiles = $('statTiles');
-  const charts = $('statCharts');
-  tiles.innerHTML = '';
-  charts.innerHTML = '';
-  if (!rows.length) {
-    tiles.innerHTML = '<div class="statTile"><div class="n">0</div><div class="l">runs</div></div>';
-    charts.innerHTML = '<div class="chartBox"><div class="empty">No runs logged yet.</div></div>';
-    renderCourseStatsTable(rows);
-    renderDriverStatsTable(rows);
-    return;
-  }
-
-  const uniqDrivers = new Set(rows.map((r) => r.uid)).size;
-  const uniqCourses = new Set(rows.map((r) => r.courseId)).size;
-  const byKind = {};
-  rows.forEach((r) => { byKind[r.kind] = (byKind[r.kind] || 0) + 1; });
-  const avgTime = rows.reduce((s, r) => s + (r.timeMs || 0), 0) / rows.length;
-  const fastest = rows.reduce((best, r) => (!best || r.timeMs < best.timeMs) ? r : best, null);
-  const now = Date.now();
-  const last24h = rows.filter((r) => tsMillis(r.createdAt) > now - 86400000).length;
-  const lastHour = rows.filter((r) => tsMillis(r.createdAt) > now - 3600000).length;
-  const races = rows.filter((r) => r.kind === 'race').length;
-  const earnedAll = creditRowsForStats.filter((v) => v.delta > 0).reduce((s, v) => s + v.delta, 0);
-  const spentAll = creditRowsForStats.filter((v) => v.delta < 0).reduce((s, v) => s - v.delta, 0);
-
-  const tile = (n, l) => {
-    const d = document.createElement('div');
-    d.className = 'statTile';
-    d.innerHTML = '<div class="n">' + n + '</div><div class="l">' + esc(l) + '</div>';
-    tiles.appendChild(d);
-  };
-  tile(rows.length, 'runs shown');
-  tile(uniqDrivers, 'distinct drivers');
-  tile(uniqCourses + ' / ' + COURSES.length, 'courses driven');
-  tile(lastHour, 'runs in last hour');
-  tile(last24h, 'runs in last 24h');
-  tile(races, 'race attempts shown');
-  tile(fmt(avgTime), 'average time');
-  tile(fastest ? fmt(fastest.timeMs) : '—', 'fastest time shown');
-  tile(Math.round(earnedAll), 'credits earned (all time)');
-  tile(Math.round(spentAll), 'credits spent (all time)');
-
-  const chartBox = (title, svg) => {
-    const d = document.createElement('div');
-    d.className = 'chartBox';
-    d.innerHTML = '<h4>' + esc(title) + '</h4>' + svg;
-    charts.appendChild(d);
-  };
-
-  chartBox('Runs by kind', barChart(
-    Object.keys(KIND_LABEL).map((k) => ({ label: KIND_LABEL[k], value: byKind[k] || 0 }))
-  ));
-
-  const byCourseCount = {};
-  rows.forEach((r) => { byCourseCount[r.courseId] = (byCourseCount[r.courseId] || 0) + 1; });
-  const topCourses = Object.entries(byCourseCount)
-    .sort((a, b) => b[1] - a[1]).slice(0, 10)
-    .map(([cid, n]) => ({ label: courseName(cid), value: n }));
-  chartBox('Top 10 courses by run count', barChart(topCourses, true));
-
-  const byDriverCount = {};
-  rows.forEach((r) => { byDriverCount[r.displayName || r.uid] = (byDriverCount[r.displayName || r.uid] || 0) + 1; });
-  const topDrivers = Object.entries(byDriverCount)
-    .sort((a, b) => b[1] - a[1]).slice(0, 10)
-    .map(([name, n]) => ({ label: name, value: n }));
-  chartBox('Top 10 drivers by run count', barChart(topDrivers, true));
-
-  // Runs per day, oldest to newest, over however many days the loaded
-  // window actually spans (bounded by the 500-row fetch above).
-  const byDay = {};
-  rows.forEach((r) => {
-    const ms = tsMillis(r.createdAt);
-    if (!ms) return;
-    const day = new Date(ms).toISOString().slice(0, 10);
-    byDay[day] = (byDay[day] || 0) + 1;
-  });
-  const days = Object.keys(byDay).sort();
-  chartBox('Runs per day', lineChart(days.map((d) => ({ label: d.slice(5), value: byDay[d] }))));
-
-  // Activity by hour of day (0-23, server/browser-local time, summed
-  // across every day in the loaded window) — shows when the machine
-  // actually gets played, independent of which specific day.
-  const byHour = new Array(24).fill(0);
-  rows.forEach((r) => {
-    const ms = tsMillis(r.createdAt);
-    if (!ms) return;
-    byHour[new Date(ms).getHours()]++;
-  });
-  chartBox('Runs by hour of day', barChart(
-    byHour.map((v, h) => ({ label: String(h).padStart(2, '0'), value: v }))
-  ));
-
-  // Credit flow, all-time (every creditEvents row, fetched once by
-  // loadAll() into creditRowsForStats) as a total, AND — now that every
-  // creditEvents write includes its own createdAt — a running balance
-  // over time, so a sudden spend/earn spike is visible at a glance
-  // instead of only as a single all-time number.
-  if (creditRowsForStats.length) {
-    const earned = creditRowsForStats.filter((v) => v.delta > 0).reduce((s, v) => s + v.delta, 0);
-    const spent = creditRowsForStats.filter((v) => v.delta < 0).reduce((s, v) => s - v.delta, 0);
-    chartBox('Credits earned vs spent (all time)', barChart([
-      { label: 'Earned', value: Math.round(earned) },
-      { label: 'Spent', value: Math.round(spent) }
-    ]));
-
-    const timed = creditRowsForStats.filter((v) => tsMillis(v.createdAt) > 0)
-      .sort((a, b) => tsMillis(a.createdAt) - tsMillis(b.createdAt));
-    if (timed.length) {
-      const byDayDelta = {};
-      timed.forEach((v) => {
-        const day = new Date(tsMillis(v.createdAt)).toISOString().slice(0, 10);
-        byDayDelta[day] = (byDayDelta[day] || 0) + v.delta;
-      });
-      let running = 0;
-      const balanceDays = Object.keys(byDayDelta).sort();
-      const balancePoints = balanceDays.map((d) => {
-        running += byDayDelta[d];
-        return { label: d.slice(5), value: Math.round(running) };
-      });
-      chartBox('Net credit balance over time (sum of all events, ' + timed.length +
-        ' with a timestamp)', lineChart(balancePoints));
-    } else {
-      chartBox('Net credit balance over time', '<div class="empty">No timestamped credit events yet — ' +
-        'this chart fills in as new credit events happen (older ones were written before timestamps ' +
-        'were added).</div>');
-    }
-  }
-
-  // Average time per course, for the courses actually present in this window.
-  const timesByCourse = {};
-  rows.forEach((r) => {
-    (timesByCourse[r.courseId] = timesByCourse[r.courseId] || []).push(r.timeMs);
-  });
-  const avgByCourse = Object.entries(timesByCourse)
-    .map(([cid, times]) => ({ label: courseName(cid), value: Math.round(times.reduce((s, t) => s + t, 0) / times.length) }))
-    .sort((a, b) => a.value - b.value).slice(0, 10);
-  chartBox('Fastest average time — top 10 courses', barChart(avgByCourse, true, (v) => fmt(v)));
-
-  renderCourseStatsTable(rows);
-  renderDriverStatsTable(rows);
-}
-
-/** One row per course (every one, not a top-10 slice) — run count and
- *  distinct-driver count and average/median time from the currently
- *  loaded run-history window, plus the all-time record from bests
- *  (bestsRowsForStats, loaded once by loadAll() — independent of the
- *  run-history window's own 500-row cap, so the record shown here is
- *  never wrong just because an old record run has aged out of the
- *  window). Courses with no runs at all in either source are still
- *  listed, with dashes, so this always covers the full course list. */
-function renderCourseStatsTable(rows) {
-  const byCourse = {};
-  rows.forEach((r) => {
-    (byCourse[r.courseId] = byCourse[r.courseId] || { times: [], drivers: new Set() });
-    byCourse[r.courseId].times.push(r.timeMs);
-    byCourse[r.courseId].drivers.add(r.uid);
-  });
-  const recordByCourse = {};
-  bestsRowsForStats.forEach((b) => {
-    if (b.banned) return;
-    const cur = recordByCourse[b.courseId];
-    if (!cur || b.timeMs < cur.timeMs) recordByCourse[b.courseId] = b;
-  });
-  const tb = $('courseStatsRows');
-  tb.innerHTML = '';
-  for (let i = 0; i < COURSES.length; i++) {
-    const cid = 'c' + (i + 1);
-    const stat = byCourse[cid];
-    const record = recordByCourse[cid];
-    let avg = '—', median = '—';
-    if (stat && stat.times.length) {
-      const sorted = stat.times.slice().sort((a, b) => a - b);
-      avg = fmt(sorted.reduce((s, t) => s + t, 0) / sorted.length);
-      const mid = Math.floor(sorted.length / 2);
-      median = fmt(sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2);
-    }
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + esc(COURSES[i]) + '</td>' +
-      '<td class="mono" style="text-align:right">' + (stat ? stat.times.length : 0) + '</td>' +
-      '<td class="mono" style="text-align:right">' + (stat ? stat.drivers.size : 0) + '</td>' +
-      '<td class="mono" style="text-align:right">' + avg + '</td>' +
-      '<td class="mono" style="text-align:right">' + median + '</td>' +
-      '<td class="mono" style="text-align:right">' +
-      (record ? fmt(record.timeMs) + ' — ' + esc(record.displayName || '—') : '—') + '</td>';
-    tb.appendChild(tr);
-  }
-}
-
-/** One row per driver who appears in the currently loaded run-history
- *  window (not the full player list — a driver who has never run
- *  anything in this window has nothing to show here beyond what the
- *  PLAYERS card above already lists). Courses-cleared and credits come
- *  from the all-time playersForStats data (loaded once by loadAll()),
- *  matched by uid; everything else is scoped to the window like the rest
- *  of this section. */
-function renderDriverStatsTable(rows) {
-  const byDriver = {};
-  rows.forEach((r) => {
-    const key = r.uid || r.displayName || '—';
-    (byDriver[key] = byDriver[key] || { name: r.displayName || '—', runs: 0, races: 0, lastMs: 0 });
-    byDriver[key].runs++;
-    if (r.kind === 'race') byDriver[key].races++;
-    const ms = tsMillis(r.createdAt);
-    if (ms > byDriver[key].lastMs) byDriver[key].lastMs = ms;
-  });
-  const playerByUid = {};
-  playersForStats.forEach((p) => { playerByUid[p.uid] = p; });
-  const entries = Object.entries(byDriver).sort((a, b) => b[1].runs - a[1].runs);
-  const tb = $('driverStatsRows');
-  tb.innerHTML = '';
-  for (const [uid, d] of entries) {
-    const p = playerByUid[uid];
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + esc(d.name) + '</td>' +
-      '<td class="mono" style="text-align:right">' + d.runs + '</td>' +
-      '<td class="mono" style="text-align:right">' + (p ? p.courses + ' / ' + COURSES.length : '—') + '</td>' +
-      '<td class="mono" style="text-align:right">' + d.races + '</td>' +
-      '<td class="mono" style="text-align:right">' + (p ? p.credits : '—') + '</td>' +
-      '<td class="mono" style="text-align:right">' + (d.lastMs ? fmtWhen(new Date(d.lastMs)) : '—') + '</td>';
-    tb.appendChild(tr);
-  }
-  if (!entries.length) {
-    tb.innerHTML = '<tr><td colspan="6" class="mono" style="color:var(--dimmer)">No runs in the loaded window.</td></tr>';
-  }
-}
-
-function tsMillis(v) {
-  if (!v) return 0;
-  if (typeof v.toMillis === 'function') return v.toMillis();
-  if (typeof v.seconds === 'number') return v.seconds * 1000;
-  return 0;
-}
-
-/** Minimal horizontal or vertical bar chart as inline SVG. `horizontal`
- *  draws labelled rows (better for long course/driver names); otherwise a
- *  simple vertical column chart. `fmtVal` formats the value label. */
-function barChart(data, horizontal, fmtVal) {
-  const fv = fmtVal || ((v) => String(v));
-  if (!data.length || data.every((d) => !d.value)) return '<div class="empty">No data yet.</div>';
-  const max = Math.max(...data.map((d) => d.value), 1);
-  if (horizontal) {
-    const rowH = 24, gap = 6, W = 460, labelW = 140;
-    const H = data.length * (rowH + gap);
-    let bars = '';
-    data.forEach((d, i) => {
-      const y = i * (rowH + gap);
-      const w = Math.max(2, (d.value / max) * (W - labelW - 50));
-      bars += '<text x="0" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#8798b5">' +
-        esc(String(d.label).slice(0, 20)) + '</text>' +
-        '<rect x="' + labelW + '" y="' + y + '" width="' + w + '" height="' + rowH + '" rx="2" fill="#3ddbb8" opacity="0.85"/>' +
-        '<text x="' + (labelW + w + 6) + '" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#eaf0f8">' +
-        esc(fv(d.value)) + '</text>';
-    });
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '">' + bars + '</svg>';
-  }
-  const barW = 28, gap = 10, W = data.length * (barW + gap), H = 160, baseY = 130;
-  let bars = '';
-  data.forEach((d, i) => {
-    const x = i * (barW + gap);
-    const h = (d.value / max) * (baseY - 10);
-    bars += '<rect x="' + x + '" y="' + (baseY - h) + '" width="' + barW + '" height="' + h +
-      '" rx="2" fill="#f2733f" opacity="0.85"/>' +
-      '<text x="' + (x + barW / 2) + '" y="' + (baseY - h - 6) + '" font-size="11" fill="#eaf0f8" text-anchor="middle">' +
-      esc(fv(d.value)) + '</text>' +
-      '<text x="' + (x + barW / 2) + '" y="' + (baseY + 16) + '" font-size="10" fill="#8798b5" text-anchor="middle">' +
-      esc(String(d.label).slice(0, 8)) + '</text>';
-  });
-  return '<svg viewBox="0 0 ' + Math.max(W, 100) + ' ' + (H) + '">' + bars + '</svg>';
-}
-
-/** Minimal line chart as inline SVG — used for the runs-per-day trend. */
-function lineChart(data) {
-  if (!data.length) return '<div class="empty">No data yet.</div>';
-  const W = 460, H = 160, padL = 24, padB = 20, padT = 14;
-  const max = Math.max(...data.map((d) => d.value), 1);
-  const stepX = data.length > 1 ? (W - padL - 10) / (data.length - 1) : 0;
-  const y = (v) => padT + (1 - v / max) * (H - padT - padB);
-  const points = data.map((d, i) => (padL + i * stepX) + ',' + y(d.value)).join(' ');
-  let dots = '', labels = '';
-  data.forEach((d, i) => {
-    const x = padL + i * stepX;
-    dots += '<circle cx="' + x + '" cy="' + y(d.value) + '" r="2.5" fill="#3ddbb8"/>';
-    if (i === 0 || i === data.length - 1 || i % Math.ceil(data.length / 6) === 0) {
-      labels += '<text x="' + x + '" y="' + (H - 4) + '" font-size="9" fill="#8798b5" text-anchor="middle">' +
-        esc(d.label) + '</text>';
-    }
-  });
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '">' +
-    '<polyline points="' + points + '" fill="none" stroke="#f2733f" stroke-width="2"/>' +
-    dots + labels + '</svg>';
-}
-
-/**
- * Banning flips the profile flag AND the copy denormalised onto every one of
- * that player's leaderboard rows. Firestore cannot join, so the boards filter
- * on their own banned field — without this second write a banned player would
- * stay on the leaderboard.
- */
+/** Banning flips the profile flag and the copy on every leaderboard row. */
 async function setBanned(p, banned) {
   say('pMsg', banned ? 'Banning…' : 'Unbanning…');
   try {
@@ -832,30 +568,19 @@ async function setBanned(p, banned) {
   } catch (e) { say('pMsg', e.message, 'err'); }
 }
 
-/**
- * Credits have no single mutable field anywhere — every credit change,
- * everywhere in this app, is an append-only event and the balance is
- * always just the sum of them (see creditEvents in firestore.rules). So
- * "set someone's credits to N" can't overwrite anything; it has to work
- * out the one adjustment event that gets the sum there and write that.
- */
+/** Credits are a sum of append-only events: setting a balance writes one adjustment. */
 async function setCredits(p) {
-  const input = prompt((p.displayName || 'Player') + ' currently has ' + p.credits +
-    ' credits. Set their balance to:', String(p.credits));
+  const input = prompt((p.displayName || 'Player') + ' has ' + p.credits + ' credits. Set their balance to:', String(p.credits));
   if (input === null) return;
   const target = parseInt(input, 10);
   if (!Number.isFinite(target)) { say('pMsg', 'Enter a whole number.', 'err'); return; }
   say('pMsg', 'Setting credits…');
   try {
-    // p.credits is whatever the last Reload loaded — the player could have
-    // earned or spent credits since, so re-total from the live events
-    // right before computing the adjustment rather than trusting the
-    // possibly-stale cached figure the prompt was seeded with.
     const ceSnap = await getDocs(query(collection(db, 'creditEvents'), where('uid', '==', p.uid)));
     let live = 0;
     ceSnap.forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') live += v.delta; });
     const delta = target - live;
-    if (delta === 0) { say('pMsg', 'Already at ' + target + ' credits.', 'ok'); return; }
+    if (Math.abs(delta) < 1e-9) { say('pMsg', 'Already at ' + target + '.', 'ok'); return; }
     const id = p.uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_adjust';
     await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, note: 'admin set to ' + target, createdAt: serverTimestamp() });
     await loadAll();
@@ -863,9 +588,370 @@ async function setCredits(p) {
   } catch (e) { say('pMsg', e.message, 'err'); }
 }
 
-function esc(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+/* -------------------------------------------------------- delete account */
+let delTarget = null;
+function openDelete(p) {
+  delTarget = p;
+  $('delName').textContent = p.displayName || p.uid;
+  $('delPass').value = '';
+  say('delMsg', '');
+  $('delModal').classList.remove('hide');
+  $('delPass').focus();
+}
+$('btnDelCancel').addEventListener('click', () => { $('delModal').classList.add('hide'); delTarget = null; });
+$('delPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnDelGo').click(); });
+$('btnDelGo').addEventListener('click', async () => {
+  const p = delTarget;
+  if (!p) return;
+  const cfg = await getDoc(doc(db, 'config', 'admin'));
+  if (!cfg.exists() || !cfg.data().passHash) { say('delMsg', 'Set an admin passcode first (Settings).', 'err'); return; }
+  const ok = (await hashPass($('delPass').value, cfg.data().salt)) === cfg.data().passHash;
+  if (!ok) { say('delMsg', 'Wrong passcode.', 'err'); return; }
+  $('btnDelGo').disabled = true;
+  try {
+    const n = await deleteAccount(p, (t) => say('delMsg', t));
+    $('delModal').classList.add('hide');
+    $('playerDetail').classList.add('hide');
+    await loadAll(); await loadRuns();
+    say('pMsg', (p.displayName || 'Player') + ' deleted (' + n + ' documents).', 'ok');
+  } catch (e) { say('delMsg', e.message, 'err'); }
+  $('btnDelGo').disabled = false;
+});
+
+/** Removes every document tied to a uid, then leaves a tombstone so the
+ *  account can never create a profile again. */
+async function deleteAccount(p, progress) {
+  const uid = p.uid;
+  const refs = [];
+  const byUidQ = async (col) => (await getDocs(query(collection(db, col), where('uid', '==', uid)))).forEach((d) => refs.push(d.ref));
+  progress('Finding their data…');
+  await byUidQ('bests'); await byUidQ('ghosts'); await byUidQ('creditEvents'); await byUidQ('runLog');
+  const races = await getDocs(collection(db, 'races'));
+  for (const r of races.docs) {
+    const e = await getDoc(doc(db, 'races', r.id, 'entries', uid));
+    if (e.exists()) refs.push(e.ref);
+  }
+  refs.push(doc(db, 'carCustomization', uid), doc(db, 'claims', uid), doc(db, 'profiles', uid));
+  progress('Deleting ' + refs.length + ' documents…');
+  for (let i = 0; i < refs.length; i += 400) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + 400).forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
+  const cleared = {};
+  ['gold', 'silver', 'bronze'].forEach((k) => { if (awards[k] && awards[k].uid === uid) cleared[k] = deleteField(); });
+  if (Object.keys(cleared).length) await setDoc(doc(db, 'seasonAwards', 's1'), cleared, { merge: true });
+  await setDoc(doc(db, 'deleted', uid), { name: p.displayName || '', at: serverTimestamp(), by: auth.currentUser.uid });
+  return refs.length;
+}
+
+/* ----------------------------------------------------------- run history */
+function filteredRuns() {
+  const kind = $('rfKind').value, out = $('rfOutcome').value, course = $('rfCourse').value;
+  const drv = $('rfDriver').value.trim().toLowerCase(), within = parseInt($('rfWhen').value, 10) || 0;
+  const now = Date.now();
+  return runs.filter((r) => (!kind || r.kind === kind) && (!out || outcomeOf(r) === out) &&
+    (!course || r.courseId === course) && (!drv || (r.displayName || '').toLowerCase().includes(drv)) &&
+    (!within || now - r.ms <= within));
+}
+let loadedLimit = 500;
+$('btnRunApply').addEventListener('click', async () => {
+  const n = parseInt($('rfLimit').value, 10) || 500;
+  if (n !== loadedLimit) { loadedLimit = n; await loadRuns(); } else renderRuns();
+});
+['rfKind', 'rfOutcome', 'rfCourse', 'rfWhen'].forEach((id) => $(id).addEventListener('change', renderRuns));
+$('rfDriver').addEventListener('input', renderRuns);
+function renderRuns() {
+  const rows = filteredRuns();
+  const fin = rows.filter((r) => outcomeOf(r) === 'finished');
+  const rst = rows.filter((r) => outcomeOf(r) === 'restarted');
+  const trm = rows.filter((r) => outcomeOf(r) === 'terminated');
+  const tiles = $('runTiles');
+  const tile = (n, l) => '<div class="statTile"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></div>';
+  const avgProg = rows.length ? rows.reduce((s, r) => s + (typeof r.progress === 'number' ? r.progress : 1), 0) / rows.length : 0;
+  const top = rows.reduce((m, r) => Math.max(m, r.topMph || 0), 0);
+  tiles.innerHTML = tile(rows.length, 'attempts shown') + tile(fin.length, 'finished') + tile(rst.length, 'restarted') +
+    tile(trm.length, 'ended early') + tile(rows.length ? Math.round(fin.length / rows.length * 100) + '%' : '—', 'finish rate') +
+    tile(Math.round(avgProg * 100) + '%', 'avg progress') + tile(top ? top + ' mph' : '—', 'top speed') +
+    tile(new Set(rows.map((r) => r.uid)).size, 'drivers');
+  const tb = $('runRows');
+  tb.innerHTML = '';
+  rows.slice(0, 1500).forEach((r) => {
+    const oc = OUTCOME[outcomeOf(r)] || OUTCOME.finished;
+    const prog = typeof r.progress === 'number' ? r.progress : (outcomeOf(r) === 'finished' ? 1 : null);
+    const tr = document.createElement('tr');
+    tr.className = 'click';
+    tr.innerHTML = '<td class="mono" title="' + fmtWhen(r.ms) + '">' + fmtWhen(r.ms) + '</td>' +
+      '<td>' + esc(r.displayName || '—') + '</td><td>' + esc(courseName(r.courseId)) + '</td>' +
+      '<td><span class="pill">' + esc(KIND[r.kind] || r.kind) + '</span></td>' +
+      '<td><span class="pill ' + oc[1] + '">' + oc[0] + '</span>' + (r.reason && r.reason !== outcomeOf(r) ?
+        ' <span class="mono">' + esc(REASON[r.reason] || r.reason) + '</span>' : '') + '</td>' +
+      '<td class="mono r">' + fmt(r.timeMs) + '</td>' +
+      '<td>' + (prog === null ? '<span class="mono">—</span>' : '<div class="bar" title="' + Math.round(prog * 100) + '%"><i style="width:' +
+        Math.round(prog * 100) + '%"></i></div>') + '</td>' +
+      '<td class="mono r">' + (r.topMph != null ? r.topMph : '—') + '</td>' +
+      '<td class="mono r">' + (r.boostUsed != null ? r.boostUsed + 's' : '—') + '</td>' +
+      '<td class="mono r">' + (r.grassSec != null ? r.grassSec + 's' : '—') + '</td>' +
+      '<td class="mono r">' + (r.attempt || '—') + '</td>';
+    tr.addEventListener('click', () => showRun(r));
+    tb.appendChild(tr);
+  });
+  if (!rows.length) tb.innerHTML = '<tr><td colspan="11" class="empty">No attempts match.</td></tr>';
+}
+function showRun(r) {
+  const el = $('runDetail');
+  const oc = OUTCOME[outcomeOf(r)] || OUTCOME.finished;
+  const kv = (k, v) => '<div><span>' + esc(k) + '</span><b>' + esc(v == null || v === '' ? '—' : v) + '</b></div>';
+  el.innerHTML = '<div class="spread"><h2 style="margin:0">' + esc(r.displayName) + ' · ' + esc(courseName(r.courseId)) +
+    '</h2><button class="small" id="rdClose">Close</button></div><div class="kv" style="margin-top:12px">' +
+    kv('when', fmtWhen(r.ms)) + kv('outcome', oc[0]) + kv('why', REASON[r.reason] || r.reason) + kv('kind', KIND[r.kind] || r.kind) +
+    kv('time', fmt(r.timeMs)) + kv('progress', typeof r.progress === 'number' ? Math.round(r.progress * 100) + '%' : '') +
+    kv('top speed', r.topMph != null ? r.topMph + ' mph' : '') + kv('boost used', r.boostUsed != null ? r.boostUsed + ' s of 3' : '') +
+    kv('on grass', r.grassSec != null ? r.grassSec + ' s' : '') + kv('airborne', r.airSec != null ? r.airSec + ' s' : '') +
+    kv('attempt #', r.attempt) + kv('racing', r.vs) + kv('race id', r.raceId) + kv('frame rate', r.fps ? r.fps + ' fps' : '') +
+    kv('season', r.season) + kv('uid', r.uid) + kv('log id', r.id) + '</div>';
+  el.classList.remove('hide');
+  $('rdClose').addEventListener('click', () => el.classList.add('hide'));
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+$('btnRunCsv').addEventListener('click', () => {
+  const cols = ['when', 'driver', 'uid', 'map', 'courseId', 'kind', 'outcome', 'reason', 'timeMs', 'progress', 'topMph',
+    'boostUsed', 'grassSec', 'airSec', 'attempt', 'vs', 'raceId', 'fps'];
+  const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [cols.join(',')].concat(filteredRuns().map((r) => [fmtWhen(r.ms), r.displayName, r.uid, courseName(r.courseId),
+    r.courseId, r.kind, outcomeOf(r), r.reason, r.timeMs, r.progress, r.topMph, r.boostUsed, r.grassSec, r.airSec, r.attempt,
+    r.vs, r.raceId, r.fps].map(q).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+  a.download = 'aipolytrack-runs.csv';
+  a.click();
+});
+
+/* ------------------------------------------------------------ overview */
+function renderOverview() {
+  $('ovRunWindow').textContent = runs.length;
+  const s2runs = runs.filter((r) => String(r.courseId).startsWith('s2'));
+  const fin = s2runs.filter((r) => outcomeOf(r) === 'finished');
+  const now = Date.now();
+  const earned = creditRows.filter((v) => v.delta > 0).reduce((s, v) => s + v.delta, 0);
+  const spent = creditRows.filter((v) => v.delta < 0).reduce((s, v) => s - v.delta, 0);
+  const tile = (n, l) => '<div class="statTile"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></div>';
+  const active24 = new Set(runs.filter((r) => now - r.ms < 86400000).map((r) => r.uid)).size;
+  $('ovTiles').innerHTML = tile(players.length, 'players') + tile(players.filter((p) => p.banned).length, 'banned') +
+    tile(active24, 'active last 24h') + tile(runs.filter((r) => now - r.ms < 3600000).length, 'attempts last hour') +
+    tile(s2runs.length, 'season 2 attempts') + tile(s2runs.length ? Math.round(fin.length / s2runs.length * 100) + '%' : '—', 'finish rate') +
+    tile(bests.filter((b) => String(b.courseId).startsWith('s2')).length, 'season 2 times') +
+    tile(Math.floor(earned), 'credits earned') + tile(Math.floor(spent), 'credits spent');
+
+  const charts = $('ovCharts');
+  charts.innerHTML = '';
+  const box = (title, svg) => { const d = document.createElement('div'); d.className = 'chartBox'; d.innerHTML = '<h4>' + esc(title) + '</h4>' + svg; charts.appendChild(d); };
+  box('Attempt outcomes', barChart(Object.keys(OUTCOME).map((k) => ({ label: OUTCOME[k][0], value: runs.filter((r) => outcomeOf(r) === k).length }))));
+  const reasons = {};
+  runs.filter((r) => outcomeOf(r) !== 'finished').forEach((r) => { const k = REASON[r.reason] || r.reason || '?'; reasons[k] = (reasons[k] || 0) + 1; });
+  box('Why runs didn\'t finish', barChart(Object.entries(reasons).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value })), true));
+  const byDay = {};
+  runs.forEach((r) => { if (!r.ms) return; const d = new Date(r.ms).toISOString().slice(0, 10); byDay[d] = (byDay[d] || 0) + 1; });
+  box('Attempts per day', lineChart(Object.keys(byDay).sort().map((d) => ({ label: d.slice(5), value: byDay[d] }))));
+  const byHour = new Array(24).fill(0);
+  runs.forEach((r) => { if (r.ms) byHour[new Date(r.ms).getHours()]++; });
+  box('Attempts by hour', barChart(byHour.map((v, h) => ({ label: pad(h), value: v }))));
+  const rst = {};
+  runs.filter((r) => outcomeOf(r) === 'restarted').forEach((r) => { rst[r.courseId] = (rst[r.courseId] || 0) + 1; });
+  box('Most restarted maps', barChart(Object.entries(rst).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => ({ label: courseName(k), value: v })), true));
+  const drivers = {};
+  runs.forEach((r) => { const k = r.displayName || r.uid; drivers[k] = (drivers[k] || 0) + 1; });
+  box('Most active drivers', barChart(Object.entries(drivers).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([label, value]) => ({ label, value })), true));
+
+  const tb = $('ovCourses');
+  tb.innerHTML = S2.map((c) => {
+    const rs = runs.filter((r) => r.courseId === c.id);
+    const f = rs.filter((r) => outcomeOf(r) === 'finished').map((r) => r.timeMs).sort((a, b) => a - b);
+    const board = bests.filter((b) => b.courseId === c.id && !b.banned).sort((a, b) => a.timeMs - b.timeMs);
+    const med = f.length ? f[Math.floor(f.length / 2)] : null;
+    return '<tr><td>' + esc(c.tag + ' ' + c.name) + '</td><td class="mono r">' + rs.length + '</td><td class="mono r">' + f.length +
+      '</td><td class="mono r">' + (rs.length ? Math.round(f.length / rs.length * 100) + '%' : '—') + '</td><td class="mono r">' +
+      rs.filter((r) => outcomeOf(r) === 'restarted').length + '</td><td class="mono r">' + new Set(rs.map((r) => r.uid)).size +
+      '</td><td class="mono r">' + (med ? fmt(med) : '—') + '</td><td class="mono r">' +
+      (board[0] ? fmt(legacyMs(board[0].timeMs)) + ' ' + esc(board[0].displayName || '') : '—') + '</td></tr>';
+  }).join('');
+}
+
+/* ---------------------------------------------------------------- times */
+$('tSeason').addEventListener('change', () => { fillTimesCourse(); renderTimes(); });
+$('tCourse').addEventListener('change', renderTimes);
+$('btnTimesReload').addEventListener('click', loadAll);
+function renderTimes() {
+  const id = $('tCourse').value;
+  const rows = bests.filter((b) => b.courseId === id).sort((a, b) => a.timeMs - b.timeMs);
+  const tt = $('times');
+  tt.innerHTML = '';
+  rows.forEach((r, k) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="mono">' + (k + 1) + '</td><td>' + esc(r.displayName || '—') +
+      (r.banned ? ' <span class="pill on">hidden</span>' : '') + '</td><td class="mono r">' + fmt(legacyMs(r.timeMs)) +
+      '</td><td class="mono">' + (r.updatedMs ? fmtWhen(r.updatedMs) : '—') + '</td><td class="r"></td>';
+    const del = document.createElement('button');
+    del.className = 'small danger'; del.textContent = 'Delete';
+    del.addEventListener('click', async () => {
+      if (!confirm('Delete ' + (r.displayName || 'this') + '\'s time on ' + courseName(id) + '?')) return;
+      await deleteDoc(doc(db, 'bests', r.id));
+      try { await deleteDoc(doc(db, 'ghosts', r.id)); } catch (e) { /* no ghost */ }
+      await loadAll();
+    });
+    tr.lastElementChild.appendChild(del);
+    tt.appendChild(tr);
+  });
+  if (!rows.length) tt.innerHTML = '<tr><td colspan="5" class="empty">No times on this map.</td></tr>';
+}
+
+/* -------------------------------------------------------------- seasons */
+const PLACES = [['gold', '1st', 'Champion'], ['silver', '2nd', 'Runner-up'], ['bronze', '3rd', 'Third place']];
+function renderSeasons() {
+  const s1 = standings(S1.map((c) => c.id));
+  $('s1Standings').innerHTML = s1.slice(0, 30).map((r, k) => '<tr><td class="mono">' + (k + 1) + '</td><td>' + esc(r.name) +
+    '</td><td class="mono r">' + r.count + ' / ' + S1.length + '</td><td class="mono r">' + fmt(r.total) + '</td><td class="r">' +
+    (k < 3 ? '<button class="small" data-quick="' + k + '" data-uid="' + esc(r.uid) + '">Award ' + PLACES[k][1] + '</button>' : '') +
+    '</td></tr>').join('') || '<tr><td colspan="5" class="empty">No Season 1 times.</td></tr>';
+  $('s1Standings').querySelectorAll('[data-quick]').forEach((b) => b.addEventListener('click', () =>
+    award(PLACES[+b.dataset.quick][0], b.dataset.uid)));
+  const s2 = standings(S2.map((c) => c.id));
+  $('s2Standings').innerHTML = s2.slice(0, 15).map((r, k) => '<tr><td class="mono">' + (k + 1) + '</td><td>' + esc(r.name) +
+    '</td><td class="mono r">' + r.count + ' / ' + S2.length + '</td><td class="mono r">' + fmt(r.total) + '</td></tr>').join('') ||
+    '<tr><td colspan="4" class="empty">No Season 2 times yet.</td></tr>';
+  $('s2Sections').innerHTML = SECTIONS.map((name, sec) => {
+    const top = standings(S2.filter((c) => c.sec === sec).map((c) => c.id))[0];
+    return '<div class="spread" style="padding:6px 0;border-bottom:1px solid var(--rule2)"><span>' + esc(name) + '</span><span class="mono">' +
+      (top ? esc(top.name) + ' · ' + top.count + '/4 · ' + fmt(top.total) : '—') + '</span></div>';
+  }).join('');
+
+  const sorted = players.slice().sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+  $('awardRows').innerHTML = PLACES.map(([key, ord, title]) => {
+    const cur = awards[key];
+    return '<div class="award"><div><span class="medal ' + key + '">' + ord.charAt(0) + '</span><b>' + title + '</b></div>' +
+      '<div class="row" style="align-items:center"><select id="aw-' + key + '"><option value="">— pick a player —</option>' +
+      sorted.map((p) => '<option value="' + esc(p.uid) + '"' + (cur && cur.uid === p.uid ? ' selected' : '') + '>' +
+        esc(p.displayName || p.uid) + '</option>').join('') + '</select>' +
+      '<span class="mono">' + (cur ? 'held by <b style="color:var(--ink)">' + esc(cur.name) + '</b>' : 'not awarded') + '</span></div>' +
+      '<div class="row"><button class="primary small" data-award="' + key + '">Award</button>' +
+      (cur ? '<button class="small danger" data-revoke="' + key + '">Remove</button>' : '') + '</div></div>';
+  }).join('');
+  $('awardRows').querySelectorAll('[data-award]').forEach((b) => b.addEventListener('click', () => {
+    const uid = $('aw-' + b.dataset.award).value;
+    if (!uid) { say('awardMsg', 'Pick a player first.', 'err'); return; }
+    award(b.dataset.award, uid);
+  }));
+  $('awardRows').querySelectorAll('[data-revoke]').forEach((b) => b.addEventListener('click', () => revoke(b.dataset.revoke)));
+}
+async function award(key, uid) {
+  const p = byUid[uid];
+  if (!p) { say('awardMsg', 'That player no longer exists.', 'err'); return; }
+  const place = PLACES.find((x) => x[0] === key);
+  const other = PLACES.map((x) => x[0]).find((k) => k !== key && awards[k] && awards[k].uid === uid);
+  if (other && !confirm(p.displayName + ' already holds the ' + other + ' trophy. Move it to ' + key + '?')) return;
+  try {
+    const patch = { [key]: { uid, name: p.displayName || uid, at: Date.now() } };
+    if (other) patch[other] = deleteField();
+    await setDoc(doc(db, 'seasonAwards', 's1'), patch, { merge: true });
+    await loadAll();
+    say('awardMsg', 'Season 1 ' + place[2].toLowerCase() + ' trophy awarded to ' + p.displayName + '.', 'ok');
+  } catch (e) { say('awardMsg', e.message, 'err'); }
+}
+async function revoke(key) {
+  if (!confirm('Remove the ' + key + ' trophy from ' + awards[key].name + '?')) return;
+  try {
+    await setDoc(doc(db, 'seasonAwards', 's1'), { [key]: deleteField() }, { merge: true });
+    await loadAll();
+    say('awardMsg', 'Removed.', 'ok');
+  } catch (e) { say('awardMsg', e.message, 'err'); }
+}
+
+/* ------------------------------------------------------------- settings */
+$('btnRandom').addEventListener('click', () => {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const buf = new Uint32Array(16);
+  crypto.getRandomValues(buf);
+  let out = '';
+  for (let i = 0; i < 16; i++) out += abc[buf[i] % abc.length];
+  $('newCode').value = out.slice(0, 5) + '-' + out.slice(5, 10) + '-' + out.slice(10, 16);
+});
+$('btnSaveCode').addEventListener('click', async () => {
+  const code = $('newCode').value.trim();
+  if (code.length < 8) { say('codeMsg', 'Use at least 8 characters.', 'err'); return; }
+  try {
+    await setDoc(doc(db, 'config', 'invite'), { code });
+    $('curCode').textContent = code; $('newCode').value = '';
+    say('codeMsg', 'Invite code updated.', 'ok');
+  } catch (e) { say('codeMsg', e.message, 'err'); }
+});
+
+async function hashPass(pass, salt) {
+  const data = new TextEncoder().encode(salt + ':' + pass);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+let pcCfg = null;
+async function loadSettings() {
+  try {
+    const cfg = await getDoc(doc(db, 'config', 'admin'));
+    pcCfg = cfg.exists() ? cfg.data() : null;
+  } catch (e) { pcCfg = null; }
+  const has = !!(pcCfg && pcCfg.passHash);
+  $('pcOldWrap').classList.toggle('hide', !has);
+  $('pcState').textContent = has ? 'A passcode is set. Needed to delete accounts.' : 'No passcode yet — set one to enable account deletion.';
+}
+$('btnPcSave').addEventListener('click', async () => {
+  const a = $('pcNew').value, b = $('pcNew2').value;
+  if (a.length < 6) { say('pcMsg', 'Use at least 6 characters.', 'err'); return; }
+  if (a !== b) { say('pcMsg', 'The two new passcodes don\'t match.', 'err'); return; }
+  await loadSettings();
+  if (pcCfg && pcCfg.passHash && (await hashPass($('pcOld').value, pcCfg.salt)) !== pcCfg.passHash) {
+    say('pcMsg', 'Current passcode is wrong.', 'err'); return;
+  }
+  const salt = [...crypto.getRandomValues(new Uint8Array(12))].map((x) => x.toString(16).padStart(2, '0')).join('');
+  try {
+    await setDoc(doc(db, 'config', 'admin'), { salt, passHash: await hashPass(a, salt), updatedAt: serverTimestamp() });
+    $('pcOld').value = $('pcNew').value = $('pcNew2').value = '';
+    await loadSettings();
+    say('pcMsg', 'Passcode saved.', 'ok');
+  } catch (e) { say('pcMsg', e.message, 'err'); }
+});
+
+/* --------------------------------------------------------------- charts */
+function barChart(data, horizontal) {
+  if (!data.length || data.every((d) => !d.value)) return '<div class="empty">No data yet.</div>';
+  const max = Math.max(...data.map((d) => d.value), 1);
+  if (horizontal) {
+    const rowH = 22, gap = 6, W = 460, labelW = 150;
+    const H = data.length * (rowH + gap);
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '">' + data.map((d, i) => {
+      const y = i * (rowH + gap), w = Math.max(2, (d.value / max) * (W - labelW - 50));
+      return '<text x="0" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#8798b5">' + esc(String(d.label).slice(0, 22)) + '</text>' +
+        '<rect x="' + labelW + '" y="' + y + '" width="' + w + '" height="' + rowH + '" rx="3" fill="#3ddbb8" opacity=".85"/>' +
+        '<text x="' + (labelW + w + 6) + '" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#eaf0f8">' + d.value + '</text>';
+    }).join('') + '</svg>';
+  }
+  const W = 460, H = 160, baseY = 130, gap = 6;
+  const barW = Math.max(8, Math.min(46, W / data.length - gap));
+  const x0 = (W - data.length * (barW + gap) + gap) / 2;
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '">' + data.map((d, i) => {
+    const x = x0 + i * (barW + gap), h = (d.value / max) * (baseY - 14);
+    return '<rect x="' + x + '" y="' + (baseY - h) + '" width="' + barW + '" height="' + h + '" rx="2" fill="#f2733f" opacity=".85"/>' +
+      '<text x="' + (x + barW / 2) + '" y="' + (baseY - h - 5) + '" font-size="10" fill="#eaf0f8" text-anchor="middle">' + d.value + '</text>' +
+      '<text x="' + (x + barW / 2) + '" y="' + (baseY + 15) + '" font-size="9.5" fill="#8798b5" text-anchor="middle">' + esc(String(d.label).slice(0, 11)) + '</text>';
+  }).join('') + '</svg>';
+}
+function lineChart(data) {
+  if (!data.length) return '<div class="empty">No data yet.</div>';
+  const W = 460, H = 160, padL = 24, padB = 20, padT = 14;
+  const max = Math.max(...data.map((d) => d.value), 1);
+  const stepX = data.length > 1 ? (W - padL - 10) / (data.length - 1) : 0;
+  const y = (v) => padT + (1 - v / max) * (H - padT - padB);
+  const pts = data.map((d, i) => (padL + i * stepX) + ',' + y(d.value)).join(' ');
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '"><polyline points="' + pts + '" fill="none" stroke="#f2733f" stroke-width="2"/>' +
+    data.map((d, i) => '<circle cx="' + (padL + i * stepX) + '" cy="' + y(d.value) + '" r="2.5" fill="#3ddbb8"/>' +
+      ((i === 0 || i === data.length - 1 || i % Math.ceil(data.length / 6) === 0) ? '<text x="' + (padL + i * stepX) + '" y="' +
+        (H - 4) + '" font-size="9" fill="#8798b5" text-anchor="middle">' + esc(d.label) + '</text>' : '')).join('') + '</svg>';
 }
 </script>
 </body>

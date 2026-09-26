@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>aiPolytrack — elevated stunt driving</title>
+<title>aiPolytrack — Season 2</title>
 <style>
 :root{
   --void:#bcdff2; --void-2:#0e1630; --horizon:#38597f;
@@ -387,27 +387,6 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .who[hidden]{display:none}
 .who b{color:var(--ink);font-weight:500}
 .who .cr{color:var(--signal)}
-/* The special long course's menu button — a full-width card rather than a
-   plain nav button, since the whole point is to make it stand out and
-   make being #1 on it feel worth chasing (see the request this was built
-   for). Shows the current leader right on the button, in large text —
-   sharing .specialBadge/.crown/.leaderTime with the matching course-card
-   treatment in courseList() so both places read as the same feature. */
-.specialCourseCard{display:block;width:100%;text-align:left;padding:16px 18px;margin-bottom:16px;
-  border:1px solid rgba(255,207,92,.45);border-radius:2px;cursor:pointer;font:inherit;color:inherit;
-  background:linear-gradient(160deg,rgba(255,207,92,.12),rgba(242,115,63,.06));
-  transition:border-color .15s,background .15s,transform .14s}
-.specialCourseCard:hover{border-color:rgba(255,207,92,.75);transform:translateY(-1px);
-  background:linear-gradient(160deg,rgba(255,207,92,.18),rgba(242,115,63,.09))}
-.specialCourseCard[hidden]{display:none}
-.specialCourseTop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
-.specialCourseName{font-size:17px;font-weight:600;letter-spacing:-.012em}
-.specialCourseLeader{display:flex;align-items:baseline;gap:7px;margin-top:9px;font-size:13px;
-  font-family:var(--mono);color:var(--dim)}
-.specialCourseLeader .crown{color:var(--signal);font-size:12px}
-.specialCourseLeader b{color:var(--signal);font-family:var(--sans);font-weight:700;font-size:18px;
-  text-shadow:0 0 14px rgba(255,207,92,.45)}
-.specialCourseLeader .leaderTime{color:var(--aqua);margin-left:auto}
 .race-lobby-card{padding:16px 18px;margin-bottom:22px;background:rgba(242,115,63,.08);
   border:1px solid rgba(242,115,63,.35);border-radius:2px}
 .race-lobby-card[hidden]{display:none}
@@ -491,6 +470,123 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   margin-bottom:6px;font-family:var(--mono)}
 .garageSliderRow label b{color:var(--aqua);font-weight:600}
 .garageSliderRow input[type=range]{width:100%;accent-color:var(--aqua);cursor:pointer}
+
+/* ---------- season 2 menu ---------- */
+.menuPanel{width:min(1040px,95vw);padding:34px 38px 30px}
+.menuTop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.menuTop .brand{margin-bottom:0;align-items:center}
+.menuTop .brand h1{font-size:clamp(40px,6.4vw,72px)}
+.menuTop .brand svg{margin-bottom:0}
+.seasonTag{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:#1d0a02;background:var(--signal);
+  padding:5px 10px;border-radius:999px;font-weight:700;align-self:center;white-space:nowrap}
+.menuTop .who{margin:6px 0 0;gap:12px;align-items:center}
+.menuTop .who .cr b{color:var(--signal)}
+.menuGrid{display:grid;grid-template-columns:1.25fr .9fr;gap:26px}
+@media(max-width:820px){.menuGrid{grid-template-columns:1fr}}
+.playBtn{display:flex;align-items:center;gap:18px;width:100%;text-align:left;padding:20px 24px;
+  background:linear-gradient(135deg,#ff8a58,var(--ember));border:0;border-radius:6px;color:#1d0a02;
+  box-shadow:0 10px 28px rgba(242,115,63,.35);margin-bottom:14px}
+.playBtn:hover{background:linear-gradient(135deg,#ffa07a,#ff8a58);border:0;box-shadow:0 12px 32px rgba(242,115,63,.45)}
+.playIcon{font-size:30px;line-height:1}
+.playText b{display:block;font-size:26px;letter-spacing:-.02em}
+.playText small{display:block;font-size:13px;opacity:.75;margin-top:2px}
+.menuTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:560px){.menuTiles{grid-template-columns:repeat(2,1fr)}}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px 16px;
+  border-radius:6px;background:rgba(255,255,255,.035);border:1px solid var(--rule)}
+.tile b{font-size:15px;font-weight:600}
+.tile small{font-size:11.5px;color:var(--dim)}
+.tile:hover{background:rgba(255,255,255,.07);border-color:rgba(234,240,248,.32)}
+#bTrophies{border-color:rgba(255,207,92,.45);background:linear-gradient(160deg,rgba(255,207,92,.1),rgba(255,207,92,.02))}
+#bTrophies b{color:var(--signal)}
+#driverRow{margin-top:16px}
+#driverRow[hidden]{display:none}
+.keysStrip{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:18px;font-size:12px;color:var(--dim)}
+.keysStrip b{font-family:var(--mono);color:var(--ink);font-weight:500;background:rgba(255,255,255,.06);
+  border:1px solid var(--rule);border-radius:3px;padding:1px 6px;margin-right:3px}
+.menuSide{display:flex;flex-direction:column;gap:14px}
+.leaderCard{padding:14px 16px;border-radius:6px;border:1px solid rgba(255,207,92,.45);
+  background:linear-gradient(160deg,rgba(255,207,92,.12),rgba(242,115,63,.05))}
+.leaderCard[hidden]{display:none}
+.lcHead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.lcKick{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--signal)}
+.lcHead .leaderTime{font-family:var(--mono);font-size:11.5px;color:var(--aqua)}
+.lcBody{display:flex;align-items:center;gap:14px}
+.lcCar{width:132px;height:92px;flex:none;margin-bottom:0}
+.lcName{font-size:20px;font-weight:700;letter-spacing:-.02em;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lcName .crown{color:var(--signal);font-size:16px}
+.sectionLeaders{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.secLead{padding:9px 12px;border-radius:5px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025)}
+.secLead .sl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--dimmer)}
+.secLead .sn{font-size:13.5px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.secLead .sn .crown{color:var(--signal)}
+.secLead .sn.empty{color:var(--dimmer);font-weight:400}
+.menuSide .race-lobby-card{margin-bottom:0;border-radius:6px}
+
+/* ---------- HUD additions ---------- */
+.hudTimes{display:flex;gap:12px;justify-content:center;font-family:var(--mono);font-size:12.5px;margin-top:3px}
+.hudTimes .pb{color:var(--aqua)}
+.hudTimes .wr{color:var(--signal)}
+.boostRow{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:7px}
+.boostRow .boost{margin:0}
+.boostPct{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--aqua);min-width:44px;text-align:right}
+.boostPct.spent{color:var(--dimmer)}
+.boostPct.on{color:var(--ember)}
+@media(max-width:760px){.boost{width:84px}.hudTimes{flex-direction:column;gap:0;align-items:center}}
+
+/* ---------- course list by section ---------- */
+.secBlock{margin-bottom:22px}
+.secBlock .courses{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.secBlock .courses{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.secHead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px;
+  padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.secHead h3{font-size:15px;letter-spacing:.02em}
+.secHead .secLeader{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.secHead .secLeader b{color:var(--signal);font-family:var(--sans)}
+.podium{display:flex;flex-direction:column;gap:2px;margin-top:8px;font-family:var(--mono);font-size:11.5px}
+.podium .p{display:flex;gap:6px;align-items:baseline;color:var(--dim)}
+.podium .p b{font-family:var(--sans);font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.podium .p .pt{margin-left:auto;color:var(--dimmer)}
+.podium .p1 .m{color:#ffcf5c} .podium .p1 b{color:var(--signal);font-size:13px}
+.podium .p1 .pt{color:var(--aqua)}
+.podium .p2 .m{color:#c9d3e0} .podium .p3 .m{color:#d08a52}
+.podium .none{color:var(--dimmer);font-style:italic}
+.moreBtn{margin-top:10px}
+.moreBtn[hidden]{display:none}
+.cdBest{font-family:var(--mono);font-size:13px;color:var(--aqua)}
+.cdLeader{margin-top:8px;font-size:15px;font-weight:600}
+.cdLeader .crown{color:var(--signal)}
+.leadersGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:18px}
+.leadersGrid .lg{padding:9px 12px;border:1px solid var(--rule-2);border-radius:5px;font-size:12.5px}
+.leadersGrid .lg .c{color:var(--dim);font-family:var(--mono);font-size:10.5px}
+.leadersGrid .lg b{color:var(--signal)}
+.leadersGrid .lg .t{float:right;color:var(--aqua);font-family:var(--mono)}
+.boardsHd{font-size:13px;font-weight:600;margin:22px 0 4px}
+
+/* ---------- trophy room ---------- */
+.trophyPanel{width:min(1040px,95vw)}
+.trophyStage{position:relative;width:100%;height:min(46vh,380px);border-radius:8px;overflow:hidden;
+  border:1px solid var(--rule);background:radial-gradient(120% 120% at 50% 10%,#1d2c48,#070b18);cursor:grab;
+  touch-action:none}
+.trophyStage:active{cursor:grabbing}
+.trophyStage canvas{width:100%;height:100%;display:block}
+.trophyCredits{position:absolute;left:16px;bottom:12px;display:flex;align-items:baseline;gap:6px;pointer-events:none}
+.trophyCredits .tcNum{font-family:var(--mono);font-size:28px;font-weight:700;color:#7fe3ff;
+  text-shadow:0 0 18px rgba(127,227,255,.55)}
+.trophyCredits .tcLbl{font-size:12px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.trophyHint{font-size:12px;margin:8px 0 14px}
+.trophyList{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.trophyItem{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:6px;
+  border:1px solid var(--rule-2);background:rgba(255,255,255,.025)}
+.trophyItem .medal{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:14px;color:#1d0a02}
+.medal.gold{background:radial-gradient(circle at 35% 30%,#fff2b8,#ffcf5c 55%,#b8860b)}
+.medal.silver{background:radial-gradient(circle at 35% 30%,#ffffff,#c9d3e0 55%,#7d8a9c)}
+.medal.bronze{background:radial-gradient(circle at 35% 30%,#ffd2a8,#d08a52 55%,#7a4a22)}
+.trophyItem .ti b{display:block;font-size:13.5px}
+.trophyItem .ti small{color:var(--dim);font-size:11.5px}
+.trophyItem.big{border-color:rgba(255,207,92,.45);background:linear-gradient(160deg,rgba(255,207,92,.1),rgba(255,207,92,.02))}
+.trophyEmpty{color:var(--dim);font-size:13.5px;padding:10px 0}
 </style>
 </head>
 <body>
@@ -511,12 +607,13 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   <div class="layer" id="hud" hidden>
     <div class="hud">
       <div class="hud-tl"><div class="n" id="hNum">Course 1</div><div class="t" id="hName">—</div></div>
-      <div class="hud-tc"><div class="clock" id="hClock">0:00.00</div><div class="split" id="hSplit"></div></div>
+      <div class="hud-tc"><div class="clock" id="hClock">0:00.000</div><div class="split" id="hSplit"></div>
+        <div class="hudTimes"><span class="pb" id="hPB">PB —</span><span class="wr" id="hWR"></span></div></div>
       <div class="hud-tr">
-        <div class="spd" id="hSpd">0<small>km/h</small></div>
+        <div class="spd" id="hSpd">0<small>mph</small></div>
         <div class="gear" id="hGrip"></div>
-        <div class="boost" id="hBoostBar"><i id="hBoost"></i></div>
-        <div class="gear" id="hBoostTxt">boost</div>
+        <div class="boostRow"><div class="boost" id="hBoostBar"><i id="hBoost"></i></div><b class="boostPct" id="hBoostPct">100%</b></div>
+        <div class="gear" id="hBoostTxt">BOOST</div>
       </div>
       <div class="tele" id="tele">
         <div class="cell">
@@ -529,7 +626,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       </div>
       </div>
       <div class="hud-bl" id="hKeys"></div>
-      <div class="hud-br" id="hProg">no time yet</div>
+      <div class="hud-br" id="hProg">0%</div>
       <div class="prompt" id="hPrompt">Hold W to launch</div>
       <div class="bar"><i id="hBar"></i></div>
     </div>
@@ -547,7 +644,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         <div id="specRosterList"></div>
       </div>
       <div class="clock" id="specClock" style="position:absolute;top:20px;left:50%;
-        transform:translateX(-50%)">0:00.00</div>
+        transform:translateX(-50%)">0:00.000</div>
       <div id="specCamHint" hidden>
         <span class="arrows">◄ ►</span> camera: <b id="specCamName">Overview</b>
       </div>
@@ -571,7 +668,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           <path id="specSpeedPath" d="" fill="none" stroke="#3ddbb8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
           <line id="specSpeedHead" x1="0" y1="0" x2="0" y2="40" stroke="#f2733f" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
         </svg>
-        <span class="specGraphLabel" id="specSpeedNow">0 km/h</span>
+        <span class="specGraphLabel" id="specSpeedNow">0 mph</span>
       </div>
       <div class="specBar">
         <span id="specT0">0:00</span>
@@ -614,127 +711,89 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 
   <div class="layer" id="menu" hidden>
     <div class="scrim"></div>
-    <div class="panel">
-      <div class="brand">
-        <svg viewBox="0 0 32 32" aria-hidden="true">
-          <path d="M1 25 L12 25 L21 7 L31 7" fill="none" stroke="#f2733f" stroke-width="3"/>
-          <rect x="7.5" y="18.5" width="9" height="4.5" fill="#3ddbb8"/>
-          <circle cx="10" cy="24" r="1.8" fill="#eaf0f8"/><circle cx="15.5" cy="24" r="1.8" fill="#eaf0f8"/>
-        </svg>
-        <h1>ai<span>Polytrack</span></h1>
-      </div>
-      <div class="who" id="who" hidden>
-        <span>driver <b id="whoName">—</b></span>
-        <span>credits <b class="cr" id="whoCredits">0</b></span>
-        <button class="ghost" id="whoOut" style="padding:0;font-size:12px">Sign out</button>
-      </div>
-      <p class="lede">Thirty-two courses cut into the hills, a coupe with real springs, dampers and
-        tyres, and no luck anywhere in it. Start line to finish line, no checkpoints: brake for
-        the corners, lean on the banking, land nose-up, and chase the ghost of your own best run.</p>
-      <div class="race-lobby-card" id="raceLobbyCard" hidden>
-        <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:6px">
-          <b style="font-size:14px">Race lobby</b>
-          <span class="race-stage" id="lobbyStageBadge">LOBBY</span>
+    <div class="panel menuPanel">
+      <div class="menuTop">
+        <div class="brand">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M1 25 L12 25 L21 7 L31 7" fill="none" stroke="#f2733f" stroke-width="3"/>
+            <rect x="7.5" y="18.5" width="9" height="4.5" fill="#3ddbb8"/>
+            <circle cx="10" cy="24" r="1.8" fill="#eaf0f8"/><circle cx="15.5" cy="24" r="1.8" fill="#eaf0f8"/>
+          </svg>
+          <h1>ai<span>Polytrack</span></h1>
+          <span class="seasonTag">SEASON 2</span>
         </div>
-        <p class="lede" id="lobbyState" style="margin-bottom:10px;font-size:13px">—</p>
-
-        <div id="lobbyMineBox" class="race-mine" hidden>
-          You're in — bought in for <b id="lobbyMineBuyIn">0</b> credits.
-        </div>
-
-        <div id="lobbyJoinBox" hidden>
-          <p class="lede" style="font-size:12.5px;margin-bottom:8px">Stake some of your
-            <b id="lobbyJoinCredits">0</b> credits. Placing better and staking more both increase
-            your share of the pot — but a run with no finish forfeits the whole stake. The course
-            stays hidden until the race actually starts.</p>
-          <div class="row">
-            <input type="text" id="lobbyBuyIn" inputmode="numeric" style="width:120px" placeholder="Credits">
-            <button class="primary" id="bLobbyJoin">Join race</button>
-          </div>
-          <div class="err" id="lobbyJoinMsg"></div>
-        </div>
-
-        <p class="lede race-waiting" id="lobbyWaitingNote" style="margin-top:8px" hidden></p>
-
-        <div id="lobbyDriveRow" style="margin-top:10px" hidden>
-          <p class="lede" style="font-size:12.5px;margin-bottom:8px" id="lobbyDriveNote"></p>
-          <button class="primary" id="bLobbyDrive">Enter race — attempt <span id="lobbyAttemptNum">1</span> of 3</button>
-        </div>
-
-        <div id="lobbyStandingsWrap" hidden>
-          <table id="lobbyTable" style="margin-top:8px">
-            <thead><tr><th></th><th>Driver</th><th style="text-align:right">Buy-in</th>
-              <th style="text-align:right">Best</th><th style="text-align:right" id="lobbyLastCol"></th></tr></thead>
-            <tbody id="lobbyRows"></tbody>
-          </table>
+        <div class="who" id="who" hidden>
+          <span><b id="whoName">—</b></span>
+          <span class="cr">◆ <b id="whoCredits">0</b></span>
+          <button class="ghost small" id="whoOut">Sign out</button>
         </div>
       </div>
-      <div class="race-lobby-card" id="overallLeaderCard" hidden>
-        <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:6px">
-          <b style="font-size:14px">Overall #1</b>
-          <span class="leaderTime" id="overallLeaderTime"></span>
-        </div>
-        <div class="row" style="align-items:center;flex-wrap:nowrap">
-          <div class="garagePreviewWrap" style="width:120px;height:90px;flex:none;margin-bottom:0">
-            <canvas id="overallLeaderCanvas"></canvas>
+
+      <div class="menuGrid">
+        <div class="menuMain">
+          <button class="playBtn" id="bDrive">
+            <span class="playIcon">▶</span>
+            <span class="playText"><b>Play</b><small id="bDriveNext">Launch Pad</small></span>
+          </button>
+          <div class="menuTiles">
+            <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
+            <button class="tile" id="bTrophies"><b>Trophy room</b><small id="tileTrophies">your awards</small></button>
+            <button class="tile" id="bCreditsRun"><b>Credit run</b><small>random map, +1 credit</small></button>
+            <button class="tile" id="bGarage"><b>Garage</b><small>paint your car</small></button>
+            <button class="tile" id="bSettings"><b>Settings</b><small>account</small></button>
+            <button class="tile" id="bSound"><b>Sound</b><small id="bSoundState">on</small></button>
           </div>
-          <p class="lede" style="margin:0;font-size:13px"><b id="overallLeaderName">—</b> — fastest across
-            every course combined.</p>
-        </div>
-      </div>
-      <button class="specialCourseCard" id="bSpecialCourse" hidden>
-        <div class="specialCourseTop">
-          <span class="specialBadge">★ THE LONG COURSE</span>
-          <span class="specialCourseName" id="specialCourseName">Endless Horizon</span>
-        </div>
-        <div class="specialCourseLeader" id="specialCourseLeaderWrap" hidden>
-          <span class="crown" id="specialCourseCrown">♛</span> <b id="specialCourseLeaderName">—</b>
-          <span class="leaderTime" id="specialCourseLeaderTime"></span>
-        </div>
-        <p class="lede" id="specialCourseNote" style="margin:6px 0 0;font-size:12px">Over three times
-          the length of Proving Ground, start to finish.</p>
-      </button>
-      <div class="cols">
-        <div>
-          <div class="row">
-            <button class="primary" id="bDrive">Start driving</button>
-            <button id="bCourses">Courses &amp; leaderboards</button>
-            <button id="bSettings">Settings</button>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <button class="ghost" id="bCreditsRun">Credits run — random course, +1 credit</button>
-            <button class="ghost" id="bGarage">Garage — paint your car</button>
-          </div>
-          <div class="rule"></div>
           <div id="driverRow">
-            <label class="fld" for="driver">Driver name — used on the leaderboards</label>
+            <label class="fld" for="driver">Driver name</label>
             <input type="text" id="driver" maxlength="14" placeholder="Driver">
           </div>
-          <div class="row"><button class="ghost" id="bSound">Sound: on</button></div>
+          <div class="keysStrip">
+            <span><b>W</b> gas</span><span><b>S</b> brake</span><span><b>A D</b> steer</span>
+            <span><b>Space</b> boost</span><span><b>Shift</b> drift</span><span><b>R</b> restart</span>
+            <span><b>Esc</b> menu</span>
+          </div>
         </div>
-        <div class="help">
-          <h3>Controls</h3>
-          <dl>
-            <dt>W / ↑</dt><dd>Throttle</dd>
-            <dt>S / ↓</dt><dd>Brake, then reverse</dd>
-            <dt>A D / ← →</dt><dd>Steer</dd>
-            <dt>Space</dt><dd>Boost — three seconds per run, spend it where it pays</dd>
-            <dt>Shift</dt><dd>Handbrake — locks the rear axle</dd>
-            <dt>R</dt><dd>Restart the run</dd>
-            <dt>T</dt><dd>Telemetry panel</dd>
-            <dt>Esc</dt><dd>Back to this screen</dd>
-          </dl>
-          <p>Airborne, W and S pitch the nose down and up while A and D yaw it. Nothing
-            auto-levels you: a kicker taken flat-out will put you into a real backflip, and
-            it is your job to bring it round before the deck arrives.</p>
-          <p>Once you have set a time, a translucent ghost of that run replays alongside the
-            next attempt and the HUD shows your live gap to it, measured at the point of the
-            course you are actually on. There are no checkpoints and nothing random: identical
-            inputs give an identical run, so every tenth is yours.</p>
-          <p>The courses are cut into the terrain, so running wide puts you on grass and down an
-            embankment rather than into thin air. You can climb back on, but four seconds off
-            the decking ends the run and returns you to the line.</p>
-        </div>
+
+        <aside class="menuSide">
+          <div class="leaderCard" id="overallLeaderCard" hidden>
+            <div class="lcHead"><span class="lcKick">SEASON 2 LEADER</span><span class="leaderTime" id="overallLeaderTime"></span></div>
+            <div class="lcBody">
+              <div class="garagePreviewWrap lcCar"><canvas id="overallLeaderCanvas"></canvas></div>
+              <div class="lcName"><span class="crown">♛</span> <b id="overallLeaderName">—</b></div>
+            </div>
+          </div>
+          <div class="sectionLeaders" id="sectionLeaders"></div>
+
+          <div class="race-lobby-card" id="raceLobbyCard" hidden>
+            <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:6px">
+              <b style="font-size:14px">Race</b>
+              <span class="race-stage" id="lobbyStageBadge">LOBBY</span>
+            </div>
+            <p class="lede" id="lobbyState" style="margin-bottom:10px;font-size:13px">—</p>
+            <div id="lobbyMineBox" class="race-mine" hidden>You're in for <b id="lobbyMineBuyIn">0</b> credits.</div>
+            <div id="lobbyJoinBox" hidden>
+              <p class="lede" style="font-size:12.5px;margin-bottom:8px">Stake credits (you have
+                <b id="lobbyJoinCredits">0</b>). Map is hidden until it starts.</p>
+              <div class="row">
+                <input type="text" id="lobbyBuyIn" inputmode="numeric" style="width:110px" placeholder="Credits">
+                <button class="primary" id="bLobbyJoin">Join</button>
+              </div>
+              <div class="err" id="lobbyJoinMsg"></div>
+            </div>
+            <p class="lede race-waiting" id="lobbyWaitingNote" style="margin-top:8px" hidden></p>
+            <div id="lobbyDriveRow" style="margin-top:10px" hidden>
+              <p class="lede" style="font-size:12.5px;margin-bottom:8px" id="lobbyDriveNote"></p>
+              <button class="primary" id="bLobbyDrive">Race — attempt <span id="lobbyAttemptNum">1</span> of 3</button>
+            </div>
+            <div id="lobbyStandingsWrap" hidden>
+              <table id="lobbyTable" style="margin-top:8px">
+                <thead><tr><th></th><th>Driver</th><th style="text-align:right">Stake</th>
+                  <th style="text-align:right">Best</th><th style="text-align:right" id="lobbyLastCol"></th></tr></thead>
+                <tbody id="lobbyRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   </div>
@@ -742,16 +801,18 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   <div class="layer" id="select" hidden>
     <div class="scrim"></div>
     <div class="panel">
-      <h2 class="big">Courses &amp; leaderboards</h2>
-      <p class="lede" style="margin-bottom:14px" id="selectNote">Clear one to open the next. Times are
-        kept on this device.</p>
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <h2 class="big">Courses</h2>
+        <button class="ghost" id="bSelBack">← Menu</button>
+      </div>
+      <p class="lede" style="margin-bottom:14px" id="selectNote">Pick a map to see its leaderboard.</p>
       <div class="tabs" id="selectTabs">
-        <button class="tab on" id="bSelTabCourses" data-tab="courses">Courses</button>
-        <button class="tab" id="bSelTabBoards" data-tab="boards">Leaderboard</button>
+        <button class="tab on" id="bSelTabCourses" data-tab="courses">Maps</button>
+        <button class="tab" id="bSelTabBoards" data-tab="boards">Leaderboards</button>
       </div>
 
       <div id="selectCoursesPane">
-        <div class="courses" id="courseList"></div>
+        <div id="courseList"></div>
       </div>
 
       <div id="selectBoardsPane" hidden>
@@ -761,15 +822,13 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           <span class="multiBarCount" id="boardMultiCount">0 selected</span>
           <span class="multiBarSpacer"></span>
           <button class="ghost small" id="bBoardClearSel">Clear</button>
-          <button class="ghost small" id="bBoardWatchSel">Watch checked</button>
-          <button class="small" id="bBoardRaceSel">Race checked</button>
+          <button class="ghost small" id="bBoardWatchSel">Watch</button>
+          <button class="small" id="bBoardRaceSel">Race</button>
         </div>
       </div>
 
-      <div class="rule"></div>
-      <div class="row">
-        <button class="ghost" id="bSelBack">Back to title</button>
-        <button class="ghost" id="bBoardWipe" hidden>Clear all times</button>
+      <div class="row" style="margin-top:18px">
+        <button class="ghost" id="bBoardWipe" hidden>Clear all local times</button>
       </div>
     </div>
   </div>
@@ -777,31 +836,49 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   <div class="layer" id="courseDetail" hidden>
     <div class="scrim"></div>
     <div class="panel">
-      <h2 class="big" id="cdName">Course</h2>
-      <div class="foot" style="margin-bottom:10px"><span id="cdTierBadge"></span><span class="best" id="cdBest"></span></div>
-      <p class="lede" style="margin-bottom:16px" id="cdBlurb"></p>
-      <div class="cols">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
         <div>
-          <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">LEADERBOARD</h3>
-          <table id="cdTable" style="margin-bottom:6px">
+          <div class="kick" id="cdSection">Section A</div>
+          <h2 class="big" id="cdName">Course</h2>
+        </div>
+        <button class="ghost" id="bCdBack">← Maps</button>
+      </div>
+      <p class="lede" style="margin-bottom:6px" id="cdBlurb"></p>
+      <p class="cdBest" id="cdBest"></p>
+      <div class="cols" style="margin-top:14px">
+        <div>
+          <table id="cdTable">
             <thead><tr><th>#</th><th>Driver</th><th style="text-align:right">Time</th></tr></thead>
             <tbody id="cdRows"></tbody>
           </table>
-          <div class="courseLeader empty" id="cdEmpty" hidden>Empty board. Set a time.</div>
+          <div class="courseLeader empty" id="cdEmpty" hidden>No times yet.</div>
+          <button class="ghost small moreBtn" id="bCdMore" hidden>Show more ▾</button>
         </div>
-        <div class="help">
-          <h3 style="font-size:13px;font-weight:600;margin-bottom:10px" id="cdLeaderHeading">FIRST PLACE</h3>
-          <div class="garagePreviewWrap">
-            <canvas id="cdCarCanvas"></canvas>
-          </div>
-          <p class="lede" id="cdLeaderNote" style="margin-top:8px;font-size:12.5px"></p>
+        <div>
+          <div class="kick" id="cdLeaderHeading">FIRST PLACE</div>
+          <div class="garagePreviewWrap"><canvas id="cdCarCanvas"></canvas></div>
+          <p class="cdLeader" id="cdLeaderNote"></p>
         </div>
       </div>
-      <div class="rule"></div>
-      <div class="row">
-        <button class="ghost" id="bCdBack">Back to courses</button>
-        <button class="primary" id="bCdDrive">Start driving</button>
+      <div class="row" style="margin-top:22px">
+        <button class="primary" id="bCdDrive">▶ Drive this map</button>
       </div>
+    </div>
+  </div>
+
+  <div class="layer" id="trophies" hidden>
+    <div class="scrim"></div>
+    <div class="panel trophyPanel">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <h2 class="big">Trophy room</h2>
+        <button class="ghost" id="bTrophyBack">← Menu</button>
+      </div>
+      <div class="trophyStage">
+        <canvas id="trophyCanvas"></canvas>
+        <div class="trophyCredits"><span class="tcNum" id="trophyCreditNum">0</span><span class="tcLbl">credits</span></div>
+      </div>
+      <p class="lede trophyHint" id="trophyHint">Drag to spin the room.</p>
+      <div class="trophyList" id="trophyList"></div>
     </div>
   </div>
 
@@ -825,9 +902,8 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         <div class="rule"></div>
 
         <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--ember)">RESET SCORES</h3>
-        <p class="lede" style="font-size:12.5px;margin-bottom:14px">Deletes every one of your times and
-          ghosts from every course, everywhere — your local device and the shared leaderboards. Credits
-          you've already earned are not affected. This cannot be undone.</p>
+        <p class="lede" style="font-size:12.5px;margin-bottom:14px">Deletes all your times and ghosts.
+          Credits stay. Can't be undone.</p>
         <div class="row">
           <button class="danger-outline" id="bResetScores">Reset all my scores</button>
         </div>
@@ -835,11 +911,10 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 
         <div class="rule"></div>
       </div>
-      <p class="lede" id="setOfflineNote" hidden>Playing offline — there's no account to change here.
-        Use "Clear all times" on the Leaderboards screen to reset your local times instead.</p>
+      <p class="lede" id="setOfflineNote" hidden>Offline — no account here.</p>
       <div class="rule" id="setOfflineRule" hidden></div>
       <div class="row">
-        <button class="ghost" id="bSetBack">Back to title</button>
+        <button class="ghost" id="bSetBack">← Menu</button>
       </div>
     </div>
   </div>
@@ -848,10 +923,8 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
     <div class="scrim"></div>
     <div class="panel" style="width:min(720px,94vw)">
       <h2 class="big">Garage</h2>
-      <p class="lede" style="margin-bottom:18px">1. Pick Primary or Secondary below. 2. Buy a hue pack
-        for 10 credits — you get back one random hue, no picking. Once a hue is yours, click it any time
-        to put it on either slot for free. 3. Drag the sliders to push that hue's saturation and
-        brightness anywhere you like, any time, for free.</p>
+      <p class="lede" style="margin-bottom:18px">A hue pack (10 credits) unlocks a random hue. Click any
+        hue you own to use it. Sliders are free.</p>
 
       <div class="garagePreviewWrap">
         <canvas id="gPreviewCanvas"></canvas>
@@ -875,18 +948,15 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       <div class="err" id="gBuyMsg"></div>
 
       <h3 style="font-size:13px;font-weight:600;margin:18px 0 6px">HUE</h3>
-      <p class="lede" style="font-size:12px;margin-bottom:8px">Every hue you own, for either slot —
-        <b class="aqua">bright squares</b> are unlocked, click one to put it on
-        <span id="gHueSlotName">primary</span>. <b class="dimx">Crossed-out squares</b> are still
-        locked.</p>
+      <p class="lede" style="font-size:12px;margin-bottom:8px">Click a bright square to use it on
+        <span id="gHueSlotName">primary</span>. Crossed-out squares are locked.</p>
       <div class="row" style="margin-bottom:10px">
         <button class="primary" id="gBuyHue">Buy a hue pack — 10 credits</button>
       </div>
       <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
 
       <h3 style="font-size:13px;font-weight:600;margin:20px 0 6px">SATURATION / BRIGHTNESS — FREE</h3>
-      <p class="lede" style="font-size:12px;margin-bottom:12px">Push <span id="gSatLightSlotName">primary</span>'s
-        current hue anywhere on this plane — no cost, no unlocking, any time.</p>
+      <p class="lede" style="font-size:12px;margin-bottom:12px">Tune <span id="gSatLightSlotName">primary</span>.</p>
       <div class="garageSliderRow">
         <label for="gSatSlider">Saturation <b id="gSatVal">65%</b></label>
         <input type="range" id="gSatSlider" min="0" max="100" value="65">
@@ -898,7 +968,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 
       <div class="rule"></div>
       <div class="row">
-        <button class="ghost" id="bGarageBack">Back to title</button>
+        <button class="ghost" id="bGarageBack">← Menu</button>
       </div>
     </div>
   </div>
@@ -908,8 +978,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
     <div class="panel">
       <div class="kick">Race — attempt <span id="revealAttemptNum">1</span> of 3</div>
       <h2 id="revealCourseName">—</h2>
-      <p class="lede" style="margin:14px 0 22px">All three attempts run back to back — there is no
-        way back to the menu once you start, so take a breath now. Your fastest of the three counts.</p>
+      <p class="lede" style="margin:14px 0 22px">Three attempts, back to back. Your best counts.</p>
       <div class="row">
         <button class="primary" id="bRevealGo">Go</button>
         <button class="ghost" id="bRevealSignOut" style="margin-left:auto">Sign out</button>
@@ -944,11 +1013,11 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       <div class="row" id="rCampaignRow">
         <button class="primary" id="bNext">Next course</button>
         <button id="bRetry">Drive it again</button>
-        <button class="ghost" id="bResCourses">Courses</button>
+        <button class="ghost" id="bResCourses">Maps</button>
       </div>
       <div class="row" id="rCreditsRunRow" hidden>
         <button class="primary" id="bCreditsRunAgain">Run again</button>
-        <button class="ghost" id="bCreditsRunBack">Back to title</button>
+        <button class="ghost" id="bCreditsRunBack">Menu</button>
       </div>
       <div class="creditBurst" id="creditBurst" hidden>
         <div class="coin">◆</div>
@@ -987,6 +1056,7 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 const approach = (rate, dt) => 1 - Math.exp(-rate * dt);
 const deg = (d) => (d * Math.PI) / 180;
+const MPH = 2.23694;            // metres per second -> miles per hour
 const AXES = ['x', 'y', 'z'];
 const sign = (v) => (v < 0 ? -1 : 1);
 // Race timestamp fields are Firestore Timestamps (needed so firestore.rules
@@ -1092,7 +1162,7 @@ const KEY = 'skyframe.records.v1';
 const Records = {
   mode: 'memory',
   data: { driver: '', boards: {}, cleared: {}, ghosts: {}, myBests: {} },
-  MAX: 10,
+  MAX: 50,
 
   async load() {
     let raw = null;
@@ -1165,7 +1235,7 @@ const Records = {
   // several credit-changing actions updated Cloud.credits and then read
   // this field straight back out, showing a stale balance on screen even
   // though the real number, and the actual Firestore write, were correct).
-  get credits() { return Cloud.credits || 0; },
+  get credits() { return Math.floor(Cloud.credits || 0); },
   set credits(v) { Cloud.credits = v; },
   setDriver(n) {
     this.data.driver = (n || '').trim().slice(0, 14);
@@ -1770,7 +1840,7 @@ const Cloud = {
   // progress tells watch() to sit out; the flow reports the outcome itself.
   busy: false,
 
-  courseIds() { return LEVELS.map((l, i) => 'c' + (i + 1)); },
+  courseIds() { return COURSE_IDS.slice(); },
 
   async init() {
     if (!FIREBASE.enabled || !FIREBASE.config.projectId) return false;
@@ -2003,7 +2073,8 @@ const Cloud = {
     } else {
       const d = pot / denom;
       for (const e of finishers) {
-        const payout = d * (e.buyIn / e.placement);
+        const payout = Math.floor(d * (e.buyIn / e.placement));
+        e.payout = payout;
         batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
         batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
           { uid: e.uid, raceId, delta: payout, createdAt: fsMod.serverTimestamp() });
@@ -2116,7 +2187,9 @@ const Cloud = {
     const snap = await fsMod.getDoc(fsMod.doc(this.db, 'profiles', this.user.uid));
     if (!snap.exists()) {
       this.profile = null;
-      throw new Error('This account has no profile yet — it needs a valid invite code.');
+      let gone = false;
+      try { gone = (await fsMod.getDoc(fsMod.doc(this.db, 'deleted', this.user.uid))).exists(); } catch (e) { /* not readable */ }
+      throw new Error(gone ? 'This account was deleted.' : 'This account has no profile yet — it needs a valid invite code.');
     }
     this.profile = snap.data();
     return this.profile;
@@ -2150,15 +2223,14 @@ const Cloud = {
         myBests[r.courseId] = t;
       }
     });
-    for (const k in boards) {
-      boards[k].sort((a, b) => a.t - b.t);
-      boards[k] = boards[k].slice(0, 10);
-    }
+    for (const k in boards) boards[k].sort((a, b) => a.t - b.t);
     let credits = 0;
     const ce = await getDocs(query(collection(this.db, 'creditEvents'),
       where('uid', '==', this.user.uid)));
     ce.forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') credits += v.delta; });
-    this.credits = credits;
+    // Older race payouts were fractional; a balance is always shown and
+    // spent as a whole number.
+    this.credits = Math.floor(credits + 1e-9);
     return { boards, cleared, myBests, credits };
   },
 
@@ -2190,10 +2262,7 @@ const Cloud = {
           myBests[r.courseId] = t;
         }
       });
-      for (const k in boards) {
-        boards[k].sort((a, b) => a.t - b.t);
-        boards[k] = boards[k].slice(0, 10);
-      }
+      for (const k in boards) boards[k].sort((a, b) => a.t - b.t);
       onChange({ boards, cleared, myBests });
     });
   },
@@ -2265,6 +2334,16 @@ const Cloud = {
     } catch (e) { return null; }
   },
 
+  /** the admin-awarded Season 1 podium: { gold, silver, bronze } of { uid, name } */
+  async fetchSeasonAwards() {
+    if (!this.on || !this.user) return null;
+    try {
+      const { fsMod } = this.fb;
+      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'seasonAwards', 's1'));
+      return snap.exists() ? snap.data() : null;
+    } catch (e) { return null; }
+  },
+
   /** this player's saved car colors, or the default red/dark-red pair if
    *  they've never customized anything. */
   async fetchCarColors() {
@@ -2331,26 +2410,21 @@ const Cloud = {
   },
 
   /**
-   * Appends one row to the admin-only run history: every campaign finish,
-   * credits-run finish, and race attempt, with an exact server timestamp.
-   * Deliberately fire-and-forget from every call site — this is pure
-   * telemetry for the admin panel, so a slow or failed write here must
-   * never delay or interrupt the player's own result screen. raceId is
-   * only present for kind:'race', letting the admin panel line a run back
-   * up to the specific race it happened in.
+   * Appends one row to the admin-only run history: every attempt, whether
+   * it finished, was restarted (R, off the track, stuck, fell) or was cut
+   * short (quit to the menu, closed the page). Fire-and-forget: telemetry
+   * must never hold up the player's own screens.
    */
-  async logRun(courseId, kind, timeMs, raceId) {
+  async logRun(entry) {
     if (!this.on || !this.user) return;
     try {
       const { fsMod } = this.fb;
-      const doc = {
-        uid: this.user.uid, displayName: this.name(), courseId, kind,
-        timeMs: Math.round(timeMs), createdAt: fsMod.serverTimestamp()
-      };
-      if (raceId) doc.raceId = raceId;
+      const doc = Object.assign({ uid: this.user.uid, displayName: this.name() }, entry,
+        { timeMs: Math.max(1, Math.round(entry.timeMs)), createdAt: fsMod.serverTimestamp() });
       await fsMod.addDoc(fsMod.collection(this.db, 'runLog'), doc);
     } catch (e) { console.warn('aiPolytrack: could not log run', e && e.message); }
   }
+
 };
 // First-clearing a course used to pay CREDITS_PER_CLEAR (100) credits —
 // removed; see Game.finishLevel and Cloud.pushBest. Credits now come from
@@ -2411,7 +2485,7 @@ class PhysicsWorld {
     this.grid = new Map();
     this.stamp = 0;
     this.groundY = GROUND_Y;
-    this.groundGrip = 0.55;      // grass: drivable, but you will not set a time on it
+    this.groundGrip = 0.5;       // grass: drivable, but slow (see CAR.grassDrag)
   }
   clear() { this.tris.length = 0; this.grid.clear(); }
 
@@ -2796,13 +2870,21 @@ const CAR = {
   // trampolines the car back into the air. Real stops are damped rubber, so
   // this one has a velocity term that dissipates instead of rebounding.
   bumpStart: 0.18, kBump: 4.5e6, cBump: 140000,
-  downforce: 2.2,        // 3520 N at 40 m/s, about 25% of weight
+  downforce: 3.4,        // ~5400 N at 40 m/s: grip grows with speed
   antiRollFront: 12000, antiRollRear: 9000,
   gravity: 13.5,          // heavier than Earth: jumps arc quickly, no float
-  mu: 2.05,
-  // Real tyres lose a little grip as load rises, which is why weight transfer
-  // costs total grip. loadRef is the static load on one wheel.
-  muLoadSens: 0.11, loadRef: 3020,
+  mu: 2.6,
+  // Only a little grip lost as load rises, so weight transfer mid-corner
+  // doesn't snap the rear loose.
+  muLoadSens: 0.04, loadRef: 3020,
+  rearGrip: 1.12,         // rear axle slightly grippier: stable, never oversteers
+  rollCentre: 0.75,       // fraction of the tyre-to-CoM lever removed from lateral force
+  // Stability assist (the car goes where it points): bleeds off sideways
+  // velocity and yaw rate beyond what the steering asks for. Off while
+  // the handbrake is held so a deliberate slide still works.
+  assistLat: 3.2, assistYaw: 5.0, assistSlip: 0.10, assistRoll: 6.0,
+  // Grass: heavy rolling drag, so cutting across it is never faster.
+  grassDrag: 1.35, grassGrip: 0.5,
   // Six-speed gearbox with a real torque curve rather than a flat force. Top
   // speed comes out of the balance between drive and drag, not a cap.
   gears: [3.6, 2.4, 1.75, 1.35, 1.10, 0.92],
@@ -3243,6 +3325,7 @@ class Vehicle {
     this.slipMax = 0;
     this.wheelspin = 0;
     this._tyreForces(dt, input, vFwd);
+    this._assist(dt, input);
 
     /* --- accelerometer readings for the telemetry panel ----------------- */
     this._accel.subVectors(this.vel, this._prevVel).multiplyScalar(1 / dt);
@@ -3393,18 +3476,20 @@ class Vehicle {
       const vLong = vp.dot(f);
       const vLat = vp.dot(s);
 
-      // load sensitivity: grip per newton falls as the tyre is pushed harder
+      // load sensitivity: grip per newton falls a little as the tyre is loaded
       const muEff = CAR.mu * clamp(
-        1 - CAR.muLoadSens * (w.load / CAR.loadRef - 1), 0.62, 1.16);
+        1 - CAR.muLoadSens * (w.load / CAR.loadRef - 1), 0.8, 1.1);
       w.mu = muEff;
-      const budget = muEff * w.load * w.grip * dt;
+      const hb = input.handbrake && !w.front;
+      const axle = w.front ? 1 : (hb ? 0.45 : CAR.rearGrip);
+      const budget = muEff * w.load * w.grip * axle * dt;
       const mLong = this.effMass(rel, f);
       const mLat = this.effMass(rel, s);
 
       let jLong = drive * share * dt;
       let brakeF = 0;
       if (braking) brakeF = w.front ? CAR.brakeFront : CAR.brakeRear;
-      if (input.handbrake && !w.front) brakeF = Math.max(brakeF, CAR.handbrake);
+      if (hb) brakeF = Math.max(brakeF, CAR.handbrake);
       if (brakeF > 0) {
         const cancel = -vLong * mLong;
         jLong += clamp(cancel, -brakeF * dt, brakeF * dt);
@@ -3413,20 +3498,27 @@ class Vehicle {
         const cancel = -vLong * mLong;
         jLong += clamp(cancel, -rr, rr);
       }
-      let jLat = -vLat * mLat;
+      const latWant = -vLat * mLat;
 
-      const mag = Math.hypot(jLong, jLat);
-      if (mag > budget && mag > 1e-9) {
-        const k = budget / mag;
-        jLong *= k; jLat *= k;
-        w.slip = clamp((mag - budget) / Math.max(budget, 1e-6), 0, 2);
-      } else {
-        w.slip = 0;
-      }
+      // Lateral grip gets first call on the friction budget, so throttle or
+      // braking mid-corner can't strip the tyre of the sideways grip that
+      // keeps the car on its line. Longitudinal force gets what is left,
+      // with a small floor so the car can always accelerate and brake.
+      let jLat = clamp(latWant, -budget, budget);
+      const longCap = Math.max(Math.sqrt(Math.max(budget * budget - jLat * jLat, 0)), budget * 0.3);
+      const longWant = jLong;
+      jLong = clamp(jLong, -longCap, longCap);
+      const over = Math.max(Math.abs(latWant) - budget, 0) + Math.max(Math.abs(longWant) - longCap, 0);
+      w.slip = budget > 1e-9 ? clamp(over / budget, 0, 2) : 0;
       this.slipMax = Math.max(this.slipMax, w.slip);
 
-      const J = this._v6.copy(f).multiplyScalar(jLong).addScaledVector(s, jLat);
-      this.addImpulseAt(J, rel);
+      this.addImpulseAt(this._v6.copy(f).multiplyScalar(jLong), rel);
+      // Sideways force acts through a raised roll centre rather than the
+      // contact patch: the car corners flat instead of tipping onto its
+      // side, however hard the tyres are working.
+      const lift = rel.dot(this.up) * CAR.rollCentre;
+      rel.addScaledVector(this.up, -lift);
+      this.addImpulseAt(this._v6.copy(s).multiplyScalar(jLat), rel);
 
       // visual + audio wheel spin: rolling speed plus any traction loss
       const excess = w.slip * (drive >= 0 ? 1 : -1) * 9;
@@ -3434,6 +3526,49 @@ class Vehicle {
       w.spin += w.spinVel * dt;
       if (drive !== 0) this.wheelspin = Math.max(this.wheelspin, w.slip);
     }
+  }
+
+  /**
+   * Arcade stability, in the spirit of Polytrack: while the tyres are on
+   * the ground the car goes where it is pointed. Sideways velocity beyond
+   * a small slip angle is bled off, and any yaw rate beyond what the
+   * steering (and the available grip) asks for is damped, so a fast turn
+   * can run wide but never snaps into a spin. Grass wheels count for less,
+   * and pay a heavy rolling drag on top.
+   */
+  _assist(dt, input) {
+    let track = 0, grass = 0;
+    for (const w of this.wheels) {
+      if (!w.contact || w.load <= 1) continue;
+      if (w.onTrack) track++; else grass++;
+    }
+    if (grass) {
+      const k = Math.exp(-CAR.grassDrag * (grass / 4) * dt);
+      this.vel.x *= k; this.vel.z *= k;
+      if (this.vel.y > 0) this.vel.y *= k;
+    }
+    const frac = (track + grass * 0.35) / 4;
+    const yawFrac = track + grass > 0 ? 1 : 0;
+    if (yawFrac <= 0 || input.handbrake) return;
+    const vF = this.vel.dot(this.fwd);
+    const vL = this.vel.dot(this.left);
+    const allow = CAR.assistSlip * Math.abs(vF) + 0.4;
+    if (Math.abs(vL) > allow) {
+      const excess = vL - Math.sign(vL) * allow;
+      this.vel.addScaledVector(this.left, -excess * approach(CAR.assistLat * frac, dt));
+    }
+    const yaw = this.omega.dot(this.up);
+    const aMax = CAR.mu * CAR.gravity * 1.3;
+    let want = vF * Math.tan(this.steer) / (CAR.wheelZ * 2);
+    const cap = aMax / Math.max(Math.abs(vF), 3);
+    want = clamp(want, -cap, cap);
+    let excessYaw = 0;
+    if (Math.abs(yaw) > 0.05 && Math.sign(yaw) !== Math.sign(want)) excessYaw = yaw - want * 0.5;
+    else if (Math.abs(yaw) > Math.abs(want)) excessYaw = yaw - want;
+    if (excessYaw) this.omega.addScaledVector(this.up, -excessYaw * approach(CAR.assistYaw * yawFrac, dt));
+    // roll damping: a wheel clipping a crest can't lever the car onto its roof
+    const roll = this.omega.dot(this.fwd);
+    this.omega.addScaledVector(this.fwd, -roll * approach(CAR.assistRoll, dt));
   }
 
   /** per-wheel steer angle from the shared rack position */
@@ -3584,6 +3719,8 @@ const SEG = 3.2;        // target frame spacing: shorter quads mean smaller
                         // position creases between them as well as smoother normals
 const CURB_W = 0.55;
 let RAMP_MAX = 0.40;
+const TURN_BIG = 55;    // degrees: a turn this big counts toward the S-bend rule
+const TURN_GAP = 45;    // metres of track required between two opposite big turns
 
 class TrackBuilder {
   constructor(o) {
@@ -3598,12 +3735,19 @@ class TrackBuilder {
     this.n = 0;
     this.pierEvery = o.pierEvery || 5;
     this.start = { pos: [0, 0, 7], heading: this.h };
+    this.lastTurn = null;       // { dir, arc } of the previous big curve
+    this.sinceTurn = Infinity;  // metres driven since that curve ended
   }
 
   dir(out) { return (out || new THREE.Vector3()).set(Math.sin(this.h), 0, Math.cos(this.h)); }
 
+  /** Banking pivots on the inside edge, like a real banked turn: the low
+   *  edge stays at the cursor's height and the outside is raised, so a
+   *  steep bank can never sink its inside edge under the grass. */
   _frame(pitch, roll, w) {
-    return { p: this.p.toArray(), t: pitch, y: this.h, r: roll, w: w };
+    const p = this.p.toArray();
+    p[1] += (w / 2) * Math.abs(Math.sin(roll));
+    return { p, t: pitch, y: this.h, r: roll, w: w };
   }
 
   /** core sweep: run forward with the given rise, subdivided to SEG spacing */
@@ -3637,6 +3781,7 @@ class TrackBuilder {
       });
     }
     this.path.push(this.p.toArray());
+    if (!this._inCurve) this.sinceTurn += len;
     return this;
   }
 
@@ -3662,6 +3807,7 @@ class TrackBuilder {
   }
   gap(len, rise) {
     this.cur = null;                       // ends the ribbon; nothing spans a gap
+    this.sinceTurn += len;
     this.p.addScaledVector(this.dir(new THREE.Vector3()), len);
     this.p.y += rise || 0;
     this.path.push(this.p.toArray());
@@ -3673,6 +3819,14 @@ class TrackBuilder {
   }
   curve(radius, arcDeg, o) {
     o = o || {};
+    // Two big opposite turns back to back (a hard left straight into a hard
+    // right) make the car bounce between banks, so a course that does it
+    // without a real straight in between is rejected outright.
+    const big = Math.abs(arcDeg) >= TURN_BIG;
+    if (big && this.lastTurn && this.lastTurn.dir !== Math.sign(arcDeg) && this.sinceTurn < TURN_GAP) {
+      throw new Error('opposite ' + Math.round(this.lastTurn.arc) + '/' + Math.round(Math.abs(arcDeg)) +
+        ' degree turns only ' + Math.round(this.sinceTurn) + ' m apart');
+    }
     const arcLen = Math.abs(deg(arcDeg)) * radius;
     const segs = Math.max(5, Math.round(arcLen / SEG));
     const segArc = deg(arcDeg) / segs;
@@ -3697,6 +3851,7 @@ class TrackBuilder {
       if (t > 1 - rf) return s((1 - t) / rf);
       return 1;
     };
+    this._inCurve = true;
     for (let i = 0; i < segs; i++) {
       const ease = profile((i + 0.5) / segs);
       this.h += segArc / 2;
@@ -3706,6 +3861,8 @@ class TrackBuilder {
       });
       this.h += segArc / 2;
     }
+    this._inCurve = false;
+    if (big) { this.lastTurn = { dir: Math.sign(arcDeg), arc: Math.abs(arcDeg) }; this.sinceTurn = 0; }
     return this;
   }
   chicane(radius, arcDeg, o) {
@@ -3828,6 +3985,48 @@ function makeGateMesh(kind, width) {
   return g;
 }
 
+/**
+ * Every deck frame's centre plus how far the deck and its embankment reach
+ * sideways from it, and interpolated points across each jump gap (the car
+ * flies there, so nothing may stand in the way). Used to keep scenery and
+ * the mountain backdrop clear of the course.
+ */
+function densePath(data) {
+  const out = [];
+  let prevEnd = null;
+  for (const st of data.strips) {
+    const F = st.frames;
+    if (!F.length) continue;
+    const first = F[0].p;
+    if (prevEnd) {
+      const gx = first[0] - prevEnd.x, gz = first[2] - prevEnd.z;
+      const n = Math.ceil(Math.hypot(gx, gz) / 3);
+      for (let k = 1; k < n; k++) {
+        out.push({ x: prevEnd.x + gx * k / n, z: prevEnd.z + gz * k / n, y: prevEnd.y, reach: prevEnd.reach, hw: prevEnd.hw });
+      }
+    }
+    for (const f of F) {
+      const hw = f.w / 2;
+      const edgeUp = hw * Math.abs(Math.sin(f.r || 0));
+      const h = Math.max(f.p[1] + edgeUp - GROUND_Y, 0);
+      const reach = hw + Math.max(h * 2.0, 2.2) + 1;
+      out.push({ x: f.p[0], z: f.p[2], y: f.p[1], reach, hw });
+    }
+    const last = F[F.length - 1];
+    prevEnd = { x: last.p[0], z: last.p[2], y: last.p[1], reach: last.w / 2 + 4, hw: last.w / 2 };
+  }
+  return out;
+}
+/** centre of a course's dense points and the furthest any of them reaches from it */
+function courseCenterAndExtent(dense) {
+  let cx = 0, cz = 0;
+  for (const q of dense) { cx += q.x; cz += q.z; }
+  cx /= Math.max(dense.length, 1); cz /= Math.max(dense.length, 1);
+  let extent = 0;
+  for (const q of dense) extent = Math.max(extent, Math.hypot(q.x - cx, q.z - cz) + q.reach);
+  return { center: { x: cx, z: cz }, extent };
+}
+
 function buildCourse(data, scene, world) {
   const root = new THREE.Group();
   const M = {
@@ -3870,11 +4069,11 @@ function buildCourse(data, scene, world) {
       const r1d = V().copy(r1).addScaledVector(u1, -DECK_T);
 
       // collision: full-width top (with smooth vertex normals so the ribbon
-      // drives like a curve, not a chain of facets), both skirts, underside
+      // drives like a curve, not a chain of facets) and the underside. The
+      // side skirts are buried inside the embankment, so they get no
+      // collision of their own — that used to shove cars sideways.
       const NT = { a: u0.clone(), b: u0.clone(), c: u1.clone(), d: u1.clone() };
       world.addQuad(l0, r0, r1, l1, s.grip === undefined ? 1 : s.grip, 1.10, false, NT);
-      world.addQuad(l0, l1, l1d, l0d, 1, 1.00);
-      world.addQuad(r0, r0d, r1d, r1, 1, 1.00);
       world.addQuad(l0d, l1d, r1d, r0d, 1, 0.10);
 
       // visible top: painted curbs either side of the running surface
@@ -3890,8 +4089,6 @@ function buildCourse(data, scene, world) {
       } else {
         deckMesh.quadN(l0, r0, r1, l1, NT.a, NT.a, NT.c, NT.c);
       }
-      M.side.quad(l0, l1, l1d, l0d);
-      M.side.quad(r0, r0d, r1d, r1);
 
       // Where the deck stands above the terrain, flare an earth embankment
       // down to ground level instead of propping it on piers. The course is
@@ -3902,18 +4099,21 @@ function buildCourse(data, scene, world) {
       // barely off the ground. Without this, a low deck presents a 0.6 m
       // vertical kerb that a car which has run wide can never climb back over
       // — it simply jams against it with the throttle open.
-      const h0 = Math.max(l0d.y - GROUND_Y, 0), h1 = Math.max(l1d.y - GROUND_Y, 0);
-      const foot = (d0, x, sx, h) => {
-        const f = V().copy(d0).addScaledVector(x, sx * Math.max(h * 1.15, 1.0));
+      // The bank starts at the deck's TOP edge, so there is no vertical lip
+      // along the side for a car that ran wide to wedge itself against, and
+      // it is gentle (about 26 degrees) so the car can always climb back on.
+      const foot = (e, x, sx) => {
+        const h = Math.max(e.y - GROUND_Y, 0);
+        const f = V().copy(e).addScaledVector(x, sx * Math.max(h * 2.0, 2.2));
         f.y = GROUND_Y;
         return f;
       };
-      const fl0 = foot(l0d, x0, 1, h0), fl1 = foot(l1d, x1, 1, h1);
-      const fr0 = foot(r0d, x0, -1, h0), fr1 = foot(r1d, x1, -1, h1);
-      M.bank.quad(l0d, l1d, fl1, fl0);
-      M.bank.quad(r0d, fr0, fr1, r1d);
-      world.addQuad(l0d, l1d, fl1, fl0, 0.70, 0.9, false, null, false);
-      world.addQuad(r0d, fr0, fr1, r1d, 0.70, 0.9, false, null, false);
+      const fl0 = foot(l0, x0, 1), fl1 = foot(l1, x1, 1);
+      const fr0 = foot(r0, x0, -1), fr1 = foot(r1, x1, -1);
+      M.bank.quad(l0, l1, fl1, fl0);
+      M.bank.quad(r0, fr0, fr1, r1);
+      world.addQuad(l0, l1, fl1, fl0, 0.5, 0.9, false, null, false);
+      world.addQuad(r0, fr0, fr1, r1, 0.5, 0.9, false, null, false);
       M.side.quad(l0d, l1d, r1d, r0d);
 
       if (s.dash && i % 2 === 0) {
@@ -3922,19 +4122,18 @@ function buildCourse(data, scene, world) {
           edge(p0, x0, u0, 0.18, lift), edge(p0, x0, u0, -0.18, lift),
           edge(p1, x1, u1, -0.18, lift), edge(p1, x1, u1, 0.18, lift));
       }
-      // Cap the open ends of every strip. Without a cap the front face of a
-      // landing ramp is not a surface at all, so a car that comes up short
-      // drives straight into the inside of the deck.
+      // Close the open ends of every strip with a solid wall from the deck
+      // top all the way down to the ground and out to both embankment feet.
+      // A thin cap left a hollow under the start of a raised landing ramp,
+      // and a car that came up short on a jump could drive into it and end
+      // up inside the track.
       if (i === 0 || i === F.length - 2) {
-        const first = i === 0;
-        const ea = first ? l0 : l1, eb = first ? r0 : r1;
-        const ed = first ? l0d : l1d, ee = first ? r0d : r1d;
-        if (first) {
-          M.side.quad(ea, ed, ee, eb);
-          world.addQuad(ea, ed, ee, eb, 1, 1.00);
+        if (i === 0) {
+          M.side.quad(l0, fl0, fr0, r0);
+          world.addQuad(l0, fl0, fr0, r0, 1, 1.00);
         } else {
-          M.side.quad(ea, eb, ee, ed);
-          world.addQuad(ea, eb, ee, ed, 1, 1.00);
+          M.side.quad(l1, r1, fr1, fl1);
+          world.addQuad(l1, r1, fr1, fl1, 1, 1.00);
         }
       }
       if (s.chev) {
@@ -3982,49 +4181,39 @@ function buildCourse(data, scene, world) {
     root.add(im);
   };
 
-  // Scenery: two instanced meshes for the whole course, placed from a seeded
-  // generator so a given course looks identical every single load. Candidates
-  // are rejected unless they clear the centreline by more than any deck plus
-  // its embankment could reach — PROP_CLEARANCE is that minimum distance
-  // from the CENTRELINE, not the track edge, so it has to cover the widest
-  // deck this game ever builds (20m, i.e. a 10m half-width) plus its
-  // embankment skirt plus the biggest prop's own footprint, with real
-  // margin left over — 25 previously left as little as ~15m of true
-  // clearance at the widest points and tallest props, which read as
-  // sitting right at the edge of (or briefly behind) the deck on a wide
-  // banked curve; 46 leaves a comfortable buffer even there. The random
-  // placement radius (rad, below) is bumped to match so candidates are
-  // drawn from a ring that's actually centred outside this new minimum
-  // rather than mostly rejected by clearOf().
-  const PROP_CLEARANCE = 46;
+  // Scenery: trees and rocks as two instanced meshes, from a seeded
+  // generator so a course looks identical every load. Every candidate is
+  // tested against the dense centreline (every deck frame plus points
+  // across each jump gap), where each point carries its own reach: that
+  // spot's half-width plus how far its embankment spreads. The old test
+  // only knew the sparse path points, so a long straight had just its two
+  // end points and a prop could land right on the middle of it.
+  const dense = densePath(data);
   const props = { tree: [], rock: [] };
   let seed = 0x9e3779b9;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  const pathPts = data.path;
-  const clearOf = (x, z, need) => {
-    let best = Infinity;
-    for (let i = 0; i < pathPts.length; i++) {
-      const dx = pathPts[i][0] - x, dz = pathPts[i][2] - z;
-      const d = dx * dx + dz * dz;
-      if (d < best) best = d;
-      if (best < need * need) return false;
+  const PROP_MARGIN = 8;
+  const clearOf = (x, z, r) => {
+    for (let i = 0; i < dense.length; i++) {
+      const q = dense[i], need = q.reach + r + PROP_MARGIN;
+      const dx = q.x - x, dz = q.z - z;
+      if (dx * dx + dz * dz < need * need) return false;
     }
     return true;
   };
-  if (pathPts.length > 1) {
-    const pm = new THREE.Matrix4(), pq = new THREE.Quaternion();
-    const pp = new THREE.Vector3(), ps = new THREE.Vector3();
-    for (let n = 0; n < 1400 && props.tree.length + props.rock.length < 420; n++) {
-      const anchor = pathPts[Math.floor(rnd() * pathPts.length)];
+  if (dense.length > 1) {
+    const pq = new THREE.Quaternion(), pp = new THREE.Vector3(), ps = new THREE.Vector3();
+    for (let n = 0; n < 1600 && props.tree.length + props.rock.length < 420; n++) {
+      const anchor = dense[Math.floor(rnd() * dense.length)];
       const ang = rnd() * Math.PI * 2;
-      const rad = PROP_CLEARANCE + rnd() * 90;
-      const x = anchor[0] + Math.cos(ang) * rad, z = anchor[2] + Math.sin(ang) * rad;
-      if (!clearOf(x, z, PROP_CLEARANCE)) continue;
       const tree = rnd() < 0.72;
       const h = tree ? 5 + rnd() * 7 : 0.8 + rnd() * 1.6;
-      pp.set(x, GROUND_Y + h / 2, z);
-      pq.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * 6.28);
       const w = tree ? h * (0.26 + rnd() * 0.14) : h * (0.7 + rnd() * 0.5);
+      const rad = anchor.reach + w + PROP_MARGIN + 2 + rnd() * 90;
+      const x = anchor.x + Math.cos(ang) * rad, z = anchor.z + Math.sin(ang) * rad;
+      if (!clearOf(x, z, w)) continue;
+      pp.set(x, GROUND_Y + h / 2, z);
+      pq.setFromAxisAngle(UP, rnd() * 6.28);
       ps.set(w, h, w);
       (tree ? props.tree : props.rock).push(new THREE.Matrix4().compose(pp.clone(), pq, ps));
     }
@@ -4056,10 +4245,12 @@ function buildCourse(data, scene, world) {
 
   world.index();
   scene.add(root);
+  const ext = courseCenterAndExtent(dense);
   return {
     root, gates, path, cum, length: cum[cum.length - 1],
     minY: isFinite(minY) ? minY : 0, segments: segCount, tris: world.tris.length,
-    props: props.tree.length + props.rock.length
+    props: props.tree.length + props.rock.length,
+    center: ext.center, extent: ext.extent
   };
 }
 
@@ -4073,795 +4264,401 @@ function disposeCourse(course, scene) {
 }
 
 /* --------------------------------------------------------- 8. course data
-   Ten original layouts, all built on the terrain: the deck starts at ground
-   level and every elevated section is carried on an earth embankment, so
-   nothing floats and there is nowhere to fall. Running wide puts you on
-   grass, which is slow but recoverable, and that is why no course needs a
-   checkpoint — start line to finish line, one clean run.
-
-   Sized to the car's measured limits: 16.7 m/s^2 of lateral grip, so corners
-   run 28-60 m radii and banking stays inside the 18-22 degree envelope that
-   direct corner tests hold at any speed. A 10 degree kicker at 30 m/s carries
-   about 40 m, so the gaps are long and the landing ramps are generous.
-   Stacked spirals are deliberately absent: an embankment under an upper deck
-   would drive straight through the deck below it.                          */
+   Season 2: sixteen courses in four sections of four. Sections exist so
+   each has its own smaller overall winner; they share no theme.
+   Every course is built on the terrain (embankments down to the grass,
+   nowhere to fall), banked turns pivot on their inside edge, and no
+   course puts two big opposite turns back to back (TrackBuilder enforces
+   it). Steep banks are for carrying speed, not for braking into.       */
+const SEASON = 2;
+const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
 const LEVELS = [
+  // ---------------------------------------------------------- Section A
   {
-    name: 'Proving Ground', tier: 1,
-    blurb: 'Wide decking and open sweepers. Learn what the brakes do before the decking narrows.',
-    build() {
-      const b = new TrackBuilder({ width: 13 });
-      b.pad(22, 17);
-      b.straight(70);
-      b.curve(60, 42, { bank: 6, chev: 1 });
-      b.straight(40);
-      b.slope(30, 4.5);
-      b.straight(26);
-      b.curve(55, -70, { bank: 8, chev: 1 });
-      b.straight(46);
-      b.crest(24, 9);
-      b.straight(34);
-      b.curve(48, 62, { bank: 8, chev: 1 });
-      b.slope(30, -4.5);
-      b.straight(50);
-      b.gate('finish');
-      b.straight(34, { w: 17 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Overpass', tier: 1,
-    blurb: 'Banked S-bends onto an embankment, then the first jump worth respecting.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(20, 15);
-      b.straight(54);
-      b.chicane(38, 48, { bank: 11, chev: 1 });
-      b.straight(34);
-      b.slope(40, 7);
-      b.straight(22);
-      b.ramp(18, 11);
-      b.gap(24, -4);
-      b.landing(20, -8, { w: 13 });
-      b.straight(30);
-      b.curve(34, 96, { bank: 15, chev: 1 });
-      b.straight(40);
-      b.bumps(3, 11, 1.1);
-      b.slope(26, -3.2);
-      b.straight(30);
-      b.gate('finish');
-      b.straight(30, { w: 15 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Switchback', tier: 2,
-    blurb: 'Climb the hill, then four banked hairpins back down it. Brake in a straight line.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(20, 15);
-      b.straight(56);
-      b.slope(44, 11);
-      b.curve(30, 150, { bank: 16, rise: -3, chev: 1 });
-      b.straight(34);
-      b.curve(30, -150, { bank: 16, rise: -3, chev: 1 });
-      b.straight(38);
-      b.curve(28, 144, { bank: 17, rise: -2.5, chev: 1 });
-      b.straight(30);
-      b.curve(28, -144, { bank: 17, rise: -2.5, chev: 1 });
-      b.straight(44);
-      b.crest(22, 10);
-      b.straight(28);
-      b.curve(40, 54, { bank: 10, chev: 1 });
-      b.straight(32);
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Ribbon', tier: 2,
-    blurb: 'Seven metres wide, rolling crests, and a chicane that arrives faster than it looks.',
-    build() {
-      const b = new TrackBuilder({ width: 7 });
-      b.pad(20, 13);
-      b.straight(40, { w: 9 });
-      b.bumps(4, 9, 1.0, { w: 8 });
-      b.straight(26);
-      b.curve(30, 84, { bank: 14, chev: 1 });
-      b.straight(46);
-      b.chicane(32, 30, { bank: 10, w: 9 });
-      b.straight(24, { w: 8.5 });
-      b.slope(24, 4, { w: 8.5 });
-      b.ramp(16, 10, { w: 8.5 });
-      b.gap(22, -3.5);
-      b.landing(20, -8, { w: 11 });
-      b.straight(26, { w: 9 });
-      b.curve(30, -104, { bank: 16, chev: 1 });
-      b.straight(34, { w: 7 });
-      b.straight(30);
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Cauldron', tier: 3,
-    blurb: 'Up the long bank, then two huge opposed sweepers spiral you back to the floor.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(48);
-      b.slope(48, 12.5);
-      b.curve(40, 180, { bank: 18, rise: -6, chev: 1 });
-      b.straight(22);
-      b.curve(40, -180, { bank: 18, rise: -6, chev: 1 });
-      b.straight(30);
-      b.slope(34, 5);
-      b.ramp(18, 12);
-      b.gap(26, -5);
-      b.landing(22, -9, { w: 13 });
-      b.straight(30, { w: 10 });
-      b.curve(32, 84, { bank: 14, chev: 1 });
-      b.straight(34, { w: 8 });
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Stepping Stones', tier: 3,
-    blurb: 'Four jumps off a raised plateau. Come up short and you are picking your way back.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(22, 15);
-      b.straight(40);
-      b.slope(40, 6);
-      b.straight(20);
-      b.ramp(18, 8);
-      b.gap(22, -2.5);
-      b.table(36, 16);
-      b.straight(24);
-      b.ramp(18, 8);
-      b.gap(24, -2.5);
-      b.table(36, 16);
-      b.curve(34, 70, { bank: 13, chev: 1 });
-      b.straight(36);
-      b.ramp(18, 8);
-      b.gap(24, -2.5);
-      b.table(38, 16);
-      b.straight(22);
-      b.ramp(20, 9);
-      b.gap(27, -3);
-      b.table(40, 18);
-      b.straight(30);
-      b.gate('finish');
-      b.straight(26, { w: 15 });
-      return b.build();
-    }
-  },
-  {
-    name: 'The Wall', tier: 4,
-    blurb: 'Two banked walls wide enough to run high or low. Pick a line and hold it.',
-    build() {
-      const b = new TrackBuilder({ width: 12 });
-      b.pad(22, 15);
-      b.straight(80);
-      b.curve(50, 108, { bank: 21, w: 20, chev: 1 });
-      b.straight(40);
-      b.curve(54, -120, { bank: 22, w: 20, chev: 1 });
-      b.straight(44);
-      b.crest(26, 11);
-      b.straight(30, { w: 10 });
-      b.curve(40, 84, { bank: 20, w: 11, chev: 1 });
-      b.straight(36, { w: 9 });
-      b.slope(24, 4);
-      b.ramp(16, 10);
-      b.gap(24, -3.5);
-      b.landing(22, -9, { w: 13 });
-      b.straight(36, { w: 10 });
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Dust Line', tier: 4,
-    blurb: 'The pale decking is dusty and short on grip. Gentler throttle, earlier brakes.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(20, 15);
-      b.straight(50);
-      b.curve(44, 58, { bank: 10, chev: 1 });
-      b.straight(34, { grip: 0.85 });
-      b.curve(46, -76, { bank: 12, grip: 0.85, chev: 1 });
-      b.straight(26, { grip: 0.85 });
-      b.straight(34);
-      b.slope(28, 4.5);
-      b.curve(34, 92, { bank: 17, chev: 1 });
-      b.straight(40, { grip: 0.85 });
-      b.bumps(3, 10, 1.0, { grip: 0.85 });
-      b.straight(24, { grip: 0.85 });
-      b.curve(40, -68, { bank: 12, chev: 1 });
-      b.straight(30);
-      b.slope(26, -3);
-      b.ramp(16, 10);
-      b.gap(22, -1);
-      b.landing(22, -8, { w: 13, grip: 0.85 });
-      b.straight(34, { w: 10 });
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Filament', tier: 5,
-    blurb: 'Five metres wide, high on the bank, and no rails. The big gap needs everything.',
-    build() {
-      const b = new TrackBuilder({ width: 5.5 });
-      b.pad(20, 13);
-      b.straight(46, { w: 9 });
-      b.slope(30, 7, { w: 7 });
-      b.straight(22, { w: 6 });
-      b.curve(28, 156, { bank: 18, w: 8, chev: 1 });
-      b.straight(70, { w: 6.5 });
-      b.ramp(20, 12, { w: 7 });
-      b.gap(27, -5);
-      b.landing(26, -10, { w: 14 });
-      b.straight(26, { w: 9 });
-      b.bumps(4, 8, 1.2, { w: 7 });
-      b.straight(22, { w: 5.6 });
-      b.curve(30, -104, { bank: 18, w: 6.5, chev: 1 });
-      b.straight(40, { w: 5.2 });
-      b.slope(26, -2, { w: 5.5 });
-      b.straight(26, { w: 6 });
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Skyline', tier: 5,
-    blurb: 'The long one. Wall, sweepers, two big jumps and a thin run to the line.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(22, 15);
-      b.straight(76);
-      b.curve(50, 56, { bank: 12, chev: 1 });
-      b.straight(34);
-      b.curve(52, 96, { bank: 21, w: 18, chev: 1 });
-      b.straight(40);
-      b.slope(40, 8);
-      b.chicane(32, 40, { bank: 12 });
-      b.straight(30);
-      b.ramp(18, 11);
-      b.gap(24, -4);
-      b.landing(26, -9, { w: 15 });
-      b.straight(34, { w: 10 });
-      b.curve(38, 180, { bank: 18, rise: -2, chev: 1 });
-      b.straight(24);
-      b.curve(36, -132, { bank: 18, rise: -1.5, chev: 1 });
-      b.straight(46);
-      b.slope(30, 5);
-      b.ramp(20, 12);
-      b.gap(26, -4.5);
-      b.landing(26, -10, { w: 15 });
-      b.straight(30, { w: 8 });
-      b.bumps(3, 9, 1.1, { w: 8 });
-      b.straight(34, { w: 6.5 });
-      b.curve(32, 70, { bank: 16, w: 8, chev: 1 });
-      b.straight(38, { w: 7 });
-      b.gate('finish');
-      b.straight(30, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Causeway', tier: 1,
-    blurb: 'A long, honest straight into two easy sweepers. A good place to learn throttle control.',
+    id: 's2c1', section: 0, name: 'Launch Pad',
+    blurb: 'Wide, fast and forgiving. One jump, one big banked right.',
     build() {
       const b = new TrackBuilder({ width: 14 });
-      b.pad(22, 17);
+      b.pad(22, 18);
       b.straight(90);
-      b.curve(58, 50, { bank: 7, chev: 1 });
-      b.straight(50);
-      b.curve(58, -50, { bank: 7, chev: 1 });
-      b.straight(56);
-      b.slope(26, 3.5);
+      b.curve(75, 50, { bank: 16, chev: 1 });
+      b.straight(70);
+      b.slope(40, 5);
       b.straight(30);
+      b.ramp(20, 10);
+      b.gap(26, -3);
+      b.landing(24, -8, { w: 16 });
+      b.straight(70);
+      b.curve(65, -85, { bank: 28, chev: 1 });
+      b.straight(90);
+      b.crest(30, 7);
+      b.straight(60);
+      b.gate('finish');
+      b.straight(36, { w: 18 });
+      return b.build();
+    }
+  },
+  {
+    id: 's2c2', section: 0, name: 'Coastline',
+    blurb: 'Long sweepers that tighten. Stay flat out if you dare.',
+    build() {
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.straight(70);
+      b.curve(95, 40, { bank: 18 });
+      b.straight(40);
+      b.curve(80, 45, { bank: 22, chev: 1 });
+      b.straight(80);
+      b.slope(50, 6);
+      b.curve(70, -105, { bank: 32, chev: 1 });
+      b.straight(60);
+      b.slope(60, -6);
+      b.straight(60);
+      b.curve(60, 70, { bank: 26, chev: 1 });
+      b.straight(70);
       b.gate('finish');
       b.straight(34, { w: 17 });
       return b.build();
     }
   },
   {
-    name: 'Millrace', tier: 1,
-    blurb: 'Wide and forgiving, with one gentle hop to get the wheels off the ground for the first time.',
+    id: 's2c3', section: 0, name: 'Redline Bank',
+    blurb: 'Two steep walls on a wide deck. Commit and they hold you.',
     build() {
-      const b = new TrackBuilder({ width: 13 });
-      b.pad(22, 16);
-      b.straight(60);
-      b.curve(56, 46, { bank: 7, chev: 1 });
-      b.straight(30);
-      b.slope(24, 4);
-      b.ramp(16, 7);
-      b.gap(18, -2);
-      b.landing(18, -7, { w: 15 });
-      b.straight(36);
-      b.curve(50, -60, { bank: 8, chev: 1 });
+      const b = new TrackBuilder({ width: 16 });
+      b.pad(24, 20);
+      b.straight(110);
+      b.curve(70, 120, { bank: 38, chev: 1 });
+      b.straight(80);
+      b.slope(40, 4);
       b.straight(40);
+      b.curve(75, -115, { bank: 36, chev: 1 });
+      b.straight(100);
+      b.crest(32, 6);
+      b.straight(50);
       b.gate('finish');
-      b.straight(30, { w: 16 });
+      b.straight(36, { w: 20 });
       return b.build();
     }
   },
   {
-    name: 'Foxglove', tier: 1,
-    blurb: 'A single lazy S through the meadow. Nothing here will catch you out.',
+    id: 's2c4', section: 0, name: 'Hopscotch',
+    blurb: 'Three table-top jumps in a row, then a quick run home.',
     build() {
       const b = new TrackBuilder({ width: 12 });
-      b.pad(20, 15);
+      b.pad(22, 16);
+      b.straight(80);
+      b.slope(40, 6);
+      b.straight(24);
+      b.ramp(18, 9);
+      b.gap(22, -2);
+      b.table(40, 16);
+      b.straight(20);
+      b.ramp(18, 9);
+      b.gap(24, -2);
+      b.table(40, 16);
+      b.curve(70, 60, { bank: 24, chev: 1 });
+      b.straight(40);
+      b.ramp(18, 9);
+      b.gap(24, -2);
+      b.landing(26, -8, { w: 16 });
+      b.straight(60);
+      b.curve(60, 70, { bank: 24, chev: 1 });
+      b.straight(60);
+      b.gate('finish');
+      b.straight(34, { w: 16 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section B
+  {
+    id: 's2c5', section: 1, name: 'Quarry Run',
+    blurb: 'Up the long ramp, then a banked drop back to the floor.',
+    build() {
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(22, 16);
+      b.straight(60);
+      b.slope(80, 14);
+      b.straight(40);
+      b.curve(60, -110, { bank: 30, rise: -4, chev: 1 });
       b.straight(50);
-      b.chicane(46, 36, { bank: 8, chev: 1 });
-      b.straight(40);
-      b.slope(30, 4);
-      b.straight(30);
-      b.curve(50, 58, { bank: 9, chev: 1 });
-      b.straight(44);
+      b.slope(70, -9);
+      b.straight(60);
+      b.crest(28, 8);
+      b.straight(60);
+      b.curve(70, -60, { bank: 22, chev: 1 });
+      b.straight(80);
       b.gate('finish');
-      b.straight(30, { w: 15 });
+      b.straight(34, { w: 16 });
       return b.build();
     }
   },
   {
-    name: 'Grainfield', tier: 2,
-    blurb: 'Three hairpins strung along a low ridge, each one tighter than the last.',
+    id: 's2c6', section: 1, name: 'Stormwall',
+    blurb: 'One huge banked wall that turns you all the way round.',
     build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(20, 15);
-      b.straight(46);
-      b.curve(36, 130, { bank: 15, chev: 1 });
-      b.straight(28);
-      b.curve(30, -140, { bank: 16, chev: 1 });
-      b.straight(30);
-      b.curve(30, 150, { bank: 17, chev: 1 });
-      b.straight(40);
-      b.crest(22, 8);
-      b.straight(30);
+      const b = new TrackBuilder({ width: 18 });
+      b.pad(24, 20);
+      b.straight(120);
+      b.curve(80, 175, { bank: 42, chev: 1 });
+      b.straight(50, { w: 14 });
+      b.slope(40, 6, { w: 14 });
+      b.ramp(20, 10, { w: 14 });
+      b.gap(28, -3);
+      b.landing(26, -8, { w: 18 });
+      b.straight(70, { w: 14 });
+      b.curve(60, 60, { bank: 24, w: 14, chev: 1 });
+      b.straight(60, { w: 14 });
       b.gate('finish');
-      b.straight(28, { w: 14 });
+      b.straight(34, { w: 18 });
       return b.build();
     }
   },
   {
-    name: 'Harrow Cut', tier: 2,
-    blurb: 'A cutting through the hillside, banked hard on both sides with a jump halfway.',
+    id: 's2c7', section: 1, name: 'Glass Mile',
+    blurb: 'Slick decking on a long straight. Smooth hands win it.',
+    build() {
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(22, 16);
+      b.straight(60);
+      b.curve(80, 45, { bank: 20, chev: 1 });
+      b.straight(180, { grip: 0.82 });
+      b.curve(70, 70, { bank: 26, grip: 0.82, chev: 1 });
+      b.straight(60);
+      b.bumps(3, 12, 1.0);
+      b.straight(50);
+      b.curve(75, -80, { bank: 26, chev: 1 });
+      b.straight(90, { grip: 0.82 });
+      b.gate('finish');
+      b.straight(34, { w: 16 });
+      return b.build();
+    }
+  },
+  {
+    id: 's2c8', section: 1, name: 'Switchyard',
+    blurb: 'Narrow deck, three linked lefts and a long jump to finish.',
     build() {
       const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(44);
-      b.curve(38, 100, { bank: 16, chev: 1 });
-      b.straight(26);
-      b.slope(30, 6);
-      b.ramp(16, 9);
-      b.gap(20, -3);
-      b.landing(20, -8, { w: 13 });
-      b.straight(30);
-      b.curve(38, -100, { bank: 16, chev: 1 });
-      b.straight(36);
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Tallow Ridge', tier: 2,
-    blurb: 'Climb along the ridge, then a long banked bowl carries you back down to the line.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(40);
+      b.pad(22, 15);
+      b.straight(70);
+      b.curve(45, 70, { bank: 24, chev: 1 });
+      b.straight(30, { w: 9 });
+      b.curve(45, 60, { bank: 24, w: 9, chev: 1 });
+      b.straight(30, { w: 9 });
+      b.curve(50, 60, { bank: 24, w: 9, chev: 1 });
+      b.straight(80);
       b.slope(40, 9);
-      b.straight(24);
-      b.bumps(3, 10, 1.0);
-      b.straight(24);
-      b.curve(44, 160, { bank: 17, rise: -5, chev: 1 });
-      b.straight(30);
-      b.slope(24, -4);
-      b.straight(30);
+      b.ramp(20, 11);
+      b.gap(30, -4);
+      b.landing(28, -9, { w: 15 });
+      b.straight(50);
       b.gate('finish');
-      b.straight(28, { w: 14 });
+      b.straight(34, { w: 15 });
       return b.build();
     }
   },
+  // ---------------------------------------------------------- Section C
   {
-    name: 'Needle Pass', tier: 2,
-    blurb: 'A narrow cut between two rises — no room to drift wide here.',
+    id: 's2c9', section: 2, name: 'High Wire',
+    blurb: 'Eight metres wide and high on the bank. Every line counts.',
     build() {
       const b = new TrackBuilder({ width: 8 });
-      b.pad(20, 13);
-      b.straight(40, { w: 10 });
-      b.curve(34, 70, { bank: 13, chev: 1 });
-      b.straight(50, { w: 7 });
-      b.curve(30, -84, { bank: 14, chev: 1 });
-      b.straight(40, { w: 7.5 });
-      b.straight(30, { w: 10 });
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Kettle Bowl', tier: 3,
-    blurb: 'A long banked bowl that spirals you halfway round. Trust the wall.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(20, 15);
-      b.straight(44);
-      b.slope(30, 8);
-      b.curve(36, 160, { bank: 20, rise: -7, chev: 1 });
-      b.straight(30);
-      b.slope(24, -1);
-      b.curve(40, 76, { bank: 13, chev: 1 });
-      b.straight(36);
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Splinter Row', tier: 3,
-    blurb: 'Three short jumps back to back — land straight or the next one punishes you for it.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(36);
-      b.ramp(16, 9);
-      b.gap(20, 0);
-      b.table(28, 15);
-      b.ramp(16, 9);
-      b.gap(20, 0);
-      b.table(28, 15);
-      b.ramp(16, 9);
-      b.gap(20, 0);
-      b.landing(22, -9, { w: 14 });
-      b.straight(30);
-      b.curve(36, 84, { bank: 14, chev: 1 });
-      b.straight(34);
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Blackwater', tier: 3,
-    blurb: 'Loose, low-grip decking through the whole middle section. Smooth inputs only.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(40);
-      b.curve(40, 66, { bank: 11, grip: 0.82, chev: 1 });
-      b.straight(30, { grip: 0.82 });
-      b.bumps(3, 10, 0.9, { grip: 0.82 });
-      b.curve(38, -80, { bank: 12, grip: 0.82, chev: 1 });
-      b.straight(30, { grip: 0.82 });
-      b.slope(26, 4);
-      b.straight(30);
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Anvil Yard', tier: 3,
-    blurb: 'A flat, wide yard with two opposed high banks. Carry speed through both or lose the line.',
-    build() {
-      const b = new TrackBuilder({ width: 13 });
-      b.pad(22, 16);
-      b.straight(50);
-      b.curve(44, 118, { bank: 19, w: 16, chev: 1 });
-      b.straight(36);
-      b.curve(46, -118, { bank: 19, w: 16, chev: 1 });
-      b.straight(40);
-      b.slope(28, 5);
-      b.straight(30);
-      b.gate('finish');
-      b.straight(30, { w: 15 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Cinder Loop', tier: 3,
-    blurb: 'A tight, twisty loop back on itself. Handbrake territory more than once.',
-    build() {
-      const b = new TrackBuilder({ width: 9 });
-      b.pad(20, 13);
-      b.straight(36);
-      b.curve(32, 150, { bank: 16, chev: 1 });
-      b.straight(24);
-      b.curve(30, -160, { bank: 17, chev: 1 });
-      b.straight(24);
-      b.curve(28, 168, { bank: 18, chev: 1 });
-      b.straight(30);
-      b.crest(20, 8);
-      b.straight(26);
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Longshadow', tier: 4,
-    blurb: 'A tall bank, a blind crest, and a second bank the opposite way. Commit before you can see the exit.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(22, 15);
+      b.pad(22, 14);
+      b.straight(60, { w: 10 });
+      b.slope(60, 9);
       b.straight(60);
-      b.curve(48, 108, { bank: 22, w: 18, chev: 1 });
-      b.straight(34);
-      b.crest(26, 12);
-      b.curve(46, -108, { bank: 22, w: 18, chev: 1 });
+      b.curve(55, 80, { bank: 26, chev: 1 });
+      b.straight(90, { w: 7.5 });
+      b.curve(60, 60, { bank: 24, chev: 1 });
       b.straight(40);
+      b.slope(50, -8);
+      b.straight(80, { w: 9 });
+      b.curve(55, -75, { bank: 26, w: 9, chev: 1 });
+      b.straight(60, { w: 8 });
       b.gate('finish');
-      b.straight(28, { w: 14 });
+      b.straight(32, { w: 14 });
       return b.build();
     }
   },
   {
-    name: 'Furrow', tier: 4,
-    blurb: 'Rolling bumps the whole back half, taken at speed. The car never quite settles.',
+    id: 's2c10', section: 2, name: 'Thunder Bowl',
+    blurb: 'A banked bowl you circle once, then out through a jump.',
     build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(40);
-      b.curve(40, 70, { bank: 13, chev: 1 });
-      b.straight(30);
-      b.bumps(6, 9, 1.3);
-      b.curve(38, -70, { bank: 13, chev: 1 });
-      b.straight(30);
-      b.straight(24);
-      b.straight(30);
+      const b = new TrackBuilder({ width: 16 });
+      b.pad(24, 20);
+      b.straight(90);
+      b.curve(65, 100, { bank: 40, chev: 1 });
+      b.curve(65, 100, { bank: 40, chev: 1 });
+      b.straight(60, { w: 13 });
+      b.slope(30, 4, { w: 13 });
+      b.ramp(20, 10, { w: 13 });
+      b.gap(28, -4);
+      b.landing(26, -8, { w: 16 });
+      b.straight(90, { w: 13 });
       b.gate('finish');
-      b.straight(28, { w: 14 });
+      b.straight(34, { w: 18 });
       return b.build();
     }
   },
   {
-    name: 'Gallows Reach', tier: 4,
-    blurb: 'A long gap off a high table, landing on a narrower deck than you left. Line it up early.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(50);
-      b.curve(40, 76, { bank: 16, chev: 1 });
-      b.straight(30);
-      b.slope(36, 9);
-      b.ramp(20, 13);
-      b.gap(30, -5);
-      b.landing(24, -10, { w: 12 });
-      b.straight(30, { w: 8.5 });
-      b.curve(34, -84, { bank: 16, w: 8.5, chev: 1 });
-      b.straight(34, { w: 8 });
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Slate Vault', tier: 4,
-    blurb: 'Narrow decking through a sunken cut, then a wall out of it. No margin either side.',
-    build() {
-      const b = new TrackBuilder({ width: 7 });
-      b.pad(20, 13);
-      b.straight(36, { w: 9 });
-      b.curve(28, 80, { bank: 12, w: 7, chev: 1 });
-      b.straight(50, { w: 6.5 });
-      b.slope(26, 6, { w: 6.5 });
-      b.curve(30, 130, { bank: 20, w: 9, chev: 1 });
-      b.straight(30, { w: 7 });
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Pilot Light', tier: 4,
-    blurb: 'Four jumps of steadily increasing size. Each one asks a little more of the boost.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(20, 14);
-      b.straight(36);
-      b.ramp(14, 7);
-      b.gap(16, 0);
-      b.table(26, 14);
-      b.ramp(16, 9);
-      b.gap(20, 0);
-      b.table(28, 14);
-      b.ramp(18, 11);
-      b.gap(24, 0);
-      b.table(30, 15);
-      b.ramp(20, 13);
-      b.gap(28, 0);
-      b.landing(24, -10, { w: 14 });
-      b.straight(30);
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Wraith Line', tier: 5,
-    blurb: 'Thin, high, and nearly seven hundred metres of it. No rails, no mercy.',
-    build() {
-      const b = new TrackBuilder({ width: 6 });
-      b.pad(20, 13);
-      b.straight(50, { w: 8 });
-      b.slope(30, 8, { w: 6.5 });
-      b.curve(30, 140, { bank: 19, w: 7.5, chev: 1 });
-      b.straight(60, { w: 6 });
-      b.bumps(4, 9, 1.1, { w: 6 });
-      b.curve(28, -150, { bank: 19, w: 7, chev: 1 });
-      b.straight(50, { w: 5.8 });
-      b.ramp(18, 11, { w: 6.5 });
-      b.gap(24, -4);
-      b.landing(24, -9, { w: 13 });
-      b.straight(40, { w: 8 });
-      b.curve(34, 90, { bank: 15, w: 7.5, chev: 1 });
-      b.straight(40, { w: 5.6 });
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Ironclad', tier: 5,
-    blurb: 'Every kind of corner this game has, one after another, on a deck that keeps narrowing.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(22, 15);
-      b.straight(60);
-      b.curve(50, 90, { bank: 16, chev: 1 });
-      b.straight(30);
-      b.chicane(36, 34, { bank: 11 });
-      b.straight(30, { w: 9 });
-      b.curve(34, 140, { bank: 20, w: 9, chev: 1 });
-      b.straight(30, { w: 8 });
-      b.slope(30, 2, { w: 8 });
-      b.ramp(18, 11, { w: 7.5 });
-      b.gap(24, 0);
-      b.landing(24, -9, { w: 13 });
-      b.straight(30, { w: 7.5 });
-      b.curve(30, -110, { bank: 17, w: 7.5, chev: 1 });
-      b.straight(34, { w: 6.5 });
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Deadfall', tier: 5,
-    blurb: 'The biggest gap on any course here, off a table that drops away behind you.',
-    build() {
-      const b = new TrackBuilder({ width: 9 });
-      b.pad(20, 14);
-      b.straight(46);
-      b.curve(36, 90, { bank: 15, chev: 1 });
-      b.straight(30);
-      b.slope(40, 10);
-      b.ramp(24, 15);
-      b.gap(34, -6);
-      b.landing(28, -11, { w: 13 });
-      b.straight(30, { w: 8 });
-      b.bumps(3, 9, 1.2, { w: 8 });
-      b.curve(30, -96, { bank: 15, w: 8, chev: 1 });
-      b.straight(34, { w: 7 });
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Hollow Bend', tier: 2,
-    blurb: 'A single wide sweeper carved into the hillside, long enough to find a proper rhythm in.',
-    build() {
-      const b = new TrackBuilder({ width: 11 });
-      b.pad(20, 15);
-      b.straight(50);
-      b.curve(58, 130, { bank: 12, chev: 1 });
-      b.straight(30);
-      b.slope(28, 5);
-      b.straight(26);
-      b.curve(50, -60, { bank: 10, chev: 1 });
-      b.straight(36);
-      b.gate('finish');
-      b.straight(28, { w: 14 });
-      return b.build();
-    }
-  },
-  {
-    name: 'Last Ember', tier: 5,
-    blurb: 'The final exam: everything the other courses taught you, back to back.',
-    build() {
-      const b = new TrackBuilder({ width: 10 });
-      b.pad(22, 15);
-      b.straight(56);
-      b.curve(44, 96, { bank: 18, chev: 1 });
-      b.straight(30);
-      b.curve(40, -110, { bank: 18, chev: 1 });
-      b.straight(30, { grip: 0.85 });
-      b.bumps(4, 9, 1.1, { grip: 0.85 });
-      b.straight(24, { grip: 0.85 });
-      b.slope(34, 9);
-      b.ramp(20, 12);
-      b.gap(28, -5);
-      b.landing(26, -10, { w: 13 });
-      b.straight(30, { w: 8 });
-      b.curve(30, 180, { bank: 20, rise: -2, w: 8, chev: 1 });
-      b.straight(30, { w: 7 });
-      b.chicane(28, 30, { bank: 11, w: 7 });
-      b.straight(30, { w: 6.5 });
-      b.gate('finish');
-      b.straight(26, { w: 13 });
-      return b.build();
-    }
-  },
-  // The special long course — deliberately outside the normal tier
-  // progression (tier: 'special', not 1-5) so it never blocks or is
-  // blocked by the ordinary "clear course N to open N+1" unlock chain;
-  // see Game's playable/course-list handling for how tier 'special' is
-  // treated as always-open instead. Verified at 3.29x Proving Ground's
-  // own measured path length (569.9m vs 1874.6m — see this session's
-  // course_check_lib.js/run_course_check.js verification script), built
-  // from the same 28-60m radius / <=22deg bank envelope every other
-  // course respects, with its finish gate placed past the 55% mark the
-  // same way every other course's is.
-  {
-    name: 'Endless Horizon', tier: 'special',
-    blurb: 'The long haul — over three times Proving Ground, start to finish. One run, no shortcuts.',
+    id: 's2c11', section: 2, name: 'Drop Zone',
+    blurb: 'Climb high, then two drops that throw you down the hill.',
     build() {
       const b = new TrackBuilder({ width: 12 });
-      b.pad(24, 16);
-      b.straight(84);
-      b.curve(52, 50, { bank: 10, chev: 1 });
-      b.straight(60);
-      b.curve(46, -64, { bank: 12, chev: 1 });
-      b.straight(72);
-      b.slope(36, 5);
+      b.pad(22, 16);
       b.straight(50);
-      b.curve(58, 58, { bank: 9, chev: 1 });
-      b.straight(64);
-      b.chicane(40, 46, { bank: 14, chev: 1 });
-      b.straight(56);
-      b.crest(30, 8);
-      b.straight(46);
-      b.curve(34, -96, { bank: 16, chev: 1 });
-      b.straight(58);
-      b.bumps(4, 10, 1.0);
+      b.slope(100, 22);
+      b.straight(30);
+      b.curve(60, 90, { bank: 28, chev: 1 });
       b.straight(40);
-      b.curve(48, 70, { bank: 11, chev: 1 });
-      b.straight(70);
-      b.slope(32, -5);
-      b.straight(60);
-      b.curve(30, -110, { bank: 18, chev: 1 });
+      b.ramp(18, 6);
+      b.gap(30, -7);
+      b.landing(30, -12, { w: 16 });
       b.straight(50);
-      b.slope(34, 6);
-      b.straight(54);
-      b.curve(44, 84, { bank: 13, chev: 1 });
-      b.straight(66);
-      b.ramp(20, 11);
-      b.gap(26, -4);
-      b.landing(22, -9, { w: 13 });
-      b.straight(56);
-      b.curve(56, -52, { bank: 8, chev: 1 });
+      b.ramp(18, 6);
+      b.gap(28, -5);
+      b.landing(28, -12, { w: 16 });
+      b.straight(50);
+      b.slope(40, -4);
+      b.straight(30);
+      b.curve(70, -60, { bank: 22, chev: 1 });
       b.straight(60);
-      b.slope(30, -1.5);
-      b.straight(44);
       b.gate('finish');
-      b.straight(40, { w: 16 });
+      b.straight(34, { w: 16 });
+      return b.build();
+    }
+  },
+  {
+    id: 's2c12', section: 2, name: 'Corkscrew Ridge',
+    blurb: 'A climbing banked spiral, then the long run down its spine.',
+    build() {
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.straight(80);
+      b.curve(55, 150, { bank: 34, rise: 9, chev: 1 });
+      b.straight(60);
+      b.curve(60, -100, { bank: 30, rise: 5, chev: 1 });
+      b.straight(40);
+      b.crest(30, 6);
+      b.straight(70);
+      b.slope(60, -12);
+      b.straight(80);
+      b.gate('finish');
+      b.straight(34, { w: 17 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section D
+  {
+    id: 's2c13', section: 3, name: 'Velocity',
+    blurb: 'The fastest course here. Long straights, huge banked arcs.',
+    build() {
+      const b = new TrackBuilder({ width: 15 });
+      b.pad(24, 19);
+      b.straight(160);
+      b.curve(110, 70, { bank: 34, chev: 1 });
+      b.straight(160);
+      b.curve(115, 75, { bank: 34, chev: 1 });
+      b.straight(100);
+      b.slope(40, 6);
+      b.ramp(24, 8);
+      b.gap(40, -3);
+      b.landing(30, -7, { w: 18 });
+      b.straight(120);
+      b.gate('finish');
+      b.straight(40, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's2c14', section: 3, name: 'Knife Edge',
+    blurb: 'Six metres of deck, a wall, and a gap that needs full speed.',
+    build() {
+      const b = new TrackBuilder({ width: 7 });
+      b.pad(22, 13);
+      b.straight(70, { w: 9 });
+      b.slope(50, 7);
+      b.straight(40, { w: 6.5 });
+      b.curve(50, -90, { bank: 30, w: 8, chev: 1 });
+      b.straight(90, { w: 6 });
+      b.ramp(20, 11, { w: 7 });
+      b.gap(30, -5);
+      b.landing(28, -9, { w: 14 });
+      b.straight(40, { w: 8 });
+      b.bumps(3, 10, 1.1, { w: 7 });
+      b.straight(50, { w: 6 });
+      b.curve(55, -70, { bank: 28, w: 7.5, chev: 1 });
+      b.straight(60, { w: 6.5 });
+      b.gate('finish');
+      b.straight(30, { w: 13 });
+      return b.build();
+    }
+  },
+  {
+    id: 's2c15', section: 3, name: 'Sky Harbor',
+    blurb: 'A high plateau loop with two jumps off the edge of it.',
+    build() {
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(22, 16);
+      b.straight(60);
+      b.slope(90, 16);
+      b.straight(40);
+      b.curve(60, 80, { bank: 30, chev: 1 });
+      b.straight(50);
+      b.ramp(18, 9);
+      b.gap(28, -3);
+      b.table(40, 16);
+      b.curve(60, -80, { bank: 30, chev: 1 });
+      b.straight(40);
+      b.ramp(18, 7);
+      b.gap(32, -8);
+      b.landing(30, -12, { w: 16 });
+      b.straight(60);
+      b.slope(40, -4);
+      b.straight(60);
+      b.gate('finish');
+      b.straight(34, { w: 16 });
+      return b.build();
+    }
+  },
+  {
+    id: 's2c16', section: 3, name: 'Apex Predator',
+    blurb: 'The final test: walls, slick deck, a big jump and a long sprint.',
+    build() {
+      const b = new TrackBuilder({ width: 11 });
+      b.pad(22, 16);
+      b.straight(90);
+      b.curve(70, 90, { bank: 34, chev: 1 });
+      b.straight(60, { grip: 0.84 });
+      b.curve(65, 80, { bank: 32, grip: 0.84, chev: 1 });
+      b.straight(60);
+      b.slope(60, 10);
+      b.straight(40);
+      b.ramp(20, 10);
+      b.gap(32, -5);
+      b.landing(28, -9, { w: 15 });
+      b.straight(70);
+      b.curve(60, -100, { bank: 34, chev: 1 });
+      b.straight(50, { w: 9 });
+      b.bumps(3, 11, 1.0, { w: 9 });
+      b.straight(120, { w: 10 });
+      b.gate('finish');
+      b.straight(36, { w: 15 });
       return b.build();
     }
   }
 ];
+const COURSE_IDS = LEVELS.map((l) => l.id);
+function courseIndexOf(id) { return LEVELS.findIndex((l) => l.id === id); }
+function sectionIds(sec) { return LEVELS.filter((l) => l.section === sec).map((l) => l.id); }
+/** "A1".."D4": section letter plus the map's place within its section */
+function courseTag(i) {
+  const lv = LEVELS[i];
+  let n = 0;
+  for (let k = 0; k <= i; k++) if (LEVELS[k].section === lv.section) n++;
+  return 'ABCD'.charAt(lv.section) + n;
+}
+
 
 /* --------------------------------------------------------- 9. chase camera
    Critically damped spring on the rig position, a much tighter filter on the
@@ -5262,6 +5059,7 @@ const App = {
       }));
     sky.frustumCulled = false;
     this.scene.add(sky);
+    this.sky = sky;
 
     this.light = new THREE.DirectionalLight(0xfffaf0, 2.05);
     this.light.position.set(52, 70, 36);
@@ -5284,30 +5082,18 @@ const App = {
     floor.receiveShadow = true;
     this.scene.add(floor);
 
-    // two rings of low-poly peaks for depth, the far ring fading into the fog
-    const ring = (count, radMin, radSpread, hMin, hSpread, mat, y) => {
+    // two rings of low-poly peaks for depth, the far ring fading into the
+    // fog. Laid out per course (layoutBackdrop) around that course's own
+    // centre and reach, so no peak can ever sit on or over the track.
+    const ring = (count, mat) => {
       const im = new THREE.InstancedMesh(GEO.peak, mat, count);
-      const m = new THREE.Matrix4(), q = new THREE.Quaternion();
-      const p = new THREE.Vector3(), s = new THREE.Vector3();
-      for (let i = 0; i < count; i++) {
-        const ang = (i / count) * Math.PI * 2 + (i % 3) * 0.19;
-        const rad = radMin + ((i * 137) % radSpread);
-        const hgt = hMin + ((i * 71) % hSpread);
-        p.set(Math.cos(ang) * rad, y + hgt / 2, Math.sin(ang) * rad);
-        q.setFromAxisAngle(UP, ang * 1.7);
-        s.set(hgt * (0.75 + (i % 4) * 0.09), hgt, hgt * 0.82);
-        im.setMatrixAt(i, m.compose(p, q, s));
-      }
-      im.instanceMatrix.needsUpdate = true;
       im.frustumCulled = false;
       this.scene.add(im);
+      return im;
     };
-    // Radii are kept well clear of every course's own extent (the longest,
-    // Dust Line, reaches ~600 units from the origin every course is built
-    // around) plus each peak's own base footprint, so the backdrop can
-    // never clip through track geometry no matter which course is loaded.
-    ring(22, 780, 260, 40, 70, MAT.scenery, GROUND_Y);
-    ring(18, 1140, 420, 90, 150, MAT.sceneryFar, GROUND_Y);
+    this.peaksNear = ring(22, MAT.scenery);
+    this.peaksFar = ring(18, MAT.sceneryFar);
+    this.layoutBackdrop(0, 0, 600);
 
     this.resize();
     addEventListener('resize', () => this.resize());
@@ -5340,7 +5126,36 @@ const App = {
     this.lightTarget.position.set(gx, gy, gz);
     this.light.position.set(gx + 52, gy + 70, gz + 36);
   },
-  render() { this.renderer.render(this.scene, this.camera); }
+  /**
+   * Places both peak rings around (cx, cz) with every peak's base clear of
+   * the course's full reach (extent, which already includes the widest
+   * embankment) — each peak is pushed out by its own footprint, since the
+   * tallest ones are also the widest.
+   */
+  layoutBackdrop(cx, cz, extent) {
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion();
+    const p = new THREE.Vector3(), s = new THREE.Vector3();
+    const place = (im, gap, spread, hMin, hSpread) => {
+      const count = im.count;
+      for (let i = 0; i < count; i++) {
+        const ang = (i / count) * Math.PI * 2 + (i % 3) * 0.19;
+        const hgt = hMin + ((i * 71) % hSpread);
+        const sx = hgt * (0.75 + (i % 4) * 0.09), sz = hgt * 0.82;
+        const rad = extent + gap + Math.max(sx, sz) + ((i * 137) % spread);
+        p.set(cx + Math.cos(ang) * rad, GROUND_Y + hgt / 2, cz + Math.sin(ang) * rad);
+        q.setFromAxisAngle(UP, ang * 1.7);
+        s.set(sx, hgt, sz);
+        im.setMatrixAt(i, m.compose(p, q, s));
+      }
+      im.instanceMatrix.needsUpdate = true;
+    };
+    place(this.peaksNear, 70, 200, 40, 70);
+    place(this.peaksFar, 380, 380, 90, 150);
+  },
+  render() {
+    if (this.sky) this.sky.position.copy(this.camera.position);
+    this.renderer.render(this.scene, this.camera);
+  }
 };
 
 /**
@@ -5493,12 +5308,261 @@ function makePlayerCarPreview(canvasId) {
 const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
 const courseDetailPreview = makePlayerCarPreview('cdCarCanvas');
 
+/**
+ * Which trophies the signed-in (or local) driver holds right now. Map and
+ * section and Season 2 placings are live — computed from the current
+ * leaderboards every time, so losing a podium spot loses the trophy.
+ * Season 1 placings are awarded by the admin (seasonAwards/s1), one
+ * driver per place.
+ */
+const PLACE = ['1st', '2nd', '3rd'];
+const PLACE_TITLE = ['Champion', 'Runner-up', 'Third place'];
+const Trophies = {
+  compute(awards) {
+    const uid = Cloud.user && Cloud.user.uid;
+    const me = Records.driver();
+    const mine = (e) => (uid && e.uid) ? e.uid === uid : (!uid && e.n === me);
+    const out = [];
+    if (awards && uid) {
+      ['gold', 'silver', 'bronze'].forEach((p, k) => {
+        const a = awards[p];
+        if (a && a.uid === uid) {
+          out.push({ kind: 'season', tier: k, size: 3, title: 'Season 1 ' + PLACE_TITLE[k], sub: 'Final standings' });
+        }
+      });
+    }
+    const ov = Records.overall(COURSE_IDS);
+    const r = ov.findIndex(mine);
+    if (r >= 0 && r < 3) out.push({ kind: 'season', tier: r, size: 3, title: 'Season 2 ' + PLACE[r] + ' place', sub: 'Current overall standings' });
+    SECTIONS.forEach((name, sec) => {
+      const k = Records.overall(sectionIds(sec)).findIndex(mine);
+      if (k >= 0 && k < 3) out.push({ kind: 'section', tier: k, size: 2, title: name + ' · ' + PLACE[k], sub: 'Section standings' });
+    });
+    LEVELS.forEach((lv, i) => {
+      const k = Records.board(lv.id).findIndex(mine);
+      if (k >= 0 && k < 3) out.push({ kind: 'map', tier: k, size: 1, title: lv.name, sub: courseTag(i) + ' · ' + PLACE[k] + ' place' });
+    });
+    out.sort((a, b) => (b.size - a.size) || (a.tier - b.tier));
+    return out;
+  }
+};
+
+/**
+ * The trophy room: its own renderer on its own canvas (like the garage
+ * preview), so it costs nothing unless open. Credits are a heap of
+ * glowing light-blue gems sized to the balance, trophies stand on
+ * pedestals in an arc behind them, biggest in the middle. Drag to spin.
+ */
+const TrophyRoom = {
+  renderer: null, scene: null, camera: null, root: null, running: false,
+  yaw: 0, yawTarget: 0, dragging: false, lastX: 0, idle: 0, clock: 0, hero: null, spinners: [],
+
+  ensureBuilt() {
+    if (this.renderer) return;
+    const canvas = $('trophyCanvas');
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.1;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+
+    // a soft studio environment so the metal actually reflects something
+    const envScene = new THREE.Scene();
+    const envGeo = new THREE.SphereGeometry(20, 24, 12);
+    const col = [], pos = envGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i) / 20;
+      const c = new THREE.Color().setHSL(0.09, 0.12, 0.08 + Math.max(y, 0) * 0.55);
+      col.push(c.r, c.g, c.b);
+    }
+    envGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    envScene.add(new THREE.Mesh(envGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+    const panel = (x, y, z, w, h, c) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+      m.position.set(x, y, z); m.lookAt(0, 0, 0); envScene.add(m);
+    };
+    panel(8, 10, 6, 10, 6, 0xffffff);
+    panel(-9, 6, -4, 8, 5, 0xbfe6ff);
+    panel(0, 3, -12, 14, 3, 0xffd8a0);
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    const env = pmrem.fromScene(envScene, 0.02).texture;
+    pmrem.dispose();
+
+    this.scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x0a0d14, 0.35));
+    const key = new THREE.DirectionalLight(0xfff4e0, 0.95);
+    key.position.set(3, 6, 8);
+    this.scene.add(key);
+    const blue = new THREE.PointLight(0x5fd8ff, 1.6, 7);
+    blue.position.set(0, 1.4, 2.2);
+    this.scene.add(blue);
+
+    // only the trophy metal reflects the studio; everything else is lit
+    // plainly, or the environment washes the dark surfaces out
+    const std = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c }, o));
+    this.mats = {
+      metal: [std(0xffc84a, { metalness: 1, roughness: 0.22, envMap: env }),
+        std(0xdfe6ee, { metalness: 1, roughness: 0.18, envMap: env }),
+        std(0xcd7f45, { metalness: 1, roughness: 0.28, envMap: env })],
+      plinth: std(0x070a12, { metalness: 0.1, roughness: 0.7 }),
+      plinthTop: std(0x121a2c, { metalness: 0.2, roughness: 0.45 }),
+      gem: std(0x1f8fc4, { metalness: 0.15, roughness: 0.18, emissive: 0x0b7fc0, emissiveIntensity: 0.7,
+        transparent: true, opacity: 0.95 }),
+      floor: std(0x03050a, { metalness: 0.05, roughness: 0.9 })
+    };
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(12, 48), this.mats.floor);
+    floor.rotation.x = -Math.PI / 2;
+    this.scene.add(floor);
+    this.root = new THREE.Group();
+    this.scene.add(this.root);
+
+    const stage = canvas.parentElement;
+    stage.addEventListener('pointerdown', (e) => { this.dragging = true; this.lastX = e.clientX; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('pointermove', (e) => {
+      if (!this.dragging) return;
+      this.yawTarget -= (e.clientX - this.lastX) * 0.008;
+      this.lastX = e.clientX;
+      this.idle = 0;
+    });
+    const up = () => { this.dragging = false; };
+    stage.addEventListener('pointerup', up);
+    stage.addEventListener('pointercancel', up);
+    addEventListener('resize', () => { if (this.running) this.resize(); });
+  },
+
+  /** a cup: lathe-turned bowl and stem, two handles, on a stepped base */
+  cup(mat, big) {
+    const g = new THREE.Group();
+    const prof = [[0, 0], [0.34, 0], [0.34, 0.06], [0.12, 0.12], [0.07, 0.2], [0.06, 0.5], [0.1, 0.58],
+      [0.28, 0.68], [0.42, 0.88], [0.48, 1.14], [0.5, 1.2], [0.44, 1.2], [0.4, 1.0], [0.26, 0.8], [0, 0.74]];
+    const bowl = new THREE.Mesh(new THREE.LatheGeometry(prof.map((p) => new THREE.Vector2(p[0], p[1])), 28), mat);
+    g.add(bowl);
+    for (const sx of [-1, 1]) {
+      const h = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 8, 20, Math.PI), mat);
+      h.position.set(sx * 0.48, 0.92, 0);
+      h.rotation.z = sx > 0 ? -Math.PI / 2 : Math.PI / 2;
+      g.add(h);
+    }
+    if (big) {
+      const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), mat);
+      star.position.y = 1.42;
+      star.scale.y = 1.5;
+      g.add(star);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.47, 0.03, 8, 32), mat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 1.2;
+      g.add(ring);
+    }
+    return g;
+  },
+
+  build(data) {
+    while (this.root.children.length) this.root.remove(this.root.children[0]);
+    this.spinners = [];
+    // --- the credit heap: one gem per credit up to 160, piled in rings
+    const n = Math.max(0, Math.min(160, Math.floor(data.credits || 0)));
+    const gemGeo = new THREE.OctahedronGeometry(0.16, 0);
+    const heap = new THREE.Group();
+    let placed = 0, layer = 0;
+    while (placed < n && layer < 12) {
+      const r = Math.max(0.05, 0.95 - layer * 0.09);
+      const per = Math.max(1, Math.floor(r * 2 * Math.PI / 0.24));
+      for (let k = 0; k < per && placed < n; k++, placed++) {
+        const a = (k / per) * Math.PI * 2 + layer * 0.37;
+        const rr = r * (0.55 + ((k * 37 + layer * 11) % 10) / 22);
+        const m = new THREE.Mesh(gemGeo, this.mats.gem);
+        m.position.set(Math.cos(a) * rr, 0.13 + layer * 0.16, Math.sin(a) * rr);
+        m.rotation.set(k * 1.3, a, layer * 0.7);
+        m.scale.y = 1.4;
+        heap.add(m);
+      }
+      layer++;
+    }
+    heap.position.set(0, 0, 1.1);
+    this.root.add(heap);
+    // the hero gem floats above the heap and turns slowly
+    this.hero = new THREE.Mesh(new THREE.OctahedronGeometry(0.34, 0), this.mats.gem);
+    this.hero.scale.y = 1.45;
+    this.hero.position.set(0, 0.75 + layer * 0.16, 1.1);
+    this.root.add(this.hero);
+
+    // --- trophies in an arc, biggest in the middle
+    const list = data.trophies || [];
+    const order = [];
+    list.forEach((t, k) => { if (k % 2 === 0) order.push(t); else order.unshift(t); });
+    const count = order.length;
+    const spread = Math.min(Math.PI * 0.9, Math.max(0.5, count * 0.22));
+    order.forEach((t, k) => {
+      const f = count > 1 ? k / (count - 1) - 0.5 : 0;
+      const a = f * spread;
+      const R = 3.6;
+      const scale = t.size === 3 ? 1.35 : t.size === 2 ? 0.95 : 0.7;
+      const plinthH = t.size === 3 ? 0.9 : t.size === 2 ? 0.6 : 0.4;
+      const holder = new THREE.Group();
+      holder.position.set(Math.sin(a) * R, 0, -Math.cos(a) * R + 1.2);
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.9 * scale, plinthH, 0.9 * scale), this.mats.plinth);
+      plinth.position.y = plinthH / 2;
+      holder.add(plinth);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.98 * scale, 0.06, 0.98 * scale), this.mats.plinthTop);
+      top.position.y = plinthH + 0.03;
+      holder.add(top);
+      const cup = this.cup(this.mats.metal[t.tier], t.size === 3);
+      cup.scale.setScalar(scale);
+      cup.position.y = plinthH + 0.06;
+      cup.rotation.y = k * 0.9;
+      holder.add(cup);
+      this.spinners.push(cup);
+      this.root.add(holder);
+    });
+  },
+
+  resize() {
+    const c = $('trophyCanvas');
+    const w = c.clientWidth || 1, h = c.clientHeight || 1;
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+  },
+
+  start(data) {
+    this.ensureBuilt();
+    this.build(data);
+    this.resize();
+    if (this.running) return;
+    this.running = true;
+    let last = performance.now();
+    const loop = (now) => {
+      if (!this.running) return;
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      this.clock += dt;
+      this.idle += dt;
+      if (!this.dragging && this.idle > 2.5) this.yawTarget += dt * 0.12;
+      this.yaw += (this.yawTarget - this.yaw) * Math.min(1, dt * 6);
+      const R = 7.0;
+      this.camera.position.set(Math.sin(this.yaw) * R, 2.9, Math.cos(this.yaw) * R + 0.4);
+      this.camera.lookAt(0, 0.7, -0.3);
+      if (this.hero) {
+        this.hero.rotation.y += dt * 0.9;
+        this.hero.position.y += Math.sin(this.clock * 1.8) * 0.002;
+      }
+      for (const c of this.spinners) c.rotation.y += dt * 0.35;
+      this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  },
+
+  stop() { this.running = false; }
+};
+
 /* ---------------------------------------------------------------- 11. ui */
 const UI = {
   toastT: 0,
   show(id) {
     ['menu', 'select', 'courseDetail', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'raceReveal', 'raceBetween', 'garage']
+     'raceReveal', 'raceBetween', 'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
   },
@@ -5549,28 +5613,42 @@ const UI = {
     this.gateError('');
   },
   course(i, name) {
-    $('hNum').textContent = 'Course ' + (i + 1);
+    $('hNum').textContent = courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase();
     $('hName').textContent = name;
   },
   clock(t, stopped) {
     $('hClock').textContent = formatTime(t);
     $('hClock').classList.toggle('stop', !!stopped);
   },
-  speed(v) { $('hSpd').innerHTML = Math.round(Math.abs(v) * 3.6) + '<small>km/h</small>'; },
+  speed(v) { $('hSpd').innerHTML = Math.round(Math.abs(v) * MPH) + '<small>mph</small>'; },
   state(car) {
     const el = $('hGrip');
     if (!car.grounded) { el.textContent = 'airborne'; el.className = 'gear air'; }
     else if (car.slipMax > 0.3) { el.textContent = 'sliding'; el.className = 'gear air'; }
     else { el.textContent = ''; el.className = 'gear'; }
   },
-  progress(f) { $('hBar').style.width = clamp(f, 0, 1) * 100 + '%'; },
-  best(t) { $('hProg').textContent = t ? 'best ' + formatTime(t) : 'no time yet'; },
+  progress(f) {
+    f = clamp(f, 0, 1);
+    $('hBar').style.width = f * 100 + '%';
+    $('hProg').textContent = Math.round(f * 100) + '%';
+  },
+  /** your personal best on this map, always on screen while driving */
+  best(t) { $('hPB').textContent = t ? 'PB ' + formatTime(t) : 'PB —'; },
+  /** the map record and who holds it, next to your PB */
+  record(id) {
+    const top = id ? Records.board(id)[0] : null;
+    $('hWR').textContent = top ? '♛ ' + formatTime(top.t) + ' ' + top.n : '';
+  },
   boost(car) {
     const f = clamp(car.boostLeft / CAR.boostTotal, 0, 1);
+    const pct = Math.round(f * 100);
     $('hBoost').style.width = (f * 100) + '%';
     $('hBoostBar').classList.toggle('spent', f <= 0.001);
-    $('hBoostTxt').textContent = car.boosting ? 'BOOST'
-      : (f > 0 ? 'boost ' + car.boostLeft.toFixed(1) + 's' : 'boost spent');
+    const el = $('hBoostPct');
+    el.textContent = pct + '%';
+    el.classList.toggle('spent', pct === 0);
+    el.classList.toggle('on', !!car.boosting);
+    $('hBoostTxt').textContent = car.boosting ? 'BOOSTING' : 'BOOST';
   },
   /** lights up the WASD/boost/handbrake glyphs from a recorded input-bits
    *  byte, so a spectated run shows exactly what its driver was pressing */
@@ -5608,7 +5686,7 @@ const UI = {
     const anchors = [];
     cars.forEach((c, k) => {
       const key = 'watch' + k;
-      const kmh = c.rig.speed * 3.6;
+      const kmh = c.rig.speed * MPH;
       // updateGhostTag already lifts the tag Game.TAG_LIFT px above the
       // car and draws the leader line down to it — this function only
       // has to push a tag FURTHER when it would otherwise land on top of
@@ -5680,7 +5758,7 @@ const UI = {
     // already shown, cheap to derive from data already on each car.
     const leader = cars.find((c) => c.place === 1);
     $('specRosterList').innerHTML = cars.map((c, k) => {
-      const kmh = Math.round(c.rig.speed * 3.6);
+      const kmh = Math.round(c.rig.speed * MPH);
       const dotColor = k === camIdx ? 'var(--ember)' : 'var(--aqua)';
       let timeStr, subStr = '';
       if (c.finished) {
@@ -5699,7 +5777,7 @@ const UI = {
       return '<div class="rRow' + (k === camIdx ? ' active' : '') + '" data-k="' + k + '">' +
         '<span class="rDot" style="background:' + dotColor + '"></span>' +
         '<span class="rName">' + (c.place ? c.place + '. ' : '') + escapeHtml(c.name) + '</span>' +
-        '<span class="rSpeed">' + kmh + ' km/h</span>' +
+        '<span class="rSpeed">' + kmh + ' mph</span>' +
         '<span class="rSub">' + subStr + '</span>' +
         '<span class="rTime' + (c.finished ? ' done' : '') + '">' + timeStr + '</span></div>';
     }).join('');
@@ -5806,153 +5884,136 @@ const UI = {
       f.style.opacity = '0';
     });
   },
-  bars(tier) {
-    // The special long course has no numeric tier (tier: 'special') — it
-    // sits outside the 1-5 progression entirely, so it gets its own badge
-    // in courseList() instead of a (meaningless) tier-bars readout here.
-    let s = '<span class="bars">';
-    for (let i = 0; i < 5; i++) s += '<i class="' + (i < tier ? 'on' : '') + '"></i>';
-    return s + '</span>';
+  /** top three on a map, gold/silver/bronze, as shown on every map card */
+  podium(id) {
+    const list = Records.board(id);
+    if (!list.length) return '<div class="podium"><span class="none">No times yet</span></div>';
+    const cls = ['p1', 'p2', 'p3'];
+    return '<div class="podium">' + list.slice(0, 3).map((e, k) =>
+      '<div class="p ' + cls[k] + '"><span class="m">' + (k === 0 ? '♛' : String(k + 1)) + '</span><b>' +
+      escapeHtml(e.n) + '</b><span class="pt">' + formatTime(e.t) + '</span></div>').join('') + '</div>';
   },
+  /** every map, grouped into its section, each section headed by its leader */
   courseList(playable, onPick) {
     const wrap = $('courseList');
     wrap.innerHTML = '';
-    LEVELS.forEach((lv, i) => {
-      const id = 'c' + (i + 1);
-      const isSpecial = lv.tier === 'special';
-      // The special course is always open — it deliberately sits outside
-      // the "clear course N to open N+1" chain (see LEVELS' own comment
-      // above Endless Horizon), so it never depends on Records.cleared.
-      const open = isSpecial || i === 0 || Records.cleared('c' + i);
-      const best = Records.best(id);
-      const btn = document.createElement('button');
-      btn.className = 'card' + (isSpecial ? ' special' : '');
-      if (!open || !playable[i]) btn.disabled = true;
-      // The first-place name (if anyone has cleared it yet) is worth
-      // showing right on the card for every course — but especially the
-      // special course, where being #1 is the whole point — so the same
-      // small "leader" line UI.boards() already builds per-course gets
-      // reused here rather than duplicated.
-      const leaderLine = this.courseLeaderLine(id);
-      btn.innerHTML =
-        '<div class="idx">' + (isSpecial ? 'SPECIAL' : 'Course ' + (i + 1)) + '</div>' +
-        '<div class="ttl">' + lv.name + '</div>' +
-        '<div class="desc">' + (playable[i] ? lv.blurb : 'This course failed to load and was skipped.') + '</div>' +
-        leaderLine +
-        '<div class="foot"><span>' + (isSpecial ? '<span class="specialBadge">★ LONG COURSE</span>' : this.bars(lv.tier)) +
-        '</span><span class="best">' +
-        (best ? formatTime(best) : (open ? 'no time' : 'locked')) + '</span></div>' +
-        (Records.cleared(id) ? '<span class="done"></span>' : '');
-      btn.addEventListener('click', () => onPick(i));
-      wrap.appendChild(btn);
+    SECTIONS.forEach((secName, sec) => {
+      const block = document.createElement('div');
+      block.className = 'secBlock';
+      const top = Records.overall(sectionIds(sec))[0];
+      block.innerHTML = '<div class="secHead"><h3>' + escapeHtml(secName) + '</h3><span class="secLeader">' +
+        (top ? '♛ <b>' + escapeHtml(top.n) + '</b> · ' + top.count + '/' + sectionIds(sec).length + ' · ' + formatTime(top.total)
+          : 'no leader yet') + '</span></div>';
+      const grid = document.createElement('div');
+      grid.className = 'courses';
+      LEVELS.forEach((lv, i) => {
+        if (lv.section !== sec) return;
+        const best = Records.best(lv.id);
+        const btn = document.createElement('button');
+        btn.className = 'card';
+        if (!playable[i]) btn.disabled = true;
+        btn.innerHTML = '<div class="idx">' + courseTag(i) + '</div>' +
+          '<div class="ttl">' + escapeHtml(lv.name) + '</div>' +
+          '<div class="desc">' + (playable[i] ? escapeHtml(lv.blurb) : 'Failed to load.') + '</div>' +
+          this.podium(lv.id) +
+          '<div class="foot"><span>your best</span><span class="best">' + (best ? formatTime(best) : '—') + '</span></div>' +
+          (Records.cleared(lv.id) ? '<span class="done"></span>' : '');
+        btn.addEventListener('click', () => onPick(i));
+        grid.appendChild(btn);
+      });
+      block.appendChild(grid);
+      wrap.appendChild(block);
     });
   },
-  /** the "#1: Name — time" line shown on a course card (courseList) —
-   *  one shared source so the card and the leaderboard tab always agree
-   *  on who's actually in first. An un-cleared course just shows an
-   *  empty-board note instead of nothing. */
-  courseLeaderLine(id) {
-    const list = Records.board(id);
-    if (!list || !list.length) {
-      return '<div class="courseLeader empty">Empty board.</div>';
-    }
-    const leader = list[0];
-    return '<div class="courseLeader"><span class="crown">♛</span> <b>' +
-      escapeHtml(leader.n) + '</b> <span class="leaderTime">' + formatTime(leader.t) + '</span></div>';
+  /** where the signed-in (or local) driver sits on a board, 1-based, or 0 */
+  myRank(list) {
+    const uid = Cloud.user && Cloud.user.uid;
+    const me = Records.driver();
+    const k = list.findIndex((e) => (uid && e.uid) ? e.uid === uid : e.n === me);
+    return k + 1;
+  },
+  isMe(e) {
+    const uid = Cloud.user && Cloud.user.uid;
+    return (uid && e.uid) ? e.uid === uid : e.n === Records.driver();
   },
   /**
-   * Renders the per-course detail page: name/blurb/tier, the full
-   * leaderboard table for just this course, and the #1 row's name/time
-   * next to the 3D car widget (courseDetailPreview — Game.toCourseDetail
-   * is the one that actually starts it and paints the leader's colors
-   * once Cloud.fetchCarColorsOf resolves; this function only ever touches
-   * static DOM/text so it can be called synchronously and re-called on
-   * live board updates without re-fetching colors every time).
+   * The per-map page: its leaderboard (ten at a time, "Show more" adds ten)
+   * and the #1 driver's car. Game.toCourseDetail starts the car preview and
+   * paints it; this only writes text, so live board updates can re-run it.
    */
   courseDetail(i) {
     const lv = LEVELS[i];
-    const id = 'c' + (i + 1);
-    const isSpecial = lv.tier === 'special';
+    const id = lv.id;
+    $('cdSection').textContent = SECTIONS[lv.section] + ' · ' + courseTag(i);
     $('cdName').textContent = lv.name;
     $('cdBlurb').textContent = lv.blurb;
-    $('cdTierBadge').innerHTML = isSpecial ? '<span class="specialBadge">★ LONG COURSE</span>' : this.bars(lv.tier);
-    const best = Records.best(id);
-    $('cdBest').textContent = best ? 'Your best: ' + formatTime(best) : 'no time yet';
     const list = Records.board(id);
+    const best = Records.best(id);
+    const rank = this.myRank(list);
+    $('cdBest').textContent = best ? 'Your best ' + formatTime(best) + (rank ? '  ·  #' + rank + ' of ' + list.length : '')
+      : 'You have no time here yet';
+    const show = Game.cdShow || 10;
     const rows = $('cdRows');
     rows.innerHTML = '';
-    $('cdEmpty').hidden = !!(list && list.length);
-    (list || []).forEach((e, idx) => {
+    $('cdEmpty').hidden = list.length > 0;
+    list.slice(0, show).forEach((e, k) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + (idx + 1) + '</td><td>' + escapeHtml(e.n) + '</td>' +
-        '<td style="text-align:right">' + formatTime(e.t) + '</td>';
+      if (this.isMe(e)) tr.className = 'me';
+      tr.innerHTML = '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(e.n) + '</td>' +
+        '<td class="t">' + formatTime(e.t) + '</td>';
       rows.appendChild(tr);
     });
-    const hasLeader = list && list.length;
-    $('cdLeaderHeading').textContent = hasLeader ? 'FIRST PLACE' : 'NO TIMES YET';
-    $('cdLeaderNote').textContent = hasLeader
-      ? list[0].n + ' — ' + formatTime(list[0].t)
-      : 'Empty board on this course.';
+    $('bCdMore').hidden = list.length <= show;
+    $('bCdMore').textContent = 'Show more (' + (list.length - show) + ') ▾';
+    $('cdLeaderHeading').textContent = list.length ? 'FIRST PLACE' : 'NO TIMES YET';
+    $('cdLeaderNote').innerHTML = list.length
+      ? '<span class="crown">♛</span> ' + escapeHtml(list[0].n) + ' — ' + formatTime(list[0].t)
+      : 'Be quick and it could be you.';
   },
-  /** the menu's own special-long-course card — hidden entirely if the
-   *  course failed to build this session (idx === -1, same "never make a
-   *  broken course look clickable" rule every other course button
-   *  follows), otherwise always shown regardless of campaign progress
-   *  (see Game.specialCourseIndex/toSelect's isSpecial handling — this
-   *  course is deliberately outside the tier-unlock chain). Shows the
-   *  current #1 prominently, or an empty-board note when nobody has set
-   *  a time yet. */
-  specialCourseCard(idx) {
-    const btn = $('bSpecialCourse');
-    if (idx < 0) { btn.hidden = true; return; }
-    btn.hidden = false;
-    const lv = LEVELS[idx];
-    $('specialCourseName').textContent = lv.name;
-    const id = 'c' + (idx + 1);
-    const list = Records.board(id);
-    const wrap = $('specialCourseLeaderWrap');
-    wrap.hidden = false;
-    if (list && list.length) {
-      $('specialCourseCrown').hidden = false;
-      $('specialCourseLeaderName').textContent = list[0].n;
-      $('specialCourseLeaderTime').textContent = formatTime(list[0].t);
-    } else {
-      $('specialCourseCrown').hidden = true;
-      $('specialCourseLeaderName').textContent = 'Empty board.';
-      $('specialCourseLeaderTime').textContent = '';
-    }
-  },
-  /** The main menu's "overall #1 across every course" 3D car widget — hidden
-   *  entirely until at least one row exists (Records.overall() returns
-   *  nothing until someone has cleared at least one course). Fetches that
-   *  player's equipped colors by uid and paints them onto the shared
-   *  overallLeaderPreview widget; a row with no uid (a local/offline board
-   *  entry recorded before any account existed) still shows the name and
-   *  time but keeps the widget in its default color rather than guessing. */
+  /** the menu's season leader card (3D car) plus one small card per section */
   async overallLeaderCard() {
     const card = $('overallLeaderCard');
-    const rows = Records.overall(LEVELS.map((lv, i) => 'c' + (i + 1)));
+    const rows = Records.overall(COURSE_IDS);
+    this.sectionLeaders();
     if (!rows.length) { card.hidden = true; overallLeaderPreview.stop(); return; }
     card.hidden = false;
     const top = rows[0];
     $('overallLeaderName').textContent = top.n;
-    $('overallLeaderTime').textContent = top.count + '/' + LEVELS.length + ' cleared';
+    $('overallLeaderTime').textContent = top.count + '/' + LEVELS.length + ' maps · ' + formatTime(top.total);
     overallLeaderPreview.start();
     const colors = await Cloud.fetchCarColorsOf(top.uid);
     overallLeaderPreview.paint(colors);
   },
+  sectionLeaders() {
+    $('sectionLeaders').innerHTML = SECTIONS.map((name, sec) => {
+      const top = Records.overall(sectionIds(sec))[0];
+      return '<div class="secLead"><div class="sl">' + escapeHtml(name.toUpperCase()) + '</div>' +
+        (top ? '<div class="sn"><span class="crown">♛</span> ' + escapeHtml(top.n) + '</div>'
+          : '<div class="sn empty">no leader yet</div>') + '</div>';
+    }).join('');
+  },
+  /** standings table for a set of maps: cleared count, then total of bests */
+  standingsTable(ids, tabKey) {
+    const rows = Records.overall(ids);
+    if (!rows.length) return '<p class="empty">No times yet.</p>';
+    const show = Game.boardShow[tabKey] || 10;
+    const uid = Cloud.user && Cloud.user.uid, me = Records.driver();
+    let h = '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Maps</th>' +
+      '<th style="text-align:right">Total</th></tr></thead><tbody>';
+    rows.slice(0, show).forEach((r, k) => {
+      const mine = (uid && r.uid) ? r.uid === uid : r.n === me;
+      h += '<tr class="' + (mine ? 'me' : '') + '"><td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' +
+        escapeHtml(r.n) + '</td><td class="d">' + r.count + ' / ' + ids.length + '</td><td class="t">' +
+        formatTime(r.total) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    if (rows.length > show) h += '<button class="ghost small moreBtn" data-more="' + tabKey + '">Show more (' + (rows.length - show) + ') ▾</button>';
+    return h;
+  },
   /**
-   * All leaderboard state (which tab, which uids are checked) lives on
-   * Game — the same place every other piece of "what is the player
-   * currently doing" state lives (garageSlot, ghostOverride, etc.) — and
-   * this screen only ever reads/writes it through Game, never keeps its
-   * own copy. That used to be split (a boardTab/boardSel pair duplicated
-   * on both UI and Game, only one of which was ever actually kept up to
-   * date) which is exactly what made clicking a course tab throw and
-   * silently leave the previous tab's table on screen: the click handler
-   * read Game.boardSel, which never existed, so the whole render crashed
-   * partway through, after the tab button's own highlight had already
-   * updated but before the table body did.
+   * Leaderboards: Overall, each section, then every map. Board state (tab,
+   * checked rows, how many rows are shown) lives on Game so it survives a
+   * trip into spectate and back.
    */
   boards() {
     const tabs = $('boardTabs');
@@ -5965,67 +6026,69 @@ const UI = {
       tabs.appendChild(b);
     };
     mk('all', 'Overall');
-    LEVELS.forEach((lv, i) => mk('c' + (i + 1), String(i + 1)));
+    SECTIONS.forEach((name, sec) => mk('sec' + sec, name));
+    LEVELS.forEach((lv, i) => mk(lv.id, courseTag(i)));
 
     const body = $('boardBody');
-    const me = Records.driver();
-    if (Game.boardTab === 'all') {
-      const ids = LEVELS.map((l, i) => 'c' + (i + 1));
-      const rows = Records.overall(ids);
-      body.innerHTML = rows.length
-        ? '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Cleared</th>' +
-          '<th style="text-align:right">Total of bests</th></tr></thead><tbody>' +
-          rows.map((r, i) => '<tr class="' + (r.n === me ? 'me' : '') + '"><td class="r">' + (i + 1) +
-            '</td><td>' + escapeHtml(r.n) + '</td><td class="d">' + r.count + ' / ' + ids.length +
-            '</td><td class="t">' + formatTime(r.total) + '</td></tr>').join('') + '</tbody></table>'
-        : '<p class="empty">No times yet. Clear a course and it will appear here.</p>';
-      this.updateBoardMultiBar(); // Overall has no selection of its own — this just hides the bar
+    const tab = Game.boardTab;
+    const bindMore = () => body.querySelectorAll('[data-more]').forEach((btn) => btn.addEventListener('click', () => {
+      const k = btn.dataset.more;
+      Game.boardShow[k] = (Game.boardShow[k] || 10) + 10;
+      this.boards();
+    }));
+    if (tab === 'all') {
+      let h = this.standingsTable(COURSE_IDS, 'all');
+      h += '<div class="boardsHd">Map leaders</div><div class="leadersGrid">' + LEVELS.map((lv, i) => {
+        const top = Records.board(lv.id)[0];
+        return '<div class="lg"><div class="c">' + courseTag(i) + ' · ' + escapeHtml(lv.name) + '</div>' +
+          (top ? '♛ <b>' + escapeHtml(top.n) + '</b><span class="t">' + formatTime(top.t) + '</span>' : '<span class="dim">—</span>') + '</div>';
+      }).join('') + '</div>';
+      body.innerHTML = h;
+      bindMore();
+      this.updateBoardMultiBar();
       return;
     }
-
-    const idx = parseInt(Game.boardTab.slice(1), 10) - 1;
-    const list = Records.board(Game.boardTab);
-    if (!list.length) {
-      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(LEVELS[idx].name) + ' yet.</p>';
+    if (tab.indexOf('sec') === 0) {
+      body.innerHTML = this.standingsTable(sectionIds(+tab.slice(3)), tab);
+      bindMore();
+      this.updateBoardMultiBar();
+      return;
+    }
+    const idx = courseIndexOf(tab);
+    const list = Records.board(tab);
+    if (idx < 0 || !list.length) {
+      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(idx >= 0 ? LEVELS[idx].name : 'this map') + ' yet.</p>';
       this.updateBoardMultiBar();
       return;
     }
     const showActions = Cloud.on;
-    const sel = Game.boardSel[Game.boardTab] || (Game.boardSel[Game.boardTab] = new Set());
-    // a uid can vanish from the board (e.g. after Records.wipe or a re-pull) —
-    // drop any stale selections so the count/checkboxes never lie
+    const show = Game.boardShow[tab] || 10;
+    const sel = Game.boardSel[tab] || (Game.boardSel[tab] = new Set());
+    // a uid can vanish from the board (a wipe, a re-pull) — drop stale picks
     const liveUids = new Set(list.map((e) => e.uid).filter(Boolean));
     for (const uid of [...sel]) if (!liveUids.has(uid)) sel.delete(uid);
-    // Race/Watch used to also live per-row here, but a checkbox + the
-    // "Race checked / Watch checked" bar underneath now covers every case
-    // a single row's own buttons used to (check just one row for a
-    // one-on-one race/watch, or several for a group one — Race checked
-    // races EVERY checked run, not just the fastest) — so the per-row
-    // buttons and their own "Vs." column are gone; checking a row is now
-    // the only way to pick who to race or watch.
     let h = '<table><thead><tr>' + (showActions ? '<th></th>' : '') + '<th></th><th>Driver</th>' +
-      '<th style="text-align:right">Time</th>' +
-      '<th style="text-align:right">Set</th></tr></thead><tbody>';
-    list.forEach((e, i) => {
+      '<th style="text-align:right">Time</th><th style="text-align:right">Set</th></tr></thead><tbody>';
+    list.slice(0, show).forEach((e, k) => {
       const when = new Date(e.d);
       const checked = e.uid && sel.has(e.uid);
-      h += '<tr class="' + [(e.n === me ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
+      const mine = this.isMe(e);
+      h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
       if (showActions) {
         h += '<td>' + (e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
           (checked ? ' checked' : '') + '>' : '') + '</td>';
       }
-      h += '<td class="r">' + (i + 1) + '</td><td>' +
-        escapeHtml(e.n) + (e.n === me ? ' <small class="youTag">(you)</small>' : '') +
-        '</td><td class="t">' + formatTime(e.t) + '</td><td class="d">' +
-        (isFinite(when.getTime()) ? when.toLocaleDateString() : '') + '</td></tr>';
+      h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(e.n) +
+        (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="t">' + formatTime(e.t) +
+        '</td><td class="d">' + (isFinite(when.getTime()) && e.d ? when.toLocaleDateString() : '') + '</td></tr>';
     });
-    body.innerHTML = h + '</tbody></table>';
+    h += '</tbody></table>';
+    if (list.length > show) h += '<button class="ghost small moreBtn" data-more="' + tab + '">Show more (' + (list.length - show) + ') ▾</button>';
+    body.innerHTML = h;
+    bindMore();
     if (showActions) {
       body.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
         if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
-        // Flip the row's own highlight immediately rather than waiting on a
-        // full re-render — feels instant and can't itself throw/derail the
-        // rest of the screen the way rebuilding the whole table would.
         cb.closest('tr').classList.toggle('sel', cb.checked);
         this.updateBoardMultiBar();
       }));
@@ -6033,19 +6096,25 @@ const UI = {
     this.updateBoardMultiBar();
   },
 
-  /** Keeps the "N selected — Race checked / Watch checked / Clear" bar in
-   *  sync with the current tab's checkbox Set. Called from every exit path
-   *  of boards() (including the empty-board and Overall-tab ones) so the
-   *  bar never keeps showing a stale count from whatever tab was open
-   *  before — a selection only ever applies to the course tab it was made
-   *  on (see Game.boardSel), so leaving that tab always means 0 relevant
-   *  here even if that tab's own Set still remembers its own picks. */
+  /** the "N selected — Watch / Race / Clear" bar; only ever for a map tab */
   updateBoardMultiBar() {
-    const sel = Game.boardTab !== 'all' ? Game.boardSel[Game.boardTab] : null;
+    const sel = courseIndexOf(Game.boardTab) >= 0 ? Game.boardSel[Game.boardTab] : null;
     const n = sel ? sel.size : 0;
     $('boardMultiBar').hidden = n < 1;
     if (n < 1) return;
     $('boardMultiCount').textContent = n + (n === 1 ? ' run selected' : ' runs selected');
+  },
+
+  trophyList(list) {
+    const el = $('trophyList');
+    if (!list.length) {
+      el.innerHTML = '<div class="trophyEmpty">No trophies yet. Finish top 3 on any map to earn one.</div>';
+      return;
+    }
+    const cls = ['gold', 'silver', 'bronze'];
+    el.innerHTML = list.map((t) => '<div class="trophyItem' + (t.size > 1 ? ' big' : '') + '">' +
+      '<span class="medal ' + cls[t.tier] + '">' + (t.tier + 1) + '</span>' +
+      '<span class="ti"><b>' + escapeHtml(t.title) + '</b><small>' + escapeHtml(t.sub) + '</small></span></div>').join('');
   },
 
   /** Redraws the whole garage screen from CarColor's current state — safe
@@ -6066,7 +6135,7 @@ const UI = {
     const hueMaxed = CarColor.lockedHueCells().length === 0;
     $('gBuyHue').disabled = !Cloud.on || hueMaxed;
     $('gBuyHue').textContent = hueMaxed ? 'Every hue already unlocked' : 'Buy a hue pack — 10 credits';
-    $('gBuyMsg').textContent = Cloud.on ? '' : 'Sign in to buy colors — offline mode keeps whatever you already unlocked, but can\'t spend credits.';
+    $('gBuyMsg').textContent = Cloud.on ? '' : 'Sign in to buy colors.';
 
     // HUE grid: 256 cells, one per hue, at the pack's own fixed reference
     // s/l — a hue you own reads as unlocked here regardless of which
@@ -6231,7 +6300,7 @@ const Game = {
   // reset only by an explicit Clear (see the bBoardClearSel listener in
   // wire()) or the automatic staleness pruning in UI.boards() (a uid that
   // no longer appears on that course's board, e.g. after Records.wipe).
-  boardTab: 'all', boardSel: {},
+  boardTab: 'all', boardSel: {}, boardShow: {}, cdShow: 10, seasonAwards: null,
 
   boot() {
     buildMaterials();
@@ -6400,12 +6469,13 @@ const Game = {
       Records.hydrate(await Cloud.pull());
     } catch (e) {
       console.warn('aiPolytrack: could not read the leaderboards', e && e.message);
-      UI.toast('Could not load leaderboards or credits — check your connection and try again.');
+      UI.toast('Could not load leaderboards. Check your connection.');
     }
     if (this.confirmedUid !== user.uid) {
       try { await CarColor.load(); } catch (e) { console.warn('aiPolytrack: could not load car colors', e && e.message); }
     }
     this.confirmedUid = user.uid;
+    Cloud.fetchSeasonAwards().then((a) => { this.seasonAwards = a; if (this.state === 'menu') this.trophyTileText(); });
     UI.who(Cloud.name(), Records.credits);
     $('driverRow').hidden = true;
     if (!this.lobbyUnwatch) {
@@ -6532,20 +6602,19 @@ const Game = {
     badge.textContent = race.state.toUpperCase();
 
     if (race.state === 'lobby') {
-      $('lobbyState').textContent = entries.length + ' joined, staking ' + pot + ' credits total. ' +
-        'Once 2 have joined, a 1-minute countdown starts for anyone else to get in.';
+      $('lobbyState').textContent = entries.length + ' in · ' + pot + ' credits. Starts when 2 join.';
     } else if (race.state === 'starting') {
       const remain = Math.max(0, Math.round((tsMs(race.joinDeadline) - Date.now()) / 1000));
-      $('lobbyState').textContent = pot + ' credits staked. Race starts in ' +
-        Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0') + ' — join now or wait for the next one.';
+      $('lobbyState').textContent = pot + ' credits · starts in ' +
+        Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
     } else if (race.state === 'running') {
       const remain = Math.max(0, Math.round((tsMs(race.endsAt) - Date.now()) / 1000));
       const left = Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
       $('lobbyState').textContent = mine
-        ? pot + ' credits in the pot. ' + (remain > 0 ? left + ' left.' : 'Time’s up — finishing up.')
-        : 'Race in progress — ' + left + ' left. Too late to join this one.';
+        ? pot + ' credits · ' + (remain > 0 ? left + ' left' : 'finishing')
+        : 'Racing now · ' + left + ' left';
     } else {
-      $('lobbyState').textContent = pot + ' credits paid out. Standings below are final — a new lobby opens shortly.';
+      $('lobbyState').textContent = pot + ' credits paid out. Next race soon.';
     }
 
     $('lobbyMineBox').hidden = !mine;
@@ -6565,13 +6634,13 @@ const Game = {
       const n = (mine.attempts || []).length + 1;
       $('lobbyAttemptNum').textContent = String(n);
       $('lobbyDriveNote').textContent = n === 1
-        ? 'Your fastest of up to 3 attempts counts. Once you start, all 3 run back to back.'
+        ? 'Best of 3, back to back.'
         : (mine.attempts.length) + ' down, ' + (3 - mine.attempts.length) + ' to go.';
     }
 
     let waiting = '';
     if (race.state === 'running' && mine && (mine.attempts || []).length >= 3 && this.state === 'menu') {
-      waiting = 'All 3 attempts used — your best stands. Waiting for the race to end.';
+      waiting = 'All 3 done. Waiting for the race to end.';
     }
     $('lobbyWaitingNote').hidden = !waiting;
     $('lobbyWaitingNote').textContent = waiting;
@@ -6589,7 +6658,7 @@ const Game = {
         const isMe = Cloud.user && e.uid === Cloud.user.uid;
         const best = typeof e.bestTimeMs === 'number' ? formatTime(e.bestTimeMs / 1000) : '—';
         const last = settled
-          ? (typeof e.payout === 'number' ? e.payout.toFixed(1) : '—')
+          ? (typeof e.payout === 'number' ? String(Math.floor(e.payout)) : '—')
           : (e.attempts || []).length + ' / 3';
         const place = settled && e.placement ? e.placement + '.' : '';
         return '<tr class="' + (isMe ? 'me' : '') + '"><td class="r">' + place + '</td><td>' +
@@ -6637,7 +6706,7 @@ const Game = {
     $('gGo').addEventListener('click', async () => {
       const user = $('gUser').value.trim(), pw = $('gPass').value;
       if (!validUsername(user)) {
-        UI.gateError('Usernames are 3-14 characters: letters, numbers, _ and - only.');
+        UI.gateError('Username: 3-14 letters, numbers, _ or -.');
         return;
       }
       if (pw.length < 6) {
@@ -6674,20 +6743,15 @@ const Game = {
     // since leaving with attempts still unused is functionally identical
     // to just not finishing them.
     $('bRevealSignOut').addEventListener('click', () => {
-      if (!confirm('Sign out now? You will forfeit your race buy-in, same as any other unfinished attempt.')) return;
+      if (!confirm('Sign out? You lose your race stake.')) return;
       Cloud.signOut();
     });
 
-    $('bDrive').addEventListener('click', () => {
-      let i = LEVELS.findIndex((l, k) => this.playable[k] && !Records.cleared('c' + (k + 1)));
-      if (i < 0) i = this.data.findIndex(Boolean);
-      this.startLevel(i);
-    });
+    $('bDrive').addEventListener('click', () => this.startLevel(this.nextCourseIndex()));
     $('bCourses').addEventListener('click', () => this.toSelect('courses'));
-    $('bSpecialCourse').addEventListener('click', () => {
-      const idx = this.specialCourseIndex();
-      if (idx >= 0) this.startLevel(idx);
-    });
+    $('bTrophies').addEventListener('click', () => this.toTrophies());
+    $('bTrophyBack').addEventListener('click', () => this.toMenu());
+    $('bCdMore').addEventListener('click', () => { this.cdShow += 10; UI.courseDetail(this.courseDetailIndex); });
     $('bSelTabCourses').addEventListener('click', () => this.setSelectTab('courses'));
     $('bSelTabBoards').addEventListener('click', () => this.setSelectTab('boards'));
     $('bSettings').addEventListener('click', () => this.toSettings());
@@ -6743,7 +6807,7 @@ const Game = {
     });
     $('bResetScores').addEventListener('click', async () => {
       const msg = $('setResetMsg');
-      if (!confirm('Delete every one of your times and ghosts on every course? This cannot be undone.')) return;
+      if (!confirm('Delete all your times and ghosts? This can\'t be undone.')) return;
       $('bResetScores').disabled = true;
       msg.textContent = 'Working…';
       try {
@@ -6791,12 +6855,15 @@ const Game = {
     $('bSound').addEventListener('click', () => {
       Sound.init();
       Sound.setEnabled(!Sound.on);
-      $('bSound').textContent = 'Sound: ' + (Sound.on ? 'on' : 'off');
+      $('bSoundState').textContent = Sound.on ? 'on' : 'off';
     });
     const wake = () => { Sound.init(); Sound.resume(); };
     document.addEventListener('pointerdown', wake, { once: true });
     addEventListener('keydown', wake, { once: true });
     document.addEventListener('visibilitychange', () => { if (document.hidden) Input.clear(); });
+    addEventListener('pagehide', () => {
+      if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') this.logAttempt('terminated', 'closed');
+    });
   },
 
   /** Firebase error codes are not for humans */
@@ -6817,7 +6884,20 @@ const Game = {
     for (let i = from + 1; i < this.data.length; i++) if (this.data[i]) return i;
     return -1;
   },
-  id(i) { return 'c' + ((i === undefined ? this.levelIndex : i) + 1); },
+  id(i) { return LEVELS[i === undefined ? this.levelIndex : i].id; },
+  /** the first map without a time of yours, else the one you rank worst on */
+  nextCourseIndex() {
+    const ok = (k) => this.playable[k];
+    let i = LEVELS.findIndex((l, k) => ok(k) && !Records.cleared(l.id));
+    if (i >= 0) return i;
+    let worst = -1, worstRank = -1;
+    LEVELS.forEach((l, k) => {
+      if (!ok(k)) return;
+      const r = UI.myRank(Records.board(l.id)) || 999;
+      if (r > worstRank) { worstRank = r; worst = k; }
+    });
+    return worst >= 0 ? worst : this.data.findIndex(Boolean);
+  },
 
   loadLevel(i, silent) {
     if (!this.data[i]) return false;
@@ -6850,9 +6930,10 @@ const Game = {
     if (this.ghostOverride && this.ghostOverrideCourse !== i) {
       this.ghostOverride = null; this.ghostOverrideName = null; this.extraGhosts = [];
     }
+    App.layoutBackdrop(this.course.center.x, this.course.center.z, this.course.extent);
     this.levelIndex = i;
     this.rec = [];
-    this.ghostData = this.ghostOverride || Records.ghost('c' + (i + 1));
+    this.ghostData = this.ghostOverride || Records.ghost(LEVELS[i].id);
     if (!this.ghostOverride) this.ghostOverrideName = null;
     if (this.ghostMesh) this.ghostMesh.visible = false;
     this.pathIdx = 0;
@@ -6898,7 +6979,40 @@ const Game = {
 
   /** No checkpoints: a run is start line to finish line, so the only reset is
       back to the line with the clock zeroed. */
-  restartRun(msg) {
+  /** fresh numbers for the attempt that is about to start */
+  resetRunStats() {
+    this.runStats = { top: 0, grass: 0, air: 0, far: 0 };
+  },
+  /**
+   * One row of run history for the attempt in progress. Skips attempts
+   * that never really started (a restart at the line), so the log is
+   * every real attempt rather than every key press.
+   */
+  logAttempt(outcome, reason) {
+    if (!this.course || !this.started) return;
+    if (outcome !== 'finished' && this.time < 0.8) return;
+    const kind = this.runKind || 'campaign';
+    const rs = this.runStats || { top: 0, grass: 0, air: 0, far: 0 };
+    const lv = LEVELS[this.levelIndex];
+    const entry = {
+      kind, courseId: lv.id, courseName: lv.name, season: SEASON, outcome, reason: reason || outcome,
+      timeMs: this.time * 1000,
+      progress: Math.round(clamp(outcome === 'finished' ? 1 : rs.far, 0, 1) * 1000) / 1000,
+      topMph: Math.round(rs.top * MPH),
+      boostUsed: Math.round((CAR.boostTotal - this.car.boostLeft) * 10) / 10,
+      grassSec: Math.round(rs.grass * 10) / 10,
+      airSec: Math.round(rs.air * 10) / 10,
+      attempt: this.attemptNo || 1,
+      fps: Math.round(this.fps)
+    };
+    if (kind === 'race' && this._lockedRaceId) entry.raceId = this._lockedRaceId;
+    if (this.ghostOverrideName) entry.vs = String(this.ghostOverrideName).slice(0, 40);
+    Cloud.logRun(entry);
+  },
+  restartRun(msg, reason) {
+    this.logAttempt('restarted', reason || 'restart');
+    this.attemptNo = (this.attemptNo || 1) + 1;
+    this.resetRunStats();
     this.car.place(this.startPose.pos, this.startPose.heading);
     this.chase.snap(this.car);
     this.time = 0;
@@ -6922,6 +7036,9 @@ const Game = {
 
   startLevel(i) {
     if (!this.loadLevel(i)) { this.toSelect(); return; }
+    if (this.attemptCourse !== i) { this.attemptCourse = i; this.attemptNo = 1; } else this.attemptNo = (this.attemptNo || 0) + 1;
+    this.runKind = 'campaign';
+    this.resetRunStats();
     Input.clear();
     this.time = 0; this.started = false; this.running = true;
     this.accum = 0;
@@ -6929,6 +7046,7 @@ const Game = {
     UI.show('hud');
     UI.course(i, LEVELS[i].name);
     UI.best(Records.best(this.id(i)));
+    UI.record(this.id(i));
     UI.clock(0, false);
     UI.delta(null);
     UI.progress(0);
@@ -6966,7 +7084,7 @@ const Game = {
   /** load someone else's stored run as the ghost for the next attempt on this
    *  course, instead of the player's own best */
   async raceGhostOf(courseId, uid) {
-    const idx = parseInt(courseId.slice(1), 10) - 1;
+    const idx = courseIndexOf(courseId);
     // A course that failed to build earlier this session is marked
     // unplayable and would otherwise make this button silently do
     // nothing — leaving the player stuck looking at the leaderboard with
@@ -7001,7 +7119,7 @@ const Game = {
   async raceGhostOfMany(courseId, uids) {
     if (!uids || !uids.length) { UI.toast('Check at least one row first.'); return; }
     if (uids.length === 1) return this.raceGhostOf(courseId, uids[0]);
-    const idx = parseInt(courseId.slice(1), 10) - 1;
+    const idx = courseIndexOf(courseId);
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     const board = Records.board(courseId) || [];
     const rows = uids.map((uid) => board.find((e) => e.uid === uid)).filter(Boolean);
@@ -7102,8 +7220,7 @@ const Game = {
     $('specSpeedHead').setAttribute('x1', x.toFixed(1));
     $('specSpeedHead').setAttribute('x2', x.toFixed(1));
     const i = Math.min(n - 1, Math.round(f));
-    // m/s -> km/h for a more readable HUD figure than the raw simulation unit
-    $('specSpeedNow').textContent = Math.round(sp.speeds[i] * 3.6) + ' km/h';
+    $('specSpeedNow').textContent = Math.round(sp.speeds[i] * MPH) + ' mph';
   },
 
   /**
@@ -7269,7 +7386,7 @@ const Game = {
    *  camera (overview, or locked onto any one car) is active. */
   async spectateMany(courseId, uids) {
     if (!uids || !uids.length) { UI.toast('Check at least one row first.'); return; }
-    const idx = parseInt(courseId.slice(1), 10) - 1;
+    const idx = courseIndexOf(courseId);
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     const capped = uids.slice(0, 1 + SPEC_POOL_SIZE); // primary + however many spares exist
     UI.toast(capped.length > 1 ? 'Loading runs…' : 'Loading run…');
@@ -7341,6 +7458,26 @@ const Game = {
   flushPendingAuth() {
     if (this.authPending) this.onAuth(Cloud.user, Cloud.profile);
   },
+  async toTrophies() {
+    this.state = 'trophies'; this.running = false;
+    Sound.stopEngine();
+    UI.show('trophies');
+    const draw = () => {
+      const list = Trophies.compute(this.seasonAwards);
+      UI.trophyList(list);
+      $('trophyCreditNum').textContent = Cloud.on ? Records.credits : '—';
+      TrophyRoom.start({ credits: Cloud.on ? Records.credits : 0, trophies: list });
+    };
+    draw();
+    if (Cloud.on) {
+      this.seasonAwards = await Cloud.fetchSeasonAwards();
+      if (this.state === 'trophies') draw();
+    }
+  },
+  trophyTileText() {
+    const n = Trophies.compute(this.seasonAwards).length;
+    $('tileTrophies').textContent = n ? n + (n === 1 ? ' trophy' : ' trophies') : 'your awards';
+  },
   toMenu() {
     this.state = 'menu'; this.running = false;
     Sound.stopEngine();
@@ -7353,17 +7490,12 @@ const Game = {
     GaragePreview.stop();
     courseDetailPreview.stop();
     UI.show('menu');
-    UI.specialCourseCard(this.specialCourseIndex());
+    TrophyRoom.stop();
+    const next = this.nextCourseIndex();
+    $('bDriveNext').textContent = next >= 0 ? courseTag(next) + ' · ' + LEVELS[next].name : '';
     UI.overallLeaderCard();
+    this.trophyTileText();
     this.flushPendingAuth();
-  },
-  /** the special long course's LEVELS index, or -1 if it somehow isn't
-   *  present/playable — looked up by its tier marker rather than a fixed
-   *  index so nothing else in the file has to know or care where in the
-   *  array it sits. */
-  specialCourseIndex() {
-    const idx = LEVELS.findIndex((l) => l.tier === 'special');
-    return (idx >= 0 && this.playable[idx]) ? idx : -1;
   },
   /** tears down the live boards subscription — called from toMenu() since
    *  that is the one place every path away from this screen passes
@@ -7409,6 +7541,7 @@ const Game = {
         Records.data.cleared = remote.cleared;
         Records.data.myBests = remote.myBests;
         if (this.state === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
+        else if (this.state === 'courseDetail') UI.courseDetail(this.courseDetailIndex);
       });
     }
   },
@@ -7421,9 +7554,8 @@ const Game = {
     $('selectBoardsPane').hidden = !onBoards;
     $('bBoardWipe').hidden = !onBoards;
     $('selectNote').textContent = onBoards
-      ? (Cloud.on ? 'Shared leaderboards, one table per course, updating live. Race or watch anyone\'s best run.'
-        : 'Times are kept on this device, one table per course. Change the driver name on the title screen to share the machine.')
-      : 'Clear one to open the next.';
+      ? (Cloud.on ? 'Live. Tick runs to watch or race them.' : 'Times on this device.')
+      : 'Pick a map to see its leaderboard.';
     if (onBoards) UI.boards(); else UI.courseList(this.playable, (i) => this.toCourseDetail(i));
   },
 
@@ -7440,6 +7572,7 @@ const Game = {
    */
   courseDetailIndex: -1,
   async toCourseDetail(i) {
+    if (this.courseDetailIndex !== i) this.cdShow = 10;
     this.state = 'courseDetail'; this.running = false;
     this.courseDetailIndex = i;
     Sound.stopEngine();
@@ -7625,6 +7758,9 @@ const Game = {
     if (!mine || (mine.attempts || []).length >= 3) { this.toMenu(); return; }
     const idx = LEVELS.findIndex((l, i) => this.id(i) === race.courseId);
     if (idx < 0 || !this.loadLevel(idx)) { this.toMenu(); return; }
+    this.attemptCourse = idx; this.attemptNo = (mine.attempts || []).length + 1;
+    this.runKind = 'race';
+    this.resetRunStats();
     this.ghostData = null; this.ghostDist = null;
     Input.clear();
     this.time = 0; this.started = false; this.running = true;
@@ -7632,7 +7768,8 @@ const Game = {
     this.state = 'race';
     UI.show('hud');
     UI.course(idx, LEVELS[idx].name);
-    UI.best(0);
+    UI.best(Records.best(this.id(idx)));
+    UI.record(this.id(idx));
     UI.clock(0, false);
     UI.delta(null);
     UI.progress(0);
@@ -7651,22 +7788,20 @@ const Game = {
       console.warn('aiPolytrack: could not record race attempt', e && e.message);
       UI.toast('Could not save that attempt — check your connection.');
     }
-    if (this.lobby && this.lobby.courseId) {
-      Cloud.logRun(this.lobby.courseId, 'race', timeSec * 1000, raceId);
-    }
+    this.logAttempt('finished');
     const mine = this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
     const attemptsUsed = mine ? (mine.attempts || []).length + 1 : 1;
     this.state = 'raceBetween';
     $('betweenTime').textContent = formatTime(timeSec);
     if (attemptsUsed >= 3) {
       $('betweenKick').textContent = 'Final attempt complete';
-      $('betweenNote').textContent = 'All 3 attempts used — your best stands. Waiting for the race to end.';
+      $('betweenNote').textContent = 'All 3 done. Your best stands.';
       $('bBetweenNext').textContent = 'Back to title';
       $('bBetweenNext').onclick = () => this.toMenu();
     } else {
       $('betweenKick').textContent = 'Attempt ' + attemptsUsed + ' of 3 complete';
       $('betweenNote').textContent = (3 - attemptsUsed) + ' attempt' + (3 - attemptsUsed === 1 ? '' : 's') +
-        ' to go — back to back, no practicing in between.';
+        ' to go.';
       $('bBetweenNext').textContent = 'Next attempt';
       $('bBetweenNext').onclick = () => this.enterRaceReveal();
     }
@@ -7689,18 +7824,22 @@ const Game = {
       return;
     }
     this.ghostData = null; this.ghostDist = null;
+    this.attemptCourse = idx; this.attemptNo = 1;
+    this.runKind = 'creditsrun';
+    this.resetRunStats();
     Input.clear();
     this.time = 0; this.started = false; this.running = true;
     this.accum = 0;
     this.state = 'creditsrun';
     UI.show('hud');
     UI.course(idx, LEVELS[idx].name);
-    UI.best(0);
+    UI.best(Records.best(this.id(idx)));
+    UI.record(this.id(idx));
     UI.clock(0, false);
     UI.delta(null);
     UI.progress(0);
     UI.prompt('Hold W to launch');
-    UI.toast('Credits run — finish for +1 credit. Times here don’t count.');
+    UI.toast('Credit run: finish for +1 credit');
     Sound.init(); Sound.resume(); Sound.startEngine();
   },
 
@@ -7709,7 +7848,7 @@ const Game = {
     this.state = 'result';
     Sound.stopEngine();
     Sound.finish(false);
-    Cloud.logRun(this.id(), 'creditsrun', this.time * 1000);
+    this.logAttempt('finished');
     $('rKick').textContent = 'Credits run';
     $('rName').textContent = LEVELS[this.levelIndex].name;
     $('rTime').textContent = formatTime(this.time);
@@ -7734,13 +7873,13 @@ const Game = {
       // next full sign-in re-hydrates it.
       Records.credits = Cloud.credits;
       UI.who(Cloud.name(), Records.credits);
-      $('rSub').textContent = '+1 credit — you now have ' + Records.credits + '. Doesn’t count toward times or leaderboards.';
+      $('rSub').textContent = '+1 credit · you have ' + Records.credits + '.';
       UI.toast('+1 credit');
       UI.playCreditBurst(1);
       Sound.creditWin();
     } catch (e) {
       console.warn('aiPolytrack: could not award the credits-run credit', e && e.message);
-      $('rSub').textContent = 'Could not award the credit — check your connection and try again.';
+      $('rSub').textContent = 'Credit not saved. Check your connection.';
       UI.toast('Could not save that credit — check your connection.');
     }
   },
@@ -7783,7 +7922,7 @@ const Game = {
     const prevBest = Records.best(id);
     const firstClear = !Records.cleared(id);
     const res = Records.submit(id, this.time);
-    Cloud.logRun(id, 'campaign', this.time * 1000);
+    this.logAttempt('finished');
     if (Cloud.on && Cloud.user && !Cloud.banned() && (!prevBest || this.time < prevBest)) {
       Cloud.pushBest(id, this.time, this.rec).then(() => {
         UI.who(Cloud.name(), Records.credits);
@@ -7793,7 +7932,7 @@ const Game = {
         // still shows it) but the shared leaderboard never got it — tell
         // the player rather than let them find out days later that a
         // record run never left their machine.
-        UI.toast('Time saved locally, but could not reach the server — check your connection.');
+        UI.toast('Time not uploaded. Check your connection.');
       });
     }
     Sound.stopEngine();
@@ -7803,10 +7942,10 @@ const Game = {
     $('rName').textContent = LEVELS[this.levelIndex].name;
     $('rTime').textContent = formatTime(this.time);
     $('rSub').innerHTML = !prevBest
-      ? 'First clean run on this course.'
+      ? 'First time on this map.'
       : (this.time < prevBest
-        ? '<em>' + formatDelta(this.time - prevBest) + 's</em> on your previous best of ' + formatTime(prevBest) + '.'
-        : formatDelta(this.time - prevBest) + 's off your best of ' + formatTime(prevBest) + '.');
+        ? '<em>' + formatDelta(this.time - prevBest) + 's</em> new personal best (was ' + formatTime(prevBest) + ')'
+        : formatDelta(this.time - prevBest) + 's off your best (' + formatTime(prevBest) + ')');
 
     if (raceResult) {
       $('rRaceResult').hidden = false;
@@ -7829,6 +7968,7 @@ const Game = {
     this.ghostData = Records.ghost(id);
     this.buildGhostProgress();
     UI.best(Records.best(id));
+    UI.record(id);
     $('bNext').hidden = this.nextPlayable(this.levelIndex) < 0;
     $('rCampaignRow').hidden = false;
     $('rCreditsRunRow').hidden = true;
@@ -7940,7 +8080,7 @@ const Game = {
     // leaderboard's Race button) is named — the player's own best-run
     // ghost chasing itself has no "who is this" question to answer, so
     // the tag stays hidden for that ordinary case.
-    const kmh = this._raceGhostSpeed(g, this.time) * 3.6;
+    const kmh = this._raceGhostSpeed(g, this.time) * MPH;
     this.updateGhostTag('race', !!this.ghostOverrideName, mesh, this.ghostOverrideName,
       this.ghostOverrideName ? { kmh } : null);
     this.updateExtraRaceGhosts(dt);
@@ -8018,7 +8158,7 @@ const Game = {
       _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
       slot.mesh.quaternion.copy(_gq1).slerp(_gq2, u);
       setGhostFlame(slot.mesh, !!((s[a + 7] | 0) & 16), dt);
-      const kmh = this._raceGhostSpeed(g, this.time) * 3.6;
+      const kmh = this._raceGhostSpeed(g, this.time) * MPH;
       this.updateGhostTag(key, true, slot.mesh, rec.name, { kmh, place });
     }
   },
@@ -8036,7 +8176,7 @@ const Game = {
       el = document.createElement('div');
       el.className = 'ghostTag';
       el.hidden = true;
-      el.innerHTML = '<span class="tagName"></span><span class="kmh"><b></b> km/h</span>';
+      el.innerHTML = '<span class="tagName"></span><span class="kmh"><b></b> mph</span>';
       $('ghostTags').appendChild(el);
       this.ghostTagPool[key] = el;
     }
@@ -8196,11 +8336,11 @@ const Game = {
       // current attempt to the start line without recording a time or
       // consuming an extra one of the 3 attempts, so it isn't a way to
       // sneak in practice either.
-      if (this.state === 'race') { UI.prompt('Locked in — finish or restart (R), no menu until all 3 attempts are done'); return; }
-      if (this.state === 'creditsrun') { this.toMenu(); return; }
+      if (this.state === 'race') { UI.prompt('Race locked in: finish or press R'); return; }
+      this.logAttempt('terminated', 'menu');
       this.toMenu(); return;
     }
-    if (Input.tapped('KeyR')) this.restartRun('Restarted');
+    if (Input.tapped('KeyR')) this.restartRun('Restarted', 'restart');
     if (Input.tapped('KeyT')) UI.toggleTele();
     if (!this.started && Input.anyDrive) {
       this.started = true;
@@ -8216,7 +8356,7 @@ const Game = {
     while (this.accum >= H && steps < 18) {
       if (!this.car.step(H, this.world, input)) {
         console.warn('aiPolytrack: vehicle state went non-finite, restarting');
-        this.restartRun('Restarted');
+        this.restartRun('Restarted', 'error');
         this.accum = 0;
         break;
       }
@@ -8231,17 +8371,28 @@ const Game = {
     if (this.car.scrapeImpact > 0.18) { Sound.scrape(this.car.scrapeImpact); this.car.scrapeImpact *= 0.3; }
 
     // The terrain catches you rather than a void, so a spoiled run is ended by
-    // time off the decking instead of by falling. Airborne does not count,
-    // otherwise every jump would trip it.
+    // time off the decking instead of by falling. Airborne pauses the timer
+    // (every jump would trip it otherwise) but doesn't reset it, so a car
+    // bouncing against a landing ramp it came up short on still gets sent back.
     const onDeck = this.car.wheels.some((w) => w.contact && w.onTrack);
-    if (!this.car.grounded || onDeck) this.offTrack = 0;
-    else this.offTrack += dt;
+    if (onDeck) this.offTrack = 0;
+    else if (this.car.grounded) this.offTrack += dt;
 
-    if (this.car.pos.y < GROUND_Y - 8) this.restartRun('Restarted');
-    else if (this.car.stuckTime > 0.9) this.restartRun('Stuck — restarted');
-    else if (this.offTrack > 4) this.restartRun('Off the track — restarted');
+    if (this.car.pos.y < GROUND_Y - 8) this.restartRun('Restarted', 'fell');
+    else if (this.car.stuckTime > 0.9) this.restartRun('Stuck — restarted', 'stuck');
+    else if (this.offTrack > 4) this.restartRun('Off the track — restarted', 'offtrack');
 
-    if (this.started) { this.time += dt; this.recordGhost(dt); }
+    if (this.started) {
+      this.time += dt;
+      this.recordGhost(dt);
+      const rs = this.runStats;
+      if (rs) {
+        rs.top = Math.max(rs.top, this.car.speed);
+        if (!this.car.grounded) rs.air += dt;
+        else if (!onDeck) rs.grass += dt;
+        rs.far = Math.max(rs.far, this.course.cum[this.pathIdx] / Math.max(this.course.length, 1));
+      }
+    }
     this.checkFinish();
     if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') this.updateProgress();
   },
