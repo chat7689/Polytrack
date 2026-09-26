@@ -3,6 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+/* Keeps the browser's inspect tools out of casual reach: no right-click
+   menu (except in text boxes, for paste), and the developer-tools,
+   view-source and save-page shortcuts do nothing. It cannot truly hide the
+   code (a browser always has it), only stop the easy ways in. */
+(function () {
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  addEventListener('contextmenu', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    stop(e);
+  }, true);
+  addEventListener('keydown', (e) => {
+    const k = (e.key || '').toLowerCase(), mod = e.ctrlKey || e.metaKey;
+    if (e.key === 'F12'
+      || (mod && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || k === 'k'))
+      || (e.metaKey && e.altKey && (k === 'i' || k === 'j' || k === 'c' || k === 'u'))
+      || (mod && !e.shiftKey && (k === 'u' || k === 's'))) stop(e);
+  }, true);
+})();
+</script>
 <title>aiPolytrack — Season 1</title>
 <style>
 :root{
@@ -1712,7 +1733,8 @@ const CarColor = {
     const cur = slot === 'secondary' ? this.secondary : this.primary;
     const color = { h: this.hueAt(cell), s: cur.s, l: cur.l };
     if (slot === 'secondary') this.secondary = color; else this.primary = color;
-    this.apply();
+    // saved now, but not painted onto the car: the garage's roll animation
+    // reveals it, and paints it (apply()) when the roll lands
     await this.save();
     return color;
   },
@@ -3174,6 +3196,9 @@ const CAR = {
   // this one has a velocity term that dissipates instead of rebounding.
   bumpStart: 0.18, kBump: 4.5e6, cBump: 140000,
   downforce: 3.4,        // ~5400 N at 40 m/s: grip grows with speed
+  // share of the downforce that is not ground effect, and the average spring
+  // compression at which the ground effect is fully there (static sag ~0.066)
+  aeroFloor: 0.5, aeroRide: 0.07,
   antiRollFront: 12000, antiRollRear: 9000,
   gravity: 13.5,          // heavier than Earth: jumps arc quickly, no float
   mu: 2.66,              // 10% more than before: the tyres let go less in corners
@@ -3218,7 +3243,7 @@ const CAR = {
   // fast the car already is (acceleration = boostAccel + boostMul * v), so
   // it multiplies speed you have earned rather than adding the same kick
   // anywhere — spending it all off the line is the weakest use of it.
-  boostAccel: 4.2, boostMul: 0.14, boostTotal: 3.0,
+  boostAccel: 4.2, boostMul: 0.09, boostTotal: 3.0,
   brakeFront: 4300, brakeRear: 2500, handbrake: 9500,
 
   drag: 0.62,
@@ -3645,8 +3670,16 @@ class Vehicle {
     this.force.set(0, -g * this.mass, 0);
     this.torque.set(0, 0, 0);
     if (spd > 0.2) this.force.addScaledVector(this.vel, -CAR.drag * spd);
-    // aerodynamic downforce, along the body's own vertical
-    this.downforceN = spd > 4 ? CAR.downforce * spd * spd : 0;
+    // Aerodynamic downforce, along the body's own vertical. Most of it is
+    // ground effect: the underbody only makes it close to the road, so it
+    // fades as the springs extend. Over a crest the car goes light, rises,
+    // loses that suction and lifts off the way a real car does, instead of
+    // being held to the road; at normal ride height (cornering, braking)
+    // it is all there. Only the aeroFloor share (wings) ignores the gap.
+    let compSum = 0;
+    for (const w of this.wheels) compSum += w.contact ? Math.max(w.comp, 0) : 0;
+    this.groundEffect = CAR.aeroFloor + (1 - CAR.aeroFloor) * clamp(compSum / 4 / CAR.aeroRide, 0, 1);
+    this.downforceN = spd > 4 ? CAR.downforce * spd * spd * this.groundEffect : 0;
     if (this.downforceN) this.force.addScaledVector(this.up, -this.downforceN);
 
     // air attitude control — real torques on the body, not a scripted pose
@@ -6048,7 +6081,7 @@ const Trophies = {
  * unless open. Your car sits in the middle; your exact credit balance
  * rains down onto it as gems (gemBreakdown says which) and piles up
  * around it under a small physics engine (every gem collides with every other gem, the car, the pedestals and
- * the cups, and a weak pull draws them back toward the centre). Trophies
+ * the cups, as real rigid bodies with bounce, friction and spin). Trophies
  * stand still on engraved pedestals, laid out on rings around the car —
  * each ring only takes as many as its circumference fits, so any number
  * of trophies spaces itself out. Drag to spin the room.
@@ -6364,32 +6397,75 @@ const TrophyRoom = {
   },
   rnd() { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 4294967296; },
 
-  /* ------------------------------------------------------ gem physics */
+  /* ------------------------------------------------------ gem physics
+     Each gem is a rigid body: position, velocity, orientation and spin.
+     Contacts (gem on gem, floor, car, pedestals, cups) are impulses with a
+     bounce for the normal part and Coulomb friction for the sliding part,
+     applied at the contact point, so a glancing hit sets a gem spinning and
+     a spinning gem skids. Being cut stones rather than balls, a gem that
+     rests on something loses its roll quickly (rolling resistance), so the
+     pile settles where it falls: nothing pulls it anywhere but gravity. */
   spawn() {
     const d = this.queue[this.queue.length - this.spawnLeft];
     const k = GEM_DENOMS[d].scale;
     const a = this.rnd() * Math.PI * 2, r = Math.sqrt(this.rnd()) * 1.6;
     this.dropped += GEM_DENOMS[d].v;
     if (this.counter) $('trophyCreditNum').textContent = this.dropped.toLocaleString('en-US');
+    // a random starting orientation (a uniformly random rotation)
+    const u1 = this.rnd(), u2 = this.rnd() * Math.PI * 2, u3 = this.rnd() * Math.PI * 2;
+    const s1 = Math.sqrt(1 - u1), s2 = Math.sqrt(u1);
+    const m = k * k * k;
     this.gems.push({
-      d, r: GEM_R * k, m: k * k * k,
+      d, r: GEM_R * k, m, I: 0.4 * m * (GEM_R * k) * (GEM_R * k),
       x: Math.cos(a) * r, y: 6 + this.rnd() * 4, z: Math.sin(a) * r,
-      vx: 0, vy: -2 - this.rnd() * 2, vz: 0,
-      rx: this.rnd() * 6, ry: this.rnd() * 6, rz: this.rnd() * 6,
+      vx: (this.rnd() - 0.5) * 0.6, vy: -2 - this.rnd() * 2, vz: (this.rnd() - 0.5) * 0.6,
+      qx: s1 * Math.sin(u2), qy: s1 * Math.cos(u2), qz: s2 * Math.sin(u3), qw: s2 * Math.cos(u3),
       wx: (this.rnd() - 0.5) * 8, wy: (this.rnd() - 0.5) * 8, wz: (this.rnd() - 0.5) * 8,
-      rest: 0
+      rest: 0, touch: 0
     });
   },
-  bounce(g, nx, ny, nz, e) {
-    const vn = g.vx * nx + g.vy * ny + g.vz * nz;
-    if (vn < 0) {
-      g.vx -= (1 + e) * vn * nx; g.vy -= (1 + e) * vn * ny; g.vz -= (1 + e) * vn * nz;
-      // friction along the surface and a little spin loss on every hit
-      const tx = g.vx - (g.vx * nx + g.vy * ny + g.vz * nz) * nx;
-      const ty = g.vy - (g.vx * nx + g.vy * ny + g.vz * nz) * ny;
-      const tz = g.vz - (g.vx * nx + g.vy * ny + g.vz * nz) * nz;
-      g.vx -= tx * 0.12; g.vy -= ty * 0.12; g.vz -= tz * 0.12;
-      g.wx *= 0.85; g.wy *= 0.85; g.wz *= 0.85;
+  /**
+   * One contact between gem g and o (another gem, or null for anything
+   * fixed), with n the unit normal from o towards g and pen the overlap.
+   * e: bounciness, mu: friction.
+   */
+  contact(g, o, nx, ny, nz, pen, e, mu) {
+    // push apart, the lighter one further
+    const ig = 1 / g.m, io = o ? 1 / o.m : 0, share = ig / (ig + io);
+    g.x += nx * pen * share; g.y += ny * pen * share; g.z += nz * pen * share;
+    if (o) { o.x -= nx * pen * (1 - share); o.y -= ny * pen * (1 - share); o.z -= nz * pen * (1 - share); }
+    g.touch = 1; if (o) o.touch = 1;
+    // velocity of each surface at the contact point: v + w x r
+    const rg = g.r, ro = o ? o.r : 0;
+    let vx = g.vx + (g.wy * -nz - g.wz * -ny) * rg;
+    let vy = g.vy + (g.wz * -nx - g.wx * -nz) * rg;
+    let vz = g.vz + (g.wx * -ny - g.wy * -nx) * rg;
+    if (o) {
+      vx -= o.vx + (o.wy * nz - o.wz * ny) * ro;
+      vy -= o.vy + (o.wz * nx - o.wx * nz) * ro;
+      vz -= o.vz + (o.wx * ny - o.wy * nx) * ro;
+    }
+    const vn = vx * nx + vy * ny + vz * nz;
+    if (vn >= 0) return;
+    // a slow touch doesn't bounce (that is what lets things come to rest)
+    const jn = -(1 + (vn < -0.6 ? e : 0)) * vn / (ig + io);
+    // sliding: friction up to mu times the normal impulse, enough to stop
+    // the slip and no more (spheres: I = 2/5 m r^2, so each side adds 3.5/m)
+    let tx = vx - vn * nx, ty = vy - vn * ny, tz = vz - vn * nz;
+    const vt = Math.sqrt(tx * tx + ty * ty + tz * tz);
+    let jt = 0;
+    if (vt > 1e-6) { jt = Math.min(mu * jn, vt / (3.5 * (ig + io))); tx /= vt; ty /= vt; tz /= vt; }
+    // the impulse on g: jn along n, jt against the slip
+    const px = jn * nx - jt * tx, py = jn * ny - jt * ty, pz = jn * nz - jt * tz;
+    g.vx += px * ig; g.vy += py * ig; g.vz += pz * ig;
+    // torque about g's centre from the contact point at -n*rg
+    const ag = rg / g.I;
+    g.wx += (-ny * pz + nz * py) * ag; g.wy += (-nz * px + nx * pz) * ag; g.wz += (-nx * py + ny * px) * ag;
+    if (o) {
+      o.vx -= px * io; o.vy -= py * io; o.vz -= pz * io;
+      const ao = ro / o.I;              // contact point at +n*ro, impulse -p
+      o.wx += (ny * -pz - nz * -py) * ao; o.wy += (nz * -px - nx * -pz) * ao; o.wz += (nx * -py - ny * -px) * ao;
+      if (-vn > 0.4) { g.rest = 0; o.rest = 0; }
     }
   },
   collideBox(g, b) {
@@ -6397,7 +6473,7 @@ const TrophyRoom = {
     const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c;
     const qx = clamp(lx, -b.hx, b.hx), qy = clamp(dy, -b.hy, b.hy), qz = clamp(lz, -b.hz, b.hz);
     let nx = lx - qx, ny = dy - qy, nz = lz - qz;
-    let d = Math.sqrt(nx * nx + ny * ny + nz * nz);
+    const d = Math.sqrt(nx * nx + ny * ny + nz * nz);
     const R = g.r;
     if (d > R) return;
     let pen;
@@ -6409,30 +6485,36 @@ const TrophyRoom = {
       else if (px <= pz) { nx = lx >= 0 ? 1 : -1; pen = px + R; }
       else { nz = lz >= 0 ? 1 : -1; pen = pz + R; }
     } else { nx /= d; ny /= d; nz /= d; pen = R - d; }
-    const wx = nx * b.c + nz * b.s, wz = -nx * b.s + nz * b.c;
-    g.x += wx * pen; g.y += ny * pen; g.z += wz * pen;
-    this.bounce(g, wx, ny, wz, 0.35);
+    this.contact(g, null, nx * b.c + nz * b.s, ny, -nx * b.s + nz * b.c, pen, 0.35, 0.45);
   },
   collideCyl(g, c) {
     if (g.y < c.y0 - g.r || g.y > c.y1 + g.r) return;
     const dx = g.x - c.x, dz = g.z - c.z, d = Math.hypot(dx, dz), need = c.r + g.r;
     if (d >= need) return;
-    if (g.y > c.y1 && d < c.r) {             // resting on the rim of the bowl
-      g.y = c.y1 + g.r; this.bounce(g, 0, 1, 0, 0.3); return;
+    if (g.y > c.y1 && d < c.r) {             // resting on the rim of the cup
+      this.contact(g, null, 0, 1, 0, c.y1 + g.r - g.y, 0.3, 0.4); return;
     }
     const nx = d > 1e-6 ? dx / d : 1, nz = d > 1e-6 ? dz / d : 0;
-    g.x = c.x + nx * need; g.z = c.z + nz * need;
-    this.bounce(g, nx, 0, nz, 0.4);
+    this.contact(g, null, nx, 0, nz, need - d, 0.45, 0.25);   // polished metal: slippery
   },
   stepGems(h) {
     const G = this.gems, n = G.length;
     for (const g of G) {
-      if (g.rest > 1.2) continue;             // asleep until something knocks it
-      g.vy -= 9.8 * h;
-      // the weak pull back toward the middle, only once it's down low
-      if (g.y < 1.4) { g.vx -= g.x * 0.85 * h; g.vz -= g.z * 0.85 * h; }
+      if (g.rest > 0.8) continue;             // asleep until something knocks it
+      g.vy -= 9.81 * h;
+      // a little air drag (tiny, for a falling stone)
+      const drag = Math.exp(-0.05 * h);
+      g.vx *= drag; g.vy *= drag; g.vz *= drag;
       g.x += g.vx * h; g.y += g.vy * h; g.z += g.vz * h;
-      g.rx += g.wx * h; g.ry += g.wy * h; g.rz += g.wz * h;
+      // orientation from the spin: q += 1/2 (w,0) q h
+      const { qx, qy, qz, qw, wx, wy, wz } = g, k = 0.5 * h;
+      g.qx += k * (wx * qw + wy * qz - wz * qy);
+      g.qy += k * (wy * qw + wz * qx - wx * qz);
+      g.qz += k * (wz * qw + wx * qy - wy * qx);
+      g.qw += k * (-wx * qx - wy * qy - wz * qz);
+      const ql = Math.hypot(g.qx, g.qy, g.qz, g.qw) || 1;
+      g.qx /= ql; g.qy /= ql; g.qz /= ql; g.qw /= ql;
+      g.touch = 0;
     }
     // gem against gem, through a spatial hash so it stays cheap
     const cell = (this.maxR || GEM_R) * 2, grid = new Map();
@@ -6451,46 +6533,36 @@ const TrophyRoom = {
         for (const j of arr) {
           if (j <= i) continue;
           const o = G[j];
-          const dx = o.x - g.x, dy = o.y - g.y, dz = o.z - g.z;
+          if (g.rest > 0.8 && o.rest > 0.8) continue;
+          const dx = g.x - o.x, dy = g.y - o.y, dz = g.z - o.z;
           const d2 = dx * dx + dy * dy + dz * dz, min = g.r + o.r;
           if (d2 >= min * min || d2 < 1e-12) continue;
-          // heavier (bigger) gems get pushed less and shove harder
-          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d, pen = min - d;
-          const wg = o.m / (g.m + o.m), wo = g.m / (g.m + o.m);
-          g.x -= nx * pen * wg; g.y -= ny * pen * wg; g.z -= nz * pen * wg;
-          o.x += nx * pen * wo; o.y += ny * pen * wo; o.z += nz * pen * wo;
-          const rv = (o.vx - g.vx) * nx + (o.vy - g.vy) * ny + (o.vz - g.vz) * nz;
-          if (rv < 0) {
-            const jn = -(1 + 0.25) * rv;
-            g.vx -= jn * wg * nx; g.vy -= jn * wg * ny; g.vz -= jn * wg * nz;
-            o.vx += jn * wo * nx; o.vy += jn * wo * ny; o.vz += jn * wo * nz;
-            if (-rv > 0.4) { g.rest = 0; o.rest = 0; }
-          }
+          const d = Math.sqrt(d2);
+          this.contact(g, o, dx / d, dy / d, dz / d, min - d, 0.3, 0.5);
         }
       }
     }
     for (const g of G) {
+      if (g.rest > 0.8) continue;
       for (const b of this.boxes) this.collideBox(g, b);
       for (const c of this.cyls) this.collideCyl(g, c);
-      if (g.y < g.r) {
-        g.y = g.r;
-        this.bounce(g, 0, 1, 0, 0.3);
-        g.vx *= 0.96; g.vz *= 0.96;           // floor friction lets the heap settle
-      }
-      const sp = g.vx * g.vx + g.vy * g.vy + g.vz * g.vz;
-      g.rest = sp < 0.02 ? g.rest + h : 0;
-      if (g.rest > 1.2) { g.vx = g.vy = g.vz = 0; g.wx = g.wy = g.wz = 0; }
+      if (g.y < g.r) this.contact(g, null, 0, 1, 0, g.r - g.y, 0.3, 0.55);
+      // cut stones don't roll far: resting on anything, the spin dies away
+      if (g.touch) { const rr = Math.exp(-6 * h); g.wx *= rr; g.wy *= rr; g.wz *= rr; }
+      const sp = g.vx * g.vx + g.vy * g.vy + g.vz * g.vz, sw = g.wx * g.wx + g.wy * g.wy + g.wz * g.wz;
+      g.rest = g.touch && sp < 0.01 && sw < 0.2 ? g.rest + h : 0;
+      if (g.rest > 0.8) { g.vx = g.vy = g.vz = 0; g.wx = g.wy = g.wz = 0; }
     }
   },
   syncGems() {
     const m = this._m || (this._m = new THREE.Matrix4()), q = this._q || (this._q = new THREE.Quaternion());
-    const e = this._e || (this._e = new THREE.Euler()), p = this._p || (this._p = new THREE.Vector3());
+    const p = this._p || (this._p = new THREE.Vector3());
     const one = this._one || (this._one = new THREE.Vector3(1, 1, 1));
     const used = this.gemMeshes.map(() => 0);
     for (const g of this.gems) {
       const mesh = this.gemMeshes[g.d];
       if (!mesh) continue;
-      q.setFromEuler(e.set(g.rx, g.ry, g.rz));
+      q.set(g.qx, g.qy, g.qz, g.qw);
       mesh.setMatrixAt(used[g.d]++, m.compose(p.set(g.x, g.y, g.z), q, one));
     }
     this.gemMeshes.forEach((mesh, i) => {
@@ -7648,6 +7720,7 @@ const UI = {
         cellEls[hitIndex].classList.remove('rolling');
         cellEls[hitIndex].classList.remove('locked');
         cellEls[hitIndex].classList.add('unlocked', 'justUnlocked');
+        CarColor.apply();                        // the car shows the new colour only now, as the roll lands
         $('gBuyMsg').textContent = 'Unlocked hue ' + Math.round(color.h) + '° — equipped on ' + slot + '.';
         setTimeout(() => { if (onDone) onDone(); }, 550);
       }
@@ -9188,6 +9261,7 @@ const Game = {
       const color = await CarColor.buy(this.garageSlot);
       UI.who(Cloud.name(), Records.credits);
       UI.garageReveal(this.garageSlot, color, () => {
+        CarColor.apply();                       // the car takes the new colour as the roll lands
         this._garageRolling = false;
         $('gSlotPrimary').disabled = false; $('gSlotSecondary').disabled = false;
         UI.garage();

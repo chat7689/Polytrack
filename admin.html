@@ -3,6 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+/* Keeps the browser's inspect tools out of casual reach: no right-click
+   menu (except in text boxes, for paste), and the developer-tools,
+   view-source and save-page shortcuts do nothing. It cannot truly hide the
+   code (a browser always has it), only stop the easy ways in. */
+(function () {
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  addEventListener('contextmenu', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    stop(e);
+  }, true);
+  addEventListener('keydown', (e) => {
+    const k = (e.key || '').toLowerCase(), mod = e.ctrlKey || e.metaKey;
+    if (e.key === 'F12'
+      || (mod && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || k === 'k'))
+      || (e.metaKey && e.altKey && (k === 'i' || k === 'j' || k === 'c' || k === 'u'))
+      || (mod && !e.shiftKey && (k === 'u' || k === 's'))) stop(e);
+  }, true);
+})();
+</script>
 <title>aiPolytrack — admin</title>
 <style>
 :root{--bg:#0b1220;--panel:#111b30;--panel2:#0e172a;--ink:#eaf0f8;--dim:#8798b5;--dimmer:#5b6a86;
