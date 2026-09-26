@@ -1054,7 +1054,8 @@ $('btnImport').addEventListener('click', async () => {
   $('btnImport').disabled = true;
   const done = {};
   const add = (r) => { for (const k in r) done[k] = (done[k] || 0) + (Number(r[k]) || 0); };
-  // parts: a count cap, and a size cap for ghosts (each can be ~400 KB)
+  // parts: a count cap, and a size cap for ghosts (each can be ~400 KB),
+  // keeping every request well under a megabyte
   const parts = (list, n, maxChars) => {
     const out = [];
     let cur = [], size = 0;
@@ -1067,12 +1068,13 @@ $('btnImport').addEventListener('click', async () => {
     return out;
   };
   try {
-    say('importMsg', 'Players, colours, trophies and settings…');
+    say('importMsg', 'Players, trophies and settings…');
     add(await rpc('admin_import', { p: {
-      profiles: c.profiles || [], carCustomization: c.carCustomization || [], adminNotes: c.adminNotes || [],
-      seasonAwards: c.seasonAwards || [], invite: cfg.invite || undefined, adminPasscode: cfg.admin || undefined
+      profiles: c.profiles || [], seasonAwards: c.seasonAwards || [],
+      invite: cfg.invite || undefined, adminPasscode: cfg.admin || undefined
     } }));
-    const steps = [['bests', 'times', 400, 0], ['ghosts', 'ghosts', 40, 1500000], ['creditEvents', 'credits', 800, 0], ['runLog', 'run history', 400, 0]];
+    const steps = [['carCustomization', 'car colours', 100, 400000], ['adminNotes', 'real names', 500, 0], ['bests', 'times', 400, 0],
+      ['ghosts', 'ghosts', 40, 900000], ['creditEvents', 'credits', 800, 0], ['runLog', 'run history', 400, 0]];
     for (const [key, label, n, maxChars] of steps) {
       const ps = parts(c[key], n, maxChars);
       for (let i = 0; i < ps.length; i++) {
