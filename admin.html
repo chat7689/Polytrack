@@ -711,7 +711,9 @@ async function deleteAccount(p, progress) {
   const byUidQ = async (col) => (await getDocs(query(collection(db, col), where('uid', '==', uid)))).forEach((d) => refs.push(d.ref));
   progress('Finding their data…');
   await byUidQ('bests'); await byUidQ('ghosts'); await byUidQ('creditEvents'); await byUidQ('runLog');
-  const races = await getDocs(collection(db, 'races'));
+  // the newest races only: the full list grows by one every race, and each
+  // one costs an extra read to check for an entry
+  const races = await getDocs(query(collection(db, 'races'), orderBy('createdAt', 'desc'), limit(100)));
   for (const r of races.docs) {
     const e = await getDoc(doc(db, 'races', r.id, 'entries', uid));
     if (e.exists()) refs.push(e.ref);

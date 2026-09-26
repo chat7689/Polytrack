@@ -2401,9 +2401,16 @@ const Cloud = {
     // the driver name IS the username — one identity, no separate display
     // name that could drift out of sync or be used to impersonate someone
     const name = username;
-    try {
-      await fsMod.setDoc(fsMod.doc(this.db, 'claims', uid), { code: (code || '').trim() });
-    } catch (e) {
+    // Codes are handed out in capitals; someone typing one in lower case
+    // (or with stray spaces) shouldn't be told it's wrong. The claim can
+    // only ever be written once, so a failed first try costs nothing.
+    const typed = (code || '').trim();
+    const tries = [typed, typed.toUpperCase().replace(/\s+/g, '')].filter((c, i, a) => c && a.indexOf(c) === i);
+    let claimed = false;
+    for (const c of tries) {
+      try { await fsMod.setDoc(fsMod.doc(this.db, 'claims', uid), { code: c }); claimed = true; break; } catch (e) { /* try the next form */ }
+    }
+    if (!claimed) {
       // the rule rejected the code: remove the useless auth account again
       try { await cred.user.delete(); } catch (x) {}
       throw new Error('That invite code is not valid.');
