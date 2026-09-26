@@ -6316,7 +6316,9 @@ const Compare = {
     if (opts.zero) { ymin = Math.min(ymin, 0); ymax = Math.max(ymax, 0); }
     if (opts.sym) { const a = Math.max(Math.abs(ymin), Math.abs(ymax)) || 1; ymin = -a; ymax = a; }
     if (!(ymax > ymin)) { ymax = ymin + 1; }
+    const floor0 = !opts.sym && ymin >= 0;       // speeds, distances: never pad below zero
     const pad = (ymax - ymin) * 0.06; ymin -= pad; ymax += pad;
+    if (floor0) ymin = Math.max(ymin, 0);
     if (!(xmax > xmin)) xmax = xmin + 1;
     const X = (v) => L + ((v - xmin) / (xmax - xmin)) * (W - L - R);
     const Y = (v) => Tp + (1 - (v - ymin) / (ymax - ymin)) * (H - Tp - Bt);
