@@ -3384,11 +3384,11 @@ const CAR = {
   aeroFloor: 0.5, aeroRide: 0.07,
   antiRollFront: 12000, antiRollRear: 9000,
   gravity: 13.5,          // heavier than Earth: jumps arc quickly, no float
-  mu: 2.66,              // 10% more than before: the tyres let go less in corners
+  mu: 3.2,               // grippy: the tyres let go late in corners (drifts still work, see drift*)
   // Only a little grip lost as load rises, so weight transfer mid-corner
   // doesn't snap the rear loose.
   muLoadSens: 0.06, loadRef: 3020,
-  rearGrip: 1.12,         // rear axle slightly grippier: stable, never oversteers
+  rearGrip: 1.2,          // rear axle grippier than the front: stable, never oversteers
   rollCentre: 0.75,       // fraction of the tyre-to-CoM lever removed from lateral force
   // Stability assist (the car goes where it points): bleeds off sideways
   // velocity and yaw rate beyond what the steering asks for. Off while
