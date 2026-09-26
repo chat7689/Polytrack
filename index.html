@@ -686,9 +686,18 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .moreBtn{margin-top:10px}
 .moreBtn[hidden]{display:none}
 .cdBest{font-family:var(--mono);font-size:14px;color:var(--aqua)}
-.cdCar{height:min(40vh,380px)}
-.cdLeader{margin-top:8px;font-size:15px;font-weight:600}
-.cdLeader .crown{color:var(--signal)}
+/* a map's top three on a podium: the picture, and the names on the blocks */
+.podium3{position:relative;aspect-ratio:16/10;max-height:380px;margin-top:8px;border:1px solid var(--rule);border-radius:4px;overflow:hidden;
+  background:radial-gradient(90% 80% at 50% 30%,rgba(61,120,200,.18),rgba(7,11,24,.2))}
+.podium3 canvas{width:100%;height:100%;display:block}
+.p3Labels{position:absolute;inset:0;pointer-events:none}
+.p3Label{position:absolute;transform:translate(-50%,-50%);width:31%;text-align:center;line-height:1.1}
+.p3Label b{display:block;font-size:clamp(15px,2.1vw,26px);font-weight:700;color:#fff;letter-spacing:-.01em;
+  text-shadow:0 2px 10px rgba(0,0,0,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p3Label b.none{color:var(--dimmer)}
+.p3Place{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px}
+.p3Label.p1 .p3Place{color:#ffcf5c} .p3Label.p2 .p3Place{color:#c9d3e0} .p3Label.p3 .p3Place{color:#d08a52}
+.p3Time{display:block;font-family:var(--mono);font-size:12px;color:var(--aqua);margin-top:2px;text-shadow:0 1px 6px rgba(0,0,0,.8)}
 .leadersGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:18px}
 .leadersGrid .lg{padding:9px 12px;border:1px solid var(--rule-2);border-radius:5px;font-size:12.5px}
 .leadersGrid .lg .c{color:var(--dim);font-family:var(--mono);font-size:10.5px}
@@ -753,7 +762,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 .svLabel .r .tm{margin-left:auto;padding-left:10px;color:var(--aqua)}
 .svLabel .r .tm.wait{color:var(--dimmer)} .svLabel .r .tm.done{color:var(--signal)}
 .svFrame{position:absolute;pointer-events:none;border:1px solid rgba(234,240,248,.12)}
-.svPanel{position:absolute;right:14px;top:64px;width:286px;max-height:calc(100% - 190px);overflow-y:auto;pointer-events:auto;
+.svPanel{position:absolute;right:14px;top:64px;width:286px;max-height:calc(100% - 250px);overflow-y:auto;pointer-events:auto;
   background:rgba(7,11,24,.8);border:1px solid var(--rule);border-radius:8px;padding:12px 12px 10px;font-size:12px}
 .svPanel h4{font-size:11px;letter-spacing:.12em;color:var(--ember);margin:0 0 8px;text-transform:uppercase}
 .svPanel .row2{display:flex;gap:7px;align-items:baseline;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-family:var(--mono)}
@@ -768,7 +777,31 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 .svPanel .gap{margin:10px 0 2px;font-size:13px;font-family:var(--mono)}
 .svPanel .gap b{color:var(--signal)}
 .svDock{bottom:12px}
-@media (max-width:900px){.svPanel{top:auto;bottom:118px;right:8px;left:8px;width:auto;max-height:28vh}}
+#svCamHint,#svDirectorHint{font-family:var(--mono);font-size:10.5px;color:var(--dim);letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+#svCamHint[hidden],#svDirectorHint[hidden]{display:none}
+#svCamHint b{color:var(--ink);font-weight:600} #svCamHint .arrows{color:var(--dimmer)} #svDirectorHint span{color:var(--dim)}
+/* each quarter's own name tags, the followed car's keys and speed */
+.svTag{position:absolute;transform:translate(-50%,-100%);pointer-events:none;padding:2px 8px;border-radius:999px;
+  background:rgba(7,11,24,.78);border:1px solid rgba(234,240,248,.3);font-size:11.5px;font-weight:600;white-space:nowrap;
+  display:flex;align-items:center;gap:5px}
+.svTag i{width:7px;height:7px;border-radius:50%}
+.svTag.on{border-color:var(--ember)}
+.svKeys{position:absolute;pointer-events:none;display:flex;align-items:center;gap:8px}
+.svKeys[hidden]{display:none}
+.svKeys .keys{position:static;transform:none;gap:3px}
+.svKeys .keys .k{width:24px;height:22px;font-size:9.5px}
+.svSpd{font-family:var(--mono);font-size:12px;color:var(--aqua);background:rgba(7,11,24,.7);padding:3px 7px;border-radius:4px;
+  display:flex;align-items:center;gap:5px;white-space:nowrap}
+.svSpd i{width:7px;height:7px;border-radius:50%}
+.svDist{position:absolute;transform:translate(-50%,-100%);padding:2px 8px;border-radius:999px;pointer-events:none;
+  background:rgba(7,11,24,.85);border:1px solid rgba(255,255,255,.6);font-family:var(--mono);font-size:11px;color:#fff}
+.svDist[hidden]{display:none}
+.svPanel .row2{cursor:pointer}
+.svPanel .row2.on .n{color:var(--ember)}
+.svCmpTabs{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:14px 0 8px;font-size:11px;color:var(--dim)}
+.svCmpTabs .tab{padding:4px 10px}
+#svCmpWrap[hidden]{display:none}
+@media (max-width:900px){.svPanel{top:auto;bottom:178px;right:8px;left:8px;width:auto;max-height:calc(30vh - 12px)}}
 
 /* ---------- trophy room ---------- */
 .trophyPanel{width:min(1440px,95vw)}
@@ -1087,9 +1120,8 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             </div>
           </div>
           <div>
-            <div class="kick" id="cdLeaderHeading">FIRST PLACE</div>
-            <div class="garagePreviewWrap cdCar"><canvas id="cdCarCanvas"></canvas></div>
-            <p class="cdLeader" id="cdLeaderNote"></p>
+            <div class="kick" id="cdLeaderHeading">PODIUM</div>
+            <div class="podium3"><canvas id="cdPodiumCanvas"></canvas><div class="p3Labels" id="cdPodiumLabels"></div></div>
             <div class="kick" style="margin-top:20px">THE MAP FROM ABOVE</div>
             <div class="miniMap" id="cdMiniMap"></div>
           </div>
@@ -1136,7 +1168,8 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     </div>
   </div>
 
-  <!-- a whole section's runs at once: one quarter of the screen per map -->
+  <!-- a whole section's runs at once: one quarter of the screen per map,
+       each one watched the same way as a single map -->
   <div class="layer" id="secview" hidden>
     <canvas id="secCanvas"></canvas>
     <div class="hud">
@@ -1147,8 +1180,28 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <button class="ghost small" id="bSvBack">Back to leaderboard</button>
       </div>
       <div id="svLabels"></div>
-      <div class="svPanel" id="svPanel"></div>
+      <div class="svPanel" id="svPanel">
+        <div id="svPanelTop"></div>
+        <div id="svCmpWrap" hidden>
+          <div class="svCmpTabs" id="svCmpTabs"></div>
+          <div id="svCmp"></div>
+        </div>
+      </div>
       <div class="specDock svDock">
+        <div id="svCamHint">
+          <span class="arrows">◄ ►</span> camera: <b id="svCamName">Overview</b>
+        </div>
+        <div id="svDirectorHint" hidden>
+          <span>W A S D</span> move · <span>Shift</span> down · <span>Space</span> up
+        </div>
+        <div class="specGraph">
+          <svg id="svSpeedSvg" viewBox="0 0 300 40" preserveAspectRatio="none">
+            <path id="svSpeedPath" d="" fill="none" stroke="#3ddbb8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+            <path id="svSpeedSplits" d="" fill="none" stroke="rgba(234,240,248,.25)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+            <line id="svSpeedHead" x1="0" y1="0" x2="0" y2="40" stroke="#f2733f" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <span class="specGraphLabel" id="svSpeedNow">0 km/h</span>
+        </div>
         <div class="specBar">
           <span id="svT0">0:00</span>
           <input type="range" id="svScrub" min="0" max="1000" value="0">
@@ -1158,7 +1211,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <button class="small" id="bSvStop" title="Stop and go back to the start">■ Stop</button>
           <button class="small" id="bSvPlay">⏸ Pause</button>
           <div class="rateBtns" id="svRates">
-            <button data-rate="0.5">0.5×</button><button data-rate="1" class="on">1×</button>
+            <button data-rate="0.25">0.25×</button><button data-rate="0.5">0.5×</button><button data-rate="1" class="on">1×</button>
             <button data-rate="2">2×</button><button data-rate="4">4×</button>
           </div>
         </div>
@@ -6156,13 +6209,117 @@ function makePlayerCarPreview(canvasId) {
     stop() { this.running = false; }
   };
 }
-// Two independent instances: the main menu's overall-#1 widget, and the
-// per-course detail page's #1-for-this-course widget. Kept separate so
-// navigating detail -> menu -> a different course's detail never has one
-// widget's paint() call race the other's, and so leaving either screen can
-// stop just its own render loop without touching the other's.
+// the main menu's overall-#1 car
 const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
-const courseDetailPreview = makePlayerCarPreview('cdCarCanvas');
+
+/**
+ * A map's top three on a podium: three blocks (2nd, 1st, 3rd, the winner's
+ * tallest), each driver's own car standing on theirs, and their name in
+ * big type on the front of the block. It is a still picture, so it is
+ * drawn once whenever the board or the size changes, not every frame.
+ */
+const Podium = {
+  renderer: null, scene: null, camera: null, cars: [], blocks: [], key: '', gen: 0,
+  // left to right: 2nd, 1st, 3rd
+  SLOTS: [{ place: 1, x: -4.3, h: 1.9 }, { place: 0, x: 0, h: 2.6 }, { place: 2, x: 4.3, h: 1.4 }],
+  ensure() {
+    if (this.renderer) return;
+    const canvas = $('cdPodiumCanvas');
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(30, 1, 0.5, 100);
+    const key = new THREE.DirectionalLight(0xfff6e8, 1.5);
+    key.position.set(5, 9, 8);
+    this.scene.add(key);
+    this.scene.add(new THREE.AmbientLight(0xaac4e0, 0.6));
+    const rim = new THREE.DirectionalLight(0x6fa8ff, 0.55);
+    rim.position.set(-6, 4, -6);
+    this.scene.add(rim);
+    const blockMat = [
+      new THREE.MeshStandardMaterial({ color: 0xc9d3e0, metalness: 0.45, roughness: 0.4 }),   // silver
+      new THREE.MeshStandardMaterial({ color: 0xffcf5c, metalness: 0.55, roughness: 0.35 }),  // gold
+      new THREE.MeshStandardMaterial({ color: 0xd08a52, metalness: 0.45, roughness: 0.42 })   // bronze
+    ];
+    const base = new THREE.MeshStandardMaterial({ color: 0x1b2742, metalness: 0.1, roughness: 0.8 });
+    this.SLOTS.forEach((s, k) => {
+      const block = new THREE.Mesh(new THREE.BoxGeometry(4, s.h, 4.6), base);
+      block.position.set(s.x, s.h / 2, 0);
+      this.scene.add(block);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.08, 4.7), blockMat[k === 1 ? 1 : k === 0 ? 0 : 2]);
+      top.position.set(s.x, s.h + 0.04, 0);
+      this.scene.add(top);
+      const bodyMat = MAT.body.clone(), darkMat = MAT.bodyDark.clone();
+      const car = buildCarMesh(bodyMat, darkMat).group;
+      // each car turned a little toward the middle, as if posing
+      car.rotation.y = deg(s.x ? -Math.sign(s.x) * 26 : 0);     // +z, the front, faces the camera
+      car.position.set(s.x, s.h + 0.08 + CAR.comHeight - 0.06, 0.1);
+      this.scene.add(car);
+      this.cars[s.place] = { car, bodyMat, darkMat, slot: s };
+    });
+    addEventListener('resize', () => { if (this.visible()) this.draw(); });
+  },
+  visible() { const c = $('cdPodiumCanvas'); return !!(c && c.clientWidth && Game.state === 'select' && Game.selView === 'map'); },
+  /** shows map i's top three (called whenever the map page is drawn) */
+  async show(i) {
+    this.ensure();
+    const list = Records.board(LEVELS[i].id).slice(0, 3);
+    const gen = ++this.gen;
+    const colors = await Promise.all(list.map((e) => e.uid ? Cloud.fetchCarColorsOf(e.uid)
+      : (UI.isMe(e) ? Promise.resolve({ primary: CarColor.primary, secondary: CarColor.secondary }) : Promise.resolve(null))));
+    if (gen !== this.gen) return;                    // a newer draw already started
+    for (let p = 0; p < 3; p++) {
+      const c = this.cars[p], e = list[p], col = colors[p];
+      c.car.visible = !!e;
+      if (col) {
+        c.bodyMat.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l));
+        c.darkMat.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l));
+      } else {
+        c.bodyMat.color.setHex(0x9aa6b8); c.darkMat.color.setHex(0x55606f);
+      }
+    }
+    this.list = list;
+    this.draw();
+  },
+  /** renders the picture and puts each name on the front of its block */
+  draw() {
+    const canvas = $('cdPodiumCanvas');
+    const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
+    this.renderer.setSize(w, h, false);
+    const cam = this.camera;
+    cam.aspect = w / h;
+    // step back until every corner of the podium (and the cars on it) is
+    // inside the picture, whatever shape the box is
+    cam.updateProjectionMatrix();
+    const pv = this._pv || (this._pv = new THREE.Vector3());
+    let dist = 12;
+    for (let it = 0; it < 40; it++) {
+      cam.position.set(0, 2.3 + dist * 0.13, dist);
+      cam.lookAt(0, 1.9, 0);
+      cam.updateMatrixWorld();
+      let worst = 0;
+      for (const x of [-6.4, 6.4]) for (const y of [0, 4.2]) for (const z of [-2.4, 2.4]) {
+        pv.set(x, y, z).project(cam);
+        worst = Math.max(worst, Math.abs(pv.x), Math.abs(pv.y));
+      }
+      if (worst > 0.97) dist *= 1.04; else if (worst < 0.9) dist *= 0.97; else break;
+    }
+    this.renderer.render(this.scene, cam);
+    const labels = $('cdPodiumLabels');
+    const v = this._v || (this._v = new THREE.Vector3());
+    labels.innerHTML = this.SLOTS.map((s) => {
+      const e = (this.list || [])[s.place];
+      v.set(s.x, s.h * 0.44, 2.31).project(cam);
+      const x = (v.x * 0.5 + 0.5) * w, y = (-v.y * 0.5 + 0.5) * h;
+      const tag = ['1st', '2nd', '3rd'][s.place];
+      return '<div class="p3Label p' + (s.place + 1) + '" style="left:' + x.toFixed(0) + 'px;top:' + y.toFixed(0) + 'px">' +
+        '<span class="p3Place">' + tag + '</span>' +
+        (e ? '<b>' + escapeHtml(e.n) + '</b><span class="p3Time">' + formatTime(e.t) + '</span>' : '<b class="none">—</b>') + '</div>';
+    }).join('');
+  }
+};
 
 /**
  * Small still pictures of a driver's car in their own colours, for the
@@ -6944,9 +7101,32 @@ const Compare = {
 
   start(spec, course) {
     const [ca, cb] = spec.cars;
-    const A = this.analyzeRun(ca.data, course), B = this.analyzeRun(cb.data, course);
+    this.pre = ''; this.twoHeads = false;
+    this.prepare(ca.data, cb.data, [ca.name, cb.name], course);
+    // 3D line between the cars, always drawn on top
+    if (!this.line) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
+      this.line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 }));
+      this.line.renderOrder = 999;
+      this.line.frustumCulled = false;
+      App.scene.add(this.line);
+    }
+    this.line.visible = true;
+    this.renderStatic();
+    this.offsetView(true);
+    $('cmpPanel').hidden = false;
+    $('cmpMap').hidden = false;
+    $('cmpDistTag').hidden = false;
+  },
+
+  /** everything worked out once for two runs on one course: each run's
+   *  own arrays, and the pairwise series (also used, one map at a time,
+   *  by the section replay's comparison) */
+  prepare(ga, gb, names, course) {
+    const A = this.analyzeRun(ga, course), B = this.analyzeRun(gb, course);
     this.runs = [A, B];
-    this.names = [ca.name, cb.name];
+    this.names = names;
     this.course = course;
     const L = course.length;
     this.L = L;
@@ -6975,22 +7155,6 @@ const Compare = {
       gap.push({ x: d, y: this.timeAt(B, d) - this.timeAt(A, d) });
     }
     this.pair = { m, dist, dv, lead, gap, leadFrac: leadA / Math.max(1, Math.ceil(Math.min(A.T, B.T) * GHOST_HZ)), changes };
-
-    // 3D line between the cars, always drawn on top
-    if (!this.line) {
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
-      this.line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 }));
-      this.line.renderOrder = 999;
-      this.line.frustumCulled = false;
-      App.scene.add(this.line);
-    }
-    this.line.visible = true;
-    this.renderStatic();
-    this.offsetView(true);
-    $('cmpPanel').hidden = false;
-    $('cmpMap').hidden = false;
-    $('cmpDistTag').hidden = false;
   },
 
   /** keep the cars centred in the part of the screen the panel leaves free */
@@ -7018,6 +7182,7 @@ const Compare = {
    *  every point hoverable for its exact values */
   chart(id, title, xLabel, yLabel, series, opts) {
     opts = opts || {};
+    id = (this.pre || '') + id;
     const W = 400, H = 150, L = 42, R = 8, Tp = 8, Bt = 30;
     let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
     for (const sr of series) for (const p of sr.pts) {
@@ -7060,13 +7225,15 @@ const Compare = {
       }
     });
     h += '<line class="head" id="' + id + 'Head" x1="0" x2="0" y1="' + Tp + '" y2="' + (H - Bt) + '"/>';
-    if (opts.head2) h += '<line class="head b" id="' + id + 'Head2" x1="0" x2="0" y1="' + Tp + '" y2="' + (H - Bt) + '"/>';
+    if (opts.head2 || this.twoHeads) h += '<line class="head b" id="' + id + 'Head2" x1="0" x2="0" y1="' + Tp + '" y2="' + (H - Bt) + '"/>';
     h += '</svg>';
     this.graphs.push({ id, X, xmin, xmax });
     return '<div class="cmpBox"><h4>' + title + '</h4>' + h + '</div>';
   },
 
-  renderStatic() {
+  renderStatic(root, mapRoot) {
+    root = root || $('cmpPanel');
+    if (mapRoot === undefined) mapRoot = $('cmpMap');
     const [A, B] = this.runs, P = this.pair, names = this.names;
     this.graphs = [];
     const ser = (r, arr, f, name, col) => {
@@ -7106,7 +7273,7 @@ const Compare = {
     const f1 = (v) => v.toFixed(1), f2 = (v) => v.toFixed(2), f0 = (v) => v.toFixed(0), ft = (v) => formatTime(v);
     let h = '<div class="cmpHead"><span class="ca">' + escapeHtml(names[0]) + '</span><span class="vs">vs</span><span class="cb">' +
       escapeHtml(names[1]) + '</span></div>';
-    h += '<div class="cmpLive" id="cmpLive"></div>';
+    h += '<div class="cmpLive" id="' + (this.pre || '') + 'cmpLive"></div>';
     h += '<h4 class="cmpSec">Summary</h4><table class="cmpT"><thead><tr><th></th><th class="ca">A</th><th class="cb">B</th><th>A−B</th></tr></thead><tbody>' +
       row('Finish', A.T, B.T, ft, -1) + row('Top speed km/h', sa.top, sb.top, f1, 1) + row('Avg speed km/h', sa.avg, sb.avg, f1, 1) +
       row('Full throttle %', sa.thr, sb.thr, f0, 1) + row('Braking %', sa.brk, sb.brk, f0, -1) + row('Steering %', sa.steer, sb.steer, f0, -1) +
@@ -7136,9 +7303,9 @@ const Compare = {
     h += this.chart('gLon', 'Longitudinal g (accel +, braking −)', 'time s', 'g', [ser(A, A.lon, id, names[0], CMP_COL[0]), ser(B, B.lon, id, names[1], CMP_COL[1])], { sym: true });
     h += this.chart('gLat', 'Lateral g', 'time s', 'g', [ser(A, A.lat, id, names[0], CMP_COL[0]), ser(B, B.lat, id, names[1], CMP_COL[1])], { sym: true });
     h += this.inputsStrip();
-    $('cmpPanel').innerHTML = h;
-    this.bindTips($('cmpPanel'));
-    this.drawMap();
+    root.innerHTML = h;
+    this.bindTips(root);
+    if (mapRoot) this.drawMap();
   },
 
   /** throttle / brake / boost / steering bands for both runs over time */
@@ -7148,7 +7315,8 @@ const Compare = {
     const rows = [['A throttle', A, 1, CMP_COL[0]], ['A brake', A, 2, '#f2733f'], ['A boost', A, 16, '#58d2ff'], ['A steer', A, 12, '#ffcf5c'],
       ['B throttle', B, 1, CMP_COL[1]], ['B brake', B, 2, '#f2733f'], ['B boost', B, 16, '#58d2ff'], ['B steer', B, 12, '#ffcf5c']];
     const rh = 12, H = rows.length * rh + 26;
-    let h = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="cmpChart" data-id="gIn">';
+    const gid = (this.pre || '') + 'gIn';
+    let h = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="cmpChart" data-id="' + gid + '">';
     rows.forEach(([label, r, mask, col], k) => {
       const y = k * rh + 2;
       h += '<text x="' + (L - 4) + '" y="' + (y + 8) + '" class="tk" text-anchor="end">' + label + '</text>';
@@ -7164,8 +7332,10 @@ const Compare = {
     });
     for (let k = 0; k <= 5; k++) h += '<text x="' + X((T * k) / 5).toFixed(1) + '" y="' + (H - 12) + '" class="tk" text-anchor="middle">' + ((T * k) / 5).toFixed(1) + '</text>';
     h += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 1) + '" class="ax" text-anchor="middle">time s</text>';
-    h += '<line class="head" id="gInHead" x1="0" x2="0" y1="0" y2="' + (rows.length * rh) + '"/></svg>';
-    this.graphs.push({ id: 'gIn', X: (t) => X(t), xmin: 0, xmax: T });
+    h += '<line class="head" id="' + gid + 'Head" x1="0" x2="0" y1="0" y2="' + (rows.length * rh) + '"/>';
+    if (this.twoHeads) h += '<line class="head b" id="' + gid + 'Head2" x1="0" x2="0" y1="0" y2="' + (rows.length * rh) + '"/>';
+    h += '</svg>';
+    this.graphs.push({ id: gid, X: (t) => X(t), xmin: 0, xmax: T });
     return '<div class="cmpBox"><h4>Inputs</h4>' + h + '</div>';
   },
 
@@ -7199,6 +7369,35 @@ const Compare = {
     tip.style.top = (e.clientY - 34) + 'px';
   },
 
+  /** the section replay's live numbers and playheads for one map: the two
+   *  cars reached this map at different moments, so each is at its own time
+   *  on it (ta, tb; below 0 not there yet, past its finish done) */
+  updateLocal(ta, tb) {
+    if (!this.runs) return;
+    const [A, B] = this.runs;
+    const ca = clamp(ta, 0, A.T), cb = clamp(tb, 0, B.T);
+    const sa = this.at(A.sm, A.n, ca), sb = this.at(B.sm, B.n, cb);
+    for (const g of this.graphs) {
+      const el = $(g.id + 'Head'), el2 = $(g.id + 'Head2');
+      const gap = g.id.endsWith('gGap');
+      const xa = gap ? sa : ca, xb = gap ? sb : cb;
+      if (el) { const px = g.X(clamp(xa, g.xmin, g.xmax)).toFixed(1); el.setAttribute('x1', px); el.setAttribute('x2', px); }
+      if (el2) { const px = g.X(clamp(xb, g.xmin, g.xmax)).toFixed(1); el2.setAttribute('x1', px); el2.setAttribute('x2', px); }
+    }
+    const live = $((this.pre || '') + 'cmpLive');
+    if (!live) return;
+    const state = (t, r) => (t < 0 ? 'not there yet' : t >= r.T ? 'finished ' + formatTime(r.T) : formatTime(t));
+    const v = (r, t) => (t < 0 || t >= r.T ? 0 : this.at(r.v, r.n, t) * KMH);
+    const bitsAt = (r, t) => (t < 0 || t >= r.T ? 0 : r.bits[Math.min(r.n - 1, Math.floor(t * GHOST_HZ))]);
+    const pill = (on, txt, cls) => '<span class="ip' + (on ? ' on ' + cls : '') + '">' + txt + '</span>';
+    const inputs = (b) => pill(b & 1, 'THR', 'thr') + pill(b & 2, 'BRK', 'brk') + pill(b & 4, '◀', 'str') + pill(b & 8, '▶', 'str') +
+      pill(b & 16, 'BST', 'bst') + pill(b & 32, 'HB', 'hb');
+    live.innerHTML = '<table class="cmpT live"><thead><tr><th></th><th>on this map</th><th>km/h</th><th>track</th></tr></thead><tbody>' +
+      '<tr><td class="ca">A</td><td>' + state(ta, A) + '</td><td>' + v(A, ta).toFixed(0) + '</td><td>' + Math.round(clamp(sa / this.L, 0, 1) * 100) + '%</td></tr>' +
+      '<tr><td class="cb">B</td><td>' + state(tb, B) + '</td><td>' + v(B, tb).toFixed(0) + '</td><td>' + Math.round(clamp(sb / this.L, 0, 1) * 100) + '%</td></tr></tbody></table>' +
+      '<div class="cmpInputs"><div><span class="ca">A</span>' + inputs(bitsAt(A, ta)) + '</div><div><span class="cb">B</span>' + inputs(bitsAt(B, tb)) + '</div></div>';
+  },
+
   /** per frame: live numbers, playheads, map dots and the 3D line */
   update(spec, t) {
     if (!this.runs) return;
@@ -7219,7 +7418,7 @@ const Compare = {
       Math.round(clamp(s / this.L, 0, 1) * 100) + '%</td><td>' + this.at(r.lon, r.n, tt).toFixed(2) + '</td><td>' +
       this.at(r.lat, r.n, tt).toFixed(2) + '</td><td>' + (boostLeft(r, tt) / CAR.boostTotal * 100).toFixed(0) + '%</td>';
     const ahead = sa > sb + 0.5 ? this.names[0] : sb > sa + 0.5 ? this.names[1] : 'level';
-    $('cmpLive').innerHTML =
+    $((this.pre || '') + 'cmpLive').innerHTML =
       '<div class="cmpBig"><div><span>DISTANCE APART</span><b>' + dist.toFixed(1) + ' m</b></div><div><span>TIME GAP</span><b>' +
       Math.abs(gap).toFixed(3) + ' s</b></div><div><span>LEAD ON TRACK</span><b>' + Math.abs(sa - sb).toFixed(1) + ' m</b></div>' +
       '<div><span>SPEED DIFF</span><b>' + (va - vb >= 0 ? '+' : '−') + Math.abs(va - vb).toFixed(1) + '</b></div></div>' +
@@ -7744,10 +7943,7 @@ const UI = {
       }));
     }
     this.updateMapMultiBar(id);
-    $('cdLeaderHeading').textContent = list.length ? 'FIRST PLACE' : 'NO TIMES YET';
-    $('cdLeaderNote').innerHTML = list.length
-      ? '<span class="crown">♛</span> ' + escapeHtml(list[0].n) + ' — ' + formatTime(list[0].t)
-      : 'Be quick and it could be you.';
+    $('cdLeaderHeading').textContent = list.length ? 'PODIUM' : 'NO TIMES YET — BE THE FIRST';
     const mm = $('cdMiniMap');
     if (mm.dataset.idx !== String(i)) { mm.innerHTML = MiniMap.svg(i, true); mm.dataset.idx = String(i); }
   },
@@ -8011,16 +8207,18 @@ function escapeHtml(s) {
 
 /**
  * A whole section's runs at once: the screen splits into four, one map per
- * quarter, in the section's order. Each driver's four best runs play back
- * to back — the instant a car crosses the finish on one map it appears on
- * the start of the next — so the clock is their four times added up, and
- * whoever finishes the fourth map first has the best section total.
- * With exactly two drivers it compares them: splits per map and the live
- * gap between them, in seconds.
+ * quarter, and each quarter is watched exactly like a single map — its own
+ * chase camera (following a driver, framing everyone, or flown by hand),
+ * name tags over the cars, the followed car's inputs and speed. Each
+ * driver's four best runs play back to back on one clock: the instant a
+ * car crosses a finish line it appears on the start of the next map, so
+ * the clock is their section total. With exactly two drivers it compares
+ * them: splits and the live gap for the section, and for any one map the
+ * full comparison (summary, sectors, graphs, inputs).
  */
 const SectionView = {
   renderer: null, quads: [], cars: [], t: 0, playing: false, rate: 1, sec: 0, compare: false,
-  scrubbing: false, longest: 0, hudAcc: 0, lastT: 0, W: 0, H: 0,
+  scrubbing: false, longest: 0, hudAcc: 0, lastT: 0, W: 0, H: 0, camIdx: -1, cmpMap: 0, cmpAuto: true, cmps: [],
 
   ensureRenderer() {
     if (this.renderer) return;
@@ -8034,7 +8232,8 @@ const SectionView = {
     this.renderer.setClearColor(0x0b1220, 1);
   },
 
-  /** one map's own little world: sky, sun, ground, the course, mountains */
+  /** one map's own little world: sky, sun, ground, the course, mountains,
+   *  a chase camera of its own */
   buildQuad(i) {
     const data = Game.data[i] || validateCourse(LEVELS[i].build());
     const scene = new THREE.Scene();
@@ -8050,7 +8249,8 @@ const SectionView = {
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = GROUND_Y;
     scene.add(floor);
-    const course = buildCourse(data, scene, new PhysicsWorld());
+    const world = new PhysicsWorld();
+    const course = buildCourse(data, scene, world);
     const ring = (count, mat) => {
       const im = new THREE.InstancedMesh(GEO.peak, mat, count);
       im.frustumCulled = false;
@@ -8059,13 +8259,20 @@ const SectionView = {
     };
     const peaks = { peaksNear: ring(22, MAT.scenery), peaksFar: ring(18, MAT.sceneryFar) };
     App.layoutBackdrop.call(peaks, course.center.x, course.center.z, course.extent);
-    const camera = new THREE.PerspectiveCamera(58, 1, 0.3, 2600);
+    const camera = new THREE.PerspectiveCamera(CAM.fovBase, 1, 0.3, 2600);
+    const chase = new ChaseCamera(camera, world);
     const start = new THREE.Vector3().fromArray(data.start.pos);
     const fin = (course.gates.find((g) => g.kind === 'finish') || {}).pos;
+    // the white line between two compared cars when both are on this map
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
+    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 }));
+    line.renderOrder = 999; line.frustumCulled = false; line.visible = false;
+    scene.add(line);
     return {
-      i, lv: LEVELS[i], scene, sky, course, camera, peaks: [peaks.peaksNear, peaks.peaksFar],
+      i, lv: LEVELS[i], scene, sky, course, camera, chase, peaks: [peaks.peaksNear, peaks.peaksFar], line,
       start, startHeading: data.start.heading, finish: fin ? fin.clone() : start.clone(),
-      camPos: new THREE.Vector3(), look: new THREE.Vector3(), snapped: false, rect: null, label: null
+      mode: null, rect: null, focus: null, focusBits: 0
     };
   },
 
@@ -8089,12 +8296,16 @@ const SectionView = {
     this.sec = sec;
     this.compare = !!compare && cars.length === 2;
     this.quads = idxs.map((i) => this.buildQuad(i));
-    // each driver: their own paint on a car in every quarter, and where each
-    // of their four runs starts on the shared clock
+    // every driver: a car in their own colours on every map (see-through,
+    // the same as watching a single map), a camera rig per map, and where
+    // each of their four runs starts on the shared clock
     this.cars = cars.map((c, n) => {
       const bodyMat = MAT.body.clone(), darkMat = MAT.bodyDark.clone();
       bodyMat.color.setHex(hslToHex(c.colors.primary.h, c.colors.primary.s, c.colors.primary.l));
       darkMat.color.setHex(hslToHex(c.colors.secondary.h, c.colors.secondary.s, c.colors.secondary.l));
+      bodyMat.transparent = darkMat.transparent = true;
+      bodyMat.opacity = darkMat.opacity = cars.length > 1 ? 0.55 : 0.9;
+      bodyMat.depthWrite = darkMat.depthWrite = false;
       const meshes = this.quads.map((q) => {
         const built = buildCarMesh(bodyMat, darkMat);
         const m = built.group;
@@ -8104,16 +8315,20 @@ const SectionView = {
         q.scene.add(m);
         return m;
       });
+      const rigs = this.quads.map(() => ({ pos: new THREE.Vector3(), heading: 0, speed: 0, boosting: false,
+        grounded: true, vel: { y: 0 }, _hasPos: false }));
       const starts = [];
       let acc = 0;
       c.ghosts.forEach((g) => { starts.push(acc); acc += g.t; });
-      return { ...c, n, bodyMat, darkMat, meshes, starts, total: acc,
+      return { ...c, n, bodyMat, darkMat, meshes, rigs, bits: [0, 0, 0, 0], active: [false, false, false, false], starts, total: acc,
         dot: hslCss(c.colors.primary.h, c.colors.primary.s, Math.max(45, c.colors.primary.l)) };
     });
     this.longest = Math.max(...this.cars.map((c) => c.total));
+    this.cmps = [];
     if (this.compare) this.measureDistances();
     this.t = 0; this.lastT = 0; this.playing = true; this.scrubbing = false;
-    this.rate = this.rate || 1;
+    this.camIdx = this.cars.length > 1 ? -1 : 0;
+    this.cmpAuto = true; this.cmpMap = 0;
     Game.state = 'section';
     Sound.stopEngine();
     $('svTitle').textContent = SECTIONS[sec] + (this.compare ? ' · compare' : '');
@@ -8123,16 +8338,38 @@ const SectionView = {
     $('svScrub').max = String(Math.round(this.longest * 1000));
     $('svScrub').value = '0';
     $('bSvPlay').textContent = '⏸ Pause';
-    document.querySelectorAll('#svRates button').forEach((b) => b.classList.toggle('on', +b.dataset.rate === this.rate));
+    this.setRate(this.rate || 1);
+    // per map: a frame, the map's label, the followed car's keys and speed,
+    // a name tag per car, and (comparing) the distance between the two
     $('svLabels').innerHTML = this.quads.map((q, k) => '<div class="svFrame" data-f="' + k + '"></div>' +
-      '<div class="svLabel" data-q="' + k + '"></div>').join('');
+      '<div class="svLabel" data-q="' + k + '"></div>' +
+      '<div class="svKeys" data-k="' + k + '"><div class="keys">' + ['handbrake:SH', 'left:A', 'throttle:W', 'right:D', 'brake:S', 'boost:SPC']
+        .map((p) => { const [key, txt] = p.split(':'); return '<div class="k' + (key === 'boost' ? ' boost' : '') + '" data-k="' + key + '">' + txt + '</div>'; }).join('') +
+      '</div><span class="svSpd"></span></div>' +
+      this.cars.map((c) => '<div class="svTag" data-t="' + k + '-' + c.n + '"><i style="background:' + c.dot + '"></i>' + escapeHtml(c.name) + '</div>').join('') +
+      '<div class="svDist" data-d="' + k + '" hidden></div>').join('');
     this.quads.forEach((q, k) => {
-      q.label = document.querySelector('.svLabel[data-q="' + k + '"]');
       q.frame = document.querySelector('.svFrame[data-f="' + k + '"]');
+      q.label = document.querySelector('.svLabel[data-q="' + k + '"]');
+      q.keys = document.querySelector('.svKeys[data-k="' + k + '"]');
+      q.tags = this.cars.map((c) => document.querySelector('.svTag[data-t="' + k + '-' + c.n + '"]'));
+      q.dist = document.querySelector('.svDist[data-d="' + k + '"]');
     });
+    $('svPanel').classList.toggle('wide', this.compare);
+    $('svCmpWrap').hidden = !this.compare;
+    if (this.compare) {
+      $('svCmpTabs').innerHTML = '<span>One map in detail:</span>' + this.quads.map((q, k) =>
+        '<button class="tab" data-m="' + k + '">' + courseTag(q.i) + '</button>').join('');
+      $('svCmpTabs').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+        this.cmpAuto = false;
+        this.showCompareMap(+b.dataset.m);
+      }));
+      this.showCompareMap(0);
+    }
     UI.show('secview');
     this.W = this.H = 0;
     this.layout();
+    this.setCam(this.camIdx);
     this.pose(0, 1 / 60, true);
     this.hud(true);
   },
@@ -8145,7 +8382,7 @@ const SectionView = {
     this.W = W; this.H = H;
     this.renderer.setSize(W, H, false);
     const wide = W > 900;
-    const top = 62, bottom = wide ? 104 : 104 + Math.min(H * 0.28, 220), right = wide ? 312 : 0;
+    const top = 62, bottom = wide ? 170 : 170 + Math.min(H * 0.3, 240), right = wide ? (this.compare ? 424 : 312) : 0;
     const gw = W - right - 8, gh = H - top - bottom;
     const qw = Math.floor((gw - 6) / 2), qh = Math.floor((gh - 6) / 2);
     this.quads.forEach((q, k) => {
@@ -8153,12 +8390,15 @@ const SectionView = {
       q.rect = { x, y, w: qw, h: qh };
       q.camera.aspect = qw / Math.max(qh, 1);
       q.camera.updateProjectionMatrix();
-      q.label.style.left = (x + 8) + 'px'; q.label.style.top = (y + 8) + 'px';
       Object.assign(q.frame.style, { left: x + 'px', top: y + 'px', width: qw + 'px', height: qh + 'px' });
+      q.label.style.left = (x + 8) + 'px'; q.label.style.top = (y + 8) + 'px';
+      q.keys.style.left = (x + 8) + 'px'; q.keys.style.top = (y + qh - 40) + 'px';
     });
+    $('svPanel').style.width = wide ? (right - 26) + 'px' : '';
   },
 
-  /** where a ghost is at local time lt, into out (position) and q (rotation) */
+  /** where a ghost is at local time lt: position into pos, rotation into
+   *  quat; returns that sample's input bits */
   ghostAt(quad, g, lt, pos, quat) {
     const s = g.s, n = s.length / GHOST_STRIDE;
     const f = clamp(lt * GHOST_HZ, 0, n - 1.001);
@@ -8170,55 +8410,122 @@ const SectionView = {
       _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
       quat.copy(_gq1).slerp(_gq2, u);
     }
-    return s[a + 7] | 0;
+    return { bits: s[a + 7] | 0, speed: Math.hypot(s[b] - s[a], s[b + 1] - s[a + 1], s[b + 2] - s[a + 2]) * GHOST_HZ };
   },
 
-  /** poses every car in every quarter at time t and aims each camera */
+  /** -2 flies the camera by hand, -1 frames everyone, n follows driver n */
+  setCam(idx) {
+    this.camIdx = idx;
+    for (const q of this.quads) q.mode = null;         // every quarter re-seats its camera
+    const name = idx >= 0 ? this.cars[idx].name : null;
+    $('svCamName').textContent = idx === -2 ? 'Director' : idx === -1 ? (this.cars.length > 1 ? 'All cars' : 'Overview') : 'Following ' + name;
+    $('svCamHint').hidden = this.cars.length < 2;
+    $('svDirectorHint').hidden = idx !== -2;
+    this.buildSpeedGraph();
+  },
+  cycleCam(dir) {
+    const n = this.cars.length;
+    let idx = this.camIdx + dir;
+    if (idx < -2) idx = n - 1;
+    if (idx >= n) idx = -2;
+    this.setCam(idx);
+  },
+
+  /** the followed car's speed over its whole section, with the map changes marked */
+  buildSpeedGraph() {
+    const c = this.cars[Math.max(0, this.camIdx)];
+    if (!c) return;
+    const W = 300, H = 40, PAD = 3, pts = [];
+    let max = 1;
+    c.ghosts.forEach((g, k) => {
+      const s = g.s, n = s.length / GHOST_STRIDE;
+      for (let i = 1; i < n; i++) {
+        const a = (i - 1) * GHOST_STRIDE, b = i * GHOST_STRIDE;
+        const v = Math.hypot(s[b] - s[a], s[b + 1] - s[a + 1], s[b + 2] - s[a + 2]) * GHOST_HZ;
+        pts.push([c.starts[k] + i / GHOST_HZ, v]);
+        if (v > max) max = v;
+      }
+    });
+    this.graphCar = c; this.graphPts = pts;
+    const step = Math.max(1, Math.floor(pts.length / 600));
+    let d = '';
+    for (let i = 0; i < pts.length; i += step) d += (d ? 'L' : 'M') + (pts[i][0] / c.total * W).toFixed(1) + ',' + (H - PAD - pts[i][1] / max * (H - PAD * 2)).toFixed(1) + ' ';
+    $('svSpeedPath').setAttribute('d', d);
+    $('svSpeedSplits').setAttribute('d', c.starts.slice(1).map((s) => 'M' + (s / c.total * W).toFixed(1) + ',0 L' + (s / c.total * W).toFixed(1) + ',' + H).join(' '));
+  },
+
+  /** poses every car in every quarter at time t and moves each camera */
   pose(t, dt, snap) {
+    const d = Input.down;
+    const move = this.camIdx === -2 ? {
+      x: (d.has('KeyD') ? 1 : 0) - (d.has('KeyA') ? 1 : 0),
+      z: (d.has('KeyW') ? 1 : 0) - (d.has('KeyS') ? 1 : 0),
+      y: (d.has('Space') ? 1 : 0) - (d.has('ShiftLeft') || d.has('ShiftRight') ? 1 : 0)
+    } : null;
     const fwd = this._f || (this._f = new THREE.Vector3());
-    const want = this._w || (this._w = new THREE.Vector3());
-    const lookW = this._lw || (this._lw = new THREE.Vector3());
     this.quads.forEach((q, k) => {
       const last = k === this.quads.length - 1;
-      let cx = 0, cy = 0, cz = 0, count = 0, lead = null, leadLt = -1;
+      const here = [];
       for (const c of this.cars) {
-        const g = c.ghosts[k], m = c.meshes[k], lt = t - c.starts[k];
+        const g = c.ghosts[k], m = c.meshes[k], rig = c.rigs[k], lt = t - c.starts[k];
         // on this map from its start until it finishes; on the last map it
         // stays at the finish, anywhere else it has moved on to the next
-        if (lt < 0 || (lt > g.t && !last)) { m.visible = false; continue; }
+        const on = lt >= 0 && (lt <= g.t || last);
+        c.active[k] = on;
+        if (!on) { m.visible = false; setGhostFlame(m, false, dt); continue; }
         m.visible = true;
-        const bits = this.ghostAt(q, g, Math.min(lt, g.t), m.position, m.quaternion);
-        setGhostFlame(m, lt < g.t && !!(bits & 16), dt);
-        if (lt <= g.t) {
-          cx += m.position.x; cy += m.position.y; cz += m.position.z; count++;
-          if (lt > leadLt) { leadLt = lt; lead = m; }
+        const done = lt >= g.t;
+        const at = this.ghostAt(q, g, Math.min(lt, g.t), m.position, m.quaternion);
+        rig.pos.copy(m.position);
+        fwd.set(0, 0, 1).applyQuaternion(m.quaternion);
+        if (fwd.x * fwd.x + fwd.z * fwd.z > 0.06) rig.heading = Math.atan2(fwd.x, fwd.z);
+        rig.speed = done ? 0 : at.speed;
+        rig.boosting = !done && !!(at.bits & 16);
+        rig._hasPos = true;
+        c.bits[k] = done ? 0 : at.bits;
+        setGhostFlame(m, rig.boosting, dt);
+        here.push(c);
+      }
+      // which car this quarter is about: the followed one if it is here,
+      // otherwise whoever is furthest into this map
+      const followed = this.camIdx >= 0 ? this.cars[this.camIdx] : null;
+      const lead = here.slice().sort((a, b) => (t - b.starts[k]) - (t - a.starts[k]))[0] || null;
+      const focus = followed && followed.active[k] ? followed : lead;
+      q.focus = focus;
+      q.focusBits = focus ? focus.bits[k] : 0;
+      // the camera
+      const mode = this.camIdx === -2 ? 'director' : (followed && followed.active[k]) ? 'follow' : here.length ? 'all' : 'still';
+      const rigs = here.map((c) => c.rigs[k]);
+      const fresh = snap || mode !== q.mode;
+      if (mode === 'follow') {
+        if (fresh) q.chase.snap(followed.rigs[k]); else q.chase.update(dt, followed.rigs[k]);
+      } else if (mode === 'all') {
+        if (fresh) q.chase.snapAll(rigs); else q.chase.frameAll(dt, rigs);
+      } else if (mode === 'director') {
+        const pts = rigs.length ? rigs.map((r) => r.pos) : [this.cars.some((c) => t < c.starts[k]) ? q.start : q.finish];
+        if (fresh) q.chase.snapDirector(pts); else q.chase.updateDirector(dt, move, pts);
+      } else {
+        // nobody on this map right now: look at where they will appear,
+        // or where the last of them finished
+        const waiting = this.cars.some((c) => t < c.starts[k]);
+        const p = waiting ? q.start : q.finish, h = q.startHeading;
+        q.camera.position.set(p.x - Math.sin(h) * 20, p.y + 10, p.z - Math.cos(h) * 20);
+        q.camera.lookAt(p.x, p.y + 0.8, p.z);
+        if (Math.abs(q.camera.fov - CAM.fovBase) > 0.05) { q.camera.fov = CAM.fovBase; q.camera.updateProjectionMatrix(); }
+      }
+      q.mode = mode;
+      // comparing, and both on this map: the line between them
+      if (this.compare) {
+        const [a, b] = this.cars;
+        const both = a.active[k] && b.active[k];
+        q.line.visible = both;
+        if (both) {
+          const pa = a.rigs[k].pos, pb = b.rigs[k].pos, pos = q.line.geometry.attributes.position;
+          pos.setXYZ(0, pa.x, pa.y + 1.2, pa.z); pos.setXYZ(1, pb.x, pb.y + 1.2, pb.z);
+          pos.needsUpdate = true;
+          q.line.geometry.computeBoundingSphere();
         }
       }
-      let target, heading;
-      if (count) {
-        target = lookW.set(cx / count, cy / count, cz / count);
-        fwd.set(0, 0, 1).applyQuaternion(lead.quaternion);
-        heading = Math.atan2(fwd.x, fwd.z);
-        let spread = 0;
-        for (const c of this.cars) if (c.meshes[k].visible) spread = Math.max(spread, c.meshes[k].position.distanceTo(target));
-        const back = 9.5 + spread * 1.1, up = 3.8 + spread * 0.45;
-        want.set(target.x - Math.sin(heading) * back, target.y + up, target.z - Math.cos(heading) * back);
-      } else {
-        // nobody on this map right now: show where they will appear, or
-        // where the last of them finished
-        const waiting = this.cars.some((c) => t < c.starts[k]);
-        target = lookW.copy(waiting ? q.start : q.finish);
-        heading = q.startHeading;
-        want.set(target.x - Math.sin(heading) * 20, target.y + 10, target.z - Math.cos(heading) * 20);
-      }
-      target.y += 0.8;
-      if (snap || !q.snapped) { q.camPos.copy(want); q.look.copy(target); q.snapped = true; }
-      else {
-        const a = 1 - Math.exp(-4.5 * dt);
-        q.camPos.lerp(want, a); q.look.lerp(target, 1 - Math.exp(-7 * dt));
-      }
-      q.camera.position.copy(q.camPos);
-      q.camera.lookAt(q.look);
     });
   },
 
@@ -8238,10 +8545,19 @@ const SectionView = {
     r.setScissorTest(false);
   },
 
+  /** a point in a quarter's world as screen pixels, or null if off its picture */
+  toScreen(q, p, lift) {
+    const v = this._sv || (this._sv = new THREE.Vector3());
+    q.camera.updateMatrixWorld();
+    v.set(p.x, p.y + lift, p.z).project(q.camera);
+    if (v.z > 1 || v.z < -1 || Math.abs(v.x) > 1.02 || Math.abs(v.y) > 1.02) return null;
+    return [q.rect.x + (v.x * 0.5 + 0.5) * q.rect.w, q.rect.y + (-v.y * 0.5 + 0.5) * q.rect.h];
+  },
+
   /**
    * For comparing: how far along the four maps each car is at every sample
-   * (metres, the racing line), so the gap can be said in seconds — the time
-   * the car behind takes to reach where the leader is now.
+   * (metres, the racing line), so the section gap can be said in seconds —
+   * the time the car behind takes to reach where the leader is now.
    */
   measureDistances() {
     const offs = [];
@@ -8262,16 +8578,15 @@ const SectionView = {
             const ax = path[p].x, az = path[p].z, ex = path[p + 1].x - ax, ez = path[p + 1].z - az;
             const L2 = ex * ex + ez * ez || 1e-9;
             const u = clamp(((x - ax) * ex + (z - az) * ez) / L2, 0, 1);
-            const dx = ax + ex * u - x, dz = az + ez * u - z, d = dx * dx + dz * dz;
-            if (d < bd) { bd = d; bestSeg = p; bestU = u; }
+            const dx = ax + ex * u - x, dz = az + ez * u - z, dd = dx * dx + dz * dz;
+            if (dd < bd) { bd = dd; bestSeg = p; bestU = u; }
           }
           idx = bestSeg;
           T.push(c.starts[k] + j / GHOST_HZ);
           D.push(offs[k] + Math.min(lerp(cum[bestSeg], cum[bestSeg + 1], bestU), q.course.length));
         }
       });
-      // never going backwards along the line
-      for (let j = 1; j < D.length; j++) if (D[j] < D[j - 1]) D[j] = D[j - 1];
+      for (let j = 1; j < D.length; j++) if (D[j] < D[j - 1]) D[j] = D[j - 1];   // never backwards
       c.T = T; c.D = D;
     }
   },
@@ -8292,15 +8607,70 @@ const SectionView = {
     return lerp(T[lo], T[hi], (d - D[lo]) / Math.max(D[hi] - D[lo], 1e-6));
   },
 
-  /** the labels in each quarter and the side panel */
+  /** the full single-map comparison of the two runs on map k */
+  showCompareMap(k) {
+    this.cmpMap = k;
+    $('svCmpTabs').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.m === k));
+    if (!this.cmps[k]) {
+      const C = Object.create(Compare);
+      C.pre = 'sv'; C.twoHeads = true; C.graphs = [];
+      C.prepare(this.cars[0].ghosts[k], this.cars[1].ghosts[k], [this.cars[0].name, this.cars[1].name], this.quads[k].course);
+      this.cmps[k] = C;
+    }
+    const C = this.cmps[k];
+    C.graphs = [];
+    C.renderStatic($('svCmp'), null);
+  },
+  /** that comparison's playheads and live numbers, each car at its own
+   *  time on that map */
+  updateCompareMap() {
+    const k = this.cmpMap, C = this.cmps[k];
+    if (!C) return;
+    const [a, b] = this.cars;
+    C.updateLocal(this.t - a.starts[k], this.t - b.starts[k]);
+  },
+
+  /** everything written on screen: tags every frame, the rest a few times a second */
   hud(force) {
     const t = this.t;
     $('svClock').textContent = formatTime(t);
     if (!this.scrubbing) $('svScrub').value = String(Math.round(t * 1000));
     $('svT0').textContent = formatTime(t);
+    // name tags and the distance between compared cars, every frame
+    this.quads.forEach((q, k) => {
+      this.cars.forEach((c, n) => {
+        const el = q.tags[n];
+        const at = c.active[k] ? this.toScreen(q, c.rigs[k].pos, 1.9) : null;
+        if (!at) { el.style.display = 'none'; return; }
+        el.style.display = '';
+        el.style.left = at[0].toFixed(0) + 'px'; el.style.top = at[1].toFixed(0) + 'px';
+        el.classList.toggle('on', n === this.camIdx);
+      });
+      if (this.compare) {
+        const [a, b] = this.cars;
+        const at = q.line.visible ? this.toScreen(q, this._mid(a.rigs[k].pos, b.rigs[k].pos), 1.6) : null;
+        q.dist.hidden = !at;
+        if (at) {
+          q.dist.style.left = at[0].toFixed(0) + 'px'; q.dist.style.top = at[1].toFixed(0) + 'px';
+          q.dist.textContent = a.rigs[k].pos.distanceTo(b.rigs[k].pos).toFixed(1) + ' m';
+        }
+      }
+    });
+    // the speed graph's playhead, for the followed car
+    const gc = this.graphCar;
+    if (gc) {
+      const x = (clamp(t, 0, gc.total) / gc.total * 300).toFixed(1);
+      $('svSpeedHead').setAttribute('x1', x); $('svSpeedHead').setAttribute('x2', x);
+    }
+    if (this.compare) this.updateCompareMap();
     this.hudAcc = force ? 1 : this.hudAcc;
     if (this.hudAcc < 0.08) return;
     this.hudAcc = 0;
+    if (gc) {
+      let k = 0;
+      while (k < 3 && t >= gc.starts[k] + gc.ghosts[k].t) k++;
+      $('svSpeedNow').textContent = Math.round((t >= gc.total ? 0 : gc.rigs[k].speed) * KMH) + ' km/h';
+    }
     this.quads.forEach((q, k) => {
       q.label.innerHTML = '<div class="h"><span>' + courseTag(q.i) + '</span>' + escapeHtml(q.lv.name) + '</div>' +
         this.cars.map((c) => {
@@ -8309,11 +8679,20 @@ const SectionView = {
           const val = lt < 0 ? '—' : formatTime(Math.min(lt, g.t));
           return '<div class="r"><i style="background:' + c.dot + '"></i><b>' + escapeHtml(c.name) + '</b><span class="tm ' + cls + '">' + val + '</span></div>';
         }).join('');
+      // the keys and speed of the car this quarter is about
+      q.keys.hidden = !q.focus;
+      if (q.focus) {
+        const bits = q.focusBits;
+        const on = { throttle: bits & 1, brake: bits & 2, left: bits & 4, right: bits & 8, boost: bits & 16, handbrake: bits & 32 };
+        q.keys.querySelectorAll('.k').forEach((el) => el.classList.toggle('on', !!on[el.dataset.k]));
+        q.keys.querySelector('.svSpd').innerHTML = '<i style="background:' + q.focus.dot + '"></i>' +
+          Math.round(q.focus.rigs[k].speed * KMH) + ' km/h';
+      }
     });
-    const panel = $('svPanel');
+    const top = $('svPanelTop');
     if (this.compare) {
       const [a, b] = this.cars;
-      let h = '<h4>Splits</h4><table><thead><tr><th>Map</th><th style="text-align:right">' + escapeHtml(a.name) +
+      let h = '<h4>Section splits</h4><table><thead><tr><th>Map</th><th style="text-align:right">' + escapeHtml(a.name) +
         '</th><th style="text-align:right">' + escapeHtml(b.name) + '</th><th style="text-align:right">Gap</th></tr></thead><tbody>';
       let ca = 0, cb = 0;
       this.quads.forEach((q, k) => {
@@ -8324,11 +8703,10 @@ const SectionView = {
           '</td><td class="t' + (tb < ta ? ' win' : '') + '">' + formatTime(tb) + '</td><td class="d">' +
           (shown ? (ca - cb >= 0 ? '+' : '') + (ca - cb).toFixed(3) : '…') + '</td></tr>';
       });
-      h += '</tbody></table>';
-      // live gap, in seconds, from how far along each is
+      h += '</tbody></table><div class="cmpNote">Gap is the running total: + means ' + escapeHtml(a.name) + ' is behind.</div>';
       const da = this.distAt(a, t), db = this.distAt(b, t);
       const ahead = da >= db ? a : b, behind = ahead === a ? b : a;
-      let gapTxt = '';
+      let gapTxt;
       if (t >= a.total && t >= b.total) {
         const w = a.total <= b.total ? a : b;
         gapTxt = '<b>' + escapeHtml(w.name) + '</b> wins the section by ' + Math.abs(a.total - b.total).toFixed(3) + ' s';
@@ -8338,10 +8716,14 @@ const SectionView = {
         gapTxt = '<b>' + escapeHtml(ahead.name) + '</b> ahead' + (when !== null ? ' by ' + Math.max(0, when - t).toFixed(2) + ' s' : '') +
           ' · ' + Math.round(Math.abs(da - db)) + ' m';
       }
-      panel.innerHTML = h + '<div class="cmpNote">Gap is the running total: + means ' + escapeHtml(a.name) + ' is behind.</div>' +
-        '<div class="gap">' + gapTxt + '</div>' +
-        '<div class="cmpNote" style="margin-top:6px">Totals: ' + escapeHtml(a.name) + ' ' + formatTime(a.total) + ' · ' +
-        escapeHtml(b.name) + ' ' + formatTime(b.total) + '</div>';
+      top.innerHTML = h + '<div class="gap">' + gapTxt + '</div>';
+      // the detailed comparison follows the map the first car is on, until
+      // a map is picked by hand
+      if (this.cmpAuto) {
+        let k = 0;
+        while (k < 3 && t >= a.starts[k] + a.ghosts[k].t) k++;
+        if (k !== this.cmpMap) this.showCompareMap(k);
+      }
     } else {
       const rows = this.cars.map((c) => {
         let k = 0;
@@ -8349,16 +8731,29 @@ const SectionView = {
         const done = t >= c.total;
         return { c, k, done, sofar: Math.min(t, c.total) };
       }).sort((x, y) => (y.done - x.done) || (x.done ? x.c.total - y.c.total : (y.k - x.k) || (x.c.starts[x.k] - y.c.starts[y.k])));
-      panel.innerHTML = '<h4>' + escapeHtml(SECTIONS[this.sec]) + ' total</h4>' + rows.map((r, p) =>
-        '<div class="row2"><i style="background:' + r.c.dot + '"></i><span class="n">' + (r.done ? (p + 1) + '. ' : '') + escapeHtml(r.c.name) +
-        '</span><span class="s">' + (r.done ? 'finished' : courseTag(this.quads[r.k].i)) + '</span><span class="v' + (r.done ? ' done' : '') + '">' +
-        formatTime(r.sofar) + '</span></div>').join('');
+      top.innerHTML = '<h4>' + escapeHtml(SECTIONS[this.sec]) + ' · watching ' + this.cars.length + '</h4>' + rows.map((r, p) =>
+        '<div class="row2' + (r.c.n === this.camIdx ? ' on' : '') + '" data-n="' + r.c.n + '"><i style="background:' + r.c.dot + '"></i><span class="n">' +
+        (r.done ? (p + 1) + '. ' : '') + escapeHtml(r.c.name) + '</span><span class="s">' +
+        (r.done ? 'finished' : courseTag(this.quads[r.k].i) + ' · ' + Math.round(r.c.rigs[r.k].speed * KMH) + ' km/h') +
+        '</span><span class="v' + (r.done ? ' done' : '') + '">' + formatTime(r.sofar) + '</span></div>').join('') +
+        (this.cars.length > 1 ? '<div class="cmpNote" style="margin-top:6px">Click a driver to follow them.</div>' : '');
+      top.querySelectorAll('.row2').forEach((el) => el.addEventListener('click', () => {
+        const n = +el.dataset.n;
+        this.setCam(this.camIdx === n ? -1 : n);
+      }));
     }
   },
+  _mid(a, b) { return (this._m || (this._m = new THREE.Vector3())).set((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); },
 
   step(dt) {
     if (Input.tapped('Escape')) { this.exit(); return; }
-    if (Input.tapped('Space')) $('bSvPlay').click();
+    // Space flies the director camera up, so there play/pause is the button
+    if (this.camIdx !== -2 && Input.tapped('Space')) this.togglePlay();
+    if (Input.tapped('KeyR')) { this.t = 0; this.playing = true; $('bSvPlay').textContent = '⏸ Pause'; }
+    if (this.cars.length > 1) {
+      if (Input.tapped('ArrowRight')) this.cycleCam(1);
+      if (Input.tapped('ArrowLeft')) this.cycleCam(-1);
+    }
     if (!this.scrubbing && this.playing) {
       this.t += dt * this.rate;
       if (this.t >= this.longest) {
@@ -8390,13 +8785,16 @@ const SectionView = {
     for (const q of this.quads) {
       disposeCourse(q.course, q.scene);
       for (const im of q.peaks) im.dispose();
+      q.line.geometry.dispose(); q.line.material.dispose();
     }
     const shared = new Set(Object.values(GEO));
     for (const c of this.cars) {
       for (const m of c.meshes) m.traverse((o) => { if (o.isMesh && o.geometry && !shared.has(o.geometry)) o.geometry.dispose(); });
       c.bodyMat.dispose(); c.darkMat.dispose();
     }
-    this.quads = []; this.cars = [];
+    this.quads = []; this.cars = []; this.cmps = [];
+    $('svLabels').innerHTML = '';
+    $('chartTip').hidden = true;
     if (this.renderer) this.renderer.renderLists.dispose();
   },
   exit() {
@@ -9796,7 +10194,6 @@ const Game = {
     this.hideAllTags(); // a race's own name tags are DOM elements, not part of the 3D scene — they don't clear on their own
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
     GaragePreview.stop();
-    courseDetailPreview.stop();
     UI.show('menu');
     TrophyRoom.stop();
     const next = this.nextCourseIndex();
@@ -9851,7 +10248,6 @@ const Game = {
       if (k === view && dir) { void el.offsetWidth; el.classList.add(dir); }
     }
     if (dir) $('selPanel').scrollTop = 0;
-    if (view === 'map') courseDetailPreview.start(); else courseDetailPreview.stop();
     this.renderSel();
   },
   /** redraws whichever view is open (live leaderboard updates call this) */
@@ -9884,13 +10280,9 @@ const Game = {
     if (this.state === 'select') this.showSelView('overall', 'enter'); else this.toSelect('overall');
   },
   backToList() { this.showSelView('list', 'back'); },
-  /** paints the map page's car in the current first-place driver's colours */
-  async paintCourseLeader(i) {
-    const list = Records.board(this.id(i));
-    // A row with no uid (local/offline board entry) leaves the widget in
-    // its default color rather than guessing whose car it is.
-    const colors = (list && list.length && list[0].uid) ? await Cloud.fetchCarColorsOf(list[0].uid) : null;
-    if (colors && this.state === 'select' && this.selView === 'map' && this.courseDetailIndex === i) courseDetailPreview.paint(colors);
+  /** the map page's podium: the top three's own cars and names */
+  paintCourseLeader(i) {
+    if (this.state === 'select' && this.selView === 'map' && this.courseDetailIndex === i) Podium.show(i);
   },
 
   toSettings() {
