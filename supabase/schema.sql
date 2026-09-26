@@ -134,6 +134,10 @@ create table if not exists public.legacy_ids (
 create or replace function public.login_email(p_name text) returns text
 language sql immutable as $$ select lower(p_name) || '@chat7689.github.io' $$;
 
+-- the database clock, so every game counts race deadlines the same way
+create or replace function public.server_ms() returns bigint
+language sql volatile as $$ select (extract(epoch from clock_timestamp()) * 1000)::bigint $$;
+
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public, pg_temp as $$
   select exists (select 1 from public.admins where user_id = auth.uid())

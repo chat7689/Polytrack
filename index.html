@@ -2005,507 +2005,381 @@ const Sound = {
 };
 
 /* ------------------------------------------------- 1b. accounts and cloud
-   Optional Firebase layer. With FIREBASE.enabled false the game runs exactly
+   Optional Supabase layer. With SUPABASE.enabled false the game runs exactly
    as before: no login, records on this device only. With it enabled the game
-   is invite-only and every leaderboard is shared.
+   is invite-only and every leaderboard is shared. The database's own rules
+   and server functions are in supabase/schema.sql.
 
    Design note: the rest of the game reads records synchronously (Records.best,
    Records.board). Rather than making all of that async, the cloud is mirrored
    into the same in-memory cache on sign-in, writes are optimistic, and the
    call sites never change.                                                  */
-const FIREBASE = {
+const SUPABASE = {
   enabled: true,
-  sdk: 'https://www.gstatic.com/firebasejs/10.12.2/',
-  config: {
-    apiKey: 'AIzaSyAeDQFyJvnV9TiVQMnhX6PkcPkXoXzhm-I',
-    authDomain: 'polytrack-918a0.firebaseapp.com',
-    projectId: 'polytrack-918a0',
-    storageBucket: 'polytrack-918a0.firebasestorage.app',
-    messagingSenderId: '928788678841',
-    appId: '1:928788678841:web:12475f136c4acd28887368'
-  }
+  sdk: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm',
+  url: 'https://tkjiivodmmjeruhxspcz.supabase.co',
+  // The project's public key. It is meant to be in the page: what anyone
+  // holding it may do is decided by the database's own rules and server
+  // functions (supabase/schema.sql), never by this file.
+  key: 'sb_publishable_ZdsFehUaa1KE1jzlRxbLIA_QgiOju7q'
 };
 
-// Firebase Auth has no username provider, so a username is mapped to a hidden
-// address nobody sees or types. This also gets uniqueness for free: Firebase
-// refuses to create a duplicate address.
-const USERNAME_DOMAIN = '@players.skyframe.local';
+// Supabase Auth has no username provider, so a username is mapped to a
+// hidden address nobody sees or types. Supabase refuses a second login with
+// the same address, which makes usernames unique. The database checks the
+// same mapping (public.login_email) when a player is created.
+const USERNAME_DOMAIN = '@chat7689.github.io';
 function usernameToEmail(name) { return (name || '').trim().toLowerCase() + USERNAME_DOMAIN; }
 function validUsername(name) { return /^[A-Za-z0-9_-]{3,14}$/.test(name || ''); }
 
+/** a Supabase or network failure as an Error the rest of the game reads:
+ *  auth failures carry the same codes the sign-in page already words */
+function cloudError(e, fallback) {
+  if (e instanceof Error && e.code && /^(auth|db)\//.test(e.code)) return e;
+  const raw = String((e && (e.code || e.error_code)) || '');
+  const msg = String((e && e.message) || fallback || 'unknown error');
+  let code = 'db/' + (raw || 'unknown');
+  if (raw === 'invalid_credentials' || /invalid login credentials/i.test(msg)) code = 'auth/invalid-credential';
+  else if (raw === 'user_already_exists' || raw === 'email_exists' || /already registered/i.test(msg)) code = 'auth/email-already-in-use';
+  else if (raw === 'weak_password') code = 'auth/weak-password';
+  else if (raw === 'email_address_invalid' || raw === 'validation_failed') code = 'auth/invalid-email';
+  else if (/rate_limit/.test(raw) || (e && e.status === 429)) code = 'auth/too-many-requests';
+  else if ((e && e.name === 'AuthRetryableFetchError') || /failed to fetch|networkerror|load failed|network/i.test(msg)) code = 'db/unavailable';
+  else if (raw === '42501' || raw === '28000' || raw === 'PGRST301' || raw === 'PGRST303' || /jwt/i.test(msg)) code = 'db/permission-denied';
+  else if (raw === 'P0001') code = 'db/refused';          // a rule of the game, worded for the player
+  const out = new Error(msg);
+  out.code = code;
+  return out;
+}
+
 const Cloud = {
   ready: false, on: false, user: null, profile: null, credits: 0,
-  fb: null, auth: null, db: null, error: '',
-  // Firebase fires onAuthStateChanged the instant an account exists — for a
-  // brand new sign-up that is before claims/profile are written, so the
-  // listener would otherwise race the sign-up/sign-in flow's own writes and
-  // can clobber its result. Setting this while one of those flows is in
-  // progress tells watch() to sit out; the flow reports the outcome itself.
+  sb: null, error: '',
+  // Supabase reports a sign-in the instant the login exists — for a brand
+  // new sign-up that is before the player is set up, so the listener would
+  // race the sign-up/sign-in flow and could clobber its result. Setting
+  // this while one of those flows runs tells watch() to sit out; the flow
+  // reports the outcome itself.
   busy: false,
+  // server clock minus this device's clock, so race countdowns agree
+  skew: 0,
+  _chn: 0,                                     // realtime channel names are never reused
 
   courseIds() { return COURSE_IDS.slice(); },
 
   async init() {
-    if (!FIREBASE.enabled || !FIREBASE.config.projectId) return false;
+    if (!SUPABASE.enabled || !SUPABASE.url) return false;
     try {
-      const [app, authMod, fsMod] = await Promise.all([
-        import(FIREBASE.sdk + 'firebase-app.js'),
-        import(FIREBASE.sdk + 'firebase-auth.js'),
-        import(FIREBASE.sdk + 'firebase-firestore.js')
-      ]);
-      this.fb = { app, authMod, fsMod };
-      const a = app.initializeApp(FIREBASE.config);
-      this.auth = authMod.getAuth(a);
-      // A local cache (shared between tabs): a reload resumes the live
-      // leaderboard and only downloads what changed, instead of every
-      // entry again — reads are the free plan's scarce resource — and the
-      // last data seen still shows if the server can't be reached.
-      try {
-        this.db = fsMod.initializeFirestore(a, {
-          localCache: fsMod.persistentLocalCache({ tabManager: fsMod.persistentMultipleTabManager() })
-        });
-      } catch (e) {
-        console.warn('aiPolytrack: no local database cache', e && e.message);
-        this.db = fsMod.getFirestore(a);
-      }
+      const mod = await import(SUPABASE.sdk);
+      this.sb = mod.createClient(SUPABASE.url, SUPABASE.key, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+        realtime: { params: { eventsPerSecond: 10 } }
+      });
       this.on = true;
       this.ready = true;
       return true;
     } catch (e) {
-      this.error = 'Could not load Firebase: ' + (e && e.message ? e.message : e);
+      this.error = 'Could not load Supabase: ' + (e && e.message ? e.message : e);
       console.warn('aiPolytrack:', this.error);
       return false;
     }
   },
 
-  /** resolves with the signed-in user, or null, once auth state is known */
+  /** runs a server function; throws a cloudError */
+  async rpc(name, args) {
+    const { data, error } = await this.sb.rpc(name, args || {});
+    if (error) throw cloudError(error);
+    return data;
+  },
+  /** a query builder's result, or a thrown cloudError */
+  async q(builder) {
+    const { data, error } = await builder;
+    if (error) throw cloudError(error);
+    return data;
+  },
+  wrapUser(u) { return u ? { uid: u.id, email: u.email || '' } : null; },
+
+  /** reports the signed-in user (or null) whenever it changes */
   watch(onChange) {
     if (!this.on) return;
-    this.fb.authMod.onAuthStateChanged(this.auth, async (user) => {
+    this.sb.auth.onAuthStateChange((event, session) => {
+      // Reported during a sign-up/sign-in flow: that flow reports its own
+      // outcome (a wrong invite code signs the new login out again, and
+      // that report arriving late used to wipe the error message).
       if (this.busy) return;
-      // A late event from an earlier sign-in or sign-out (they are
-      // delivered asynchronously) must not overwrite the session the SDK
-      // actually has now: that is how the menu could still show "Sign
-      // out" while Cloud.user had been wiped to null underneath it, and
-      // every signed-in action then said "Sign in to…".
-      const now = this.auth.currentUser || null;
-      if ((user ? user.uid : null) !== (now ? now.uid : null)) return;
-      // Firebase can report the same signed-in user more than once; keep
-      // the profile we already have for them instead of blanking it (a
-      // blank profile shows "Driver" and, if the re-read hiccups, used to
-      // bounce the player to the sign-in page)
-      const same = user && this.user && this.user.uid === user.uid && this.profile;
-      this.user = user || null;
-      if (!user) this.profile = null;
-      else if (!same) {
-        this.profile = null;
-        this.error = '';                         // no stale message from an earlier attempt
-        try { await this.loadProfile(); } catch (e) { this.error = this.error || e.message; }
-      }
-      onChange(this.user, this.profile);
+      // Supabase calls this while holding its session lock: anything that
+      // talks to the server from inside it would wait forever, so the work
+      // happens on the next turn instead.
+      setTimeout(async () => {
+        if (this.busy) return;
+        // token refreshes and profile edits are not a change of player
+        if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
+        const user = this.wrapUser(session && session.user);
+        // A late event from an earlier sign-in or sign-out must not
+        // overwrite the session the client actually has now.
+        let now = null;
+        try { now = (await this.sb.auth.getSession()).data.session; } catch (e) { now = session; }
+        if ((user ? user.uid : null) !== (now && now.user ? now.user.id : null)) return;
+        // the same player reported again: keep the profile we have
+        const same = user && this.user && this.user.uid === user.uid && this.profile;
+        this.user = user;
+        if (!user) this.profile = null;
+        else if (!same) {
+          this.profile = null;
+          this.error = '';
+          try { await this.loadProfile(); } catch (e) { this.error = this.error || e.message; }
+        }
+        onChange(this.user, this.profile);
+      }, 0);
     });
   },
 
   async signIn(username, pass) {
     this.error = '';
-    const cred = await this.fb.authMod.signInWithEmailAndPassword(
-      this.auth, usernameToEmail(username), pass);
-    this.user = cred.user;
-    try { await this.loadProfile(); } catch (e) {
-      this.error = e.message;
-      if (e.code === 'auth/invalid-credential') throw e;
-    }
+    const { data, error } = await this.sb.auth.signInWithPassword({ email: usernameToEmail(username), password: pass });
+    if (error) throw cloudError(error);
+    this.user = this.wrapUser(data.user);
+    try { await this.loadProfile(); } catch (e) { this.error = e.message; }
   },
   async signOut() {
     Game.confirmedUid = null;
     this.credits = 0;
-    await this.fb.authMod.signOut(this.auth);
-    // A player clicking "Sign out" is a deliberate, explicit action, not
-    // an incidental auth blip — it must take effect immediately regardless
-    // of what screen it was clicked from, unlike the passive
-    // onAuthStateChanged listener (Game.onAuth's own call from watch())
-    // which deliberately defers over an active run so a stray network
-    // hiccup can't yank the gate up mid-drive. Forcing it here is what
-    // makes the Sign out button on the race-reveal screen actually work
-    // instead of silently queuing behind that deferral forever (a locked
-    // race attempt has no other screen to "get back to" that would ever
-    // flush it).
+    this.stopBoards(); this.stopAdjust();
+    // this device only: the player stays signed in anywhere else
+    try { await this.sb.auth.signOut({ scope: 'local' }); } catch (e) { /* already signed out */ }
+    this.user = null; this.profile = null;
+    // A player clicking "Sign out" is deliberate: it takes effect at once
+    // from any screen, unlike a passive auth report, which waits for the
+    // player to get back to a safe screen.
     Game.authPending = false;
-    await Game.onAuth(this.user, this.profile, true);
+    await Game.onAuth(null, null, true);
   },
 
-  /**
-   * Firebase treats a password change as security-sensitive and refuses it
-   * on a session that isn't "recently" authenticated, so the current
-   * password is used to re-authenticate immediately beforehand rather than
-   * making the player sign out and back in.
-   */
+  /** the password is checked by signing in with it again first */
+  async checkPassword(pass) {
+    if (!this.user) throw new Error('Not signed in.');
+    const { error } = await this.sb.auth.signInWithPassword({ email: this.user.email, password: pass });
+    if (error) throw cloudError(error);
+  },
   async changePassword(oldPass, newPass) {
     if (!this.user) throw new Error('Not signed in.');
     if (newPass.length < 6) throw new Error('Pick a new password of at least 6 characters.');
-    const { authMod } = this.fb;
-    const cred = authMod.EmailAuthProvider.credential(this.user.email, oldPass);
-    await authMod.reauthenticateWithCredential(this.user, cred);
-    await authMod.updatePassword(this.user, newPass);
+    await this.checkPassword(oldPass);
+    const { error } = await this.sb.auth.updateUser({ password: newPass });
+    if (error) {
+      if (error.code === 'same_password') throw new Error('That is already your password.');
+      throw cloudError(error);
+    }
   },
 
   /**
-   * Deletes every one of this player's own bests and ghosts, on every
-   * course, from Firestore, plus the local device cache. creditEvents are
-   * untouched — they are the append-only record of credits already
-   * earned, not a leaderboard entry, and letting a reset erase them would
-   * let a player farm the clear bonus repeatedly on the same course.
+   * Deletes every one of this player's own bests and ghosts. Credits are
+   * untouched — they are the record of credits already earned, not a
+   * leaderboard entry.
    */
   async resetScores(password) {
     if (!this.user || !this.on) throw new Error('Not signed in.');
-    // Firebase itself checks the password before anything is deleted
     if (!password) throw new Error('Type your password to reset your scores.');
-    const { authMod, fsMod } = this.fb;
-    await authMod.reauthenticateWithCredential(this.user, authMod.EmailAuthProvider.credential(this.user.email, password));
-    const uid = this.user.uid;
-    const batch = fsMod.writeBatch(this.db);
-    for (const courseId of this.courseIds().concat(RETIRED_IDS)) {
-      const id = uid + '_' + courseId;
-      batch.delete(fsMod.doc(this.db, 'bests', id));
-      batch.delete(fsMod.doc(this.db, 'ghosts', id));
-    }
-    await batch.commit();
-    // only this player's rows: clearing the whole board here left everyone
-    // else's times missing until a reload (the live listener only sends
-    // what changed, and nothing of theirs did)
-    Records.forgetPlayer(uid);
+    await this.checkPassword(password);
+    await this.rpc('reset_my_scores');
+    Records.forgetPlayer(this.user.uid);
   },
 
-  /** +1 credit for finishing any non-race course, or +3 for a credit
-   *  run. Each is its own event shape, capped server-side at exactly that
-   *  amount (see creditEvents in firestore.rules). */
+  /** +1 credit for finishing any non-race course, or +3 for a credit run;
+   *  the amounts are fixed by the server */
   async grindCredit(amount) {
     if (!this.user || !this.on || this.banned()) return false;
-    const n = amount === 3 ? 3 : 1;
-    const { fsMod } = this.fb;
-    const uid = this.user.uid;
-    const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + (n === 3 ? '_crun' : '_grind');
-    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: n, createdAt: fsMod.serverTimestamp() });
-    this.credits += n;
+    this.credits = await this.rpc('grant_credit', { p_kind: amount === 3 ? 'crun' : 'grind' });
     return true;
   },
 
-  /** live-subscribes to whichever race is currently open (lobby, starting
-   *  or running — never more than one at a time by client convention) plus
-   *  its entries; returns an unsubscribe fn. This is the single feed that
-   *  drives the always-on race lobby card on the menu now, so there is no
-   *  separate "list of open races" any more — just the one. */
+  /** the server clock against this device's, once per session (a race
+   *  deadline is the server's time; a device clock a minute out would
+   *  otherwise count down to the wrong moment) */
+  async syncClock() {
+    if (this._clockAt && Date.now() - this._clockAt < 600000) return;
+    try {
+      const t0 = Date.now();
+      const server = Number(await this.rpc('server_ms'));
+      const t1 = Date.now();
+      if (Number.isFinite(server) && t1 - t0 < 3000) { this.skew = server - (t0 + t1) / 2; this._clockAt = t1; }
+    } catch (e) { /* keep the last estimate */ }
+  },
+  /** a server timestamp as this device's milliseconds */
+  localMs(ts) {
+    if (!ts) return 0;
+    const ms = Date.parse(ts);
+    return Number.isFinite(ms) ? ms - this.skew : 0;
+  },
+  mapRace(r) {
+    return {
+      id: r.id, state: r.state, courseId: r.course_id || undefined, pot: 0,
+      createdAt: this.localMs(r.created_at), joinDeadline: this.localMs(r.join_deadline),
+      startedAt: this.localMs(r.started_at), endsAt: this.localMs(r.ends_at), settledBy: r.settled_by || null
+    };
+  },
+  mapEntry(e) {
+    return {
+      uid: e.uid, displayName: e.display_name, buyIn: e.buy_in, attempts: e.attempts || [],
+      bestTimeMs: e.best_time_ms == null ? null : e.best_time_ms,
+      placement: e.placement == null ? null : e.placement, payout: e.payout == null ? null : e.payout
+    };
+  },
+
+  /** follows the current race (the newest one) and its entries; returns an
+   *  unsubscribe fn. Any change pushed by the server reloads both — two
+   *  small reads — and a slow poll covers a dropped connection. */
   watchCurrentRace(onChange) {
     if (!this.on) return () => {};
-    const { fsMod } = this.fb;
-    const { collection, onSnapshot, query } = fsMod;
-    let raceId = null, race = null, entries = [], unEntries = null;
-    const fire = () => onChange(race, entries);
-    // Only the newest few races by creation time — the current one is
-    // always the newest — rather than every race ever settled, which grew
-    // forever and was re-read on every sign-in.
-    let unRace = null, retry = null, stopped = false;
-    const subscribe = () => { unRace = onSnapshot(
-      query(collection(this.db, 'races'), fsMod.orderBy('createdAt', 'desc'), fsMod.limit(3)),
-      (snap) => {
-        let d0 = null, best = -1;
-        snap.forEach((d) => {
-          const c = tsMs(d.data().createdAt) || Date.now();   // a just-created lobby has no server time yet
-          if (c > best) { best = c; d0 = d; }
-        });
-        const newId = d0 ? d0.id : null;
-        race = d0 ? { id: d0.id, ...d0.data() } : null;
-        if (newId !== raceId) {
-          raceId = newId;
-          if (unEntries) { unEntries(); unEntries = null; }
-          // Reset entries synchronously the instant the race id changes —
-          // the new entries subscription below is async and its first
-          // snapshot hasn't arrived yet, so the fire() at the end of this
-          // callback must never pair the new race doc with the *previous*
-          // race's now-stale entries array (that mismatch is exactly how
-          // a fresh, nobody-has-joined-yet lobby could misread "2+ already
-          // joined" from a just-unsubscribed race's leftover entries).
-          entries = [];
-          if (raceId) {
-            unEntries = onSnapshot(collection(this.db, 'races', raceId, 'entries'), (esnap) => {
-              entries = [];
-              esnap.forEach((e) => entries.push({ uid: e.id, ...e.data() }));
-              fire();
-            }, (e) => console.warn('aiPolytrack: race entries listener', e && e.message));
-          }
-        }
-        fire();
-      }, (e) => {
-        // a dropped feed would freeze the lobby card: reconnect shortly
-        console.warn('aiPolytrack: race listener', e && e.code, e && e.message);
-        this.noteError(e);
-        raceId = null;
-        if (unEntries) { unEntries(); unEntries = null; }
-        clearTimeout(retry);
-        if (!stopped) retry = setTimeout(() => { if (!stopped) subscribe(); }, 15000);
-      }); };
-    subscribe();
-    return () => { stopped = true; clearTimeout(retry); if (unRace) unRace(); if (unEntries) unEntries(); };
+    let stopped = false, busy = false, again = false, kickTimer = null;
+    const load = async () => {
+      if (stopped) return;
+      if (busy) { again = true; return; }
+      busy = true;
+      try {
+        await this.syncClock();
+        const rows = await this.q(this.sb.from('races').select('*').order('created_at', { ascending: false }).limit(1));
+        const r = rows[0] || null;
+        const es = r ? await this.q(this.sb.from('race_entries').select('*').eq('race_id', r.id)) : [];
+        if (!stopped) onChange(r ? this.mapRace(r) : null, es.map((e) => this.mapEntry(e)));
+      } catch (e) {
+        console.warn('aiPolytrack: race feed', e && e.code, e && e.message);
+      } finally {
+        busy = false;
+        if (again && !stopped) { again = false; load(); }
+      }
+    };
+    const kick = () => { clearTimeout(kickTimer); kickTimer = setTimeout(load, 120); };
+    this._raceKick = kick;
+    const ch = this.sb.channel('race-feed-' + (++this._chn))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'races' }, kick)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'race_entries' }, kick)
+      .subscribe((status) => { if (status === 'SUBSCRIBED') kick(); });
+    const poll = setInterval(load, 20000);
+    load();
+    return () => {
+      stopped = true; clearTimeout(kickTimer); clearInterval(poll);
+      if (this._raceKick === kick) this._raceKick = null;
+      this.sb.removeChannel(ch);
+    };
   },
+  raceChanged() { if (this._raceKick) this._raceKick(); },
 
-  /** Opens the next lobby. Any signed-in client may call this the moment
-   *  its watchCurrentRace feed shows nothing open — two clients racing to
-   *  do it is harmless, since Firestore just keeps whichever create landed
-   *  first and every client's next snapshot reflects that one race. */
+  /** opens the next lobby, or finds the one already open */
   async openLobby() {
     if (!this.user || !this.on) return;
-    // one new lobby per client at a time (the lobby snapshot takes a moment
-    // to arrive; a second call in that gap used to open a duplicate)
     if (Date.now() - (this._lobbyOpenedAt || 0) < 15000) return;
     this._lobbyOpenedAt = Date.now();
-    const { fsMod } = this.fb;
-    const id = 'race_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
-    try {
-      await fsMod.setDoc(fsMod.doc(this.db, 'races', id), {
-        state: 'lobby', pot: 0, createdAt: fsMod.serverTimestamp(), createdBy: this.user.uid
-      });
-    } catch (e) { /* someone else's lobby create almost certainly won the race */ }
+    try { await this.rpc('open_lobby'); } catch (e) { console.warn('aiPolytrack: open lobby', e && e.message); }
+    this.raceChanged();
   },
 
-  /** lobby -> starting: opens the 60s late-join window. Whichever client's
-   *  watchCurrentRace first notices 2+ entries calls this once. */
-  async startCountdown(raceId) {
-    const { fsMod } = this.fb;
-    // a failure (usually: another client already made this transition) is
-    // passed up so the caller backs off rather than retrying every second
-    await fsMod.updateDoc(fsMod.doc(this.db, 'races', raceId), {
-      state: 'starting', joinDeadline: fsMod.Timestamp.fromMillis(Date.now() + 60000)
-    });
+  /** moves a race on if one of its deadlines has passed; the database
+   *  decides (its own clock, its own random course from today's list), so
+   *  every game asking at once is harmless */
+  async advanceRace(raceId) {
+    await this.rpc('advance_race', { p_race: raceId, p_pool: COURSE_IDS });
+    this.raceChanged();
   },
-
-  /** starting -> running: picks the course (plain Math.random, same as the
-   *  old admin flow — this is presentation randomness, not physics, so it
-   *  doesn't need the seeded LCG) and locks it in. This is also the very
-   *  first moment courseId exists on the document at all, which is what
-   *  actually keeps it hidden pre-buy-in: nothing can read a field that
-   *  hasn't been written yet. */
-  async startRace(raceId, courseId) {
-    const { fsMod } = this.fb;
-    const now = Date.now();
-    await fsMod.updateDoc(fsMod.doc(this.db, 'races', raceId), {
-      state: 'running', courseId,
-      startedAt: fsMod.Timestamp.fromMillis(now), endsAt: fsMod.Timestamp.fromMillis(now + 10 * 60 * 1000)
-    });
-  },
-
-  /**
-   * running -> settled, computing and writing every payout. Whichever
-   * signed-in client notices the clock ran out runs this — there is no
-   * backend, so this is the same trust level a lap time already has.
-   * Payout: d = pot / sum(buyIn_i / place_i), payout_n = d * (buyIn_n /
-   * place_n). Self-balancing by construction. A DNF (no bestTimeMs after
-   * 3 attempts) is excluded from the ranking and formula entirely, and its
-   * buy-in is absorbed into the pot the finishers split — unless literally
-   * nobody finished, in which case every entrant is refunded their own
-   * buy-in instead of the pot vanishing.
-   */
+  startCountdown(raceId) { return this.advanceRace(raceId); },
+  startRace(raceId) { return this.advanceRace(raceId); },
   async settleRace(raceId) {
-    const { fsMod } = this.fb;
-    // Who entered comes from the server, never from this client's live
-    // list: that list is empty for a moment whenever the race first loads
-    // (the race document arrives before its entries), and settling in that
-    // moment marked races settled with no payouts at all — every stake lost.
-    let entries = [];
-    (await fsMod.getDocs(fsMod.collection(this.db, 'races', raceId, 'entries')))
-      .forEach((d) => entries.push({ uid: d.id, ...d.data() }));
-    // a malformed entry (no usable buy-in) can't be allowed to turn every
-    // payout into NaN, which the rules reject on every retry forever
-    entries = entries.filter((e) => e && e.uid && Number.isFinite(e.buyIn) && e.buyIn > 0);
-    const finishers = entries.filter((e) => typeof e.bestTimeMs === 'number' && Number.isFinite(e.bestTimeMs))
-      .sort((a, b) => a.bestTimeMs - b.bestTimeMs);
-    finishers.forEach((e, i) => { e.placement = i + 1; });
-    const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
-    const denom = finishers.reduce((s, e) => s + (e.buyIn / e.placement), 0);
-
-    const batch = fsMod.writeBatch(this.db);
-    if (finishers.length === 0) {
-      for (const e of entries) {
-        batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: null, payout: e.buyIn });
-        batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-          { uid: e.uid, raceId, delta: e.buyIn, kind: 'payout', createdAt: fsMod.serverTimestamp() });
-      }
-    } else {
-      const d = pot / denom;
-      for (const e of finishers) {
-        const raw = Math.floor(d * (e.buyIn / e.placement));
-        const payout = Number.isFinite(raw) && raw >= 0 ? Math.min(raw, pot) : 0;
-        e.payout = payout;
-        batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
-        batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-          { uid: e.uid, raceId, delta: payout, kind: 'payout', createdAt: fsMod.serverTimestamp() });
-      }
-      // Non-finishing entrants stay unranked with no payout — their stake
-      // was absorbed into the pot the finishers just split.
-    }
-    batch.update(fsMod.doc(this.db, 'races', raceId), { state: 'settled', settledBy: this.user.uid });
-    await batch.commit();
-    if (entries.some((e) => e.uid === this.user.uid)) {
-      // refresh this client's own credits immediately rather than waiting
-      // on a creditEvents re-pull that nothing currently triggers live
-      const mine = entries.find((e) => e.uid === this.user.uid);
-      if (mine) {
-        const payout = finishers.length === 0 ? mine.buyIn
-          : (finishers.find((f) => f.uid === this.user.uid)?.payout || 0);
-        this.credits += payout;
-      }
-    }
+    await this.advanceRace(raceId);
+    this.refreshCredits();
   },
 
-  /** join a race: writes the entry doc and the matching buy-in debit
-   *  together, so a join is never left half-applied */
+  /** join a race: the stake is checked and taken by the server */
   async joinRace(raceId, buyIn) {
     if (!this.user || !this.on) throw new Error('Not signed in.');
     if (this.banned()) throw new Error('This account is suspended.');
     if (!(buyIn > 0)) throw new Error('Enter a buy-in of at least 1 credit.');
     if (buyIn > this.credits) throw new Error('That is more credits than you have.');
-    const { fsMod } = this.fb;
-    const uid = this.user.uid;
-    const batch = fsMod.writeBatch(this.db);
-    batch.set(fsMod.doc(this.db, 'races', raceId, 'entries', uid), {
-      uid, displayName: this.name(), buyIn, attempts: [], bestTimeMs: null
-    });
-    batch.set(fsMod.doc(this.db, 'creditEvents', uid + '_' + raceId + '_buyin'), {
-      uid, raceId, delta: -buyIn, createdAt: fsMod.serverTimestamp()
-    });
-    await batch.commit();
-    this.credits -= buyIn;
+    const r = await this.rpc('join_race', { p_race: raceId, p_buy_in: buyIn });
+    if (r && typeof r.balance === 'number') this.credits = r.balance;
+    else this.credits -= buyIn;
+    this.raceChanged();
   },
 
-  /** append one attempt time to the caller's own race entry */
+  /** one attempt (null = did not finish); returns the attempts used */
   async recordRaceAttempt(raceId, timeMsOrNull) {
-    const { fsMod } = this.fb;
-    const uid = this.user.uid;
-    const ref = fsMod.doc(this.db, 'races', raceId, 'entries', uid);
-    const snap = await fsMod.getDoc(ref);
-    if (!snap.exists()) return;
-    const data = snap.data();
-    const attempts = (data.attempts || []).concat([timeMsOrNull]);
-    const valid = attempts.filter((t) => typeof t === 'number' && isFinite(t));
-    const bestTimeMs = valid.length ? Math.min(...valid) : null;
-    await fsMod.updateDoc(ref, { attempts, bestTimeMs });
-    return attempts.length;               // attempts used, including this one
+    const t = typeof timeMsOrNull === 'number' && isFinite(timeMsOrNull) ? Math.round(timeMsOrNull) : null;
+    const n = await this.rpc('record_race_attempt', { p_race: raceId, p_time_ms: t });
+    this.raceChanged();
+    return n;
   },
 
   /**
-   * Invite-gated sign-up. The code is checked by writing claims/{uid}: the
-   * security rule compares it against a document no client is allowed to read,
-   * so a wrong code is rejected server-side and the real code never leaves the
-   * database. Only then can the profile be created.
+   * Invite-gated sign-up. The login is made first, then the server checks
+   * the invite code (which no player can read) and creates the player; a
+   * wrong code removes the login again. A player from before the move to
+   * Supabase gets their old times, credits and colours back by signing up
+   * with their old username — no code needed for that.
    */
   async signUp(username, pass, code) {
     if (!validUsername(username)) {
       throw new Error('Usernames are 3-14 characters: letters, numbers, _ and - only.');
     }
-    const { authMod, fsMod } = this.fb;
-    const cred = await authMod.createUserWithEmailAndPassword(this.auth, usernameToEmail(username), pass);
-    const uid = cred.user.uid;
-    // adopt the user straight away: the auth-state watcher fires asynchronously
-    // and loadProfile below would otherwise read a null user
-    this.user = cred.user;
-    // the driver name IS the username — one identity, no separate display
-    // name that could drift out of sync or be used to impersonate someone
-    const name = username;
-    // Codes are handed out in capitals; someone typing one in lower case
-    // (or with stray spaces) shouldn't be told it's wrong. The claim can
-    // only ever be written once, so a failed first try costs nothing.
-    const typed = (code || '').trim();
-    const tries = [typed, typed.toUpperCase().replace(/\s+/g, '')].filter((c, i, a) => c && a.indexOf(c) === i);
-    let claimed = false;
-    for (const c of tries) {
-      try { await fsMod.setDoc(fsMod.doc(this.db, 'claims', uid), { code: c }); claimed = true; break; } catch (e) { /* try the next form */ }
+    const email = usernameToEmail(username);
+    let { data, error } = await this.sb.auth.signUp({ email, password: pass });
+    if (error && cloudError(error).code === 'auth/email-already-in-use') {
+      // the login exists: a sign-up that stopped half way is finished with
+      // the same password; anyone else is told the name is taken
+      const again = await this.sb.auth.signInWithPassword({ email, password: pass });
+      if (again.error) throw cloudError(error);
+      data = again.data; error = null;
     }
-    if (!claimed) {
-      // the rule rejected the code: remove the useless auth account again
-      try { await cred.user.delete(); } catch (x) {}
-      throw new Error('That invite code is not valid.');
+    if (error) throw cloudError(error);
+    if (!data || !data.session) {
+      throw new Error('Sign-up is waiting on an email confirmation. The game owner needs to switch off ' +
+        '"Confirm email" in Supabase (Authentication > Sign In / Providers > Email).');
     }
-    try {
-      await fsMod.setDoc(fsMod.doc(this.db, 'profiles', uid), {
-        displayName: name, banned: false, createdAt: fsMod.serverTimestamp()
-      });
-    } catch (e) {
-      // The claim write above already succeeded and committed server-side,
-      // so the invite code itself was genuinely right — a permission error
-      // here is something else (most likely the profiles rule's exists()
-      // check on the claim not yet being visible to this immediately
-      // following request). Retry once after a short pause before giving
-      // up, since a real second attempt a moment later routinely succeeds
-      // where an instant retry wouldn't.
-      await new Promise((r) => setTimeout(r, 800));
-      try {
-        await fsMod.setDoc(fsMod.doc(this.db, 'profiles', uid), {
-          displayName: name, banned: false, createdAt: fsMod.serverTimestamp()
-        });
-      } catch (e2) {
-        throw new Error('Your invite code was accepted, but the account could not finish ' +
-          'setting up (' + (e2 && e2.message || 'unknown error') + '). Try signing up again ' +
-          'with the same details in a few seconds.');
-      }
+    this.user = this.wrapUser(data.user);
+    let res;
+    try { res = await this.rpc('claim_profile', { p_name: username.trim(), p_code: code || '' }); } catch (e) {
+      throw new Error('Your account was made but could not finish setting up (' + e.message + '). ' +
+        'Sign up again with the same details in a few seconds.');
     }
+    if (!res || !res.ok) {
+      try { await this.sb.auth.signOut({ scope: 'local' }); } catch (e) { /* the login is gone already */ }
+      this.user = null;
+      if (res && res.error === 'invite') throw new Error('That invite code is not valid.');
+      if (res && res.error === 'taken') { const e = new Error('taken'); e.code = 'auth/email-already-in-use'; throw e; }
+      const e = new Error('invalid'); e.code = 'auth/invalid-email'; throw e;
+    }
+    if (res.adopted) UI.toast('Welcome back — your old times, credits and colours are on this account.');
     await this.loadProfile();
   },
 
   async loadProfile() {
-    const { fsMod } = this.fb;
     const key = 'aipolytrack.profile.' + this.user.uid;
-    let snap;
+    let row;
     try {
-      snap = await fsMod.getDoc(fsMod.doc(this.db, 'profiles', this.user.uid));
+      row = await this.q(this.sb.from('profiles').select('display_name, banned').eq('id', this.user.uid).maybeSingle());
     } catch (e) {
-      // A read that failed (connection, daily read limit) is not a missing
-      // profile: carry on with this account's copy from last time rather
-      // than throwing the player back to the sign-in page.
+      // A read that failed (no connection) is not a missing profile: carry
+      // on with this account's copy from last time rather than throwing
+      // the player back to the sign-in page.
       let cached = null;
       try { cached = JSON.parse(localStorage.getItem(key) || 'null'); } catch (x) { /* storage blocked */ }
       if (cached && cached.displayName) { this.profile = cached; return cached; }
       this.error = this.errText(e);
       throw e;
     }
-    if (snap.exists()) {
-      try { localStorage.setItem(key, JSON.stringify(snap.data())); } catch (x) { /* storage blocked */ }
-    }
-    if (!snap.exists()) {
+    if (!row) {
       this.profile = null;
-      let gone = false;
-      try { gone = (await fsMod.getDoc(fsMod.doc(this.db, 'deleted', this.user.uid))).exists(); } catch (e) { /* not readable */ }
-      if (gone) {
-        // The admin erased this account. Finish the job by removing the
-        // login itself, and answer exactly as if it had never existed.
-        try { await this.user.delete(); } catch (e) { /* needs a fresh sign-in; happens next time */ }
-        try { await this.fb.authMod.signOut(this.auth); } catch (e) { /* already gone */ }
-        this.user = null;
-        const err = new Error('That username and password do not match.');
-        err.code = 'auth/invalid-credential';
-        throw err;
-      }
       throw new Error('This account has no profile yet — it needs a valid invite code.');
     }
-    this.profile = snap.data();
+    this.profile = { displayName: row.display_name, banned: !!row.banned };
+    try { localStorage.setItem(key, JSON.stringify(this.profile)); } catch (x) { /* storage blocked */ }
     return this.profile;
   },
 
   banned() { return !!(this.profile && this.profile.banned); },
   name() { return (this.profile && this.profile.displayName) || 'Driver'; },
 
-  /** every player's best per course, plus my own bests and my credits, into
-   *  the local cache. myBests is kept separate from boards (which is only
-   *  ever the shared top-10) because "is this run worth pushing" has to
-   *  compare against the player's own previous time, not the current #1 —
-   *  otherwise nobody except whoever is already in first place would ever
-   *  get a new time onto the shared leaderboard at all. */
   /**
-   * Sign-in load: starts the one leaderboard listener this session keeps
-   * (Season 2 maps only) and waits for its first snapshot, then totals the
-   * player's credits with a server-side sum. Reading every credit event —
-   * one per finished run — and re-reading the whole leaderboard every time
-   * the Courses screen opened is what used to exhaust the free daily
-   * read quota, at which point every other read (season awards included)
-   * started failing.
+   * Sign-in load: starts the session's live leaderboard and waits for its
+   * first full copy, then reads the player's balance.
    */
   async pull() {
     const first = new Promise((resolve, reject) => {
@@ -2522,97 +2396,121 @@ const Cloud = {
     await first;
     this.credits = await this.sumCredits();
     this.watchAdjust();
-    // whatever the live listener holds NOW — a newer snapshot may have
-    // landed while the credits were being totalled
     return { credits: this.credits, boards: Records.data.boards, cleared: Records.data.cleared, myBests: Records.data.myBests };
   },
 
-  /**
-   * Credits other people give this player show up straight away: an admin
-   * setting the balance, and race payouts (written by whichever racer's
-   * game settles the race, so usually not this one). Only those events are
-   * listened to — a handful of small documents, not every credit event —
-   * and when one arrives the balance is re-totalled.
-   */
+  /** re-reads the balance and redraws where it shows */
+  async refreshCredits() {
+    if (!this.user) return;
+    const uid = this.user.uid;
+    try {
+      const c = await this.sumCredits();
+      if (!this.user || this.user.uid !== uid) return;
+      this.credits = c;
+      Records.credits = c;
+      UI.who(this.name(), Records.credits);
+      if (Game.state === 'garage') UI.garage();
+      if (Game.state === 'menu' && Game.lobby) Game.renderLobbyCard();
+    } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); }
+  },
+
+  /** credits other people give this player (an admin setting the balance,
+   *  a race payout settled by someone else's game) show up straight away */
   watchAdjust() {
     if (!this.on || !this.user) return;
     this.stopAdjust();
-    const { fsMod } = this.fb;
-    const uid = this.user.uid;
-    const refresh = async () => {
-      if (!this.user || this.user.uid !== uid) return;
-      try {
-        this.credits = await this.sumCredits();
-        UI.who(this.name(), Records.credits);
-        if (Game.state === 'garage') UI.garage();
-      } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); this.noteError(e); }
-    };
-    this.adjustUnsubs = ['adjust', 'payout'].map((kind) => {
-      let first = true;
-      return fsMod.onSnapshot(fsMod.query(fsMod.collection(this.db, 'creditEvents'),
-        fsMod.where('uid', '==', uid), fsMod.where('kind', '==', kind)), () => {
-        if (first) { first = false; return; }    // the balance was just totalled at sign-in
-        refresh();
-      }, (e) => console.warn('aiPolytrack: credit listener', e && e.message));
-    });
+    let t = null;
+    const ch = this.sb.channel('credits-' + (++this._chn))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'credit_events', filter: 'uid=eq.' + this.user.uid }, () => {
+        clearTimeout(t); t = setTimeout(() => this.refreshCredits(), 300);
+      })
+      .subscribe();
+    this.adjustUnsub = () => { clearTimeout(t); this.sb.removeChannel(ch); };
   },
-  stopAdjust() { (this.adjustUnsubs || []).forEach((u) => u()); this.adjustUnsubs = null; },
+  stopAdjust() { if (this.adjustUnsub) { this.adjustUnsub(); this.adjustUnsub = null; } },
 
-  /** the player's balance: the sum of their credit events, done by the server */
+  /** the player's balance, totalled by the server */
   async sumCredits() {
-    const { fsMod } = this.fb;
-    const q = fsMod.query(fsMod.collection(this.db, 'creditEvents'), fsMod.where('uid', '==', this.user.uid));
-    let total = 0;
-    if (fsMod.getAggregateFromServer && fsMod.sum) {
-      const agg = await fsMod.getAggregateFromServer(q, { total: fsMod.sum('delta') });
-      total = agg.data().total || 0;
-    } else {
-      (await fsMod.getDocs(q)).forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') total += v.delta; });
-    }
-    // older race payouts were fractional; a balance is always a whole number
-    return Math.floor(total + 1e-9);
+    return Math.floor(Number(await this.rpc('my_balance')) || 0);
   },
 
   /**
-   * The session's live leaderboard: Season 2 maps only, kept open from
-   * sign-in to sign-out so only documents that actually change are ever
-   * read again. Banned rows are dropped client-side (a second filter
-   * would need a composite index).
+   * The session's live leaderboard (Season 2 maps): one full read, then
+   * only the rows that change arrive. After a dropped connection comes
+   * back, the whole board is read again so nothing missed stays missing.
    */
   watchBoards(onChange, onError) {
     if (!this.on) return () => {};
-    if (this.boardsUnsub) { this.boardsUnsub(); this.boardsUnsub = null; }
-    const { fsMod } = this.fb;
-    const { collection, onSnapshot, query, where } = fsMod;
-    this.boardsUnsub = onSnapshot(query(collection(this.db, 'bests'), where('courseId', 'in', COURSE_IDS)), (snap) => {
+    this.stopBoards();
+    const rows = new Map();                        // uid|course -> row
+    const key = (r) => r.uid + '|' + r.course_id;
+    let loaded = false, loading = false, buffered = null, stopped = false;
+    const emit = () => {
       const boards = {}, cleared = {}, myBests = {};
-      snap.forEach((d) => {
-        const r = d.data();
-        if (!r || r.banned || typeof r.timeMs !== 'number' || !r.courseId) return;
-        const t = migrateLegacyTime(r.timeMs / 1000, r.courseId);
-        (boards[r.courseId] = boards[r.courseId] || []).push({
-          n: r.displayName || 'Driver', t, d: r.updatedMs || 0, uid: r.uid
+      for (const r of rows.values()) {
+        if (!r || r.banned || typeof r.time_ms !== 'number' || !COURSE_IDS.includes(r.course_id)) continue;
+        const t = migrateLegacyTime(r.time_ms / 1000, r.course_id);
+        (boards[r.course_id] = boards[r.course_id] || []).push({
+          n: r.display_name || 'Driver', t, d: Number(r.updated_ms) || 0, uid: r.uid
         });
         if (this.user && r.uid === this.user.uid) {
-          cleared[r.courseId] = true;
-          myBests[r.courseId] = t;
+          cleared[r.course_id] = true;
+          myBests[r.course_id] = t;
         }
-      });
+      }
       for (const k in boards) boards[k].sort((a, b) => a.t - b.t);
       onChange({ boards, cleared, myBests });
-    }, (e) => {
-      console.warn('aiPolytrack: leaderboard listener', e && e.code, e && e.message);
-      this.noteError(e);
-      if (onError) onError(e);
-      // a dropped listener would freeze every board until the next sign-in:
-      // reconnect shortly (the same user, same callback)
-      this.boardsUnsub = null;
-      const uid = this.user && this.user.uid;
-      clearTimeout(this._boardsRetry);
-      this._boardsRetry = setTimeout(() => {
-        if (this.on && this.user && this.user.uid === uid && !this.boardsUnsub) this.watchBoards(onChange);
-      }, 8000);
-    });
+    };
+    const apply = (p) => {
+      if (p.eventType === 'DELETE') { if (p.old && p.old.uid) rows.delete(key(p.old)); }
+      else if (p.new && p.new.uid) rows.set(key(p.new), p.new);
+    };
+    const loadAll = async () => {
+      if (loading || stopped) return;
+      loading = true; buffered = [];
+      try {
+        const all = [];
+        for (let from = 0; ; from += 1000) {
+          const page = await this.q(this.sb.from('bests')
+            .select('uid, course_id, display_name, banned, time_ms, updated_ms')
+            .in('course_id', COURSE_IDS).order('uid').order('course_id').range(from, from + 999));
+          all.push(...page);
+          if (page.length < 1000) break;
+        }
+        if (stopped) return;
+        rows.clear();
+        for (const r of all) rows.set(key(r), r);
+        // changes that arrived while reading, in order, on top
+        for (const p of buffered) apply(p);
+        loaded = true;
+        emit();
+      } catch (e) {
+        console.warn('aiPolytrack: leaderboard read', e && e.code, e && e.message);
+        this.noteError(e);
+        if (!loaded && onError) onError(e);
+        // try again shortly (same player, same board)
+        const uid = this.user && this.user.uid;
+        clearTimeout(this._boardsRetry);
+        this._boardsRetry = setTimeout(() => {
+          if (!stopped && this.user && this.user.uid === uid) loadAll();
+        }, 8000);
+      } finally {
+        loading = false; buffered = null;
+      }
+    };
+    const ch = this.sb.channel('bests-feed-' + (++this._chn))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bests' }, (p) => {
+        if (buffered) { buffered.push(p); return; }
+        if (!loaded) return;
+        apply(p);
+        emit();
+      })
+      .subscribe((status) => {
+        // (re)connected: anything missed while away is picked up
+        if (status === 'SUBSCRIBED' && loaded) loadAll();
+      });
+    loadAll();
+    this.boardsUnsub = () => { stopped = true; this.sb.removeChannel(ch); };
     return this.boardsUnsub;
   },
   stopBoards() {
@@ -2625,105 +2523,67 @@ const Cloud = {
   async fetchMySeason1() {
     if (!this.on || !this.user) return null;
     try {
-      const { fsMod } = this.fb;
-      const snap = await fsMod.getDocs(fsMod.query(fsMod.collection(this.db, 'bests'), fsMod.where('uid', '==', this.user.uid)));
+      const rows = await this.q(this.sb.from('bests').select('course_id, time_ms').eq('uid', this.user.uid));
       let count = 0, total = 0;
-      snap.forEach((d) => {
-        const r = d.data();
-        if (/^c\d+$/.test(r.courseId || '') && typeof r.timeMs === 'number') { count++; total += migrateLegacyTime(r.timeMs / 1000, r.courseId); }
-      });
+      for (const r of rows) {
+        if (/^c\d+$/.test(r.course_id || '') && typeof r.time_ms === 'number') { count++; total += migrateLegacyTime(r.time_ms / 1000, r.course_id); }
+      }
       return count ? { count, total } : null;
     } catch (e) { return null; }
   },
 
   /**
-   * Push a personal best. The bests document id is the player's own uid and
-   * the course, so nobody can write into anyone else's row.
+   * Push a personal best and its ghost in one step. The server keeps only
+   * ever the faster time, and says what it has when this run is not faster.
    */
   async pushBest(courseId, timeSec, ghostSamples) {
     if (!this.on || !this.user || this.banned()) return;
-    // A signed-in player's real username must never be overwritten with
-    // the 'Driver' fallback name() falls back to when this.profile hasn't
-    // (re)loaded yet — that fallback exists for genuinely-offline/no-
-    // account play, not for a signed-in account caught in a momentary
-    // profile-reload gap (a token refresh, a brief network hiccup). This
-    // used to happen silently: setDoc fully replaces the bests document,
-    // so one push at the wrong moment permanently stamped 'Driver' onto
-    // an otherwise-real leaderboard row. Retry the profile load a couple
-    // of times with a short pause rather than ever writing the fallback.
+    // never publish under the 'Driver' fallback name while the profile is
+    // momentarily reloading
     if (!this.profile || !this.profile.displayName) {
       for (let attempt = 0; attempt < 3 && (!this.profile || !this.profile.displayName); attempt++) {
         await new Promise((r) => setTimeout(r, 400));
-        try { await this.loadProfile(); } catch (e) { /* still not loaded — try again or give up below */ }
+        try { await this.loadProfile(); } catch (e) { /* try again or give up below */ }
       }
       if (!this.profile || !this.profile.displayName) {
         throw new Error('Your profile has not finished loading — try again in a moment.');
       }
     }
-    const { fsMod } = this.fb;
-    const uid = this.user.uid;
-    const id = uid + '_' + courseId;
     const timeMs = Math.round(timeSec * 1000);
-    // Only ever replace a slower time. This device can think a run is a
-    // best when it isn't (its copy of your bests failed to load), and a
-    // blind write then overwrote a faster time on the server with a
-    // slower one. The rules enforce the same thing.
-    const ref = fsMod.doc(this.db, 'bests', id);
-    let serverMs = null;
-    const improved = await fsMod.runTransaction(this.db, async (tx) => {
-      const cur = await tx.get(ref);
-      serverMs = cur.exists() ? cur.data().timeMs : null;
-      if (typeof serverMs === 'number' && serverMs <= timeMs) return false;
-      tx.set(ref, { uid, courseId, displayName: this.name(), banned: false, timeMs, updatedMs: Date.now() });
-      return true;
-    });
-    // the server already has a faster run (and its ghost): say what it is,
-    // so this device's board stops showing the slower one as your best
-    if (!improved) return { improved: false, serverMs };
-    // First-clearing a course no longer pays a credit bonus (see
-    // Game.finishLevel — firstClear is still computed and passed in for
-    // the result screen's own "first clean run" messaging, it just no
-    // longer triggers a creditEvents write here). Credits now only come
-    // from the credits-run grind and the special long course's own
-    // reward — see CREDITS_PER_CLEAR's own comment.
-    if (ghostSamples && ghostSamples.length) {
-      // The ghost is what other players race; a time on the board without
-      // one reads as "that run has no ghost data". Retry once, and say so
-      // if it still doesn't go.
-      const ghost = { uid, courseId, timeMs: Math.round(timeSec * 1000), samples: ghostSamples.join(','), v: GHOST_VERSION };
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          await fsMod.setDoc(fsMod.doc(this.db, 'ghosts', id), ghost);
-          break;
-        } catch (e) {
-          console.warn('aiPolytrack: ghost upload failed', e && e.message);
-          if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
-          else UI.toast('Your time is saved, but its ghost could not be uploaded.');
-        }
+    let samples = ghostSamples && ghostSamples.length ? ghostSamples.join(',') : null;
+    if (samples && samples.length >= 400000) {
+      samples = null;
+      UI.toast('Your time is saved, but that run was too long to keep its ghost.');
+    }
+    let r = null;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        r = await this.rpc('submit_best', { p_course: courseId, p_time_ms: timeMs, p_samples: samples });
+        break;
+      } catch (e) {
+        // one retry after a dropped connection; anything else is final
+        if (attempt > 0 || e.code !== 'db/unavailable') throw e;
+        await new Promise((res) => setTimeout(res, 1500));
       }
     }
+    if (r && r.improved === false) return { improved: false, serverMs: r.serverMs };
   },
 
-  /** the fastest stored ghost on a course, for chasing someone else's run.
-   *  The this.fb destructure moved inside the try — this.on can flip true
-   *  for a frame or two around a sign-out/sign-in before this.fb itself is
-   *  (re)populated, and Race/Watch clicking straight into that gap used to
-   *  throw a raw, uncaught TypeError instead of the same "couldn't load
-   *  that run" failure every other lookup error already falls back to. */
+  /** a player's stored ghost on a course, for racing or watching it */
   async fetchGhost(courseId, uid) {
     // ghostError says WHY the last fetch came back empty, so the game can
     // tell "this run was never saved with a ghost" from "couldn't load it"
     this.ghostError = null;
-    if (!this.on) { this.ghostError = 'offline'; return null; }
+    if (!this.on || !this.sb) { this.ghostError = 'offline'; return null; }
     try {
-      const { fsMod } = this.fb;
-      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'ghosts', (uid || this.user.uid) + '_' + courseId));
-      if (!snap.exists()) { this.ghostError = 'missing'; return null; }
-      const d = snap.data();
+      const who = uid || (this.user && this.user.uid);
+      const d = await this.q(this.sb.from('ghosts').select('time_ms, samples, v')
+        .eq('uid', who).eq('course_id', courseId).maybeSingle());
+      if (!d) { this.ghostError = 'missing'; return null; }
       const s = String(d.samples || '').split(',').map(Number);
       if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
         || s.some((v) => !isFinite(v))) { this.ghostError = 'damaged'; return null; }
-      return { t: migrateLegacyTime(d.timeMs / 1000, courseId), s, v: d.v || 1 };
+      return { t: migrateLegacyTime(d.time_ms / 1000, courseId), s, v: d.v || 1 };
     } catch (e) {
       console.warn('aiPolytrack: could not load a ghost', e && e.code, e && e.message);
       this.ghostError = 'load';
@@ -2731,27 +2591,16 @@ const Cloud = {
       return null;
     }
   },
-  /**
-   * Plain words for a failed Firestore call. The free plan allows 50,000
-   * reads a day; once they're gone every read fails until midnight
-   * Pacific, and saying "check your connection" then only misleads.
-   */
+  /** plain words for a failed server call */
   errText(e) {
-    const c = String((e && e.code) || '').replace(/^firestore\//, '');
-    if (c === 'resource-exhausted') return 'The game\'s free daily database limit is used up. It resets at midnight Pacific time.';
-    if (c === 'permission-denied' || c === 'unauthenticated') return 'Your sign-in has expired. Sign out and back in.';
-    if (c === 'unavailable' || /offline/i.test((e && e.message) || '')) return 'No connection to the game server right now.';
-    return 'The server said: ' + (c || (e && e.message) || 'unknown error') + '.';
+    const c = String((e && e.code) || '');
+    if (c === 'db/refused') return (e && e.message) || 'The server refused that.';
+    if (c === 'db/permission-denied') return 'Your sign-in has expired. Sign out and back in.';
+    if (c === 'db/unavailable' || /offline|failed to fetch/i.test((e && e.message) || '')) return 'No connection to the game server right now.';
+    return 'The server said: ' + ((e && e.message) || c || 'unknown error') + '.';
   },
-  /** a quota error anywhere gets said once a minute, wherever the player is */
-  noteError(e) {
-    const c = String((e && e.code) || '').replace(/^firestore\//, '');
-    if (c !== 'resource-exhausted') return;
-    const now = Date.now();
-    if (now - (this._quotaToldAt || 0) < 60000) return;
-    this._quotaToldAt = now;
-    UI.toast(this.errText(e));
-  },
+  /** nothing on this plan runs out mid-day; kept for the callers */
+  noteError(e) { /* no daily limits to warn about */ },
   /** what to tell the player when a ghost couldn't be used */
   ghostProblem() {
     if (this.ghostError === 'load') return 'Could not load that run. ' + (this.ghostErrorText || '');
@@ -2764,51 +2613,41 @@ const Cloud = {
     if (!this.on || !this.user) return null;
     const key = 'aipolytrack.awards.' + this.user.uid;
     try {
-      const { fsMod } = this.fb;
-      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'seasonAwards', 's1'));
-      const data = snap.exists() ? snap.data() : {};
+      const row = await this.q(this.sb.from('season_awards').select('data').eq('season', 's1').maybeSingle());
+      const data = (row && row.data) || {};
       try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) { /* storage blocked */ }
       return data;
     } catch (e) {
-      // offline or out of quota: fall back to what this account last saw
       console.warn('aiPolytrack: could not read season awards', e && e.message);
       try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (x) { return null; }
     }
   },
 
   /** this player's saved car colors, or the default red/dark-red pair if
-   *  they've never customized anything. */
+   *  they've never customized anything */
   async fetchCarColors() {
     const fallback = { unlocked: [], primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 }, isNew: true };
     if (!this.on || !this.user) return fallback;
     try {
-      const { fsMod } = this.fb;
-      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'carCustomization', this.user.uid));
-      if (!snap.exists()) return fallback;
-      const d = snap.data();
+      const d = await this.q(this.sb.from('car_customization').select('unlocked, primary_color, secondary_color')
+        .eq('uid', this.user.uid).maybeSingle());
+      if (!d) return fallback;
       return {
         unlocked: Array.isArray(d.unlocked) ? d.unlocked : [],
-        primary: d.primary || fallback.primary,
-        secondary: d.secondary || fallback.secondary,
+        primary: d.primary_color || fallback.primary,
+        secondary: d.secondary_color || fallback.secondary,
         isNew: false
       };
     } catch (e) {
-      // A failed read is NOT a new player. Treating it as one rolled
-      // starter colours and saved them over everything the player had
-      // bought; the caller keeps what it has and tries again later.
+      // A failed read is NOT a new player: the caller keeps what it has
+      // and tries again later rather than saving starter colours over
+      // everything the player bought.
       e.carColorsUnread = true;
       throw e;
     }
   },
 
-  /** the equipped primary/secondary colors of ANY player, by uid — used
-   *  to paint a ghost/spectated car in that player's own colors instead
-   *  of a fixed placeholder. Falls back to the same default red pair a
-   *  brand new account would have if that player has never customized
-   *  anything (or the read fails), so a ghost always renders in some
-   *  sensible color rather than not at all. carCustomization/{uid} is get-
-   *  readable by any signed-in user (not just its owner) precisely for
-   *  this — see firestore.rules. */
+  /** the equipped colors of any player, to paint their ghost */
   async fetchCarColorsOf(uid) {
     const fallback = { primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 } };
     if (!this.on || !uid) return fallback;
@@ -2816,56 +2655,44 @@ const Cloud = {
     const c = (this._colorCache || (this._colorCache = new Map())).get(uid);
     if (c && Date.now() - c.at < 300000) return c.v;
     try {
-      const { fsMod } = this.fb;
-      const snap = await fsMod.getDoc(fsMod.doc(this.db, 'carCustomization', uid));
-      const d = snap.exists() ? snap.data() : {};
-      const v = { primary: d.primary || fallback.primary, secondary: d.secondary || fallback.secondary };
+      const d = await this.q(this.sb.from('car_customization').select('primary_color, secondary_color').eq('uid', uid).maybeSingle()) || {};
+      const v = { primary: d.primary_color || fallback.primary, secondary: d.secondary_color || fallback.secondary };
       this._colorCache.set(uid, { v, at: Date.now() });
       return v;
     } catch (e) { return fallback; }
   },
 
-  /** persists the full customization doc — called after every purchase or
-   *  every equip, so a refresh never loses what was already unlocked. */
+  /** saves the whole customization (after every purchase or equip) */
   async saveCarColors(state) {
     if (!this.on || !this.user) return;
-    const { fsMod } = this.fb;
-    await fsMod.setDoc(fsMod.doc(this.db, 'carCustomization', this.user.uid), {
-      uid: this.user.uid, unlocked: state.unlocked, primary: state.primary, secondary: state.secondary
-    });
-    // your own car on a leader card shows the new paint straight away
+    await this.q(this.sb.from('car_customization').upsert({
+      uid: this.user.uid, unlocked: state.unlocked, primary_color: state.primary, secondary_color: state.secondary,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'uid' }));
     if (this._colorCache) this._colorCache.set(this.user.uid, { v: { primary: state.primary, secondary: state.secondary }, at: Date.now() });
   },
 
-  /** buys one color pack for 10 credits: the debit and the color purchase
-   *  are two separate documents (the debit in creditEvents, the color in
-   *  carCustomization) rather than one atomic batch, because
-   *  carCustomization holds the player's whole unlocked list and has to be
-   *  read-modify-written with the latest state anyway — see CarColor.buy(). */
+  /** buys one color pack for 10 credits (the server checks the balance) */
   async payForColor() {
     if (!this.user || !this.on) throw new Error('Not signed in.');
     if (this.banned()) throw new Error('This account is suspended.');
     if ((this.credits || 0) < 10) throw new Error('You need 10 credits for a color.');
-    const { fsMod } = this.fb;
-    const uid = this.user.uid;
-    const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_color';
-    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: -10, createdAt: fsMod.serverTimestamp() });
-    this.credits -= 10;
+    this.credits = await this.rpc('buy_color');
   },
 
   /**
    * Appends one row to the admin-only run history: every attempt, whether
-   * it finished, was restarted (R, off the track, stuck, fell) or was cut
-   * short (quit to the menu, closed the page). Fire-and-forget: telemetry
-   * must never hold up the player's own screens.
+   * it finished, was restarted or was cut short. Fire-and-forget.
    */
   async logRun(entry) {
     if (!this.on || !this.user) return;
     try {
-      const { fsMod } = this.fb;
-      const doc = Object.assign({ uid: this.user.uid, displayName: this.name() }, entry,
-        { timeMs: Math.max(1, Math.round(entry.timeMs)), createdAt: fsMod.serverTimestamp() });
-      await fsMod.addDoc(fsMod.collection(this.db, 'runLog'), doc);
+      const { kind, courseId, outcome, timeMs, ...rest } = entry;
+      const { error } = await this.sb.from('run_log').insert({
+        uid: this.user.uid, display_name: this.name(), kind, course_id: courseId,
+        outcome: outcome || null, time_ms: Math.max(1, Math.min(599999, Math.round(timeMs))), data: rest
+      });
+      if (error) throw error;
     } catch (e) { console.warn('aiPolytrack: could not log run', e && e.message); }
   }
 
@@ -7974,15 +7801,15 @@ const Game = {
     this.wire();
     this.loadLevel(this.data.findIndex(Boolean), true);
 
-    // Cloud.init() loads the Firebase SDK over the network, so it cannot
+    // Cloud.init() loads the Supabase SDK over the network, so it cannot
     // finish before this function returns. The render loop is started
     // immediately either way (return true below) — the boot overlay just
     // stays up a moment longer when the cloud is enabled, then swaps
     // straight to the gate rather than flashing the menu first.
-    if (FIREBASE.enabled) {
+    if (SUPABASE.enabled) {
       Cloud.init().then((ok) => {
         if (ok && Cloud.on) {
-          // Wait for Firebase to say whether a login is saved before showing
+          // Wait for Supabase to say whether a login is saved before showing
           // anything: flashing the sign-in page at someone who is signed
           // in (and then leaving it up while their data loaded) looked like
           // being signed out.
