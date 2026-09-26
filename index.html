@@ -2789,7 +2789,14 @@ const Cloud = {
     let r = null;
     for (let attempt = 0; ; attempt++) {
       try {
-        r = await this.rpc('submit_best', { p_course: courseId, p_time_ms: timeMs, p_samples: samples });
+        try {
+          r = await this.rpc('submit_best', { p_course: courseId, p_time_ms: timeMs, p_samples: samples, p_v: GHOST_VERSION });
+        } catch (e) {
+          // a database from before ghost versions (schema.sql not re-run
+          // yet): save the time the old way rather than not at all
+          if (!/submit_best|PGRST202|function/i.test(e.code + ' ' + e.message)) throw e;
+          r = await this.rpc('submit_best', { p_course: courseId, p_time_ms: timeMs, p_samples: samples });
+        }
         break;
       } catch (e) {
         // one retry after a dropped connection; anything else is final
@@ -4386,7 +4393,9 @@ class TrackBuilder {
     // liftBankedTurns, which raises the track only where that edge would
     // otherwise reach the grass, easing in and out over long ramps.
     const sink = (w / 2) * Math.abs(Math.sin(roll));
-    return { p: this.p.toArray(), t: pitch, y: this.h, r: roll, w: w, sink, y0: this.p.y, sink0: sink, r0: roll };
+    const f = { p: this.p.toArray(), t: pitch, y: this.h, r: roll, w: w, sink, y0: this.p.y, sink0: sink, r0: roll };
+    if (this._roller !== undefined) { f.roller = true; f.bump = this._roller; }
+    return f;
   }
 
   /** core sweep: run forward with the given rise, subdivided to SEG spacing */
@@ -4453,6 +4462,28 @@ class TrackBuilder {
     this.p.addScaledVector(this.dir(new THREE.Vector3()), len);
     this.p.y += rise || 0;
     this.path.push(this.p.toArray());
+    return this;
+  }
+  /**
+   * Rollers: n smooth waves, each len metres long, rising h metres above the
+   * road and back (negative h: dips). Unlike everything else they are kept
+   * exactly as built — the profile smoothing leaves them alone — so they are
+   * real bumps: fast over them, the car goes light on each top and lifts.
+   * Only on straights, well clear of turns and jumps.
+   */
+  rollers(n, len, h, o) {
+    const steps = Math.max(6, Math.round(len / SEG));
+    const seg = len / steps;
+    let prev = 0;
+    for (let k = 0; k < n; k++) {
+      for (let i = 1; i <= steps; i++) {
+        const y = (h / 2) * (1 - Math.cos((2 * Math.PI * i) / steps));
+        this._roller = y;
+        this.slab(seg, y - prev, o);
+        prev = y;
+      }
+    }
+    this._roller = undefined;
     return this;
   }
   bumps(n, seg, h, o) {
@@ -4525,12 +4556,18 @@ class TrackBuilder {
     // blend. Keep that surface (frames only) so replays of those ghosts can
     // be moved onto today's road exactly (see buildCourse's roadShift).
     const oldSurface = this.strips.map((st) => ({ frames: st.frames.map((fr) => ({
-      p: [fr.p[0], fr.y0 + fr.sink0, fr.p[2]], t: fr.t, y: fr.y, r: fr.r0, w: fr.w })) }));
+      p: [fr.p[0], fr.y0 + fr.sink0 - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r0, w: fr.w })) }));
     smoothProfile(oldSurface, 7, false);
     easeBanking(this.strips);
     liftBankedTurns(this.strips);
     smoothProfile(this.strips, 7);
-    for (const st of this.strips) for (const fr of st.frames) { delete fr.y0; delete fr.sink0; delete fr.r0; }
+    // and the road exactly as now but without the rollers, for ghosts
+    // recorded before they were added (only courses that have rollers)
+    const flatSurface = this.strips.some((st) => st.frames.some((fr) => fr.roller))
+      ? this.strips.map((st) => ({ frames: st.frames.map((fr) => ({
+        p: [fr.p[0], fr.p[1] - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r, w: fr.w })) }))
+      : null;
+    for (const st of this.strips) for (const fr of st.frames) { delete fr.y0; delete fr.sink0; delete fr.r0; delete fr.roller; delete fr.bump; }
     // gates stand on the finished road surface (the lift and the profile
     // smoothing above can move it a metre from where the cursor was)
     for (const g of this.gates) {
@@ -4541,7 +4578,7 @@ class TrackBuilder {
       }
       if (best) g.pos[1] = best.p[1];
     }
-    return { strips: this.strips, gates: this.gates, start: this.start, path: this.path, oldSurface };
+    return { strips: this.strips, gates: this.gates, start: this.start, path: this.path, oldSurface, flatSurface };
   }
 }
 
@@ -4628,7 +4665,7 @@ function smoothProfile(strips, iterations, long = true) {
     if (n < 4) continue;
     for (let it = 0; it < iterations; it++) {
       const y = F.map((f) => f.p[1]);
-      for (let i = 1; i < n - 1; i++) F[i].p[1] = 0.25 * y[i - 1] + 0.5 * y[i] + 0.25 * y[i + 1];
+      for (let i = 1; i < n - 1; i++) if (!F[i].roller) F[i].p[1] = 0.25 * y[i - 1] + 0.5 * y[i] + 0.25 * y[i + 1];
     }
     // Then a much longer blend away from the strip ends, so the top of a
     // hill is a wide rounded crest the car stays on rather than a lip that
@@ -4640,13 +4677,14 @@ function smoothProfile(strips, iterations, long = true) {
     const len = dist[n - 1];
     const y0 = F.map((f) => f.p[1]);
     for (let i = 1; long && i < n - 1; i++) {
+      if (F[i].roller) continue;
       const fromEnd = Math.min(dist[i], len - dist[i]);
       const keep = clamp((fromEnd - PROFILE_KEEP) / PROFILE_BLEND, 0, 1);
       if (keep <= 0) continue;
       let sw = 0, sy = 0;
       for (let j = 0; j < n; j++) {
         const d = dist[j] - dist[i];
-        if (Math.abs(d) > 3 * PROFILE_SIGMA) continue;
+        if (Math.abs(d) > 3 * PROFILE_SIGMA || F[j].roller) continue;
         const wgt = Math.exp(-0.5 * (d / PROFILE_SIGMA) * (d / PROFILE_SIGMA));
         sw += wgt; sy += wgt * y0[j];
       }
@@ -4685,6 +4723,7 @@ function validateCourse(data) {
   return {
     strips, gates, path, start: data.start,
     oldSurface: Array.isArray(data.oldSurface) ? data.oldSurface : null,
+    flatSurface: Array.isArray(data.flatSurface) ? data.flatSurface : null,
     valid: strips.length > 0 && finish === 1 && path.length > 1
   };
 }
@@ -5075,24 +5114,28 @@ function buildCourse(data, scene, world) {
   // The road as it was before the reshaping, collision only, so a ghost
   // recorded on it can be moved by exactly how far the surface under it
   // moved (Game.ghostY). Built once per course; nothing is drawn.
-  let oldWorld = null;
-  if (data.oldSurface) {
-    oldWorld = new PhysicsWorld();
-    oldWorld.groundY = null;
+  const surfaceWorld = (surface) => {
+    if (!surface) return null;
+    const w = new PhysicsWorld();
+    w.groundY = null;
     const qa = new THREE.Quaternion(), ax = new THREE.Vector3(), eu = new THREE.Euler();
     const edgeOf = (fr, side) => {
       qa.setFromEuler(eu.set(fr.t, fr.y, fr.r, 'YXZ'));
       ax.set(1, 0, 0).applyQuaternion(qa);
       return new THREE.Vector3().fromArray(fr.p).addScaledVector(ax, side * fr.w / 2);
     };
-    for (const st of data.oldSurface) {
+    for (const st of surface) {
       const F = st.frames || [];
       for (let i = 0; i < F.length - 1; i++) {
-        oldWorld.addQuad(edgeOf(F[i], 1), edgeOf(F[i], -1), edgeOf(F[i + 1], -1), edgeOf(F[i + 1], 1), 1, 1.1, true, null, true);
+        w.addQuad(edgeOf(F[i], 1), edgeOf(F[i], -1), edgeOf(F[i + 1], -1), edgeOf(F[i + 1], 1), 1, 1.1, true, null, true);
       }
     }
-    oldWorld.index();
-  }
+    w.index();
+    return w;
+  };
+  // v1 ghosts: before the reshaping; v2 ghosts: before the rollers
+  const oldWorld = surfaceWorld(data.oldSurface);
+  const flatWorld = surfaceWorld(data.flatSurface);
   const shiftHit = { normal: new THREE.Vector3(), point: new THREE.Vector3() };
   const shiftFrom = new THREE.Vector3(), DOWN = new THREE.Vector3(0, -1, 0);
   const surfaceBelow = (w, x, y, z, trackOnly) => {
@@ -5101,9 +5144,10 @@ function buildCourse(data, scene, world) {
     if (trackOnly && shiftHit.track === false) return null;
     return shiftHit.point.y;
   };
-  const roadShift = (x, z, y) => {
-    if (!oldWorld) return 0;
-    const was = surfaceBelow(oldWorld, x, y, z, false);
+  const roadShift = (x, z, y, v) => {
+    const then = (v || 1) <= 1 ? oldWorld : flatWorld;
+    if (!then) return 0;
+    const was = surfaceBelow(then, x, y, z, false);
     const now = surfaceBelow(world, x, y, z, true);
     return was === null || now === null ? 0 : now - was;
   };
@@ -5152,7 +5196,9 @@ const LEVELS = [
       b.landing(24, -8, { w: 16 });
       b.straight(70);
       b.curve(65, -85, { bank: 28, chev: 1 });
-      b.straight(90);
+      b.straight(20);
+      b.rollers(2, 24, 0.9);
+      b.straight(22);
       b.crest(30, 7);
       b.straight(60);
       b.gate('finish');
@@ -5214,7 +5260,9 @@ const LEVELS = [
     build() {
       const b = new TrackBuilder({ width: 12 });
       b.pad(22, 16);
-      b.straight(80);
+      b.straight(16);
+      b.rollers(2, 24, -0.9);
+      b.straight(16);
       b.slope(40, 6);
       b.straight(24);
       b.ramp(18, 9);
@@ -5274,7 +5322,9 @@ const LEVELS = [
     build() {
       const b = new TrackBuilder({ width: 18 });
       b.pad(24, 20);
-      b.straight(120);
+      b.straight(24);
+      b.rollers(3, 24, 0.9);
+      b.straight(24);
       b.curve(80, 175, { bank: 42, chev: 1 });
       b.straight(50, { w: 14 });
       b.slope(40, 6, { w: 14 });
@@ -5380,7 +5430,9 @@ const LEVELS = [
       b.ramp(20, 10, { w: 13 });
       b.gap(28, -4);
       b.landing(26, -8, { w: 16 });
-      b.straight(90, { w: 13 });
+      b.straight(20, { w: 13 });
+      b.rollers(2, 24, 0.9, { w: 13 });
+      b.straight(22, { w: 13 });
       b.gate('finish');
       b.straight(34, { w: 18 });
       return b.build();
@@ -5546,7 +5598,9 @@ const LEVELS = [
       b.curve(60, -100, { bank: 34, chev: 1 });
       b.straight(50, { w: 9 });
       b.bumps(3, 11, 1.0, { w: 9 });
-      b.straight(120, { w: 10 });
+      b.straight(20, { w: 10 });
+      b.rollers(3, 24, 0.9, { w: 10 });
+      b.straight(28, { w: 10 });
       b.gate('finish');
       b.straight(36, { w: 15 });
       return b.build();
@@ -8404,7 +8458,7 @@ const SectionView = {
     const f = clamp(lt * GHOST_HZ, 0, n - 1.001);
     const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
     pos.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
-    if ((g.v || 1) < GHOST_VERSION && quad.course.roadShift) pos.y += quad.course.roadShift(pos.x, pos.z, pos.y);
+    if ((g.v || 1) < GHOST_VERSION && quad.course.roadShift) pos.y += quad.course.roadShift(pos.x, pos.z, pos.y, g.v || 1);
     if (quat) {
       _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
       _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
@@ -8811,9 +8865,10 @@ const SectionView = {
    playback stays in step whatever the frame rate does.                      */
 const GHOST_HZ = 20;
 const GHOST_STRIDE = 8;                      // pos.xyz, quat.xyzw, input bits
-// 2 = recorded on the current road shape (centre-pivot banking, eased
-// profile); older ghosts are shifted onto it when replayed (Game.ghostY)
-const GHOST_VERSION = 2;
+// Which road a ghost was recorded on: 1 before the reshaping (centre-pivot
+// banking, eased profile), 2 before the rollers, 3 today's. Older ghosts
+// are moved onto today's road when replayed (Game.ghostY).
+const GHOST_VERSION = 3;
 const GHOST_MAX = GHOST_STRIDE * GHOST_HZ * 300;   // 300 s ceiling per recording
 // Extra watched/raced cars beyond the primary one — set to cover every
 // row a course's leaderboard can ever hold (Records.MAX) minus the
@@ -10692,7 +10747,7 @@ const Game = {
    *  reshaped is moved by exactly how far the road moved under it */
   ghostY(g, p) {
     if (!g || (g.v || 1) >= GHOST_VERSION || !this.course || !this.course.roadShift) return p.y;
-    return p.y + this.course.roadShift(p.x, p.z, p.y);
+    return p.y + this.course.roadShift(p.x, p.z, p.y, g.v || 1);
   },
   /** the top five on the course just finished; redrawn live while the
    *  result screen is up, so a time someone else sets appears in it */

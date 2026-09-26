@@ -248,7 +248,10 @@ $$;
 
 -- A best only ever gets faster. Returns {improved:false, serverMs} when
 -- the server already holds a faster (or equal) run.
-create or replace function public.submit_best(p_course text, p_time_ms integer, p_samples text) returns jsonb
+-- (the version of the road the ghost was recorded on came later: the
+-- older three-argument form goes, so calls can never be ambiguous)
+drop function if exists public.submit_best(text, integer, text);
+create or replace function public.submit_best(p_course text, p_time_ms integer, p_samples text, p_v smallint default 2) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); cur integer;
 begin
@@ -264,8 +267,8 @@ begin
   on conflict (uid, course_id) do update
     set time_ms = excluded.time_ms, updated_ms = excluded.updated_ms, display_name = excluded.display_name, banned = excluded.banned;
   if p_samples is not null and length(p_samples) between 1 and 399999 then
-    insert into public.ghosts (uid, course_id, time_ms, samples, v) values (p.id, p_course, p_time_ms, p_samples, 2)
-    on conflict (uid, course_id) do update set time_ms = excluded.time_ms, samples = excluded.samples, v = 2;
+    insert into public.ghosts (uid, course_id, time_ms, samples, v) values (p.id, p_course, p_time_ms, p_samples, least(greatest(coalesce(p_v, 2), 1), 99))
+    on conflict (uid, course_id) do update set time_ms = excluded.time_ms, samples = excluded.samples, v = excluded.v;
   end if;
   return jsonb_build_object('improved', true);
 end $$;
