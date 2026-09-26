@@ -367,7 +367,7 @@ begin
     return 'starting';
   end if;
   if r.state = 'starting' and now() >= r.join_deadline then
-    select array_agg(c) into pool from unnest(coalesce(p_pool, '{}')) c where c ~ '^s2c[0-9]{1,3}$';
+    select array_agg(distinct c) into pool from unnest(coalesce(p_pool, '{}')) c where c ~ '^s2c[0-9]{1,3}$';
     if pool is null or array_length(pool, 1) is null then raise exception 'no courses' using errcode = '22023'; end if;
     update public.races set state = 'running', course_id = pool[1 + floor(random() * array_length(pool, 1))::integer],
       started_at = now(), ends_at = now() + interval '10 minutes' where id = p_race;
