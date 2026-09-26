@@ -128,7 +128,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
 .creditBadge[hidden]{display:none}
 /* the main menu already shows the balance in its top-right account box */
-body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge{display:none}
+body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge,body[data-screen=secview] .creditBadge{display:none}
 .creditBadge b{color:#7fe3ff;font-size:15px;font-weight:700}
 .creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
 @keyframes creditPop{
@@ -431,7 +431,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .empty{color:var(--dim);font-size:13.5px;padding:22px 0;line-height:1.6}
 /* the "N selected — Watch all / Race fastest / Clear" bar under a course's
    table — only ever shown once at least one row on THAT tab is checked
-   (see UI.updateBoardMultiBar), so it never sits there empty by default. */
+   (see UI.updateMapMultiBar), so it never sits there empty by default. */
 .multiBar{display:flex;align-items:center;gap:10px;margin:14px 0 -4px;padding:10px 14px;
   background:rgba(61,219,184,.07);border:1px solid rgba(61,219,184,.25);border-radius:10px}
 .multiBar[hidden]{display:none}
@@ -695,6 +695,80 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .leadersGrid .lg b{color:var(--signal)}
 .leadersGrid .lg .t{float:right;color:var(--aqua);font-family:var(--mono)}
 .boardsHd{font-size:13px;font-weight:600;margin:22px 0 4px}
+
+/* ---------- courses: list, map, section and overall views ---------- */
+/* one panel, four views; a view sliding in fades up from a little to the right */
+.selView[hidden]{display:none}
+.selView.enter{animation:selIn .32s cubic-bezier(.2,.8,.2,1)}
+.selView.back{animation:selBack .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes selIn{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes selBack{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+/* the clickable bar above a section (and the overall one at the top) */
+.secBar{display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin:0 0 10px;padding:11px 16px;
+  border:1px solid var(--rule);border-radius:4px;background:linear-gradient(90deg,rgba(242,115,63,.10),rgba(255,255,255,.02));
+  cursor:pointer}
+.secBar:hover{border-color:rgba(242,115,63,.6);background:linear-gradient(90deg,rgba(242,115,63,.18),rgba(255,255,255,.04))}
+.secBar h3{font-size:15px;letter-spacing:.02em;white-space:nowrap}
+.secBar .sl{font-family:var(--mono);font-size:12px;color:var(--dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.secBar .sl b{color:var(--signal);font-family:var(--sans)}
+.secBar .go{font-family:var(--mono);font-size:11.5px;color:var(--ember);white-space:nowrap}
+.secBar.overall{margin-bottom:18px;background:linear-gradient(90deg,rgba(255,207,92,.12),rgba(255,255,255,.02))}
+.secBar.overall:hover{border-color:rgba(255,207,92,.6)}
+.secBar.overall .go{color:var(--signal)}
+/* the first-place driver's car, small, beside their name */
+.winCar{width:36px;height:21px;flex:0 0 auto;object-fit:contain;margin:-5px 0 -5px -3px;opacity:0;transition:opacity .25s}
+.podium .p b{flex:1 1 auto;min-width:2.5em}
+.podium .p .pt{flex:0 0 auto}
+.winCar.ready{opacity:1}
+.podium .p1{align-items:center}
+/* the map from above */
+.miniMap{border:1px solid var(--rule);border-radius:4px;background:rgba(7,11,24,.45);aspect-ratio:1/1;max-height:340px;margin-top:8px}
+.miniMap svg{width:100%;height:100%;display:block}
+.mmTrack{fill:none;stroke:rgba(120,150,190,.45);stroke-linejoin:round;stroke-linecap:round}
+.mmLine{fill:none;stroke:#eaf0f8;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round}
+.mmStart{fill:#3ddbb8} .mmFin{fill:#ffcf5c} .mmArrow{fill:#3ddbb8}
+.mmLabel{font-family:var(--mono);font-size:10px;fill:#8798b5}
+/* the section page's four maps */
+.secMaps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.secMaps .sm{border:1px solid var(--rule-2);border-radius:4px;padding:8px 10px 10px;cursor:pointer;background:rgba(255,255,255,.02)}
+.secMaps .sm:hover{border-color:rgba(234,240,248,.3)}
+.secMaps .sm .t{font-size:12.5px;font-weight:600} .secMaps .sm .t span{font-family:var(--mono);color:var(--ember);font-size:10.5px;margin-right:6px}
+.secMaps .sm .l{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.secMaps .sm .l b{color:var(--signal);font-family:var(--sans)}
+.secMaps .miniMap{max-height:none;margin-top:6px}
+td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
+
+/* ---------- section replay: four maps at once ---------- */
+#secview{background:#0b1220}
+#secCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#secview .specTop{z-index:3}
+#secview .specBar,#secview .specTop button{pointer-events:auto}
+.svLabel{position:absolute;pointer-events:none;padding:6px 9px;background:rgba(7,11,24,.72);border:1px solid var(--rule-2);
+  border-radius:6px;font-family:var(--mono);font-size:11px;max-width:calc(50% - 20px)}
+.svLabel .h{font-family:var(--sans);font-size:12.5px;font-weight:600;margin-bottom:3px;white-space:nowrap}
+.svLabel .h span{color:var(--ember);font-family:var(--mono);font-size:10.5px;margin-right:6px}
+.svLabel .r{display:flex;gap:6px;align-items:center;white-space:nowrap;color:var(--dim)}
+.svLabel .r i{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.svLabel .r b{color:var(--ink);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.svLabel .r .tm{margin-left:auto;padding-left:10px;color:var(--aqua)}
+.svLabel .r .tm.wait{color:var(--dimmer)} .svLabel .r .tm.done{color:var(--signal)}
+.svFrame{position:absolute;pointer-events:none;border:1px solid rgba(234,240,248,.12)}
+.svPanel{position:absolute;right:14px;top:64px;width:286px;max-height:calc(100% - 190px);overflow-y:auto;pointer-events:auto;
+  background:rgba(7,11,24,.8);border:1px solid var(--rule);border-radius:8px;padding:12px 12px 10px;font-size:12px}
+.svPanel h4{font-size:11px;letter-spacing:.12em;color:var(--ember);margin:0 0 8px;text-transform:uppercase}
+.svPanel .row2{display:flex;gap:7px;align-items:baseline;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-family:var(--mono)}
+.svPanel .row2 i{width:8px;height:8px;border-radius:50%;flex:0 0 auto;align-self:center}
+.svPanel .row2 .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--sans);color:var(--ink)}
+.svPanel .row2 .s{color:var(--dimmer);font-size:10.5px}
+.svPanel .row2 .v{color:var(--aqua);min-width:70px;text-align:right}
+.svPanel .row2 .v.done{color:var(--signal)}
+.svPanel table{font-size:11.5px;font-family:var(--mono)}
+.svPanel td,.svPanel th{padding:4px 6px 4px 0}
+.svPanel td.win{color:var(--aqua);font-weight:700}
+.svPanel .gap{margin:10px 0 2px;font-size:13px;font-family:var(--mono)}
+.svPanel .gap b{color:var(--signal)}
+.svDock{bottom:12px}
+@media (max-width:900px){.svPanel{top:auto;bottom:118px;right:8px;left:8px;width:auto;max-height:28vh}}
 
 /* ---------- trophy room ---------- */
 .trophyPanel{width:min(1440px,95vw)}
@@ -971,69 +1045,123 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 
   <div class="layer" id="select" hidden>
     <div class="scrim"></div>
-    <div class="panel">
-      <div class="row" style="justify-content:space-between;align-items:baseline">
-        <h2 class="big">Courses</h2>
-        <button class="ghost" id="bSelBack">← Menu</button>
-      </div>
-      <p class="lede" style="margin-bottom:14px" id="selectNote">Pick a map to see its leaderboard.</p>
-      <div class="tabs" id="selectTabs">
-        <button class="tab on" id="bSelTabCourses" data-tab="courses">Maps</button>
-        <button class="tab" id="bSelTabBoards" data-tab="boards">Leaderboards</button>
-      </div>
-
-      <div id="selectCoursesPane">
+    <div class="panel" id="selPanel">
+      <!-- every map, grouped by section; a bar above each section opens its leaderboard -->
+      <div class="selView" id="selList">
+        <div class="row" style="justify-content:space-between;align-items:baseline">
+          <h2 class="big">Courses</h2>
+          <button class="ghost" id="bSelBack">← Menu</button>
+        </div>
+        <p class="lede" style="margin-bottom:14px" id="selectNote">Pick a map for its leaderboard, or a section bar for the whole section's.</p>
+        <button class="secBar overall" id="bOverallBar"></button>
         <div id="courseList"></div>
-      </div>
-
-      <div id="selectBoardsPane" hidden>
-        <div class="tabs" id="boardTabs"></div>
-        <div id="boardBody"></div>
-        <div class="multiBar" id="boardMultiBar" hidden>
-          <span class="multiBarCount" id="boardMultiCount">0 selected</span>
-          <span class="multiBarSpacer"></span>
-          <button class="ghost small" id="bBoardClearSel">Clear</button>
-          <button class="ghost small" id="bBoardWatchSel">Watch</button>
-          <button class="small" id="bBoardRaceSel">Race</button>
-          <button class="small cmpBtn" id="bBoardCmpSel" hidden>Compare</button>
+        <div class="row" style="margin-top:18px">
+          <button class="ghost" id="bBoardWipe" hidden>Clear all local times</button>
         </div>
       </div>
 
-      <div class="row" style="margin-top:18px">
-        <button class="ghost" id="bBoardWipe" hidden>Clear all local times</button>
+      <!-- one map: its full leaderboard, first place's car and the map from above -->
+      <div class="selView" id="selMap" hidden>
+        <div class="row" style="justify-content:space-between;align-items:baseline">
+          <div>
+            <div class="kick" id="cdSection">Section A</div>
+            <h2 class="big" id="cdName">Course</h2>
+          </div>
+          <button class="ghost" id="bCdBack">← All courses</button>
+        </div>
+        <p class="lede" style="margin-bottom:6px" id="cdBlurb"></p>
+        <p class="cdBest" id="cdBest"></p>
+        <div class="cols" style="margin-top:14px">
+          <div>
+            <div id="cdBoard"></div>
+            <div class="multiBar" id="cdMultiBar" hidden>
+              <span class="multiBarCount" id="cdMultiCount">0 selected</span>
+              <span class="multiBarSpacer"></span>
+              <button class="ghost small" id="bCdClearSel">Clear</button>
+              <button class="ghost small" id="bCdWatchSel">Watch</button>
+              <button class="small" id="bCdRaceSel">Race</button>
+              <button class="small cmpBtn" id="bCdCmpSel" hidden>Compare</button>
+            </div>
+            <div class="row" style="margin-top:22px">
+              <button class="primary" id="bCdDrive">▶ Drive this map</button>
+            </div>
+          </div>
+          <div>
+            <div class="kick" id="cdLeaderHeading">FIRST PLACE</div>
+            <div class="garagePreviewWrap cdCar"><canvas id="cdCarCanvas"></canvas></div>
+            <p class="cdLeader" id="cdLeaderNote"></p>
+            <div class="kick" style="margin-top:20px">THE MAP FROM ABOVE</div>
+            <div class="miniMap" id="cdMiniMap"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- one section: totals over its four maps, and the four-screen replay -->
+      <div class="selView" id="selSection" hidden>
+        <div class="row" style="justify-content:space-between;align-items:baseline">
+          <div>
+            <div class="kick">SECTION LEADERBOARD</div>
+            <h2 class="big" id="secName">Section</h2>
+          </div>
+          <button class="ghost" id="bSecBack">← All courses</button>
+        </div>
+        <p class="lede" style="margin-bottom:14px" id="secNote">Every driver's four best times added up.</p>
+        <div class="cols">
+          <div>
+            <div id="secBoard"></div>
+            <div class="multiBar" id="secMultiBar" hidden>
+              <span class="multiBarCount" id="secMultiCount">0 selected</span>
+              <span class="multiBarSpacer"></span>
+              <button class="ghost small" id="bSecClearSel">Clear</button>
+              <button class="ghost small" id="bSecWatchSel">Watch</button>
+              <button class="small cmpBtn" id="bSecCmpSel" hidden>Compare</button>
+            </div>
+          </div>
+          <div class="secMaps" id="secMaps"></div>
+        </div>
+      </div>
+
+      <!-- every map added up -->
+      <div class="selView" id="selOverall" hidden>
+        <div class="row" style="justify-content:space-between;align-items:baseline">
+          <div>
+            <div class="kick">SEASON <span id="ovSeason">1</span></div>
+            <h2 class="big">Overall standings</h2>
+          </div>
+          <button class="ghost" id="bOvBack">← All courses</button>
+        </div>
+        <p class="lede" style="margin-bottom:14px">Most maps cleared first, then the lowest total of best times.</p>
+        <div id="ovBoard"></div>
       </div>
     </div>
   </div>
 
-  <div class="layer" id="courseDetail" hidden>
-    <div class="scrim"></div>
-    <div class="panel">
-      <div class="row" style="justify-content:space-between;align-items:baseline">
-        <div>
-          <div class="kick" id="cdSection">Section A</div>
-          <h2 class="big" id="cdName">Course</h2>
-        </div>
-        <button class="ghost" id="bCdBack">← Maps</button>
+  <!-- a whole section's runs at once: one quarter of the screen per map -->
+  <div class="layer" id="secview" hidden>
+    <canvas id="secCanvas"></canvas>
+    <div class="hud">
+      <div class="specTop">
+        <div class="specWho"><span id="svTitle">Section</span>
+          <small id="svSub"></small></div>
+        <div class="clock" id="svClock">0:00.000</div>
+        <button class="ghost small" id="bSvBack">Back to leaderboard</button>
       </div>
-      <p class="lede" style="margin-bottom:6px" id="cdBlurb"></p>
-      <p class="cdBest" id="cdBest"></p>
-      <div class="cols" style="margin-top:14px">
-        <div>
-          <table id="cdTable">
-            <thead><tr><th>#</th><th>Driver</th><th style="text-align:right">Time</th></tr></thead>
-            <tbody id="cdRows"></tbody>
-          </table>
-          <div class="courseLeader empty" id="cdEmpty" hidden>No times yet.</div>
-          <button class="ghost small moreBtn" id="bCdMore" hidden>Show more ▾</button>
+      <div id="svLabels"></div>
+      <div class="svPanel" id="svPanel"></div>
+      <div class="specDock svDock">
+        <div class="specBar">
+          <span id="svT0">0:00</span>
+          <input type="range" id="svScrub" min="0" max="1000" value="0">
+          <span id="svT1">0:00</span>
         </div>
-        <div>
-          <div class="kick" id="cdLeaderHeading">FIRST PLACE</div>
-          <div class="garagePreviewWrap cdCar"><canvas id="cdCarCanvas"></canvas></div>
-          <p class="cdLeader" id="cdLeaderNote"></p>
+        <div class="specCtl">
+          <button class="small" id="bSvStop" title="Stop and go back to the start">■ Stop</button>
+          <button class="small" id="bSvPlay">⏸ Pause</button>
+          <div class="rateBtns" id="svRates">
+            <button data-rate="0.5">0.5×</button><button data-rate="1" class="on">1×</button>
+            <button data-rate="2">2×</button><button data-rate="4">4×</button>
+          </div>
         </div>
-      </div>
-      <div class="row" style="margin-top:22px">
-        <button class="primary" id="bCdDrive">▶ Drive this map</button>
       </div>
     </div>
   </div>
@@ -2471,7 +2599,9 @@ const Cloud = {
       this.credits = c;
       Records.credits = c;
       UI.who(this.name(), Records.credits);
-      if (Game.state === 'garage') UI.garage();
+      // mid-roll, only the balance changes: redrawing the garage would pull
+      // the hue grid out from under the roll animation
+      if (Game.state === 'garage') { if (Game._garageRolling) $('gCredits').textContent = Records.credits; else UI.garage(); }
       if (Game.state === 'menu' && Game.lobby) Game.renderLobbyCard();
     } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); }
   },
@@ -6035,6 +6165,112 @@ const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
 const courseDetailPreview = makePlayerCarPreview('cdCarCanvas');
 
 /**
+ * Small still pictures of a driver's car in their own colours, for the
+ * winner of each map on the course cards. One hidden renderer draws every
+ * one, and each colour pair is drawn once and kept as an image.
+ */
+const CarThumbs = {
+  cache: new Map(), renderer: null, failed: false,
+  ensure() {
+    if (this.renderer || this.failed) return !!this.renderer;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 176; canvas.height = 104;
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      this.renderer.setSize(176, 104, false);
+      this.renderer.outputEncoding = THREE.sRGBEncoding;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(26, 176 / 104, 0.5, 60);
+      this.camera.position.set(3.75, 2.05, 5.85);
+      this.camera.lookAt(0, 0.05, 0);
+      const key = new THREE.DirectionalLight(0xfff6e8, 1.5);
+      key.position.set(4, 6, 5);
+      this.scene.add(key);
+      this.scene.add(new THREE.AmbientLight(0xaac4e0, 0.7));
+      const rim = new THREE.DirectionalLight(0x6fa8ff, 0.5);
+      rim.position.set(-5, 3, -4);
+      this.scene.add(rim);
+      this.bodyMat = MAT.body.clone();
+      this.darkMat = MAT.bodyDark.clone();
+      const car = buildCarMesh(this.bodyMat, this.darkMat).group;
+      car.rotation.y = deg(28);
+      this.scene.add(car);
+      return true;
+    } catch (e) {
+      this.failed = true;
+      return false;
+    }
+  },
+  /** a picture (data URL) of the car in these colours */
+  draw(colors) {
+    const key = JSON.stringify([colors.primary, colors.secondary]);
+    if (this.cache.has(key)) return this.cache.get(key);
+    if (!this.ensure()) return null;
+    this.bodyMat.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
+    this.darkMat.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
+    this.renderer.render(this.scene, this.camera);
+    const url = this.renderer.domElement.toDataURL('image/png');
+    this.cache.set(key, url);
+    return url;
+  },
+  /** a driver's car by uid (no uid: this device's own car) */
+  async forUid(uid) {
+    const colors = uid ? await Cloud.fetchCarColorsOf(uid) : { primary: CarColor.primary, secondary: CarColor.secondary };
+    return colors ? this.draw(colors) : null;
+  }
+};
+
+/**
+ * Each map drawn from straight above as an SVG: the deck at its real
+ * width (jumps show as breaks), the racing line, the start with an arrow
+ * the way it runs, and the finish.
+ */
+const MiniMap = {
+  cache: new Map(),
+  svg(i, labels) {
+    const key = i + (labels ? 'L' : '');
+    if (this.cache.has(key)) return this.cache.get(key);
+    let data;
+    try { data = validateCourse(LEVELS[i].build()); } catch (e) { return ''; }
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const st of data.strips) for (const f of st.frames) {
+      x0 = Math.min(x0, f.p[0]); x1 = Math.max(x1, f.p[0]); z0 = Math.min(z0, f.p[2]); z1 = Math.max(z1, f.p[2]);
+    }
+    const S = 200, pad = 16;
+    const sc = (S - pad * 2) / Math.max(x1 - x0, z1 - z0, 1);
+    const ox = (S - (x1 - x0) * sc) / 2, oz = (S - (z1 - z0) * sc) / 2;
+    const X = (x) => (ox + (x - x0) * sc).toFixed(1), Z = (z) => (oz + (z - z0) * sc).toFixed(1);
+    let deck = '', line = '';
+    for (const st of data.strips) {
+      if (st.frames.length < 2) continue;
+      const w = st.frames.reduce((a, f) => a + (f.w || 12), 0) / st.frames.length;
+      const d = st.frames.map((f, k) => (k ? 'L' : 'M') + X(f.p[0]) + ',' + Z(f.p[2])).join(' ');
+      deck += '<path class="mmTrack" d="' + d + '" stroke-width="' + Math.max(2.5, w * sc).toFixed(1) + '"/>';
+      line += '<path class="mmLine" d="' + d + '"/>';
+    }
+    const st = data.start, fin = data.gates.find((g) => g.kind === 'finish');
+    const sx = +X(st.pos[0]), sz = +Z(st.pos[2]);
+    // an arrow along the start heading (+z is forward at heading 0)
+    const hx = Math.sin(st.heading), hz = Math.cos(st.heading);
+    // just ahead of the start dot, pointing the way the course runs
+    const bx = sx + hx * 6, bz = sz + hz * 6;
+    const tip = [bx + hx * 9, bz + hz * 9], l = [bx - hz * 4.5, bz + hx * 4.5], r = [bx + hz * 4.5, bz - hx * 4.5];
+    let h = '<svg viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="' + escapeHtml(LEVELS[i].name) + ' from above">' + deck + line +
+      '<polygon class="mmArrow" points="' + tip.join(',') + ' ' + l.join(',') + ' ' + r.join(',') + '"/>' +
+      '<circle class="mmStart" cx="' + sx + '" cy="' + sz + '" r="3.2"/>';
+    if (fin) h += '<circle class="mmFin" cx="' + X(fin.pos[0]) + '" cy="' + Z(fin.pos[2]) + '" r="4"/>';
+    if (labels) {
+      h += '<text class="mmLabel" x="' + (sx + 7) + '" y="' + (sz - 6) + '">START</text>';
+      if (fin) h += '<text class="mmLabel" x="' + (+X(fin.pos[0]) + 7) + '" y="' + (+Z(fin.pos[2]) + 12) + '">FINISH</text>';
+    }
+    h += '</svg>';
+    this.cache.set(key, h);
+    return h;
+  }
+};
+
+/**
  * Which trophies the signed-in (or local) driver holds right now. Every one
  * is live — computed from the current leaderboards each time — so beating
  * someone's time takes their trophy, and losing a podium spot loses it.
@@ -7028,7 +7264,7 @@ const Compare = {
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'courseDetail', 'result', 'gate', 'banned', 'spectate', 'settings',
+    ['menu', 'select', 'secview', 'result', 'gate', 'banned', 'spectate', 'settings',
      'raceReveal', 'raceBetween', 'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
@@ -7383,26 +7619,27 @@ const UI = {
       f.style.opacity = '0';
     });
   },
-  /** top three on a map, gold/silver/bronze, as shown on every map card */
-  podium(id) {
-    const list = Records.board(id);
-    if (!list.length) return '<div class="podium"><span class="none">No times yet</span></div>';
-    const cls = ['p1', 'p2', 'p3'];
-    return '<div class="podium">' + list.slice(0, 3).map((e, k) =>
-      '<div class="p ' + cls[k] + '"><span class="m">' + (k === 0 ? '♛' : String(k + 1)) + '</span><b>' +
-      escapeHtml(e.n) + '</b><span class="pt">' + formatTime(e.t) + '</span></div>').join('') + '</div>';
-  },
-  /** every map, grouped into its section, each section headed by its leader */
+  /** every map, grouped into its section, with a bar above each section
+   *  that opens the section's own leaderboard (and one for the overall) */
   courseList(playable, onPick) {
+    const ov = Records.overall(COURSE_IDS)[0];
+    $('bOverallBar').innerHTML = '<h3>Overall</h3><span class="sl">' +
+      (ov ? '♛ <b>' + escapeHtml(ov.n) + '</b> · ' + ov.count + '/' + LEVELS.length + ' maps · ' + formatTime(ov.total)
+        : 'no times yet') + '</span><span class="go">STANDINGS ›</span>';
     const wrap = $('courseList');
     wrap.innerHTML = '';
     SECTIONS.forEach((secName, sec) => {
       const block = document.createElement('div');
       block.className = 'secBlock';
-      const top = Records.overall(sectionIds(sec))[0];
-      block.innerHTML = '<div class="secHead"><h3>' + escapeHtml(secName) + '</h3><span class="secLeader">' +
-        (top ? '♛ <b>' + escapeHtml(top.n) + '</b> · ' + top.count + '/' + sectionIds(sec).length + ' · ' + formatTime(top.total)
-          : 'no leader yet') + '</span></div>';
+      const ids = sectionIds(sec);
+      const top = Records.overall(ids)[0];
+      const bar = document.createElement('button');
+      bar.className = 'secBar';
+      bar.innerHTML = '<h3>' + escapeHtml(secName) + '</h3><span class="sl">' +
+        (top ? '♛ <b>' + escapeHtml(top.n) + '</b> · ' + top.count + '/' + ids.length + ' · ' + formatTime(top.total)
+          : 'no leader yet') + '</span><span class="go">SECTION LEADERBOARD ›</span>';
+      bar.addEventListener('click', () => Game.openSection(sec));
+      block.appendChild(bar);
       const grid = document.createElement('div');
       grid.className = 'courses';
       LEVELS.forEach((lv, i) => {
@@ -7423,6 +7660,25 @@ const UI = {
       block.appendChild(grid);
       wrap.appendChild(block);
     });
+    this.fillWinnerCars(wrap);
+  },
+  /** top three on a map, gold/silver/bronze, the winner with a little
+   *  picture of their own car */
+  podium(id) {
+    const list = Records.board(id);
+    if (!list.length) return '<div class="podium"><span class="none">No times yet</span></div>';
+    const cls = ['p1', 'p2', 'p3'];
+    return '<div class="podium">' + list.slice(0, 3).map((e, k) =>
+      '<div class="p ' + cls[k] + '"><span class="m">' + (k === 0 ? '♛' : String(k + 1)) + '</span>' +
+      (k === 0 ? '<img class="winCar" alt="" data-uid="' + escapeHtml(e.uid || '') + '">' : '') + '<b>' +
+      escapeHtml(e.n) + '</b><span class="pt">' + formatTime(e.t) + '</span></div>').join('') + '</div>';
+  },
+  /** paints every not-yet-painted winner picture under root */
+  fillWinnerCars(root) {
+    root.querySelectorAll('img.winCar:not(.ready)').forEach(async (img) => {
+      const url = await CarThumbs.forUid(img.dataset.uid);
+      if (url && img.isConnected) { img.src = url; img.classList.add('ready'); }
+    });
   },
   /** where the signed-in (or local) driver sits on a board, 1-based, or 0 */
   myRank(list) {
@@ -7436,11 +7692,11 @@ const UI = {
     return (uid && e.uid) ? e.uid === uid : e.n === Records.driver();
   },
   /**
-   * The per-map page: its leaderboard (ten at a time, "Show more" adds ten)
-   * and the #1 driver's car. Game.toCourseDetail starts the car preview and
-   * paints it; this only writes text, so live board updates can re-run it.
+   * One map: its whole leaderboard (ten at a time, "Show more" adds ten),
+   * rows ticked for watching / racing / comparing, the #1 driver's car and
+   * the map from above. Only writes the page, so live updates can re-run it.
    */
-  courseDetail(i) {
+  mapView(i) {
     const lv = LEVELS[i];
     const id = lv.id;
     $('cdSection').textContent = SECTIONS[lv.section] + ' · ' + courseTag(i);
@@ -7452,22 +7708,142 @@ const UI = {
     $('cdBest').textContent = best ? 'Your best ' + formatTime(best) + (rank ? '  ·  #' + rank + ' of ' + list.length : '')
       : 'You have no time here yet';
     const show = Game.cdShow || 10;
-    const rows = $('cdRows');
-    rows.innerHTML = '';
-    $('cdEmpty').hidden = list.length > 0;
-    list.slice(0, show).forEach((e, k) => {
-      const tr = document.createElement('tr');
-      if (this.isMe(e)) tr.className = 'me';
-      tr.innerHTML = '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(e.n) + '</td>' +
-        '<td class="t">' + formatTime(e.t) + '</td>';
-      rows.appendChild(tr);
-    });
-    $('bCdMore').hidden = list.length <= show;
-    $('bCdMore').textContent = 'Show more (' + (list.length - show) + ') ▾';
+    const actions = Cloud.on;
+    const sel = Game.boardSel[id] || (Game.boardSel[id] = new Set());
+    // a uid can vanish from the board (an admin removing a time) — drop stale picks
+    const live = new Set(list.map((e) => e.uid).filter(Boolean));
+    for (const uid of [...sel]) if (!live.has(uid)) sel.delete(uid);
+    const board = $('cdBoard');
+    if (!list.length) {
+      board.innerHTML = '<p class="empty">No times on ' + escapeHtml(lv.name) + ' yet. Be the first.</p>';
+    } else {
+      let h = '<table><thead><tr>' + (actions ? '<th></th>' : '') + '<th></th><th>Driver</th>' +
+        '<th style="text-align:right">Time</th><th style="text-align:right">Set</th></tr></thead><tbody>';
+      list.slice(0, show).forEach((e, k) => {
+        const when = new Date(e.d);
+        const checked = e.uid && sel.has(e.uid);
+        const mine = this.isMe(e);
+        h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
+        if (actions) {
+          h += '<td>' + (e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
+            (checked ? ' checked' : '') + ' aria-label="Select ' + escapeHtml(e.n) + '">' : '') + '</td>';
+        }
+        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(e.n) +
+          (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="t">' + formatTime(e.t) +
+          '</td><td class="d">' + (isFinite(when.getTime()) && e.d ? when.toLocaleDateString() : '') + '</td></tr>';
+      });
+      h += '</tbody></table>';
+      if (list.length > show) h += '<button class="ghost small moreBtn" id="bCdMore">Show more (' + (list.length - show) + ') ▾</button>';
+      board.innerHTML = h;
+      const more = $('bCdMore');
+      if (more) more.addEventListener('click', () => { Game.cdShow = show + 10; this.mapView(i); });
+      board.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
+        if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
+        cb.closest('tr').classList.toggle('sel', cb.checked);
+        this.updateMapMultiBar(id);
+      }));
+    }
+    this.updateMapMultiBar(id);
     $('cdLeaderHeading').textContent = list.length ? 'FIRST PLACE' : 'NO TIMES YET';
     $('cdLeaderNote').innerHTML = list.length
       ? '<span class="crown">♛</span> ' + escapeHtml(list[0].n) + ' — ' + formatTime(list[0].t)
       : 'Be quick and it could be you.';
+    const mm = $('cdMiniMap');
+    if (mm.dataset.idx !== String(i)) { mm.innerHTML = MiniMap.svg(i, true); mm.dataset.idx = String(i); }
+  },
+  /** the "N selected — Watch / Race / Compare" bar under a map's table */
+  updateMapMultiBar(id) {
+    const sel = Game.boardSel[id];
+    const n = sel ? sel.size : 0;
+    $('cdMultiBar').hidden = n < 1;
+    $('bCdCmpSel').hidden = n !== 2;
+    if (n) $('cdMultiCount').textContent = n + (n === 1 ? ' run selected' : ' runs selected');
+  },
+  /**
+   * One section: every driver's four bests added up, ticked for the
+   * four-maps-at-once replay (only drivers with a time on all four maps
+   * can be ticked: the replay runs their four runs back to back), and the
+   * four maps from above.
+   */
+  sectionView(sec) {
+    const ids = sectionIds(sec);
+    const key = 'sec' + sec;
+    $('secName').textContent = SECTIONS[sec];
+    const rows = Records.overall(ids);
+    const actions = Cloud.on;
+    const sel = Game.boardSel[key] || (Game.boardSel[key] = new Set());
+    const whole = new Set(rows.filter((r) => r.uid && r.count === ids.length).map((r) => r.uid));
+    for (const uid of [...sel]) if (!whole.has(uid)) sel.delete(uid);
+    $('secNote').textContent = actions
+      ? 'Every driver\'s best on the four maps added up. Tick drivers with all four to watch their runs back to back — ' +
+        'the four maps on screen at once — or tick two to compare them.'
+      : 'Every best on the four maps added up (times on this device).';
+    const show = Game.boardShow[key] || 10;
+    const board = $('secBoard');
+    if (!rows.length) board.innerHTML = '<p class="empty">No times in ' + escapeHtml(SECTIONS[sec]) + ' yet.</p>';
+    else {
+      const uid = Cloud.user && Cloud.user.uid, me = Records.driver();
+      let h = '<table><thead><tr>' + (actions ? '<th></th>' : '') + '<th></th><th>Driver</th><th style="text-align:right">Maps</th>' +
+        '<th style="text-align:right">Total</th></tr></thead><tbody>';
+      rows.slice(0, show).forEach((r, k) => {
+        const mine = (uid && r.uid) ? r.uid === uid : r.n === me;
+        const ok = whole.has(r.uid), checked = ok && sel.has(r.uid);
+        h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
+        if (actions) {
+          h += ok ? '<td><input type="checkbox" class="selBox" data-uid="' + escapeHtml(r.uid) + '"' + (checked ? ' checked' : '') +
+            ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all four maps">—</td>';
+        }
+        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(r.n) +
+          (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="d">' + r.count + ' / ' + ids.length +
+          '</td><td class="t">' + formatTime(r.total) + '</td></tr>';
+      });
+      h += '</tbody></table>';
+      if (rows.length > show) h += '<button class="ghost small moreBtn" id="bSecMore">Show more (' + (rows.length - show) + ') ▾</button>';
+      board.innerHTML = h;
+      const more = $('bSecMore');
+      if (more) more.addEventListener('click', () => { Game.boardShow[key] = show + 10; this.sectionView(sec); });
+      board.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
+        if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
+        cb.closest('tr').classList.toggle('sel', cb.checked);
+        this.updateSectionMultiBar(sec);
+      }));
+    }
+    this.updateSectionMultiBar(sec);
+    const maps = $('secMaps');
+    if (maps.dataset.sec !== String(sec)) {
+      maps.dataset.sec = String(sec);
+      maps.innerHTML = LEVELS.map((lv, i) => lv.section !== sec ? '' :
+        '<div class="sm" data-i="' + i + '"><div class="t"><span>' + courseTag(i) + '</span>' + escapeHtml(lv.name) + '</div>' +
+        '<div class="l" data-lead="' + lv.id + '"></div><div class="miniMap">' + MiniMap.svg(i, false) + '</div></div>').join('');
+      maps.querySelectorAll('.sm').forEach((el) => el.addEventListener('click', () => Game.openMap(+el.dataset.i)));
+    }
+    maps.querySelectorAll('[data-lead]').forEach((el) => {
+      const top = Records.board(el.dataset.lead)[0];
+      el.innerHTML = top ? '♛ <b>' + escapeHtml(top.n) + '</b> · ' + formatTime(top.t) : 'no times yet';
+    });
+  },
+  updateSectionMultiBar(sec) {
+    const sel = Game.boardSel['sec' + sec];
+    const n = sel ? sel.size : 0;
+    $('secMultiBar').hidden = n < 1;
+    $('bSecCmpSel').hidden = n !== 2;
+    if (n) $('secMultiCount').textContent = n + (n === 1 ? ' driver selected' : ' drivers selected');
+  },
+  /** every map added up, and each map's leader */
+  overallView() {
+    $('ovSeason').textContent = String(SEASON);
+    let h = this.standingsTable(COURSE_IDS, 'all');
+    h += '<div class="boardsHd">Map leaders</div><div class="leadersGrid">' + LEVELS.map((lv, i) => {
+      const top = Records.board(lv.id)[0];
+      return '<div class="lg"><div class="c">' + courseTag(i) + ' · ' + escapeHtml(lv.name) + '</div>' +
+        (top ? '♛ <b>' + escapeHtml(top.n) + '</b><span class="t">' + formatTime(top.t) + '</span>' : '<span class="dim">—</span>') + '</div>';
+    }).join('') + '</div>';
+    const el = $('ovBoard');
+    el.innerHTML = h;
+    el.querySelectorAll('[data-more]').forEach((btn) => btn.addEventListener('click', () => {
+      Game.boardShow[btn.dataset.more] = (Game.boardShow[btn.dataset.more] || 10) + 10;
+      this.overallView();
+    }));
   },
   /** the menu's season leader card (3D car) plus one small card per section */
   async overallLeaderCard() {
@@ -7509,102 +7885,6 @@ const UI = {
     if (rows.length > show) h += '<button class="ghost small moreBtn" data-more="' + tabKey + '">Show more (' + (rows.length - show) + ') ▾</button>';
     return h;
   },
-  /**
-   * Leaderboards: Overall, each section, then every map. Board state (tab,
-   * checked rows, how many rows are shown) lives on Game so it survives a
-   * trip into spectate and back.
-   */
-  boards() {
-    const tabs = $('boardTabs');
-    tabs.innerHTML = '';
-    const mk = (key, label) => {
-      const b = document.createElement('button');
-      b.className = 'tab' + (Game.boardTab === key ? ' on' : '');
-      b.textContent = label;
-      b.addEventListener('click', () => { Game.boardTab = key; this.boards(); });
-      tabs.appendChild(b);
-    };
-    mk('all', 'Overall');
-    SECTIONS.forEach((name, sec) => mk('sec' + sec, name));
-    LEVELS.forEach((lv, i) => mk(lv.id, courseTag(i)));
-
-    const body = $('boardBody');
-    const tab = Game.boardTab;
-    const bindMore = () => body.querySelectorAll('[data-more]').forEach((btn) => btn.addEventListener('click', () => {
-      const k = btn.dataset.more;
-      Game.boardShow[k] = (Game.boardShow[k] || 10) + 10;
-      this.boards();
-    }));
-    if (tab === 'all') {
-      let h = this.standingsTable(COURSE_IDS, 'all');
-      h += '<div class="boardsHd">Map leaders</div><div class="leadersGrid">' + LEVELS.map((lv, i) => {
-        const top = Records.board(lv.id)[0];
-        return '<div class="lg"><div class="c">' + courseTag(i) + ' · ' + escapeHtml(lv.name) + '</div>' +
-          (top ? '♛ <b>' + escapeHtml(top.n) + '</b><span class="t">' + formatTime(top.t) + '</span>' : '<span class="dim">—</span>') + '</div>';
-      }).join('') + '</div>';
-      body.innerHTML = h;
-      bindMore();
-      this.updateBoardMultiBar();
-      return;
-    }
-    if (tab.indexOf('sec') === 0) {
-      body.innerHTML = this.standingsTable(sectionIds(+tab.slice(3)), tab);
-      bindMore();
-      this.updateBoardMultiBar();
-      return;
-    }
-    const idx = courseIndexOf(tab);
-    const list = Records.board(tab);
-    if (idx < 0 || !list.length) {
-      body.innerHTML = '<p class="empty">No times on ' + escapeHtml(idx >= 0 ? LEVELS[idx].name : 'this map') + ' yet.</p>';
-      this.updateBoardMultiBar();
-      return;
-    }
-    const showActions = Cloud.on;
-    const show = Game.boardShow[tab] || 10;
-    const sel = Game.boardSel[tab] || (Game.boardSel[tab] = new Set());
-    // a uid can vanish from the board (a wipe, a re-pull) — drop stale picks
-    const liveUids = new Set(list.map((e) => e.uid).filter(Boolean));
-    for (const uid of [...sel]) if (!liveUids.has(uid)) sel.delete(uid);
-    let h = '<table><thead><tr>' + (showActions ? '<th></th>' : '') + '<th></th><th>Driver</th>' +
-      '<th style="text-align:right">Time</th><th style="text-align:right">Set</th></tr></thead><tbody>';
-    list.slice(0, show).forEach((e, k) => {
-      const when = new Date(e.d);
-      const checked = e.uid && sel.has(e.uid);
-      const mine = this.isMe(e);
-      h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
-      if (showActions) {
-        h += '<td>' + (e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
-          (checked ? ' checked' : '') + '>' : '') + '</td>';
-      }
-      h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(e.n) +
-        (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="t">' + formatTime(e.t) +
-        '</td><td class="d">' + (isFinite(when.getTime()) && e.d ? when.toLocaleDateString() : '') + '</td></tr>';
-    });
-    h += '</tbody></table>';
-    if (list.length > show) h += '<button class="ghost small moreBtn" data-more="' + tab + '">Show more (' + (list.length - show) + ') ▾</button>';
-    body.innerHTML = h;
-    bindMore();
-    if (showActions) {
-      body.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
-        if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
-        cb.closest('tr').classList.toggle('sel', cb.checked);
-        this.updateBoardMultiBar();
-      }));
-    }
-    this.updateBoardMultiBar();
-  },
-
-  /** the "N selected — Watch / Race / Clear" bar; only ever for a map tab */
-  updateBoardMultiBar() {
-    const sel = courseIndexOf(Game.boardTab) >= 0 ? Game.boardSel[Game.boardTab] : null;
-    const n = sel ? sel.size : 0;
-    $('boardMultiBar').hidden = n < 1;
-    $('bBoardCmpSel').hidden = n !== 2;
-    if (n < 1) return;
-    $('boardMultiCount').textContent = n + (n === 1 ? ' run selected' : ' runs selected');
-  },
-
   trophyList(list) {
     const el = $('trophyList');
     if (!list.length) {
@@ -7729,6 +8009,402 @@ function escapeHtml(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+/**
+ * A whole section's runs at once: the screen splits into four, one map per
+ * quarter, in the section's order. Each driver's four best runs play back
+ * to back — the instant a car crosses the finish on one map it appears on
+ * the start of the next — so the clock is their four times added up, and
+ * whoever finishes the fourth map first has the best section total.
+ * With exactly two drivers it compares them: splits per map and the live
+ * gap between them, in seconds.
+ */
+const SectionView = {
+  renderer: null, quads: [], cars: [], t: 0, playing: false, rate: 1, sec: 0, compare: false,
+  scrubbing: false, longest: 0, hudAcc: 0, lastT: 0, W: 0, H: 0,
+
+  ensureRenderer() {
+    if (this.renderer) return;
+    const canvas = $('secCanvas');
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.12;
+    this.renderer.autoClear = false;
+    this.renderer.setClearColor(0x0b1220, 1);
+  },
+
+  /** one map's own little world: sky, sun, ground, the course, mountains */
+  buildQuad(i) {
+    const data = Game.data[i] || validateCourse(LEVELS[i].build());
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xcfe6f6, 260, 1100);
+    const sky = new THREE.Mesh(App.sky.geometry, App.sky.material);
+    sky.frustumCulled = false;
+    scene.add(sky);
+    const sun = new THREE.DirectionalLight(0xfffaf0, 2.05);
+    sun.position.set(52, 70, 36);
+    scene.add(sun, sun.target);
+    scene.add(new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95));
+    const floor = new THREE.Mesh(this.floorGeo || (this.floorGeo = new THREE.PlaneGeometry(6000, 6000)), MAT.floor);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = GROUND_Y;
+    scene.add(floor);
+    const course = buildCourse(data, scene, new PhysicsWorld());
+    const ring = (count, mat) => {
+      const im = new THREE.InstancedMesh(GEO.peak, mat, count);
+      im.frustumCulled = false;
+      scene.add(im);
+      return im;
+    };
+    const peaks = { peaksNear: ring(22, MAT.scenery), peaksFar: ring(18, MAT.sceneryFar) };
+    App.layoutBackdrop.call(peaks, course.center.x, course.center.z, course.extent);
+    const camera = new THREE.PerspectiveCamera(58, 1, 0.3, 2600);
+    const start = new THREE.Vector3().fromArray(data.start.pos);
+    const fin = (course.gates.find((g) => g.kind === 'finish') || {}).pos;
+    return {
+      i, lv: LEVELS[i], scene, sky, course, camera, peaks: [peaks.peaksNear, peaks.peaksFar],
+      start, startHeading: data.start.heading, finish: fin ? fin.clone() : start.clone(),
+      camPos: new THREE.Vector3(), look: new THREE.Vector3(), snapped: false, rect: null, label: null
+    };
+  },
+
+  async open(sec, uids, compare) {
+    const ids = sectionIds(sec);
+    if (!uids || !uids.length) { UI.toast('Tick at least one driver first.'); return; }
+    const idxs = ids.map(courseIndexOf);
+    if (idxs.some((i) => !Game.playable[i])) { UI.toast('One of this section\'s maps could not be loaded.'); return; }
+    const capped = uids.slice(0, 6);
+    UI.toast('Loading ' + capped.length * ids.length + ' runs…');
+    const rows = Records.overall(ids);
+    const loaded = await Promise.all(capped.map(async (uid) => {
+      const got = await Promise.all([Cloud.fetchCarColorsOf(uid), ...ids.map((id) => Cloud.fetchGhost(id, uid))]);
+      return { uid, colors: got[0], ghosts: got.slice(1), name: (rows.find((r) => r.uid === uid) || {}).n || 'driver' };
+    }));
+    const cars = loaded.filter((c) => c.ghosts.every(Boolean));
+    if (!cars.length) { UI.toast(Cloud.ghostProblem()); return; }
+    if (cars.length < loaded.length) UI.toast((loaded.length - cars.length) + ' left out: one of their four runs has no ghost.');
+    this.teardown();
+    this.ensureRenderer();
+    this.sec = sec;
+    this.compare = !!compare && cars.length === 2;
+    this.quads = idxs.map((i) => this.buildQuad(i));
+    // each driver: their own paint on a car in every quarter, and where each
+    // of their four runs starts on the shared clock
+    this.cars = cars.map((c, n) => {
+      const bodyMat = MAT.body.clone(), darkMat = MAT.bodyDark.clone();
+      bodyMat.color.setHex(hslToHex(c.colors.primary.h, c.colors.primary.s, c.colors.primary.l));
+      darkMat.color.setHex(hslToHex(c.colors.secondary.h, c.colors.secondary.s, c.colors.secondary.l));
+      const meshes = this.quads.map((q) => {
+        const built = buildCarMesh(bodyMat, darkMat);
+        const m = built.group;
+        m.userData.flame = built.flame; m.userData.flameLights = built.flameLights;
+        m.userData.flamePhase = 0; m.userData.flameAmt = 0;
+        m.visible = false;
+        q.scene.add(m);
+        return m;
+      });
+      const starts = [];
+      let acc = 0;
+      c.ghosts.forEach((g) => { starts.push(acc); acc += g.t; });
+      return { ...c, n, bodyMat, darkMat, meshes, starts, total: acc,
+        dot: hslCss(c.colors.primary.h, c.colors.primary.s, Math.max(45, c.colors.primary.l)) };
+    });
+    this.longest = Math.max(...this.cars.map((c) => c.total));
+    if (this.compare) this.measureDistances();
+    this.t = 0; this.lastT = 0; this.playing = true; this.scrubbing = false;
+    this.rate = this.rate || 1;
+    Game.state = 'section';
+    Sound.stopEngine();
+    $('svTitle').textContent = SECTIONS[sec] + (this.compare ? ' · compare' : '');
+    $('svSub').textContent = this.cars.length === 1 ? this.cars[0].name + ' — ' + formatTime(this.cars[0].total)
+      : this.cars.map((c) => c.name).join(' vs ');
+    $('svT1').textContent = formatTime(this.longest);
+    $('svScrub').max = String(Math.round(this.longest * 1000));
+    $('svScrub').value = '0';
+    $('bSvPlay').textContent = '⏸ Pause';
+    document.querySelectorAll('#svRates button').forEach((b) => b.classList.toggle('on', +b.dataset.rate === this.rate));
+    $('svLabels').innerHTML = this.quads.map((q, k) => '<div class="svFrame" data-f="' + k + '"></div>' +
+      '<div class="svLabel" data-q="' + k + '"></div>').join('');
+    this.quads.forEach((q, k) => {
+      q.label = document.querySelector('.svLabel[data-q="' + k + '"]');
+      q.frame = document.querySelector('.svFrame[data-f="' + k + '"]');
+    });
+    UI.show('secview');
+    this.W = this.H = 0;
+    this.layout();
+    this.pose(0, 1 / 60, true);
+    this.hud(true);
+  },
+
+  /** four quarters of the screen, leaving room for the bars and the panel */
+  layout() {
+    const c = $('secCanvas');
+    const W = c.clientWidth || innerWidth, H = c.clientHeight || innerHeight;
+    if (W === this.W && H === this.H) return;
+    this.W = W; this.H = H;
+    this.renderer.setSize(W, H, false);
+    const wide = W > 900;
+    const top = 62, bottom = wide ? 104 : 104 + Math.min(H * 0.28, 220), right = wide ? 312 : 0;
+    const gw = W - right - 8, gh = H - top - bottom;
+    const qw = Math.floor((gw - 6) / 2), qh = Math.floor((gh - 6) / 2);
+    this.quads.forEach((q, k) => {
+      const x = 4 + (k % 2) * (qw + 6), y = top + Math.floor(k / 2) * (qh + 6);
+      q.rect = { x, y, w: qw, h: qh };
+      q.camera.aspect = qw / Math.max(qh, 1);
+      q.camera.updateProjectionMatrix();
+      q.label.style.left = (x + 8) + 'px'; q.label.style.top = (y + 8) + 'px';
+      Object.assign(q.frame.style, { left: x + 'px', top: y + 'px', width: qw + 'px', height: qh + 'px' });
+    });
+  },
+
+  /** where a ghost is at local time lt, into out (position) and q (rotation) */
+  ghostAt(quad, g, lt, pos, quat) {
+    const s = g.s, n = s.length / GHOST_STRIDE;
+    const f = clamp(lt * GHOST_HZ, 0, n - 1.001);
+    const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
+    pos.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
+    if ((g.v || 1) < GHOST_VERSION && quad.course.roadShift) pos.y += quad.course.roadShift(pos.x, pos.z, pos.y);
+    if (quat) {
+      _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
+      _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
+      quat.copy(_gq1).slerp(_gq2, u);
+    }
+    return s[a + 7] | 0;
+  },
+
+  /** poses every car in every quarter at time t and aims each camera */
+  pose(t, dt, snap) {
+    const fwd = this._f || (this._f = new THREE.Vector3());
+    const want = this._w || (this._w = new THREE.Vector3());
+    const lookW = this._lw || (this._lw = new THREE.Vector3());
+    this.quads.forEach((q, k) => {
+      const last = k === this.quads.length - 1;
+      let cx = 0, cy = 0, cz = 0, count = 0, lead = null, leadLt = -1;
+      for (const c of this.cars) {
+        const g = c.ghosts[k], m = c.meshes[k], lt = t - c.starts[k];
+        // on this map from its start until it finishes; on the last map it
+        // stays at the finish, anywhere else it has moved on to the next
+        if (lt < 0 || (lt > g.t && !last)) { m.visible = false; continue; }
+        m.visible = true;
+        const bits = this.ghostAt(q, g, Math.min(lt, g.t), m.position, m.quaternion);
+        setGhostFlame(m, lt < g.t && !!(bits & 16), dt);
+        if (lt <= g.t) {
+          cx += m.position.x; cy += m.position.y; cz += m.position.z; count++;
+          if (lt > leadLt) { leadLt = lt; lead = m; }
+        }
+      }
+      let target, heading;
+      if (count) {
+        target = lookW.set(cx / count, cy / count, cz / count);
+        fwd.set(0, 0, 1).applyQuaternion(lead.quaternion);
+        heading = Math.atan2(fwd.x, fwd.z);
+        let spread = 0;
+        for (const c of this.cars) if (c.meshes[k].visible) spread = Math.max(spread, c.meshes[k].position.distanceTo(target));
+        const back = 9.5 + spread * 1.1, up = 3.8 + spread * 0.45;
+        want.set(target.x - Math.sin(heading) * back, target.y + up, target.z - Math.cos(heading) * back);
+      } else {
+        // nobody on this map right now: show where they will appear, or
+        // where the last of them finished
+        const waiting = this.cars.some((c) => t < c.starts[k]);
+        target = lookW.copy(waiting ? q.start : q.finish);
+        heading = q.startHeading;
+        want.set(target.x - Math.sin(heading) * 20, target.y + 10, target.z - Math.cos(heading) * 20);
+      }
+      target.y += 0.8;
+      if (snap || !q.snapped) { q.camPos.copy(want); q.look.copy(target); q.snapped = true; }
+      else {
+        const a = 1 - Math.exp(-4.5 * dt);
+        q.camPos.lerp(want, a); q.look.lerp(target, 1 - Math.exp(-7 * dt));
+      }
+      q.camera.position.copy(q.camPos);
+      q.camera.lookAt(q.look);
+    });
+  },
+
+  render() {
+    const r = this.renderer;
+    r.setScissorTest(false);
+    r.clear();
+    r.setScissorTest(true);
+    const H = this.H;
+    for (const q of this.quads) {
+      const { x, y, w, h } = q.rect;
+      r.setViewport(x, H - y - h, w, h);
+      r.setScissor(x, H - y - h, w, h);
+      q.sky.position.copy(q.camera.position);
+      r.render(q.scene, q.camera);
+    }
+    r.setScissorTest(false);
+  },
+
+  /**
+   * For comparing: how far along the four maps each car is at every sample
+   * (metres, the racing line), so the gap can be said in seconds — the time
+   * the car behind takes to reach where the leader is now.
+   */
+  measureDistances() {
+    const offs = [];
+    let acc = 0;
+    for (const q of this.quads) { offs.push(acc); acc += q.course.length; }
+    for (const c of this.cars) {
+      const T = [], D = [];
+      c.ghosts.forEach((g, k) => {
+        const q = this.quads[k], path = q.course.path, cum = q.course.cum;
+        const s = g.s, n = s.length / GHOST_STRIDE;
+        // the path can be sparse (a long straight is two points), so each
+        // sample is projected onto the nearest segment, not the nearest point
+        let idx = 0;
+        for (let j = 0; j < n; j++) {
+          const x = s[j * GHOST_STRIDE], z = s[j * GHOST_STRIDE + 2];
+          let bd = Infinity, bestSeg = idx, bestU = 0;
+          for (let p = Math.max(0, idx - 4); p < Math.min(path.length - 1, idx + 30); p++) {
+            const ax = path[p].x, az = path[p].z, ex = path[p + 1].x - ax, ez = path[p + 1].z - az;
+            const L2 = ex * ex + ez * ez || 1e-9;
+            const u = clamp(((x - ax) * ex + (z - az) * ez) / L2, 0, 1);
+            const dx = ax + ex * u - x, dz = az + ez * u - z, d = dx * dx + dz * dz;
+            if (d < bd) { bd = d; bestSeg = p; bestU = u; }
+          }
+          idx = bestSeg;
+          T.push(c.starts[k] + j / GHOST_HZ);
+          D.push(offs[k] + Math.min(lerp(cum[bestSeg], cum[bestSeg + 1], bestU), q.course.length));
+        }
+      });
+      // never going backwards along the line
+      for (let j = 1; j < D.length; j++) if (D[j] < D[j - 1]) D[j] = D[j - 1];
+      c.T = T; c.D = D;
+    }
+  },
+  distAt(c, t) {
+    const T = c.T, D = c.D;
+    if (t <= T[0]) return D[0];
+    if (t >= T[T.length - 1]) return D[D.length - 1];
+    let lo = 0, hi = T.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (T[mid] <= t) lo = mid; else hi = mid; }
+    return lerp(D[lo], D[hi], (t - T[lo]) / Math.max(T[hi] - T[lo], 1e-6));
+  },
+  timeAtDist(c, d) {
+    const T = c.T, D = c.D;
+    if (d <= D[0]) return T[0];
+    if (d > D[D.length - 1]) return null;
+    let lo = 0, hi = D.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (D[mid] < d) lo = mid; else hi = mid; }
+    return lerp(T[lo], T[hi], (d - D[lo]) / Math.max(D[hi] - D[lo], 1e-6));
+  },
+
+  /** the labels in each quarter and the side panel */
+  hud(force) {
+    const t = this.t;
+    $('svClock').textContent = formatTime(t);
+    if (!this.scrubbing) $('svScrub').value = String(Math.round(t * 1000));
+    $('svT0').textContent = formatTime(t);
+    this.hudAcc = force ? 1 : this.hudAcc;
+    if (this.hudAcc < 0.08) return;
+    this.hudAcc = 0;
+    this.quads.forEach((q, k) => {
+      q.label.innerHTML = '<div class="h"><span>' + courseTag(q.i) + '</span>' + escapeHtml(q.lv.name) + '</div>' +
+        this.cars.map((c) => {
+          const g = c.ghosts[k], lt = t - c.starts[k];
+          const cls = lt < 0 ? 'wait' : lt >= g.t ? 'done' : '';
+          const val = lt < 0 ? '—' : formatTime(Math.min(lt, g.t));
+          return '<div class="r"><i style="background:' + c.dot + '"></i><b>' + escapeHtml(c.name) + '</b><span class="tm ' + cls + '">' + val + '</span></div>';
+        }).join('');
+    });
+    const panel = $('svPanel');
+    if (this.compare) {
+      const [a, b] = this.cars;
+      let h = '<h4>Splits</h4><table><thead><tr><th>Map</th><th style="text-align:right">' + escapeHtml(a.name) +
+        '</th><th style="text-align:right">' + escapeHtml(b.name) + '</th><th style="text-align:right">Gap</th></tr></thead><tbody>';
+      let ca = 0, cb = 0;
+      this.quads.forEach((q, k) => {
+        const ta = a.ghosts[k].t, tb = b.ghosts[k].t;
+        const shown = t >= a.starts[k] + ta && t >= b.starts[k] + tb;
+        ca += ta; cb += tb;
+        h += '<tr><td>' + courseTag(q.i) + '</td><td class="t' + (ta <= tb ? ' win' : '') + '">' + formatTime(ta) +
+          '</td><td class="t' + (tb < ta ? ' win' : '') + '">' + formatTime(tb) + '</td><td class="d">' +
+          (shown ? (ca - cb >= 0 ? '+' : '') + (ca - cb).toFixed(3) : '…') + '</td></tr>';
+      });
+      h += '</tbody></table>';
+      // live gap, in seconds, from how far along each is
+      const da = this.distAt(a, t), db = this.distAt(b, t);
+      const ahead = da >= db ? a : b, behind = ahead === a ? b : a;
+      let gapTxt = '';
+      if (t >= a.total && t >= b.total) {
+        const w = a.total <= b.total ? a : b;
+        gapTxt = '<b>' + escapeHtml(w.name) + '</b> wins the section by ' + Math.abs(a.total - b.total).toFixed(3) + ' s';
+      } else if (Math.abs(da - db) < 0.5) gapTxt = 'Side by side';
+      else {
+        const when = this.timeAtDist(behind, this.distAt(ahead, t));
+        gapTxt = '<b>' + escapeHtml(ahead.name) + '</b> ahead' + (when !== null ? ' by ' + Math.max(0, when - t).toFixed(2) + ' s' : '') +
+          ' · ' + Math.round(Math.abs(da - db)) + ' m';
+      }
+      panel.innerHTML = h + '<div class="cmpNote">Gap is the running total: + means ' + escapeHtml(a.name) + ' is behind.</div>' +
+        '<div class="gap">' + gapTxt + '</div>' +
+        '<div class="cmpNote" style="margin-top:6px">Totals: ' + escapeHtml(a.name) + ' ' + formatTime(a.total) + ' · ' +
+        escapeHtml(b.name) + ' ' + formatTime(b.total) + '</div>';
+    } else {
+      const rows = this.cars.map((c) => {
+        let k = 0;
+        while (k < this.quads.length - 1 && t >= c.starts[k] + c.ghosts[k].t) k++;
+        const done = t >= c.total;
+        return { c, k, done, sofar: Math.min(t, c.total) };
+      }).sort((x, y) => (y.done - x.done) || (x.done ? x.c.total - y.c.total : (y.k - x.k) || (x.c.starts[x.k] - y.c.starts[y.k])));
+      panel.innerHTML = '<h4>' + escapeHtml(SECTIONS[this.sec]) + ' total</h4>' + rows.map((r, p) =>
+        '<div class="row2"><i style="background:' + r.c.dot + '"></i><span class="n">' + (r.done ? (p + 1) + '. ' : '') + escapeHtml(r.c.name) +
+        '</span><span class="s">' + (r.done ? 'finished' : courseTag(this.quads[r.k].i)) + '</span><span class="v' + (r.done ? ' done' : '') + '">' +
+        formatTime(r.sofar) + '</span></div>').join('');
+    }
+  },
+
+  step(dt) {
+    if (Input.tapped('Escape')) { this.exit(); return; }
+    if (Input.tapped('Space')) $('bSvPlay').click();
+    if (!this.scrubbing && this.playing) {
+      this.t += dt * this.rate;
+      if (this.t >= this.longest) {
+        this.t = this.longest;
+        this.playing = false;
+        $('bSvPlay').textContent = '↺ Replay';
+      }
+    }
+    const jump = Math.abs(this.t - this.lastT) > 0.6;
+    this.lastT = this.t;
+    this.layout();
+    this.pose(this.t, dt, jump);
+    this.render();
+    this.hudAcc += dt;
+    this.hud(false);
+  },
+
+  togglePlay() {
+    if (this.t >= this.longest) { this.t = 0; this.playing = true; }
+    else this.playing = !this.playing;
+    $('bSvPlay').textContent = this.playing ? '⏸ Pause' : '▶ Play';
+  },
+  setRate(r) {
+    this.rate = r;
+    document.querySelectorAll('#svRates button').forEach((b) => b.classList.toggle('on', +b.dataset.rate === r));
+  },
+
+  teardown() {
+    for (const q of this.quads) {
+      disposeCourse(q.course, q.scene);
+      for (const im of q.peaks) im.dispose();
+    }
+    const shared = new Set(Object.values(GEO));
+    for (const c of this.cars) {
+      for (const m of c.meshes) m.traverse((o) => { if (o.isMesh && o.geometry && !shared.has(o.geometry)) o.geometry.dispose(); });
+      c.bodyMat.dispose(); c.darkMat.dispose();
+    }
+    this.quads = []; this.cars = [];
+    if (this.renderer) this.renderer.renderLists.dispose();
+  },
+  exit() {
+    this.teardown();
+    Game.toSelect('section');
+  }
+};
+
 /* -------------------------------------------------------------- 12. game
    Ghost replay: every run is sampled at a fixed 20 Hz into a flat array of
    position + quaternion. The best run per course is kept and played back as a
@@ -7798,13 +8474,10 @@ const Game = {
   _lockedRaceId: null, _nextLobbyTimer: null, _raceSteps: null,
   _joinedRaceId: null, _joinedEntry: null,
   garageSlot: 'primary', _garageRolling: false,
-  // Leaderboard screen state: which tab is open, and which uids are
-  // checked via the multi-select checkboxes — kept per-courseId so a
-  // selection made on one course's tab doesn't leak into another, and
-  // reset only by an explicit Clear (see the bBoardClearSel listener in
-  // wire()) or the automatic staleness pruning in UI.boards() (a uid that
-  // no longer appears on that course's board, e.g. after Records.wipe).
-  boardTab: 'all', boardSel: {}, boardShow: {}, cdShow: 10,
+  // Which rows are ticked on each leaderboard (a map's id, or 'sec0'..'sec3'
+  // for a section), kept per board so a pick on one never leaks into
+  // another; cleared by its Clear button, pruned when a row disappears.
+  boardSel: {}, boardShow: {}, cdShow: 10,
 
   boot() {
     buildMaterials();
@@ -8322,12 +8995,9 @@ const Game = {
     });
 
     $('bDrive').addEventListener('click', () => this.startLevel(this.nextCourseIndex()));
-    $('bCourses').addEventListener('click', () => this.toSelect('courses'));
+    $('bCourses').addEventListener('click', () => this.toSelect('list'));
     $('bTrophies').addEventListener('click', () => this.toTrophies());
     $('bTrophyBack').addEventListener('click', () => this.toMenu());
-    $('bCdMore').addEventListener('click', () => { this.cdShow += 10; UI.courseDetail(this.courseDetailIndex); });
-    $('bSelTabCourses').addEventListener('click', () => this.setSelectTab('courses'));
-    $('bSelTabBoards').addEventListener('click', () => this.setSelectTab('boards'));
     $('bSettings').addEventListener('click', () => this.toSettings());
     $('bGarage').addEventListener('click', () => this.toGarage());
     $('bGarageBack').addEventListener('click', () => this.toMenu());
@@ -8340,7 +9010,50 @@ const Game = {
       this.setGarageSatLight($('gSatSlider').value, $('gLightSlider').value));
     $('bSetBack').addEventListener('click', () => this.toMenu());
     $('bSelBack').addEventListener('click', () => this.toMenu());
-    $('bCdBack').addEventListener('click', () => this.toSelect('courses'));
+    $('bCdBack').addEventListener('click', () => this.backToList());
+    $('bSecBack').addEventListener('click', () => this.backToList());
+    $('bOvBack').addEventListener('click', () => this.backToList());
+    $('bOverallBar').addEventListener('click', () => this.openOverall());
+    // a map's ticked runs: watch, race or compare them
+    const mapSel = () => [...(this.boardSel[this.id(this.courseDetailIndex)] || [])];
+    $('bCdClearSel').addEventListener('click', () => {
+      const sel = this.boardSel[this.id(this.courseDetailIndex)];
+      if (sel) sel.clear();
+      UI.mapView(this.courseDetailIndex);
+    });
+    $('bCdWatchSel').addEventListener('click', () => this.spectateMany(this.id(this.courseDetailIndex), mapSel()));
+    $('bCdRaceSel').addEventListener('click', () => this.raceGhostOfMany(this.id(this.courseDetailIndex), mapSel()));
+    $('bCdCmpSel').addEventListener('click', () => {
+      const sel = mapSel();
+      if (sel.length === 2) this.spectateMany(this.id(this.courseDetailIndex), sel, true);
+    });
+    // a section's ticked drivers: the four-maps-at-once replay (no racing:
+    // four maps back to back can't be raced)
+    const secSel = () => [...(this.boardSel['sec' + this.selSection] || [])];
+    $('bSecClearSel').addEventListener('click', () => {
+      const sel = this.boardSel['sec' + this.selSection];
+      if (sel) sel.clear();
+      UI.sectionView(this.selSection);
+    });
+    $('bSecWatchSel').addEventListener('click', () => SectionView.open(this.selSection, secSel(), false));
+    $('bSecCmpSel').addEventListener('click', () => {
+      const sel = secSel();
+      if (sel.length === 2) SectionView.open(this.selSection, sel, true);
+    });
+    $('bSvBack').addEventListener('click', () => SectionView.exit());
+    $('bSvPlay').addEventListener('click', () => SectionView.togglePlay());
+    $('bSvStop').addEventListener('click', () => {
+      SectionView.t = 0; SectionView.playing = false;
+      $('bSvPlay').textContent = '▶ Play';
+    });
+    document.querySelectorAll('#svRates button').forEach((b) =>
+      b.addEventListener('click', () => SectionView.setRate(+b.dataset.rate)));
+    const svScrub = $('svScrub');
+    svScrub.addEventListener('pointerdown', () => { SectionView.scrubbing = true; });
+    svScrub.addEventListener('input', () => { SectionView.t = (+svScrub.value) / 1000; });
+    const endSv = () => { SectionView.scrubbing = false; };
+    svScrub.addEventListener('pointerup', endSv);
+    svScrub.addEventListener('change', endSv);
     $('bCdDrive').addEventListener('click', () => this.startLevel(this.courseDetailIndex));
     $('bLobbyJoin').addEventListener('click', () => this.joinCurrentRace());
     $('bLobbyDrive').addEventListener('click', () => this.enterRaceReveal());
@@ -8348,22 +9061,9 @@ const Game = {
     $('bCreditsRun').addEventListener('click', () => this.toCreditsRun());
     $('bCreditsRunAgain').addEventListener('click', () => this.toCreditsRun());
     $('bCreditsRunBack').addEventListener('click', () => this.toMenu());
-    $('bBoardRaceSel').addEventListener('click', () => {
-      const sel = [...(this.boardSel[this.boardTab] || [])];
-      this.raceGhostOfMany(this.boardTab, sel);
-    });
-    $('bBoardWatchSel').addEventListener('click', () => {
-      const sel = [...(this.boardSel[this.boardTab] || [])];
-      this.spectateMany(this.boardTab, sel);
-    });
-    $('bBoardClearSel').addEventListener('click', () => {
-      const sel = this.boardSel[this.boardTab];
-      if (sel) sel.clear();
-      UI.boards();
-    });
     $('bBoardWipe').addEventListener('click', () => {
       Records.wipe();
-      UI.boards();
+      this.renderSel();
       UI.toast('Times cleared');
     });
     $('bSetPassword').addEventListener('click', async () => {
@@ -8414,10 +9114,6 @@ const Game = {
     });
     document.querySelectorAll('#specRates button').forEach((b) =>
       b.addEventListener('click', () => this.setPlaybackRate(+b.dataset.rate)));
-    $('bBoardCmpSel').addEventListener('click', () => {
-      const sel = [...(this.boardSel[this.boardTab] || [])];
-      if (sel.length === 2) this.spectateMany(this.boardTab, sel, true);
-    });
     const scrub = $('specScrub');
     const beginScrub = () => { if (this.spec) this.spec.scrubbing = true; };
     const endScrub = () => {
@@ -9056,7 +9752,7 @@ const Game = {
     if (this.spec) this.spec.cars.forEach((c) => { c.mesh.visible = false; setGhostFlame(c.mesh, false, 1); });
     this.spec = null;
     this.hideAllTags();
-    this.toSelect('boards'); // back to the leaderboard tab specifically — the run just watched came from there
+    this.toSelect(); // back to the courses view it was started from (a map's leaderboard)
   },
 
   /** applies a sign-out/ban/etc. that arrived while a run or replay was in
@@ -9112,8 +9808,7 @@ const Game = {
   /** called whenever the live leaderboard changes: redraw whatever shows it */
   onBoardsChanged() {
     const s = this.state;
-    if (s === 'select') this.setSelectTab(this.selectTab);   // redraws the open tab and its note
-    else if (s === 'courseDetail') { UI.courseDetail(this.courseDetailIndex); this.paintCourseLeader(this.courseDetailIndex); }
+    if (s === 'select') this.renderSel();                    // whichever courses view is open
     else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
     else if (s === 'result') this.renderResultBoard();
     else if (s === 'trophies') {
@@ -9125,77 +9820,77 @@ const Game = {
     if ((s === 'play' || s === 'result') && this.course) UI.record(this.id());
   },
   /**
-   * Courses and Leaderboards used to be two separate screens; they're one
-   * now (one "back to title", one panel, a tab strip switching which pane
-   * is visible) since a course and its own leaderboard are naturally the
-   * same subject — picking a course and checking who's fastest on it are
-   * the same errand, not two different ones. selectTab ('courses' or
-   * 'boards') is the only new piece of state; everything each pane
-   * already did (UI.courseList / UI.boards, the live watchBoards
-   * subscription) is unchanged, just shown/hidden together under one
-   * screen instead of switched between via two separate nav buttons.
+   * The Courses screen: one panel, four views — every map ('list'), one
+   * map's leaderboard ('map'), one section's ('section') and the overall
+   * standings ('overall'). selView says which is open and survives a trip
+   * into a replay and back.
    */
-  selectTab: 'courses',
-  toSelect(tab) {
+  selView: 'list', selSection: 0, courseDetailIndex: -1,
+  toSelect(view) {
     this.state = 'select'; this.running = false;
     Sound.stopEngine();
-    // Same reasoning as toMenu(): picking a different course from the list
-    // is a deliberate exit from "racing so-and-so" mode, not a restart of it.
+    // Same reasoning as toMenu(): going back to the courses is a deliberate
+    // exit from "racing so-and-so" mode, not a restart of it.
     this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
     this.hideAllTags();
-    courseDetailPreview.stop();
-    this.setSelectTab(tab || this.selectTab);
+    if (view) this.selView = ['list', 'map', 'section', 'overall'].includes(view) ? view : 'list';
+    if (this.selView === 'map' && !this.playable[this.courseDetailIndex]) this.selView = 'list';
     UI.show('select');
+    this.showSelView(this.selView, null);
     this.flushPendingAuth();
   },
-  setSelectTab(tab) {
-    this.selectTab = tab === 'boards' ? 'boards' : 'courses';
-    const onBoards = this.selectTab === 'boards';
-    $('bSelTabCourses').classList.toggle('on', !onBoards);
-    $('bSelTabBoards').classList.toggle('on', onBoards);
-    $('selectCoursesPane').hidden = onBoards;
-    $('selectBoardsPane').hidden = !onBoards;
-    // signed in, the server holds the times (they're reset from Settings)
-    $('bBoardWipe').hidden = !onBoards || !!(Cloud.on && Cloud.user);
-    $('selectNote').textContent = onBoards
-      ? (Cloud.on ? (Records.boardsError ? 'Leaderboards could not load. ' + Records.boardsError + ' Retrying every minute.'
-        : 'Live. Tick runs to watch or race them.') : 'Times on this device.')
-      : 'Pick a map to see its leaderboard.';
-    if (onBoards) UI.boards(); else UI.courseList(this.playable, (i) => this.toCourseDetail(i));
+  /** switch the panel to a view; dir 'enter' slides it in from the right,
+   *  'back' from the left, null just shows it */
+  showSelView(view, dir) {
+    this.selView = view;
+    const ids = { list: 'selList', map: 'selMap', section: 'selSection', overall: 'selOverall' };
+    for (const k in ids) {
+      const el = $(ids[k]);
+      el.hidden = k !== view;
+      el.classList.remove('enter', 'back');
+      if (k === view && dir) { void el.offsetWidth; el.classList.add(dir); }
+    }
+    if (dir) $('selPanel').scrollTop = 0;
+    if (view === 'map') courseDetailPreview.start(); else courseDetailPreview.stop();
+    this.renderSel();
   },
-
-  /**
-   * The course-select card's onPick target: instead of jumping straight
-   * into driving, this opens a dedicated page for that one course showing
-   * its own leaderboard table and a rotating 3D model of its current #1
-   * player's car (Cloud.fetchCarColorsOf by that row's uid — see
-   * Records.board()/pull(), which already attaches uid to every row from
-   * Firestore). "Start driving" on that page is the only thing that
-   * actually calls startLevel(i) now. Locked/unplayable courses never
-   * reach here (courseList() already disables their button), so this can
-   * assume i is always safe to load.
-   */
-  courseDetailIndex: -1,
-  async toCourseDetail(i) {
+  /** redraws whichever view is open (live leaderboard updates call this) */
+  renderSel() {
+    const v = this.selView;
+    if (v === 'list') {
+      // signed in, the server holds the times (they're reset from Settings)
+      $('bBoardWipe').hidden = !!(Cloud.on && Cloud.user);
+      $('selectNote').textContent = Cloud.on && Records.boardsError
+        ? 'Leaderboards could not load. ' + Records.boardsError + ' Retrying every minute.'
+        : 'Pick a map for its leaderboard, or a section bar for the whole section\'s.' + (Cloud.on ? '' : ' Times on this device.');
+      UI.courseList(this.playable, (i) => this.openMap(i));
+    } else if (v === 'map') {
+      UI.mapView(this.courseDetailIndex);
+      this.paintCourseLeader(this.courseDetailIndex);
+    } else if (v === 'section') UI.sectionView(this.selSection);
+    else UI.overallView();
+  },
+  openMap(i) {
+    if (!this.playable[i]) return;
     if (this.courseDetailIndex !== i) this.cdShow = 10;
-    this.state = 'courseDetail'; this.running = false;
     this.courseDetailIndex = i;
-    Sound.stopEngine();
-    this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
-    this.hideAllTags();
-    UI.show('courseDetail');
-    UI.courseDetail(i);
-    this.flushPendingAuth();
-    courseDetailPreview.start();
-    await this.paintCourseLeader(i);
+    if (this.state === 'select') this.showSelView('map', 'enter'); else this.toSelect('map');
   },
-  /** paints the course page's car in the current first-place driver's colours */
+  openSection(sec) {
+    this.selSection = sec;
+    if (this.state === 'select') this.showSelView('section', 'enter'); else this.toSelect('section');
+  },
+  openOverall() {
+    if (this.state === 'select') this.showSelView('overall', 'enter'); else this.toSelect('overall');
+  },
+  backToList() { this.showSelView('list', 'back'); },
+  /** paints the map page's car in the current first-place driver's colours */
   async paintCourseLeader(i) {
     const list = Records.board(this.id(i));
     // A row with no uid (local/offline board entry) leaves the widget in
     // its default color rather than guessing whose car it is.
     const colors = (list && list.length && list[0].uid) ? await Cloud.fetchCarColorsOf(list[0].uid) : null;
-    if (colors && this.state === 'courseDetail' && this.courseDetailIndex === i) courseDetailPreview.paint(colors);
+    if (colors && this.state === 'select' && this.selView === 'map' && this.courseDetailIndex === i) courseDetailPreview.paint(colors);
   },
 
   toSettings() {
@@ -10164,6 +10859,8 @@ const Game = {
       UI.speed(this.car.speedFwd);
     } else if (this.state === 'spectate') {
       this.stepSpectate(dt);
+    } else if (this.state === 'section') {
+      SectionView.step(dt);
     } else {
       this.clock += dt;
       if (this.car && this.course) this.chase.orbit(this.car.pos, this.clock);
@@ -10175,7 +10872,7 @@ const Game = {
     else if (this.state === 'spectate') App.aimLight(this.chase.look);
     UI.tick(dt);
     Input.endFrame();
-    App.render();
+    if (this.state !== 'section') App.render();    // the section replay draws its own four views
   }
 };
 
