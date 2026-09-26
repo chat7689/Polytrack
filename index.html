@@ -1420,6 +1420,21 @@ const Records = {
   submit(id, time, laps) {
     const prevBest = this.best(id);
     this.data.cleared[id] = true;
+    const uid = Cloud.on && Cloud.user ? Cloud.user.uid : null;
+    if (uid) {
+      // Signed in, the board is the live server copy: one row per player.
+      // Replace your own row only if this run beat it (exactly what gets
+      // uploaded) — never add a second, uid-less row, and never a slower
+      // run that the server will never see.
+      const list = this.board(id).filter((e) => e.uid !== uid);
+      const best = prevBest && prevBest <= time ? prevBest : time;
+      list.push({ n: this.driver(), t: best, d: Date.now(), uid });
+      list.sort((a, b) => a.t - b.t);
+      this.data.boards[id] = list;
+      if (!prevBest || time < prevBest) this.data.myBests[id] = time;
+      const rank = list.findIndex((e) => e.uid === uid) + 1;
+      return { rank: time <= best ? rank : 0, best: this.best(id), prevBest };
+    }
     const list = this.board(id).slice();
     list.push({ n: this.driver(), t: time, d: Date.now() });
     list.sort((a, b) => a.t - b.t);
@@ -2379,15 +2394,19 @@ const Cloud = {
       this.watchBoards((remote) => {
         Records.data.boards = remote.boards;
         Records.data.cleared = Object.assign({}, Records.data.cleared, remote.cleared);
-        Records.data.myBests = Object.assign({}, Records.data.myBests, remote.myBests);
+        // the server's copy is the truth for your own bests too (a time an
+        // admin removed must disappear here as well)
+        Records.data.myBests = remote.myBests;
         resolve(remote);
         Game.onBoardsChanged();
       }, reject);
     });
-    const remote = await first;
+    await first;
     this.credits = await this.sumCredits();
     this.watchAdjust();
-    return Object.assign({ credits: this.credits }, remote);
+    // whatever the live listener holds NOW — a newer snapshot may have
+    // landed while the credits were being totalled
+    return { credits: this.credits, boards: Records.data.boards, cleared: Records.data.cleared, myBests: Records.data.myBests };
   },
 
   /**
@@ -2454,10 +2473,24 @@ const Cloud = {
       });
       for (const k in boards) boards[k].sort((a, b) => a.t - b.t);
       onChange({ boards, cleared, myBests });
-    }, (e) => { console.warn('aiPolytrack: leaderboard listener', e && e.message); if (onError) onError(e); });
+    }, (e) => {
+      console.warn('aiPolytrack: leaderboard listener', e && e.message);
+      if (onError) onError(e);
+      // a dropped listener would freeze every board until the next sign-in:
+      // reconnect shortly (the same user, same callback)
+      this.boardsUnsub = null;
+      const uid = this.user && this.user.uid;
+      clearTimeout(this._boardsRetry);
+      this._boardsRetry = setTimeout(() => {
+        if (this.on && this.user && this.user.uid === uid && !this.boardsUnsub) this.watchBoards(onChange);
+      }, 8000);
+    });
     return this.boardsUnsub;
   },
-  stopBoards() { if (this.boardsUnsub) { this.boardsUnsub(); this.boardsUnsub = null; } },
+  stopBoards() {
+    clearTimeout(this._boardsRetry);
+    if (this.boardsUnsub) { this.boardsUnsub(); this.boardsUnsub = null; }
+  },
 
   /** this player's own times on the archived Season 1 maps (for the
    *  engraving on a Season 1 trophy) — read only when one is shown */
@@ -2513,12 +2546,20 @@ const Cloud = {
     // from the credits-run grind and the special long course's own
     // reward — see CREDITS_PER_CLEAR's own comment.
     if (ghostSamples && ghostSamples.length) {
-      try {
-        await fsMod.setDoc(fsMod.doc(this.db, 'ghosts', id), {
-          uid, courseId, timeMs: Math.round(timeSec * 1000),
-          samples: ghostSamples.join(',')
-        });
-      } catch (e) { console.warn('aiPolytrack: ghost upload skipped', e && e.message); }
+      // The ghost is what other players race; a time on the board without
+      // one reads as "that run has no ghost data". Retry once, and say so
+      // if it still doesn't go.
+      const ghost = { uid, courseId, timeMs: Math.round(timeSec * 1000), samples: ghostSamples.join(',') };
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          await fsMod.setDoc(fsMod.doc(this.db, 'ghosts', id), ghost);
+          break;
+        } catch (e) {
+          console.warn('aiPolytrack: ghost upload failed', e && e.message);
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
+          else UI.toast('Your time is saved, but its ghost could not be uploaded.');
+        }
+      }
     }
   },
 
@@ -2529,17 +2570,30 @@ const Cloud = {
    *  throw a raw, uncaught TypeError instead of the same "couldn't load
    *  that run" failure every other lookup error already falls back to. */
   async fetchGhost(courseId, uid) {
-    if (!this.on) return null;
+    // ghostError says WHY the last fetch came back empty, so the game can
+    // tell "this run was never saved with a ghost" from "couldn't load it"
+    this.ghostError = null;
+    if (!this.on) { this.ghostError = 'offline'; return null; }
     try {
       const { fsMod } = this.fb;
       const snap = await fsMod.getDoc(fsMod.doc(this.db, 'ghosts', (uid || this.user.uid) + '_' + courseId));
-      if (!snap.exists()) return null;
+      if (!snap.exists()) { this.ghostError = 'missing'; return null; }
       const d = snap.data();
       const s = String(d.samples || '').split(',').map(Number);
       if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
-        || s.some((v) => !isFinite(v))) return null;
+        || s.some((v) => !isFinite(v))) { this.ghostError = 'damaged'; return null; }
       return { t: migrateLegacyTime(d.timeMs / 1000, courseId), s };
-    } catch (e) { return null; }
+    } catch (e) {
+      console.warn('aiPolytrack: could not load a ghost', e && e.message);
+      this.ghostError = 'load';
+      return null;
+    }
+  },
+  /** what to tell the player when a ghost couldn't be used */
+  ghostProblem() {
+    if (this.ghostError === 'load') return 'Could not load that run. Check your connection and try again.';
+    if (this.ghostError === 'damaged') return 'That run\'s ghost is damaged, so it can\'t be raced or watched.';
+    return 'That run was saved without a ghost (its upload failed), so it can\'t be raced or watched.';
   },
 
   /** the admin-awarded Season 1 podium: { gold, silver, bronze } of { uid, name } */
@@ -8267,7 +8321,7 @@ const Game = {
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     UI.toast('Loading ghost…');
     const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, uid), Cloud.fetchCarColorsOf(uid)]);
-    if (!g) { UI.toast('That run has no ghost data.'); return; }
+    if (!g) { UI.toast(Cloud.ghostProblem()); return; }
     const row = (Records.board(courseId) || []).find((e) => e.uid === uid);
     this.ghostOverride = g;
     this.ghostOverrideName = (row && row.n) || 'that driver';
@@ -8296,7 +8350,7 @@ const Game = {
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
     const board = Records.board(courseId) || [];
     const rows = uids.map((uid) => board.find((e) => e.uid === uid)).filter(Boolean);
-    if (!rows.length) { UI.toast('That run has no ghost data.'); return; }
+    if (!rows.length) { UI.toast('Those runs are no longer on the leaderboard.'); return; }
     rows.sort((a, b) => a.t - b.t);
     const capped = rows.slice(0, 1 + SPEC_POOL_SIZE);
     UI.toast('Loading ' + capped.length + ' ghosts…');
@@ -8304,7 +8358,8 @@ const Game = {
       const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, row.uid), Cloud.fetchCarColorsOf(row.uid)]);
       return { g, colors, name: row.n };
     }))).filter((r) => r.g);
-    if (!loaded.length) { UI.toast('That run has no ghost data.'); return; }
+    if (!loaded.length) { UI.toast(Cloud.ghostProblem()); return; }
+    if (loaded.length < capped.length) UI.toast((capped.length - loaded.length) + ' of those runs had no ghost and were left out.');
     const primary = loaded[0], rest = loaded.slice(1);
     this.ghostOverride = primary.g;
     this.ghostOverrideName = primary.name;
@@ -8570,7 +8625,8 @@ const Game = {
       const [g, colors] = await Promise.all([Cloud.fetchGhost(courseId, uid), Cloud.fetchCarColorsOf(uid)]);
       return { uid, g, colors, name: nameOf(uid) };
     }))).filter((r) => r.g);
-    if (!loaded.length) { UI.toast('That run has no ghost data.'); return; }
+    if (!loaded.length) { UI.toast(Cloud.ghostProblem()); return; }
+    if (loaded.length < capped.length) UI.toast((capped.length - loaded.length) + ' of those runs had no ghost and were left out.');
     if (!this.loadLevel(idx)) return;
     this._specRig = null;
     const meshesFor = [this.specMesh, ...this.extraSpecMeshes.map((s) => s.mesh)];
@@ -8696,9 +8752,18 @@ const Game = {
   },
   /** called whenever the live leaderboard changes: redraw whatever shows it */
   onBoardsChanged() {
-    if (this.state === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
-    else if (this.state === 'courseDetail') { UI.courseDetail(this.courseDetailIndex); this.paintCourseLeader(this.courseDetailIndex); }
-    else if (this.state === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
+    const s = this.state;
+    if (s === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
+    else if (s === 'courseDetail') { UI.courseDetail(this.courseDetailIndex); this.paintCourseLeader(this.courseDetailIndex); }
+    else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
+    else if (s === 'result') this.renderResultBoard();
+    else if (s === 'trophies') {
+      const list = Trophies.compute(this.seasonAwards, this.s1Mine);
+      UI.trophyList(list);
+      TrophyRoom.start({ credits: Cloud.on ? Records.credits : 0, counter: Cloud.on, trophies: list });
+    }
+    // the course record shown while driving
+    if ((s === 'play' || s === 'result') && this.course) UI.record(this.id());
   },
   /**
    * Courses and Leaderboards used to be two separate screens; they're one
@@ -9042,6 +9107,7 @@ const Game = {
     $('rSub').textContent = 'Awarding your credits…';
     $('rBoardHd').textContent = '';
     $('rBoard').innerHTML = '';
+    this.resultBoardId = null;          // no live course board on this result
     $('rCampaignRow').hidden = true;
     $('rCreditsRunRow').hidden = false;
     $('creditBurst').hidden = true;
@@ -9137,11 +9203,8 @@ const Game = {
     if (!prevBest || this.time < prevBest) Records.setGhost(id, this.time, this.rec);
     this.ghostMesh.visible = false;
 
-    const list = Records.board(id).slice(0, 5);
-    $('rBoardHd').textContent = 'Course leaderboard — ' + LEVELS[this.levelIndex].name;
-    $('rBoard').innerHTML = list.map((e, i) =>
-      '<li class="' + (e.t === this.time && e.n === Records.driver() ? 'me' : '') + '"><span>' +
-      (i + 1) + '. ' + escapeHtml(e.n) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
+    this.resultBoardId = id;
+    this.renderResultBoard();
     this.ghostData = Records.ghost(id);
     this.buildGhostProgress();
     UI.best(Records.best(id));
@@ -9153,6 +9216,19 @@ const Game = {
     UI.show('result');
     UI.clock(this.time, true);
     this.awardCompletion();
+  },
+  /** the top five on the course just finished; redrawn live while the
+   *  result screen is up, so a time someone else sets appears in it */
+  renderResultBoard() {
+    const id = this.resultBoardId;
+    if (!id) return;
+    const lv = LEVELS[courseIndexOf(id)];
+    const uid = Cloud.on && Cloud.user ? Cloud.user.uid : null;
+    const list = Records.board(id).slice(0, 5);
+    $('rBoardHd').textContent = 'Course leaderboard — ' + (lv ? lv.name : '');
+    $('rBoard').innerHTML = list.map((e, i) =>
+      '<li class="' + ((uid ? e.uid === uid : e.n === Records.driver()) ? 'me' : '') + '"><span>' +
+      (i + 1) + '. ' + escapeHtml(e.n) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
   },
   /** +1 credit for any finished course that isn't a race attempt */
   async awardCompletion() {

@@ -240,7 +240,10 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.timeMs is number
         && request.resource.data.samples is string
-        && request.resource.data.samples.size() < 60000;
+        // ~820 characters per second of driving: 400k covers the game's
+        // own 5-minute recording cap (60k used to drop every run over
+        // ~74 s, leaving a time on the board with no ghost to race)
+        && request.resource.data.samples.size() < 400000;
       // A player may delete their own ghost (Settings > reset scores); an
       // admin may delete any ghost. Checked against the doc id itself, not
       // resource.data — see the identical note on bests' delete rule.
