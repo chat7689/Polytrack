@@ -2173,6 +2173,10 @@ const Cloud = {
    *  first and every client's next snapshot reflects that one race. */
   async openLobby() {
     if (!this.user || !this.on) return;
+    // one new lobby per client at a time (the lobby snapshot takes a moment
+    // to arrive; a second call in that gap used to open a duplicate)
+    if (Date.now() - (this._lobbyOpenedAt || 0) < 15000) return;
+    this._lobbyOpenedAt = Date.now();
     const { fsMod } = this.fb;
     const id = 'race_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
     try {
@@ -2186,11 +2190,11 @@ const Cloud = {
    *  watchCurrentRace first notices 2+ entries calls this once. */
   async startCountdown(raceId) {
     const { fsMod } = this.fb;
-    try {
-      await fsMod.updateDoc(fsMod.doc(this.db, 'races', raceId), {
-        state: 'starting', joinDeadline: fsMod.Timestamp.fromMillis(Date.now() + 60000)
-      });
-    } catch (e) { /* another client already made this transition, or lost a race to */ }
+    // a failure (usually: another client already made this transition) is
+    // passed up so the caller backs off rather than retrying every second
+    await fsMod.updateDoc(fsMod.doc(this.db, 'races', raceId), {
+      state: 'starting', joinDeadline: fsMod.Timestamp.fromMillis(Date.now() + 60000)
+    });
   },
 
   /** starting -> running: picks the course (plain Math.random, same as the
@@ -2202,12 +2206,10 @@ const Cloud = {
   async startRace(raceId, courseId) {
     const { fsMod } = this.fb;
     const now = Date.now();
-    try {
-      await fsMod.updateDoc(fsMod.doc(this.db, 'races', raceId), {
-        state: 'running', courseId,
-        startedAt: fsMod.Timestamp.fromMillis(now), endsAt: fsMod.Timestamp.fromMillis(now + 10 * 60 * 1000)
-      });
-    } catch (e) { /* another client already made this transition */ }
+    await fsMod.updateDoc(fsMod.doc(this.db, 'races', raceId), {
+      state: 'running', courseId,
+      startedAt: fsMod.Timestamp.fromMillis(now), endsAt: fsMod.Timestamp.fromMillis(now + 10 * 60 * 1000)
+    });
   },
 
   /**
@@ -2221,9 +2223,19 @@ const Cloud = {
    * nobody finished, in which case every entrant is refunded their own
    * buy-in instead of the pot vanishing.
    */
-  async settleRace(raceId, entries) {
+  async settleRace(raceId) {
     const { fsMod } = this.fb;
-    const finishers = entries.filter((e) => typeof e.bestTimeMs === 'number')
+    // Who entered comes from the server, never from this client's live
+    // list: that list is empty for a moment whenever the race first loads
+    // (the race document arrives before its entries), and settling in that
+    // moment marked races settled with no payouts at all — every stake lost.
+    let entries = [];
+    (await fsMod.getDocs(fsMod.collection(this.db, 'races', raceId, 'entries')))
+      .forEach((d) => entries.push({ uid: d.id, ...d.data() }));
+    // a malformed entry (no usable buy-in) can't be allowed to turn every
+    // payout into NaN, which the rules reject on every retry forever
+    entries = entries.filter((e) => e && e.uid && Number.isFinite(e.buyIn) && e.buyIn > 0);
+    const finishers = entries.filter((e) => typeof e.bestTimeMs === 'number' && Number.isFinite(e.bestTimeMs))
       .sort((a, b) => a.bestTimeMs - b.bestTimeMs);
     finishers.forEach((e, i) => { e.placement = i + 1; });
     const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
@@ -2239,7 +2251,8 @@ const Cloud = {
     } else {
       const d = pot / denom;
       for (const e of finishers) {
-        const payout = Math.floor(d * (e.buyIn / e.placement));
+        const raw = Math.floor(d * (e.buyIn / e.placement));
+        const payout = Number.isFinite(raw) && raw >= 0 ? Math.min(raw, pot) : 0;
         e.payout = payout;
         batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
         batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
@@ -2474,7 +2487,8 @@ const Cloud = {
       for (const k in boards) boards[k].sort((a, b) => a.t - b.t);
       onChange({ boards, cleared, myBests });
     }, (e) => {
-      console.warn('aiPolytrack: leaderboard listener', e && e.message);
+      console.warn('aiPolytrack: leaderboard listener', e && e.code, e && e.message);
+      this.noteError(e);
       if (onError) onError(e);
       // a dropped listener would freeze every board until the next sign-in:
       // reconnect shortly (the same user, same callback)
@@ -2584,14 +2598,36 @@ const Cloud = {
         || s.some((v) => !isFinite(v))) { this.ghostError = 'damaged'; return null; }
       return { t: migrateLegacyTime(d.timeMs / 1000, courseId), s };
     } catch (e) {
-      console.warn('aiPolytrack: could not load a ghost', e && e.message);
+      console.warn('aiPolytrack: could not load a ghost', e && e.code, e && e.message);
       this.ghostError = 'load';
+      this.ghostErrorText = this.errText(e);
       return null;
     }
   },
+  /**
+   * Plain words for a failed Firestore call. The free plan allows 50,000
+   * reads a day; once they're gone every read fails until midnight
+   * Pacific, and saying "check your connection" then only misleads.
+   */
+  errText(e) {
+    const c = String((e && e.code) || '').replace(/^firestore\//, '');
+    if (c === 'resource-exhausted') return 'The game\'s free daily database limit is used up. It resets at midnight Pacific time.';
+    if (c === 'permission-denied' || c === 'unauthenticated') return 'Your sign-in has expired. Sign out and back in.';
+    if (c === 'unavailable' || /offline/i.test((e && e.message) || '')) return 'No connection to the game server right now.';
+    return 'The server said: ' + (c || (e && e.message) || 'unknown error') + '.';
+  },
+  /** a quota error anywhere gets said once a minute, wherever the player is */
+  noteError(e) {
+    const c = String((e && e.code) || '').replace(/^firestore\//, '');
+    if (c !== 'resource-exhausted') return;
+    const now = Date.now();
+    if (now - (this._quotaToldAt || 0) < 60000) return;
+    this._quotaToldAt = now;
+    UI.toast(this.errText(e));
+  },
   /** what to tell the player when a ghost couldn't be used */
   ghostProblem() {
-    if (this.ghostError === 'load') return 'Could not load that run. Check your connection and try again.';
+    if (this.ghostError === 'load') return 'Could not load that run. ' + (this.ghostErrorText || '');
     if (this.ghostError === 'damaged') return 'That run\'s ghost is damaged, so it can\'t be raced or watched.';
     return 'That run was saved without a ghost (its upload failed), so it can\'t be raced or watched.';
   },
@@ -7494,8 +7530,7 @@ const Game = {
   spec: null,
   confirmedUid: null, authPending: false,
   lobby: null, lobbyEntries: [], lobbyUnwatch: null,
-  _lockedRaceId: null, _settlingRace: null, _nextLobbyTimer: null,
-  _startingCountdownFor: null, _startingRaceFor: null,
+  _lockedRaceId: null, _nextLobbyTimer: null, _raceSteps: null,
   _joinedRaceId: null, _joinedEntry: null,
   garageSlot: 'primary', _garageRolling: false,
   // Leaderboard screen state: which tab is open, and which uids are
@@ -7681,7 +7716,8 @@ const Game = {
       Records.hydrate(await Cloud.pull());
     } catch (e) {
       console.warn('aiPolytrack: could not read the leaderboards', e && e.message);
-      UI.toast('Could not load leaderboards. Check your connection.');
+      UI.toast('Could not load the leaderboards. ' + Cloud.errText(e));
+      this.scheduleCloudRetry(user.uid);
     }
     if (this.confirmedUid !== user.uid) {
       try { await CarColor.load(); } catch (e) { console.warn('aiPolytrack: could not load car colors', e && e.message); }
@@ -7712,6 +7748,20 @@ const Game = {
    * to make the same one is harmless; whichever write lands first wins and
    * every other client's next snapshot just reflects that.
    */
+  /** the sign-in load failed (no connection, or the daily read limit):
+   *  keep trying quietly once a minute, so credits and live boards come
+   *  back without the player having to sign in again */
+  scheduleCloudRetry(uid) {
+    clearTimeout(this._cloudRetry);
+    this._cloudRetry = setTimeout(async () => {
+      if (!Cloud.user || Cloud.user.uid !== uid) return;
+      try {
+        Records.hydrate(await Cloud.pull());
+        UI.who(Cloud.name(), Records.credits);
+        this.onBoardsChanged();
+      } catch (e) { this.scheduleCloudRetry(uid); }
+    }, 60000);
+  },
   onLobbyUpdate(race, entries) {
     this.lobby = race;
     this.lobbyEntries = entries;
@@ -7754,24 +7804,33 @@ const Game = {
     // write is still in flight, and without a guard each would fire its
     // own redundant write instead of waiting for the snapshot that
     // actually reflects the change.
+    // One attempt at a time per race step, and a step that fails backs off
+    // (5 s, doubling to 10 min) instead of retrying every second in every
+    // open tab: each attempt is a write whose rules read the race document,
+    // and a stuck race retried once a second by several players' games
+    // can burn the whole free daily read quota on its own.
+    const attempt = (step, fn) => {
+      const all = this._raceSteps || (this._raceSteps = {});
+      const key = race.id + ':' + step;
+      const st = all[key] || (all[key] = { busy: false, next: 0, delay: 5000 });
+      if (st.busy || now < st.next) return;
+      st.busy = true;
+      Promise.resolve().then(fn)
+        .then(() => { st.delay = 5000; st.next = now + 3000; })
+        .catch((e) => {
+          console.warn('aiPolytrack: race ' + step + ' failed', e && e.code, e && e.message);
+          Cloud.noteError(e);
+          st.next = Date.now() + st.delay;
+          st.delay = Math.min(st.delay * 2, 600000);
+        })
+        .finally(() => { st.busy = false; });
+    };
     if (race.state === 'lobby' && this.lobbyEntries.length >= 2) {
-      if (this._startingCountdownFor !== race.id) {
-        this._startingCountdownFor = race.id;
-        Cloud.startCountdown(race.id).finally(() => { this._startingCountdownFor = null; });
-      }
+      attempt('countdown', () => Cloud.startCountdown(race.id));
     } else if (race.state === 'starting' && tsMs(race.joinDeadline) && now >= tsMs(race.joinDeadline)) {
-      if (this._startingRaceFor !== race.id) {
-        this._startingRaceFor = race.id;
-        const idx = Math.floor(Math.random() * LEVELS.length);
-        Cloud.startRace(race.id, this.id(idx)).finally(() => { this._startingRaceFor = null; });
-      }
+      attempt('start', () => Cloud.startRace(race.id, this.id(Math.floor(Math.random() * LEVELS.length))));
     } else if (race.state === 'running' && tsMs(race.endsAt) && now >= tsMs(race.endsAt)) {
-      if (!this._settlingRace || this._settlingRace !== race.id) {
-        this._settlingRace = race.id;
-        Cloud.settleRace(race.id, this.lobbyEntries)
-          .catch((e) => console.warn('aiPolytrack: could not settle race', e && e.message))
-          .finally(() => { this._settlingRace = null; });
-      }
+      attempt('settle', () => Cloud.settleRace(race.id));
     } else if (race.state === 'settled') {
       // Give everyone a moment to see the standings, then open the next
       // lobby — one client's timer does it, same harmless-race-to-create
@@ -9175,7 +9234,7 @@ const Game = {
         // still shows it) but the shared leaderboard never got it — tell
         // the player rather than let them find out days later that a
         // record run never left their machine.
-        UI.toast('Time not uploaded. Check your connection.');
+        UI.toast('Time not uploaded. ' + Cloud.errText(e));
       });
     }
     Sound.stopEngine();
