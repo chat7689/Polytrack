@@ -1431,7 +1431,7 @@ const Records = {
   },
   setGhost(id, time, samples) {
     if (!this.data.ghosts) this.data.ghosts = {};
-    this.data.ghosts[id] = { t: time, s: samples };
+    this.data.ghosts[id] = { t: time, s: samples, v: GHOST_VERSION };
     this.save();
   },
 
@@ -2674,7 +2674,7 @@ const Cloud = {
       // The ghost is what other players race; a time on the board without
       // one reads as "that run has no ghost data". Retry once, and say so
       // if it still doesn't go.
-      const ghost = { uid, courseId, timeMs: Math.round(timeSec * 1000), samples: ghostSamples.join(',') };
+      const ghost = { uid, courseId, timeMs: Math.round(timeSec * 1000), samples: ghostSamples.join(','), v: GHOST_VERSION };
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           await fsMod.setDoc(fsMod.doc(this.db, 'ghosts', id), ghost);
@@ -2707,7 +2707,7 @@ const Cloud = {
       const s = String(d.samples || '').split(',').map(Number);
       if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
         || s.some((v) => !isFinite(v))) { this.ghostError = 'damaged'; return null; }
-      return { t: migrateLegacyTime(d.timeMs / 1000, courseId), s };
+      return { t: migrateLegacyTime(d.timeMs / 1000, courseId), s, v: d.v || 1 };
     } catch (e) {
       console.warn('aiPolytrack: could not load a ghost', e && e.code, e && e.message);
       this.ghostError = 'load';
@@ -4305,7 +4305,8 @@ class TrackBuilder {
     // twice per S-bend.) How far the inside edge sinks is kept for
     // liftBankedTurns, which raises the track only where that edge would
     // otherwise reach the grass, easing in and out over long ramps.
-    return { p: this.p.toArray(), t: pitch, y: this.h, r: roll, w: w, sink: (w / 2) * Math.abs(Math.sin(roll)) };
+    const sink = (w / 2) * Math.abs(Math.sin(roll));
+    return { p: this.p.toArray(), t: pitch, y: this.h, r: roll, w: w, sink, y0: this.p.y, sink0: sink, r0: roll };
   }
 
   /** core sweep: run forward with the given rise, subdivided to SEG spacing */
@@ -4439,9 +4440,17 @@ class TrackBuilder {
     return this;
   }
   build() {
+    // Ghosts recorded before the road-shaping below existed ran on the old
+    // surface: banks tilted about the inside edge, with only a short profile
+    // blend. Keep that surface (frames only) so replays of those ghosts can
+    // be moved onto today's road exactly (see buildCourse's roadShift).
+    const oldSurface = this.strips.map((st) => ({ frames: st.frames.map((fr) => ({
+      p: [fr.p[0], fr.y0 + fr.sink0, fr.p[2]], t: fr.t, y: fr.y, r: fr.r0, w: fr.w })) }));
+    smoothProfile(oldSurface, 7, false);
     easeBanking(this.strips);
     liftBankedTurns(this.strips);
     smoothProfile(this.strips, 7);
+    for (const st of this.strips) for (const fr of st.frames) { delete fr.y0; delete fr.sink0; delete fr.r0; }
     // gates stand on the finished road surface (the lift and the profile
     // smoothing above can move it a metre from where the cursor was)
     for (const g of this.gates) {
@@ -4452,7 +4461,7 @@ class TrackBuilder {
       }
       if (best) g.pos[1] = best.p[1];
     }
-    return { strips: this.strips, gates: this.gates, start: this.start, path: this.path };
+    return { strips: this.strips, gates: this.gates, start: this.start, path: this.path, oldSurface };
   }
 }
 
@@ -4532,7 +4541,7 @@ function liftBankedTurns(strips) {
 const PROFILE_SIGMA = 14;   // metres: the long blend's width (crest radius ~ 2.5 * sigma / grade change)
 const PROFILE_KEEP = 24;    // metres at each end of a strip left untouched (jump take-offs and landings)
 const PROFILE_BLEND = 16;   // metres over which the long blend fades in past that
-function smoothProfile(strips, iterations) {
+function smoothProfile(strips, iterations, long = true) {
   for (const st of strips) {
     const F = st.frames;
     const n = F.length;
@@ -4550,7 +4559,7 @@ function smoothProfile(strips, iterations) {
     for (let i = 1; i < n; i++) dist.push(dist[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2]));
     const len = dist[n - 1];
     const y0 = F.map((f) => f.p[1]);
-    for (let i = 1; i < n - 1; i++) {
+    for (let i = 1; long && i < n - 1; i++) {
       const fromEnd = Math.min(dist[i], len - dist[i]);
       const keep = clamp((fromEnd - PROFILE_KEEP) / PROFILE_BLEND, 0, 1);
       if (keep <= 0) continue;
@@ -4595,6 +4604,7 @@ function validateCourse(data) {
   const finish = gates.filter((g) => g.kind === 'finish').length;
   return {
     strips, gates, path, start: data.start,
+    oldSurface: Array.isArray(data.oldSurface) ? data.oldSurface : null,
     valid: strips.length > 0 && finish === 1 && path.length > 1
   };
 }
@@ -4982,7 +4992,43 @@ function buildCourse(data, scene, world) {
   world.index();
   scene.add(root);
   const ext = courseCenterAndExtent(dense);
+  // The road as it was before the reshaping, collision only, so a ghost
+  // recorded on it can be moved by exactly how far the surface under it
+  // moved (Game.ghostY). Built once per course; nothing is drawn.
+  let oldWorld = null;
+  if (data.oldSurface) {
+    oldWorld = new PhysicsWorld();
+    oldWorld.groundY = null;
+    const qa = new THREE.Quaternion(), ax = new THREE.Vector3(), eu = new THREE.Euler();
+    const edgeOf = (fr, side) => {
+      qa.setFromEuler(eu.set(fr.t, fr.y, fr.r, 'YXZ'));
+      ax.set(1, 0, 0).applyQuaternion(qa);
+      return new THREE.Vector3().fromArray(fr.p).addScaledVector(ax, side * fr.w / 2);
+    };
+    for (const st of data.oldSurface) {
+      const F = st.frames || [];
+      for (let i = 0; i < F.length - 1; i++) {
+        oldWorld.addQuad(edgeOf(F[i], 1), edgeOf(F[i], -1), edgeOf(F[i + 1], -1), edgeOf(F[i + 1], 1), 1, 1.1, true, null, true);
+      }
+    }
+    oldWorld.index();
+  }
+  const shiftHit = { normal: new THREE.Vector3(), point: new THREE.Vector3() };
+  const shiftFrom = new THREE.Vector3(), DOWN = new THREE.Vector3(0, -1, 0);
+  const surfaceBelow = (w, x, y, z, trackOnly) => {
+    shiftFrom.set(x, y + 3, z);
+    if (!w.raycast(shiftFrom, DOWN, 9, shiftHit)) return null;
+    if (trackOnly && shiftHit.track === false) return null;
+    return shiftHit.point.y;
+  };
+  const roadShift = (x, z, y) => {
+    if (!oldWorld) return 0;
+    const was = surfaceBelow(oldWorld, x, y, z, false);
+    const now = surfaceBelow(world, x, y, z, true);
+    return was === null || now === null ? 0 : now - was;
+  };
   return {
+    roadShift,
     root, gates, path, cum, length: cum[cum.length - 1],
     minY: isFinite(minY) ? minY : 0, segments: segCount, tris: world.tris.length,
     props: props.tree.length + props.rock.length,
@@ -7769,6 +7815,9 @@ function escapeHtml(s) {
    playback stays in step whatever the frame rate does.                      */
 const GHOST_HZ = 20;
 const GHOST_STRIDE = 8;                      // pos.xyz, quat.xyzw, input bits
+// 2 = recorded on the current road shape (centre-pivot banking, eased
+// profile); older ghosts are shifted onto it when replayed (Game.ghostY)
+const GHOST_VERSION = 2;
 const GHOST_MAX = GHOST_STRIDE * GHOST_HZ * 300;   // 300 s ceiling per recording
 // Extra watched/raced cars beyond the primary one — set to cover every
 // row a course's leaderboard can ever hold (Records.MAX) minus the
@@ -8861,6 +8910,7 @@ const Game = {
       const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
       const rig = c.rig;
       rig.pos.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
+      rig.pos.y = this.ghostY(g, rig.pos);
       c.mesh.position.copy(rig.pos);
       _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
       _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
@@ -9631,6 +9681,12 @@ const Game = {
       if (!this.started) { this.ghostData = g; this.buildGhostProgress(); }
     });
   },
+  /** a ghost's height on today's road: one recorded before the road was
+   *  reshaped is moved by exactly how far the road moved under it */
+  ghostY(g, p) {
+    if (!g || (g.v || 1) >= GHOST_VERSION || !this.course || !this.course.roadShift) return p.y;
+    return p.y + this.course.roadShift(p.x, p.z, p.y);
+  },
   /** the top five on the course just finished; redrawn live while the
    *  result screen is up, so a time someone else sets appears in it */
   renderResultBoard() {
@@ -9747,6 +9803,7 @@ const Game = {
       const a = (n - 1) * GHOST_STRIDE;
       mesh.visible = true;
       mesh.position.set(g.s[a], g.s[a + 1], g.s[a + 2]);
+      mesh.position.y = this.ghostY(g, mesh.position);
       setGhostFlame(mesh, false, dt);
       this.updateGhostTag('race', !!this.ghostOverrideName, mesh, this.ghostOverrideName,
         { kmh: 0, place: this._racePlaces && this._racePlaces.primary });
@@ -9757,6 +9814,7 @@ const Game = {
     mesh.visible = true;
     mesh.position.set(
       lerp(g.s[a], g.s[b], u), lerp(g.s[a + 1], g.s[b + 1], u), lerp(g.s[a + 2], g.s[b + 2], u));
+    mesh.position.y = this.ghostY(g, mesh.position);
     _gq1.set(g.s[a + 3], g.s[a + 4], g.s[a + 5], g.s[a + 6]);
     _gq2.set(g.s[b + 3], g.s[b + 4], g.s[b + 5], g.s[b + 6]);
     mesh.quaternion.copy(_gq1).slerp(_gq2, u);
@@ -9835,6 +9893,7 @@ const Game = {
         const a = (n - 1) * GHOST_STRIDE;
         slot.mesh.visible = true;
         slot.mesh.position.set(s[a], s[a + 1], s[a + 2]);
+        slot.mesh.position.y = this.ghostY(g, slot.mesh.position);
         setGhostFlame(slot.mesh, false, dt);
         this.updateGhostTag(key, true, slot.mesh, rec.name, { kmh: 0, place });
         continue;
@@ -9843,6 +9902,7 @@ const Game = {
       const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
       slot.mesh.visible = true;
       slot.mesh.position.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
+      slot.mesh.position.y = this.ghostY(g, slot.mesh.position);
       _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
       _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
       slot.mesh.quaternion.copy(_gq1).slerp(_gq2, u);
