@@ -1323,20 +1323,41 @@ const Records = {
         const p = JSON.parse(raw);
         if (p && typeof p === 'object') {
           this.data.driver = typeof p.driver === 'string' ? p.driver.slice(0, 14) : '';
-          this.data.boards = (p.boards && typeof p.boards === 'object') ? p.boards : {};
-          for (const k in this.data.boards) {
-            const list = this.data.boards[k];
+          this.localBoards = (p.boards && typeof p.boards === 'object') ? p.boards : {};
+          for (const k in this.localBoards) {
+            const list = this.localBoards[k];
             if (Array.isArray(list)) list.forEach((e) => { if (e && typeof e.t === 'number') e.t = migrateLegacyTime(e.t, k); });
           }
-          this.data.cleared = (p.cleared && typeof p.cleared === 'object') ? p.cleared : {};
-          this.data.ghosts = (p.ghosts && typeof p.ghosts === 'object') ? p.ghosts : {};
-          for (const k in this.data.ghosts) {
-            const g = this.data.ghosts[k];
+          this.localCleared = (p.cleared && typeof p.cleared === 'object') ? p.cleared : {};
+          this.localGhosts = (p.ghosts && typeof p.ghosts === 'object') ? p.ghosts : {};
+          for (const k in this.localGhosts) {
+            const g = this.localGhosts[k];
             if (g && typeof g.t === 'number') g.t = migrateLegacyTime(g.t, k);
           }
         }
       } catch (e) { console.warn('aiPolytrack: stored records were unreadable, starting fresh'); }
     }
+  },
+
+  /**
+   * The device's own offline records (every run appended, under the
+   * offline driver name) are only ever shown when the game is genuinely
+   * offline. With accounts on they used to sit in the leaderboard until
+   * the live one loaded, and stayed there whenever it failed to: a list
+   * full of your own repeated times, some of them named "Driver".
+   */
+  useLocal() {
+    this.data.boards = this.localBoards || {};
+    this.data.cleared = this.localCleared || {};
+    this.data.ghosts = this.localGhosts || {};
+  },
+  /** signing out: nothing of the previous account's may carry over */
+  resetSession() {
+    this.data.boards = {};
+    this.data.cleared = {};
+    this.data.myBests = {};
+    this.data.ghosts = {};
+    this.boardsError = '';
   },
 
   save() {
@@ -1360,7 +1381,7 @@ const Records = {
   hydrate(remote) {
     this.data.boards = remote.boards || {};
     this.data.cleared = Object.assign({}, this.data.cleared, remote.cleared || {});
-    this.data.myBests = Object.assign({}, this.data.myBests, remote.myBests || {});
+    this.data.myBests = remote.myBests || {};
     Cloud.credits = remote.credits || 0;
   },
   // Credits only ever mean anything once signed in — this is a thin
@@ -1421,6 +1442,7 @@ const Records = {
     const prevBest = this.best(id);
     this.data.cleared[id] = true;
     const uid = Cloud.on && Cloud.user ? Cloud.user.uid : null;
+    if (Cloud.on && !uid) return { rank: 0, best: prevBest, prevBest };
     if (uid) {
       // Signed in, the board is the live server copy: one row per player.
       // Replace your own row only if this run beat it (exactly what gets
@@ -2007,7 +2029,18 @@ const Cloud = {
       this.fb = { app, authMod, fsMod };
       const a = app.initializeApp(FIREBASE.config);
       this.auth = authMod.getAuth(a);
-      this.db = fsMod.getFirestore(a);
+      // A local cache (shared between tabs): a reload resumes the live
+      // leaderboard and only downloads what changed, instead of every
+      // entry again — reads are the free plan's scarce resource — and the
+      // last data seen still shows if the server can't be reached.
+      try {
+        this.db = fsMod.initializeFirestore(a, {
+          localCache: fsMod.persistentLocalCache({ tabManager: fsMod.persistentMultipleTabManager() })
+        });
+      } catch (e) {
+        console.warn('aiPolytrack: no local database cache', e && e.message);
+        this.db = fsMod.getFirestore(a);
+      }
       this.on = true;
       this.ready = true;
       return true;
@@ -2030,10 +2063,16 @@ const Cloud = {
       // every signed-in action then said "Sign in to…".
       const now = this.auth.currentUser || null;
       if ((user ? user.uid : null) !== (now ? now.uid : null)) return;
+      // Firebase can report the same signed-in user more than once; keep
+      // the profile we already have for them instead of blanking it (a
+      // blank profile shows "Driver" and, if the re-read hiccups, used to
+      // bounce the player to the sign-in page)
+      const same = user && this.user && this.user.uid === user.uid && this.profile;
       this.user = user || null;
-      this.profile = null;
-      if (user) {
-        try { await this.loadProfile(); } catch (e) { this.error = e.message; }
+      if (!user) this.profile = null;
+      else if (!same) {
+        this.profile = null;
+        try { await this.loadProfile(); } catch (e) { this.error = this.error || e.message; }
       }
       onChange(this.user, this.profile);
     });
@@ -2363,7 +2402,23 @@ const Cloud = {
 
   async loadProfile() {
     const { fsMod } = this.fb;
-    const snap = await fsMod.getDoc(fsMod.doc(this.db, 'profiles', this.user.uid));
+    const key = 'aipolytrack.profile.' + this.user.uid;
+    let snap;
+    try {
+      snap = await fsMod.getDoc(fsMod.doc(this.db, 'profiles', this.user.uid));
+    } catch (e) {
+      // A read that failed (connection, daily read limit) is not a missing
+      // profile: carry on with this account's copy from last time rather
+      // than throwing the player back to the sign-in page.
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem(key) || 'null'); } catch (x) { /* storage blocked */ }
+      if (cached && cached.displayName) { this.profile = cached; return cached; }
+      this.error = this.errText(e);
+      throw e;
+    }
+    if (snap.exists()) {
+      try { localStorage.setItem(key, JSON.stringify(snap.data())); } catch (x) { /* storage blocked */ }
+    }
     if (!snap.exists()) {
       this.profile = null;
       let gone = false;
@@ -2549,10 +2604,20 @@ const Cloud = {
     const { fsMod } = this.fb;
     const uid = this.user.uid;
     const id = uid + '_' + courseId;
-    await fsMod.setDoc(fsMod.doc(this.db, 'bests', id), {
-      uid, courseId, displayName: this.name(), banned: false,
-      timeMs: Math.round(timeSec * 1000), updatedMs: Date.now()
+    const timeMs = Math.round(timeSec * 1000);
+    // Only ever replace a slower time. This device can think a run is a
+    // best when it isn't (its copy of your bests failed to load), and a
+    // blind write then overwrote a faster time on the server with a
+    // slower one. The rules enforce the same thing.
+    const ref = fsMod.doc(this.db, 'bests', id);
+    const improved = await fsMod.runTransaction(this.db, async (tx) => {
+      const cur = await tx.get(ref);
+      const had = cur.exists() ? cur.data().timeMs : null;
+      if (typeof had === 'number' && had <= timeMs) return false;
+      tx.set(ref, { uid, courseId, displayName: this.name(), banned: false, timeMs, updatedMs: Date.now() });
+      return true;
     });
+    if (!improved) return false;          // the server already has a faster run (and its ghost)
     // First-clearing a course no longer pays a credit bonus (see
     // Game.finishLevel — firstClear is still computed and passed in for
     // the result screen's own "first clean run" messaging, it just no
@@ -2665,7 +2730,13 @@ const Cloud = {
         secondary: d.secondary || fallback.secondary,
         isNew: false
       };
-    } catch (e) { return fallback; }
+    } catch (e) {
+      // A failed read is NOT a new player. Treating it as one rolled
+      // starter colours and saved them over everything the player had
+      // bought; the caller keeps what it has and tries again later.
+      e.carColorsUnread = true;
+      throw e;
+    }
   },
 
   /** the equipped primary/secondary colors of ANY player, by uid — used
@@ -2989,17 +3060,22 @@ function buildMaterials() {
   // slightly less saturated than the original pale grey/tan, so the track
   // reads as a real driving surface against the terrain and the curbs
   // pop with more contrast against it.
-  MAT.deck = std(0x35383e, { roughness: 0.88, metalness: 0 });
-  MAT.deckAlt = std(0x3d372c, { roughness: 0.9, metalness: 0 });
-  MAT.curb = std(0xe8544c, { roughness: 0.78 });
-  MAT.curbAlt = std(0xf6f7f9, { roughness: 0.82 });
+  // The road, kerbs and earth banks are smooth-shaded from the normals the
+  // course builder gives them: flat-shaded, the twisting quads on a banked
+  // curve lit each triangle differently, a sawtooth of dark lines along the
+  // road edge and stripes down the banks. (Props keep the faceted look.)
+  const smooth = { flatShading: false };
+  MAT.deck = std(0x35383e, Object.assign({ roughness: 0.88, metalness: 0 }, smooth));
+  MAT.deckAlt = std(0x3d372c, Object.assign({ roughness: 0.9, metalness: 0 }, smooth));
+  MAT.curb = std(0xe8544c, Object.assign({ roughness: 0.78 }, smooth));
+  MAT.curbAlt = std(0xf6f7f9, Object.assign({ roughness: 0.82 }, smooth));
   MAT.truss = std(0x8492a1, { roughness: 0.95 });
   MAT.pier = std(0xa7b3bf, { roughness: 0.97 });
-  MAT.bank = std(0x7fb968, { roughness: 1 });          // grass embankment
+  MAT.bank = std(0x7fb968, { roughness: 1, flatShading: false });   // grass embankment
   MAT.side = std(0x4a4f57, { roughness: 0.92 });
-  MAT.pad = std(0x5a616a, { roughness: 0.92 });
+  MAT.pad = std(0x5a616a, { roughness: 0.92, flatShading: false });
   MAT.dash = std(0xffffff, { roughness: 0.7 });
-  MAT.strip = std(0x0f4a5c, { roughness: 0.5, emissive: 0x0a7fa0, emissiveIntensity: 0.55 });
+  MAT.strip = std(0x0f4a5c, { roughness: 0.5, emissive: 0x0a7fa0, emissiveIntensity: 0.55, flatShading: false });
   MAT.stripArrow = std(0xbff4ff, { roughness: 0.4, emissive: 0x5fe0ff, emissiveIntensity: 0.9 });
   MAT.chev = std(0xffc628, { roughness: 0.7 });
   MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
@@ -3232,7 +3308,7 @@ const CAR = {
   // fast the car already is (acceleration = boostAccel + boostMul * v), so
   // it multiplies speed you have earned rather than adding the same kick
   // anywhere — spending it all off the line is the weakest use of it.
-  boostAccel: 4.2, boostMul: 0.19, boostTotal: 3.0,
+  boostAccel: 4.2, boostMul: 0.14, boostTotal: 3.0,
   brakeFront: 5400, brakeRear: 3300, handbrake: 9500,
 
   drag: 0.62,
@@ -4176,9 +4252,14 @@ class TrackBuilder {
    *  edge stays at the cursor's height and the outside is raised, so a
    *  steep bank can never sink its inside edge under the grass. */
   _frame(pitch, roll, w) {
-    const p = this.p.toArray();
-    p[1] += (w / 2) * Math.abs(Math.sin(roll));
-    return { p, t: pitch, y: this.h, r: roll, w: w };
+    // The deck tilts about its centre line, so the car's path stays level
+    // through a banked turn. (It used to tilt about the inside edge, which
+    // lifted the middle of the road about a metre and dropped it again
+    // within 20 m: a hidden hump that threw the car into the air at speed,
+    // twice per S-bend.) How far the inside edge sinks is kept for
+    // liftBankedTurns, which raises the track only where that edge would
+    // otherwise reach the grass, easing in and out over long ramps.
+    return { p: this.p.toArray(), t: pitch, y: this.h, r: roll, w: w, sink: (w / 2) * Math.abs(Math.sin(roll)) };
   }
 
   /** core sweep: run forward with the given rise, subdivided to SEG spacing */
@@ -4312,9 +4393,76 @@ class TrackBuilder {
     return this;
   }
   build() {
+    easeBanking(this.strips);
+    liftBankedTurns(this.strips);
     smoothProfile(this.strips, 7);
     return { strips: this.strips, gates: this.gates, start: this.start, path: this.path };
   }
+}
+
+/**
+ * Raises the track where a banked turn near ground level would sink its
+ * inside edge into the grass, by just enough, and so gently that the car
+ * can't be launched by it: the raise is widened (dilated) and then blurred
+ * twice along the distance travelled, which turns it into a smooth hill
+ * whose crest radius is hundreds of metres. One distance axis runs over
+ * the whole course, gaps included, so a raise that spans a jump lifts the
+ * take-off and the landing alike.
+ */
+/**
+ * Eases every change of bank angle along the distance travelled, running
+ * it on into the straights either side the way a real road's banking
+ * does. Anywhere off the centre line a change of tilt is a change of
+ * height (a car 3 m out rises 1.3 m as a 24 degree bank comes in), so a
+ * bank that arrived over 15 m was a hump that could launch the car.
+ */
+const BANK_EASE_SIGMA = 9;     // metres
+function easeBanking(strips) {
+  for (const st of strips) {
+    const F = st.frames, n = F.length;
+    if (n < 3) continue;
+    const dist = [0];
+    for (let i = 1; i < n; i++) dist.push(dist[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2]));
+    const r0 = F.map((f) => f.r);
+    if (!r0.some((r) => r)) continue;
+    for (let i = 0; i < n; i++) {
+      let sw = 0, sr = 0;
+      for (let j = 0; j < n; j++) {
+        const d = dist[j] - dist[i];
+        if (Math.abs(d) > 3 * BANK_EASE_SIGMA) continue;
+        const wgt = Math.exp(-0.5 * (d / BANK_EASE_SIGMA) * (d / BANK_EASE_SIGMA));
+        sw += wgt; sr += wgt * r0[j];
+      }
+      F[i].r = sr / sw;
+      F[i].sink = (F[i].w / 2) * Math.abs(Math.sin(F[i].r));
+    }
+  }
+}
+
+const BANK_EDGE_ALLOW = 0.2;   // the inside edge may sit this far below the base deck height (grass is 0.7 below)
+const BANK_LIFT_R = 12;        // metres: each blur's half-width (the ramps are four times this long)
+function liftBankedTurns(strips) {
+  const F = [];
+  let d = 0, prev = null;
+  for (const st of strips) {
+    for (const f of st.frames) {
+      if (prev) d += Math.hypot(f.p[0] - prev.p[0], f.p[2] - prev.p[2]);
+      prev = f;
+      F.push({ f, d, need: Math.max(0, (f.sink || 0) - f.p[1] - BANK_EDGE_ALLOW) });
+    }
+  }
+  if (!F.some((e) => e.need > 0)) { F.forEach((e) => { delete e.f.sink; }); return; }
+  const windowed = (vals, r, fn) => F.map((e, i) => {
+    let acc = fn === 'max' ? 0 : 0, n = 0;
+    for (let j = i; j >= 0 && e.d - F[j].d <= r; j--) { acc = fn === 'max' ? Math.max(acc, vals[j]) : acc + vals[j]; n++; }
+    for (let j = i + 1; j < F.length && F[j].d - e.d <= r; j++) { acc = fn === 'max' ? Math.max(acc, vals[j]) : acc + vals[j]; n++; }
+    return fn === 'max' ? acc : acc / n;
+  });
+  // widened by twice the blur radius, so after two blurs the raise still
+  // covers every frame that needs it in full
+  const wide = windowed(F.map((e) => e.need), 2 * BANK_LIFT_R, 'max');
+  const lift = windowed(windowed(wide, BANK_LIFT_R, 'avg'), BANK_LIFT_R, 'avg');
+  F.forEach((e, i) => { e.f.p[1] += lift[i]; delete e.f.sink; });
 }
 
 /**
@@ -4325,6 +4473,9 @@ class TrackBuilder {
  * frame's pitch is recomputed from its neighbours. Strip ends are pinned,
  * which keeps jump lips and landing ramps exactly as authored.
  */
+const PROFILE_SIGMA = 14;   // metres: the long blend's width (crest radius ~ 2.5 * sigma / grade change)
+const PROFILE_KEEP = 24;    // metres at each end of a strip left untouched (jump take-offs and landings)
+const PROFILE_BLEND = 16;   // metres over which the long blend fades in past that
 function smoothProfile(strips, iterations) {
   for (const st of strips) {
     const F = st.frames;
@@ -4333,6 +4484,28 @@ function smoothProfile(strips, iterations) {
     for (let it = 0; it < iterations; it++) {
       const y = F.map((f) => f.p[1]);
       for (let i = 1; i < n - 1; i++) F[i].p[1] = 0.25 * y[i - 1] + 0.5 * y[i] + 0.25 * y[i + 1];
+    }
+    // Then a much longer blend away from the strip ends, so the top of a
+    // hill is a wide rounded crest the car stays on rather than a lip that
+    // throws it (a crest of radius R lifts a car off at v^2/R > g). Within
+    // PROFILE_KEEP of either end of a strip nothing changes, so every jump's
+    // take-off and landing stay exactly as built.
+    const dist = [0];
+    for (let i = 1; i < n; i++) dist.push(dist[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2]));
+    const len = dist[n - 1];
+    const y0 = F.map((f) => f.p[1]);
+    for (let i = 1; i < n - 1; i++) {
+      const fromEnd = Math.min(dist[i], len - dist[i]);
+      const keep = clamp((fromEnd - PROFILE_KEEP) / PROFILE_BLEND, 0, 1);
+      if (keep <= 0) continue;
+      let sw = 0, sy = 0;
+      for (let j = 0; j < n; j++) {
+        const d = dist[j] - dist[i];
+        if (Math.abs(d) > 3 * PROFILE_SIGMA) continue;
+        const wgt = Math.exp(-0.5 * (d / PROFILE_SIGMA) * (d / PROFILE_SIGMA));
+        sw += wgt; sy += wgt * y0[j];
+      }
+      F[i].p[1] = y0[i] + (sy / sw - y0[i]) * keep;
     }
     for (let i = 0; i < n; i++) {
       const a = F[Math.max(0, i - 1)], b = F[Math.min(n - 1, i + 1)];
@@ -4461,6 +4634,73 @@ function courseCenterAndExtent(dense) {
   return { center: { x: cx, z: cz }, extent };
 }
 
+/**
+ * One side of a strip's earth embankment: where each frame's bank meets the
+ * grass, and a smooth normal for its shading. The bank runs from the deck's
+ * top edge down to the grass at about 26 degrees, but on the inside of a
+ * turn its foot never reaches past the turn's centre (the bank just gets
+ * steeper there): a tall bank on a tight curve used to fold over itself,
+ * drawing stray lines and flickering where the folded faces overlapped.
+ */
+const BANK_SINK = 0.35;   // metres the embankment foot sits below the grass
+function embankment(F, side) {
+  const n = F.length, XA = new THREE.Vector3(1, 0, 0), q = new THREE.Quaternion(), eu = new THREE.Euler();
+  const edgeP = [], xs = [];
+  for (const f of F) {
+    q.setFromEuler(eu.set(f.t, f.y, f.r, 'YXZ'));
+    const x = XA.clone().applyQuaternion(q);
+    xs.push(x);
+    edgeP.push(new THREE.Vector3().fromArray(f.p).addScaledVector(x, side * f.w / 2));
+  }
+  // how far the foot may reach: on the inside of a turn, short of its centre
+  const lim = new Array(n).fill(1e4);
+  for (let i = 0; i < n - 1; i++) {
+    let dy = F[i + 1].y - F[i].y;
+    while (dy > Math.PI) dy -= 2 * Math.PI;
+    while (dy < -Math.PI) dy += 2 * Math.PI;
+    if (Math.abs(dy) < 1e-5) continue;
+    const seg = Math.hypot(F[i + 1].p[0] - F[i].p[0], F[i + 1].p[2] - F[i].p[2]);
+    const edgeLen = Math.hypot(edgeP[i + 1].x - edgeP[i].x, edgeP[i + 1].z - edgeP[i].z);
+    if (edgeLen >= seg) continue;                  // the outside of this turn
+    const r = seg / Math.abs(dy) - F[i].w / 2;     // radius of this inside edge
+    const l = Math.max(0.6, 0.85 * r);
+    lim[i] = Math.min(lim[i], l);
+    lim[i + 1] = Math.min(lim[i + 1], l);
+  }
+  // eased along the strip (a moving minimum, then a moving average over the
+  // same span, which never exceeds the limit) so the foot line has no notch
+  const k = 3;
+  const lo = lim.map((_, i) => {
+    let m = 1e4;
+    for (let j = Math.max(0, i - k); j <= Math.min(n - 1, i + k); j++) m = Math.min(m, lim[j]);
+    return m;
+  });
+  const eased = lo.map((_, i) => {
+    let s = 0, c = 0;
+    for (let j = Math.max(0, i - k); j <= Math.min(n - 1, i + k); j++) { s += lo[j]; c++; }
+    return s / c;
+  });
+  const foot = edgeP.map((p, i) => {
+    const h = Math.max(p.y - GROUND_Y, 0);
+    const reach = Math.min(Math.max(h * 2.0, 2.2), eased[i]);
+    // carried on a little below the grass, so bank and grass meet along one
+    // clean line instead of lying in the same plane and flickering
+    const f = p.clone().addScaledVector(xs[i], side * (reach + BANK_SINK * 2));
+    f.y = GROUND_Y - BANK_SINK;
+    return f;
+  });
+  const norm = edgeP.map((p, i) => {
+    const t = new THREE.Vector3().subVectors(edgeP[Math.min(n - 1, i + 1)], edgeP[Math.max(0, i - 1)]);
+    const down = new THREE.Vector3().subVectors(foot[i], p);
+    const nrm = new THREE.Vector3().crossVectors(t, down);
+    if (!(nrm.lengthSq() > 1e-12)) return new THREE.Vector3(0, 1, 0);
+    nrm.normalize();
+    if (nrm.y < 0) nrm.negate();
+    return nrm;
+  });
+  return { foot, norm };
+}
+
 function buildCourse(data, scene, world) {
   const root = new THREE.Group();
   const M = {
@@ -4483,6 +4723,7 @@ function buildCourse(data, scene, world) {
 
   for (const strip of data.strips) {
     const F = strip.frames;
+    const bankL = embankment(F, 1), bankR = embankment(F, -1);
     for (let i = 0; i < F.length - 1; i++) {
       const s = strip.segs[i] || {};
       const a = F[i], b = F[i + 1];
@@ -4536,16 +4777,12 @@ function buildCourse(data, scene, world) {
       // The bank starts at the deck's TOP edge, so there is no vertical lip
       // along the side for a car that ran wide to wedge itself against, and
       // it is gentle (about 26 degrees) so the car can always climb back on.
-      const foot = (e, x, sx) => {
-        const h = Math.max(e.y - GROUND_Y, 0);
-        const f = V().copy(e).addScaledVector(x, sx * Math.max(h * 2.0, 2.2));
-        f.y = GROUND_Y;
-        return f;
-      };
-      const fl0 = foot(l0, x0, 1), fl1 = foot(l1, x1, 1);
-      const fr0 = foot(r0, x0, -1), fr1 = foot(r1, x1, -1);
-      M.bank.quad(l0, l1, fl1, fl0);
-      M.bank.quad(r0, fr0, fr1, r1);
+      const fl0 = bankL.foot[i], fl1 = bankL.foot[i + 1];
+      const fr0 = bankR.foot[i], fr1 = bankR.foot[i + 1];
+      // smooth shading along the bank (a flat-shaded, non-planar quad lit
+      // its two triangles differently: a sawtooth band under the road edge)
+      M.bank.quadN(l0, l1, fl1, fl0, bankL.norm[i], bankL.norm[i + 1], bankL.norm[i + 1], bankL.norm[i]);
+      M.bank.quadN(r0, fr0, fr1, r1, bankR.norm[i], bankR.norm[i], bankR.norm[i + 1], bankR.norm[i + 1]);
       world.addQuad(l0, l1, fl1, fl0, 0.5, 0.9, false, null, false);
       world.addQuad(r0, fr0, fr1, r1, 0.5, 0.9, false, null, false);
       M.side.quad(l0d, l1d, r1d, r0d);
@@ -6772,6 +7009,7 @@ const UI = {
      'raceReveal', 'raceBetween', 'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
+    $('boot').hidden = true;             // the loading notice ends when any screen shows
     document.body.dataset.screen = id;   // lets CSS hide things per screen
   },
   who(name, credits) {
@@ -7622,20 +7860,29 @@ const Game = {
     // straight to the gate rather than flashing the menu first.
     if (FIREBASE.enabled) {
       Cloud.init().then((ok) => {
-        $('boot').hidden = true;
         if (ok && Cloud.on) {
+          // Wait for Firebase to say whether a login is saved before showing
+          // anything: flashing the sign-in page at someone who is signed
+          // in (and then leaving it up while their data loaded) looked like
+          // being signed out.
+          $('boot').textContent = 'Signing in…';
+          this.state = 'boot';
           UI.gateMode(false);
-          UI.show('gate');
-          this.state = 'gate';
           Cloud.watch((user, profile) => this.onAuth(user, profile));
+          setTimeout(() => {
+            if (this.state === 'boot') { UI.show('gate'); this.state = 'gate'; }
+          }, 8000);
         } else {
+          $('boot').hidden = true;
           if (!ok) console.warn('aiPolytrack:', Cloud.error);
+          Records.useLocal();
           UI.who(null);
           this.toMenu();
         }
       });
     } else {
       $('boot').hidden = true;
+      Records.useLocal();
       UI.who(null);
       CarColor.load().then(() => this.toMenu());
     }
@@ -7691,6 +7938,9 @@ const Game = {
       // cleared confirmedUid; anything else is the session expiring.)
       this.confirmedUid = null;
       Cloud.credits = 0;
+      clearTimeout(this._cloudRetry);
+      this._colorsLoaded = false;
+      Records.resetSession();
       if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
       Cloud.stopBoards(); Cloud.stopAdjust();
       this.seasonAwards = null; this.s1Mine = null;
@@ -7712,30 +7962,58 @@ const Game = {
       UI.show('gate'); this.state = 'gate'; return;
     }
     if (Cloud.banned()) { this.confirmedUid = null; UI.show('banned'); this.state = 'banned'; return; }
-    try {
-      Records.hydrate(await Cloud.pull());
-    } catch (e) {
-      console.warn('aiPolytrack: could not read the leaderboards', e && e.message);
-      UI.toast('Could not load the leaderboards. ' + Cloud.errText(e));
-      this.scheduleCloudRetry(user.uid);
-    }
-    if (this.confirmedUid !== user.uid) {
-      try { await CarColor.load(); } catch (e) { console.warn('aiPolytrack: could not load car colors', e && e.message); }
+    // A repeat report of the session we already have (Firebase can fire
+    // more than once): nothing to redo, and above all no yanking the
+    // player back to the menu from whatever screen they are on.
+    const fresh = this.confirmedUid !== user.uid;
+    if (!fresh && !force && this.state !== 'gate' && this.state !== 'boot') {
+      UI.who(Cloud.name(), Records.credits);
+      return;
     }
     this.confirmedUid = user.uid;
-    Cloud.fetchSeasonAwards().then((a) => { this.seasonAwards = a; if (this.state === 'menu') this.trophyTileText(); });
+    UI.gateError('');
     UI.who(Cloud.name(), Records.credits);
     $('driverRow').hidden = true;
     if (!this.lobbyUnwatch) {
       this.lobbyUnwatch = Cloud.watchCurrentRace((race, entries) => this.onLobbyUpdate(race, entries));
-      // State transitions (lobby countdown elapsing, the race clock running
-      // out) are deadlines, not Firestore events — nothing pushes a new
-      // snapshot the instant a deadline passes. Re-check against the last
-      // known doc once a second so whichever client notices first can
-      // perform the next transition, and so the visible countdown moves.
-      setInterval(() => this.tickLobby(), 1000);
     }
+    // State transitions (lobby countdown elapsing, the race clock running
+    // out) are deadlines, not Firestore events: re-check once a second.
+    // Created once — it used to be added again on every sign-in.
+    if (!this._lobbyTick) this._lobbyTick = setInterval(() => this.tickLobby(), 1000);
+    // Straight to the menu; leaderboards, credits and colours arrive in the
+    // background and every screen redraws when they do (the sign-in page
+    // used to sit there, looking stuck, until all of it had loaded).
     this.toMenu();
+    this.loadCloudData(user.uid, fresh);
+  },
+
+  /** everything a signed-in session needs from the server, after the menu
+   *  is already up; a failure retries itself (see scheduleCloudRetry) */
+  async loadCloudData(uid, fresh) {
+    let ok = true;
+    try {
+      Records.hydrate(await Cloud.pull());
+      Records.boardsError = '';
+    } catch (e) {
+      ok = false;
+      console.warn('aiPolytrack: could not read the leaderboards', e && e.code, e && e.message);
+      Records.boardsError = Cloud.errText(e);
+      UI.toast('Could not load the leaderboards. ' + Cloud.errText(e));
+    }
+    if (!Cloud.user || Cloud.user.uid !== uid) return;
+    if (fresh || !this._colorsLoaded) {
+      try { await CarColor.load(); this._colorsLoaded = true; } catch (e) {
+        ok = false;
+        console.warn('aiPolytrack: could not load car colors', e && e.message);
+      }
+    }
+    if (!Cloud.user || Cloud.user.uid !== uid) return;
+    UI.who(Cloud.name(), Records.credits);
+    this.onBoardsChanged();
+    if (this.state === 'garage') UI.garage();
+    Cloud.fetchSeasonAwards().then((a) => { this.seasonAwards = a; if (this.state === 'menu') this.trophyTileText(); });
+    if (!ok) this.scheduleCloudRetry(uid);
   },
 
   /**
@@ -7753,13 +8031,9 @@ const Game = {
    *  back without the player having to sign in again */
   scheduleCloudRetry(uid) {
     clearTimeout(this._cloudRetry);
-    this._cloudRetry = setTimeout(async () => {
+    this._cloudRetry = setTimeout(() => {
       if (!Cloud.user || Cloud.user.uid !== uid) return;
-      try {
-        Records.hydrate(await Cloud.pull());
-        UI.who(Cloud.name(), Records.credits);
-        this.onBoardsChanged();
-      } catch (e) { this.scheduleCloudRetry(uid); }
+      this.loadCloudData(uid, false);          // reschedules itself on failure
     }, 60000);
   },
   onLobbyUpdate(race, entries) {
@@ -8221,6 +8495,7 @@ const Game = {
     this.rec = [];
     this.ghostData = this.ghostOverride || Records.ghost(LEVELS[i].id);
     if (!this.ghostOverride) this.ghostOverrideName = null;
+    this.fetchOwnGhost(i);
     if (this.ghostMesh) this.ghostMesh.visible = false;
     this.pathIdx = 0;
     this.buildGhostProgress();
@@ -8812,7 +9087,7 @@ const Game = {
   /** called whenever the live leaderboard changes: redraw whatever shows it */
   onBoardsChanged() {
     const s = this.state;
-    if (s === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
+    if (s === 'select') this.setSelectTab(this.selectTab);   // redraws the open tab and its note
     else if (s === 'courseDetail') { UI.courseDetail(this.courseDetailIndex); this.paintCourseLeader(this.courseDetailIndex); }
     else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
     else if (s === 'result') this.renderResultBoard();
@@ -8858,7 +9133,8 @@ const Game = {
     // signed in, the server holds the times (they're reset from Settings)
     $('bBoardWipe').hidden = !onBoards || !!(Cloud.on && Cloud.user);
     $('selectNote').textContent = onBoards
-      ? (Cloud.on ? 'Live. Tick runs to watch or race them.' : 'Times on this device.')
+      ? (Cloud.on ? (Records.boardsError ? 'Leaderboards could not load. ' + Records.boardsError + ' Retrying every minute.'
+        : 'Live. Tick runs to watch or race them.') : 'Times on this device.')
       : 'Pick a map to see its leaderboard.';
     if (onBoards) UI.boards(); else UI.courseList(this.playable, (i) => this.toCourseDetail(i));
   },
@@ -9275,6 +9551,20 @@ const Game = {
     UI.show('result');
     UI.clock(this.time, true);
     this.awardCompletion();
+  },
+  /** Signed in, your best run's ghost lives on the server (the device
+   *  only keeps this session's runs), so fetch it when a map loads and
+   *  this session doesn't already hold a ghost for that exact time. */
+  fetchOwnGhost(i) {
+    const id = LEVELS[i].id, best = Records.best(id);
+    if (!Cloud.on || !Cloud.user || !best || this.ghostOverride) return;
+    const have = Records.ghost(id);
+    if (have && Math.abs(have.t - best) < 0.0015) return;
+    Cloud.fetchGhost(id).then((g) => {
+      if (!g || this.levelIndex !== i || this.ghostOverride) return;
+      Records.data.ghosts[id] = g;
+      if (!this.started) { this.ghostData = g; this.buildGhostProgress(); }
+    });
   },
   /** the top five on the course just finished; redrawn live while the
    *  result screen is up, so a time someone else sets appears in it */

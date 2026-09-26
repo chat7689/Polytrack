@@ -101,7 +101,9 @@ service cloud.firestore {
         && request.resource.data.banned == myProfile().banned
         && request.resource.data.timeMs is number
         && request.resource.data.timeMs > 0
-        && request.resource.data.timeMs < 600000;
+        && request.resource.data.timeMs < 600000
+        // a best only ever gets faster: a slower run can't overwrite it
+        && (resource == null || request.resource.data.timeMs < resource.data.timeMs);
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned']);
       // A player may delete their own row (Settings > reset scores); an

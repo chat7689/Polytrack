@@ -500,6 +500,20 @@ async function loadAll() {
   } catch (e) { say('pMsg', e.message, 'err'); }
 }
 
+/* After a single change, redraw from what is already loaded rather than
+   calling loadAll(): a full reload reads every best, every profile and every
+   player's credit total — several hundred reads of the free plan's 50,000 a
+   day, on every click. */
+function redrawAll() { renderPlayers(); renderTimes(); renderSeasons(); renderOverview(); }
+async function refreshCredits(p) {
+  const agg = await getAggregateFromServer(query(collection(db, 'creditEvents'), where('uid', '==', p.uid)), { t: sum('delta') });
+  p.credits = Math.floor((agg.data().t || 0) + 1e-9);
+}
+async function refreshAwards() {
+  const aw = await getDoc(doc(db, 'seasonAwards', 's1'));
+  awards = aw.exists() ? aw.data() : {};
+}
+
 async function loadRuns() {
   say('runMsg', 'Loading…');
   try {
@@ -622,7 +636,9 @@ async function setBanned(p, banned) {
     batch.update(doc(db, 'profiles', p.uid), { banned });
     mine.forEach((d) => batch.update(d.ref, { banned }));
     await batch.commit();
-    await loadAll();
+    p.banned = banned;
+    bests.forEach((b) => { if (b.uid === p.uid) b.banned = banned; });
+    redrawAll();
     say('pMsg', (p.displayName || 'Player') + (banned ? ' is banned.' : ' is active again.'), 'ok');
   } catch (e) { say('pMsg', e.message, 'err'); }
 }
@@ -649,8 +665,10 @@ async function setCredits(p) {
     // kind: 'adjust' is what the player's game listens for, so their
     // balance updates on screen straight away
     await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, kind: 'adjust', note: 'admin set to ' + target, createdAt: serverTimestamp() });
-    await loadAll();
-    const now = (byUid[p.uid] || p).credits;
+    if (delta > 0) creditTotals.earned += delta; else creditTotals.spent -= delta;
+    await refreshCredits(p);
+    redrawAll();
+    const now = p.credits;
     say('pMsg', (p.displayName || 'Player') + ' now has ' + Number(now).toLocaleString('en-US') + ' credits.', now === target ? 'ok' : 'err');
   } catch (e) { say('pMsg', 'Could not set credits: ' + e.message, 'err'); }
 }
@@ -875,7 +893,10 @@ function renderTimes() {
       if (!confirm('Delete ' + (r.displayName || 'this') + '\'s time on ' + courseName(id) + '?')) return;
       await deleteDoc(doc(db, 'bests', r.id));
       try { await deleteDoc(doc(db, 'ghosts', r.id)); } catch (e) { /* no ghost */ }
-      await loadAll();
+      bests = bests.filter((b) => b.id !== r.id);
+      const owner = byUid[r.uid];
+      if (owner) { if (S2_IDS.has(r.courseId)) owner.s2--; else if (!String(r.courseId).startsWith('s2')) owner.s1--; }
+      redrawAll();
     });
     tr.lastElementChild.appendChild(del);
     tt.appendChild(tr);
@@ -931,7 +952,8 @@ async function award(key, uid) {
     const patch = { [key]: { uid, name: p.displayName || uid, at: Date.now() } };
     if (other) patch[other] = deleteField();
     await setDoc(doc(db, 'seasonAwards', 's1'), patch, { merge: true });
-    await loadAll();
+    await refreshAwards();
+    redrawAll();
     say('awardMsg', 'Season 1 ' + place[2].toLowerCase() + ' trophy awarded to ' + p.displayName + '.', 'ok');
   } catch (e) { say('awardMsg', e.message, 'err'); }
 }
@@ -939,7 +961,8 @@ async function revoke(key) {
   if (!confirm('Remove the ' + key + ' trophy from ' + awards[key].name + '?')) return;
   try {
     await setDoc(doc(db, 'seasonAwards', 's1'), { [key]: deleteField() }, { merge: true });
-    await loadAll();
+    await refreshAwards();
+    redrawAll();
     say('awardMsg', 'Removed.', 'ok');
   } catch (e) { say('awardMsg', e.message, 'err'); }
 }
