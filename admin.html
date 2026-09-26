@@ -44,6 +44,7 @@ td.r,th.r{text-align:right}
 tr.banned td{color:var(--dimmer)}
 tr.banned td.name b{text-decoration:line-through}
 tr.click{cursor:pointer}
+td.name .real{color:var(--signal);font-size:12.5px;font-style:italic;margin-left:6px}
 .pill{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border:1px solid var(--rule);border-radius:999px;color:var(--dim);white-space:nowrap}
 .pill.on{border-color:var(--ember);color:var(--ember)}
 .pill.fin{border-color:rgba(61,219,184,.5);color:var(--aqua)}
@@ -156,7 +157,7 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
     <!-- PLAYERS -->
     <section class="page hide" id="page-players">
       <div class="spread" style="margin-bottom:12px">
-        <input type="text" id="pSearch" placeholder="Search name or uid">
+        <input type="text" id="pSearch" placeholder="Search username, real name or uid">
         <div class="row"><span class="mono" id="pCount"></span><button id="btnReload">Reload</button></div>
       </div>
       <div class="card tableWrap">
@@ -187,7 +188,7 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
             <select id="rfWhen" style="width:140px"><option value="">Any time</option><option value="3600000">Last hour</option>
               <option value="86400000">Last 24h</option><option value="604800000">Last 7 days</option></select></div>
           <div><label for="rfLimit">Load</label>
-            <select id="rfLimit" style="width:110px"><option>500</option><option>1500</option><option>3000</option></select></div>
+            <select id="rfLimit" style="width:110px"><option>300</option><option>1000</option><option>3000</option></select></div>
           <button class="primary" id="btnRunApply">Apply</button>
           <button id="btnRunCsv">Export CSV</button>
         </div>
@@ -326,7 +327,7 @@ const { initializeApp } = await import(SDK + 'firebase-app.js');
 const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
   await import(SDK + 'firebase-auth.js');
 const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, writeBatch,
-  orderBy, limit, serverTimestamp, deleteField } = await import(SDK + 'firebase-firestore.js');
+  orderBy, limit, serverTimestamp, deleteField, getAggregateFromServer, sum } = await import(SDK + 'firebase-firestore.js');
 
 const $ = (id) => document.getElementById(id);
 const app = initializeApp(CONFIG);
@@ -439,30 +440,35 @@ function fillTimesCourse() {
 }
 
 /* ----------------------------------------------------------- data load */
-let players = [], byUid = {}, bests = [], creditRows = [], runs = [], awards = {};
+let players = [], byUid = {}, bests = [], creditTotals = { earned: 0, spent: 0 }, runs = [], awards = {};
 
 async function loadAll() {
   say('pMsg', 'Loading…');
   try {
-    const [inv, profs, bs, ce, aw] = await Promise.all([
+    // Credits are summed on the server (one aggregate read per player)
+    // rather than downloading every credit event, which grows by one per
+    // finished run and used to burn through the free daily read quota.
+    const [inv, profs, bs, aw, notes] = await Promise.all([
       getDoc(doc(db, 'config', 'invite')),
       getDocs(collection(db, 'profiles')),
       getDocs(collection(db, 'bests')),
-      getDocs(collection(db, 'creditEvents')),
-      getDoc(doc(db, 'seasonAwards', 's1'))
+      getDoc(doc(db, 'seasonAwards', 's1')),
+      getDocs(collection(db, 'adminNotes')).catch(() => null)
     ]);
     $('curCode').textContent = inv.exists() ? inv.data().code : 'not set';
     awards = aw.exists() ? aw.data() : {};
     players = []; byUid = {};
     profs.forEach((d) => { const p = { uid: d.id, ...d.data(), credits: 0, s2: 0, s1: 0, runs: 0, lastMs: 0 }; players.push(p); byUid[p.uid] = p; });
-    creditRows = [];
-    ce.forEach((d) => {
-      const v = d.data();
-      if (typeof v.delta !== 'number') return;
-      creditRows.push(v);
-      if (byUid[v.uid]) byUid[v.uid].credits += v.delta;
-    });
-    players.forEach((p) => { p.credits = Math.floor(p.credits + 1e-9); });
+    const sumOf = async (q) => (await getAggregateFromServer(q, { t: sum('delta') })).data().t || 0;
+    await Promise.all(players.map(async (p) => {
+      p.credits = Math.floor(await sumOf(query(collection(db, 'creditEvents'), where('uid', '==', p.uid))) + 1e-9);
+    }));
+    const [earnedAll, spentAll] = await Promise.all([
+      sumOf(query(collection(db, 'creditEvents'), where('delta', '>', 0))),
+      sumOf(query(collection(db, 'creditEvents'), where('delta', '<', 0)))
+    ]);
+    creditTotals = { earned: earnedAll, spent: -spentAll };
+    if (notes) notes.forEach((d) => { if (byUid[d.id]) byUid[d.id].realName = d.data().realName || ''; });
     bests = [];
     bs.forEach((d) => {
       const v = { id: d.id, ...d.data() };
@@ -480,7 +486,7 @@ async function loadAll() {
 async function loadRuns() {
   say('runMsg', 'Loading…');
   try {
-    const n = parseInt($('rfLimit').value, 10) || 500;
+    const n = parseInt($('rfLimit').value, 10) || 300;
     const snap = await getDocs(query(collection(db, 'runLog'), orderBy('createdAt', 'desc'), limit(n)));
     runs = [];
     snap.forEach((d) => runs.push({ id: d.id, ...d.data(), ms: tsMillis(d.data().createdAt) }));
@@ -514,7 +520,8 @@ const trophyText = (uid) => ['gold', 'silver', 'bronze'].filter((p) => awards[p]
 $('pSearch').addEventListener('input', renderPlayers);
 function renderPlayers() {
   const q = $('pSearch').value.trim().toLowerCase();
-  const list = players.filter((p) => !q || (p.displayName || '').toLowerCase().includes(q) || p.uid.toLowerCase().includes(q))
+  const list = players.filter((p) => !q || (p.displayName || '').toLowerCase().includes(q) || p.uid.toLowerCase().includes(q)
+      || (p.realName || '').toLowerCase().includes(q))
     .sort((a, b) => (b.lastMs - a.lastMs) || (a.displayName || '').localeCompare(b.displayName || ''));
   $('pCount').textContent = list.length + ' of ' + players.length + ' players';
   const tb = $('players');
@@ -522,7 +529,9 @@ function renderPlayers() {
   for (const p of list) {
     const tr = document.createElement('tr');
     tr.className = 'click' + (p.banned ? ' banned' : '');
-    tr.innerHTML = '<td class="name"><b>' + esc(p.displayName || '—') + '</b><br><span class="mono">' + esc(p.uid) + '</span></td>' +
+    tr.innerHTML = '<td class="name"><b>' + esc(p.displayName || '—') + '</b>' +
+      (p.realName ? ' <span class="real">' + esc(p.realName) + '</span>' : '') +
+      '<br><span class="mono">' + esc(p.uid) + '</span></td>' +
       '<td><span class="pill' + (p.banned ? ' on' : '') + '">' + (p.banned ? 'banned' : 'active') + '</span></td>' +
       '<td class="mono r">' + p.credits + '</td><td class="mono r">' + p.s2 + ' / ' + S2.length + '</td>' +
       '<td class="mono r">' + p.runs + '</td><td class="mono" title="' + fmtWhen(p.lastMs) + '">' + ago(p.lastMs) + '</td>' +
@@ -534,6 +543,7 @@ function renderPlayers() {
       b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
       cell.appendChild(b);
     };
+    btn('Name', '', () => setRealName(p));
     btn('Credits', '', () => setCredits(p));
     btn(p.banned ? 'Unban' : 'Ban', p.banned ? '' : 'danger', () => setBanned(p, !p.banned));
     btn('Delete', 'danger', () => openDelete(p));
@@ -556,6 +566,7 @@ function showPlayer(p) {
   }).join('');
   el.innerHTML = '<div class="spread"><h2 style="margin:0">' + esc(p.displayName) + '</h2><button class="small" id="pdClose">Close</button></div>' +
     '<div class="kv" style="margin:12px 0">' +
+    '<div><span>real name</span><b>' + esc(p.realName || '—') + '</b></div>' +
     '<div><span>uid</span><b>' + esc(p.uid) + '</b></div><div><span>credits</span><b>' + p.credits + '</b></div>' +
     '<div><span>season 2 maps</span><b>' + p.s2 + ' / ' + S2.length + '</b></div><div><span>season 1 maps</span><b>' + p.s1 + ' / ' + S1.length + '</b></div>' +
     '<div><span>attempts loaded</span><b>' + myRuns.length + '</b></div><div><span>finished</span><b>' + fin + '</b></div>' +
@@ -567,6 +578,21 @@ function showPlayer(p) {
   $('pdClose').addEventListener('click', () => el.classList.add('hide'));
   $('pdRuns').addEventListener('click', () => { $('rfDriver').value = p.displayName || ''; location.hash = '#runs'; renderRuns(); });
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/** The admin's private note of who a player really is. Stored in
+ *  adminNotes/{uid}, which only admins can read or write. */
+async function setRealName(p) {
+  const v = prompt('Real name for ' + (p.displayName || p.uid) + ' (only you can see this):', p.realName || '');
+  if (v === null) return;
+  const realName = v.trim().slice(0, 80);
+  try {
+    if (realName) await setDoc(doc(db, 'adminNotes', p.uid), { realName, updatedAt: serverTimestamp() });
+    else await deleteDoc(doc(db, 'adminNotes', p.uid));
+    p.realName = realName;
+    renderPlayers();
+    say('pMsg', realName ? 'Saved: ' + (p.displayName || '') + ' is ' + realName + '.' : 'Real name cleared.', 'ok');
+  } catch (e) { say('pMsg', e.message, 'err'); }
 }
 
 /** Banning flips the profile flag and the copy on every leaderboard row. */
@@ -655,7 +681,7 @@ async function deleteAccount(p, progress) {
       refs.push(r.ref);
     }
   }
-  refs.push(doc(db, 'carCustomization', uid), doc(db, 'claims', uid), doc(db, 'profiles', uid));
+  refs.push(doc(db, 'carCustomization', uid), doc(db, 'claims', uid), doc(db, 'adminNotes', uid), doc(db, 'profiles', uid));
   progress('Deleting ' + refs.length + ' documents…');
   for (let i = 0; i < refs.length; i += 400) {
     const batch = writeBatch(db);
@@ -680,7 +706,7 @@ function filteredRuns() {
     (!course || r.courseId === course) && (!drv || (r.displayName || '').toLowerCase().includes(drv)) &&
     (!within || now - r.ms <= within));
 }
-let loadedLimit = 500;
+let loadedLimit = 300;
 $('btnRunApply').addEventListener('click', async () => {
   const n = parseInt($('rfLimit').value, 10) || 500;
   if (n !== loadedLimit) { loadedLimit = n; await loadRuns(); } else renderRuns();
@@ -759,8 +785,7 @@ function renderOverview() {
   const s2runs = runs.filter((r) => String(r.courseId).startsWith('s2'));
   const fin = s2runs.filter((r) => outcomeOf(r) === 'finished');
   const now = Date.now();
-  const earned = creditRows.filter((v) => v.delta > 0).reduce((s, v) => s + v.delta, 0);
-  const spent = creditRows.filter((v) => v.delta < 0).reduce((s, v) => s - v.delta, 0);
+  const earned = creditTotals.earned, spent = creditTotals.spent;
   const tile = (n, l) => '<div class="statTile"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></div>';
   const active24 = new Set(runs.filter((r) => now - r.ms < 86400000).map((r) => r.uid)).size;
   $('ovTiles').innerHTML = tile(players.length, 'players') + tile(players.filter((p) => p.banned).length, 'banned') +

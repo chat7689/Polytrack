@@ -55,6 +55,12 @@ service cloud.firestore {
       allow list, delete: if false;
     }
 
+    // The admin's private notes on a player (their real name). Nobody else
+    // can read or write these.
+    match /adminNotes/{uid} {
+      allow read, write: if isAdmin();
+    }
+
     // Admin-awarded season podiums, e.g. seasonAwards/s1 =
     // { gold: {uid, name}, silver: {uid, name}, bronze: {uid, name} } —
     // one document per season, so there is exactly one of each place.

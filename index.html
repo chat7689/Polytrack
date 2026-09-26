@@ -665,6 +665,11 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .trophyCredits .tcNum{font-family:var(--mono);font-size:28px;font-weight:700;color:#7fe3ff;
   text-shadow:0 0 18px rgba(127,227,255,.55)}
 .trophyCredits .tcLbl{font-size:12px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.trophyGemKey{position:absolute;left:16px;right:16px;bottom:52px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;
+  font-family:var(--mono);font-size:12.5px;color:var(--ink);pointer-events:none;text-shadow:0 1px 3px #000}
+.trophyGemKey .gk{white-space:nowrap}
+.trophyGemKey .gem2d{box-shadow:none}
+.trophyGemKey .gkPlus{color:var(--dim)}
 .trophyHint{font-size:12px;margin:8px 0 14px}
 .trophyList{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .trophyItem{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:6px;
@@ -999,6 +1004,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       <div class="trophyStage">
         <canvas id="trophyCanvas"></canvas>
         <div class="trophyCredits"><span class="gem2d"></span><span class="tcNum" id="trophyCreditNum">0</span><span class="tcLbl">credits</span></div>
+        <div class="trophyGemKey" id="trophyGemKey"></div>
       </div>
       <p class="lede trophyHint" id="trophyHint">Drag to spin the room.</p>
       <div class="trophyList" id="trophyList"></div>
@@ -2088,22 +2094,18 @@ const Cloud = {
   watchCurrentRace(onChange) {
     if (!this.on) return () => {};
     const { fsMod } = this.fb;
-    const { collection, onSnapshot, query, where } = fsMod;
+    const { collection, onSnapshot, query } = fsMod;
     let raceId = null, race = null, entries = [], unEntries = null;
     const fire = () => onChange(race, entries);
-    // Deliberately no orderBy here: a where('in', ...) combined with
-    // orderBy on a different field needs a composite index, which this
-    // free-tier project has never provisioned. There should only ever be
-    // one document in these states by client convention (races race to
-    // create the next lobby, but Firestore has no uniqueness constraint,
-    // so a rare double-create is possible) — picking the one with the
-    // latest createdAt client-side handles that without needing an index.
+    // Only the newest few races by creation time — the current one is
+    // always the newest — rather than every race ever settled, which grew
+    // forever and was re-read on every sign-in.
     const unRace = onSnapshot(
-      query(collection(this.db, 'races'), where('state', 'in', ['lobby', 'starting', 'running', 'settled'])),
+      query(collection(this.db, 'races'), fsMod.orderBy('createdAt', 'desc'), fsMod.limit(3)),
       (snap) => {
         let d0 = null, best = -1;
         snap.forEach((d) => {
-          const c = tsMs(d.data().createdAt);
+          const c = tsMs(d.data().createdAt) || Date.now();   // a just-created lobby has no server time yet
           if (c > best) { best = c; d0 = d; }
         });
         const newId = d0 ? d0.id : null;
@@ -2345,55 +2347,61 @@ const Cloud = {
    *  compare against the player's own previous time, not the current #1 —
    *  otherwise nobody except whoever is already in first place would ever
    *  get a new time onto the shared leaderboard at all. */
+  /**
+   * Sign-in load: starts the one leaderboard listener this session keeps
+   * (Season 2 maps only) and waits for its first snapshot, then totals the
+   * player's credits with a server-side sum. Reading every credit event —
+   * one per finished run — and re-reading the whole leaderboard every time
+   * the Courses screen opened is what used to exhaust the free daily
+   * read quota, at which point every other read (season awards included)
+   * started failing.
+   */
   async pull() {
-    const { fsMod } = this.fb;
-    const { collection, getDocs, query, where } = fsMod;
-    const boards = {};
-    const cleared = {};
-    const myBests = {};
-    const snap = await getDocs(query(collection(this.db, 'bests'), where('banned', '==', false)));
-    snap.forEach((d) => {
-      const r = d.data();
-      if (!r || typeof r.timeMs !== 'number' || !r.courseId) return;
-      const t = migrateLegacyTime(r.timeMs / 1000);
-      (boards[r.courseId] = boards[r.courseId] || []).push({
-        n: r.displayName || 'Driver', t, d: r.updatedMs || 0, uid: r.uid
-      });
-      if (r.uid === this.user.uid) {
-        cleared[r.courseId] = true;
-        myBests[r.courseId] = t;
-      }
+    const first = new Promise((resolve, reject) => {
+      this.watchBoards((remote) => {
+        Records.data.boards = remote.boards;
+        Records.data.cleared = Object.assign({}, Records.data.cleared, remote.cleared);
+        Records.data.myBests = Object.assign({}, Records.data.myBests, remote.myBests);
+        resolve(remote);
+        Game.onBoardsChanged();
+      }, reject);
     });
-    for (const k in boards) boards[k].sort((a, b) => a.t - b.t);
-    let credits = 0;
-    const ce = await getDocs(query(collection(this.db, 'creditEvents'),
-      where('uid', '==', this.user.uid)));
-    ce.forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') credits += v.delta; });
-    // Older race payouts were fractional; a balance is always shown and
-    // spent as a whole number.
-    this.credits = Math.floor(credits + 1e-9);
-    return { boards, cleared, myBests, credits };
+    const remote = await first;
+    this.credits = await this.sumCredits();
+    return Object.assign({ credits: this.credits }, remote);
+  },
+
+  /** the player's balance: the sum of their credit events, done by the server */
+  async sumCredits() {
+    const { fsMod } = this.fb;
+    const q = fsMod.query(fsMod.collection(this.db, 'creditEvents'), fsMod.where('uid', '==', this.user.uid));
+    let total = 0;
+    if (fsMod.getAggregateFromServer && fsMod.sum) {
+      const agg = await fsMod.getAggregateFromServer(q, { total: fsMod.sum('delta') });
+      total = agg.data().total || 0;
+    } else {
+      (await fsMod.getDocs(q)).forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') total += v.delta; });
+    }
+    // older race payouts were fractional; a balance is always a whole number
+    return Math.floor(total + 1e-9);
   },
 
   /**
-   * Live version of pull()'s boards/cleared/myBests transform — subscribes
-   * to the whole bests collection with onSnapshot instead of a one-shot
-   * getDocs, so the leaderboards screen updates the instant anyone posts a
-   * new time, with no reload needed. Deliberately leaves credits alone
-   * (pull() already covers that at sign-in, and credits changing has
-   * nothing to do with the boards screen being open). Returns an
-   * unsubscribe fn; the caller is responsible for calling it the moment
-   * the boards screen is left, so this never keeps listening in the
-   * background burning free-tier read quota for no reason. */
-  watchBoards(onChange) {
+   * The session's live leaderboard: Season 2 maps only, kept open from
+   * sign-in to sign-out so only documents that actually change are ever
+   * read again. Banned rows are dropped client-side (a second filter
+   * would need a composite index).
+   */
+  watchBoards(onChange, onError) {
     if (!this.on) return () => {};
+    if (this.boardsUnsub) { this.boardsUnsub(); this.boardsUnsub = null; }
     const { fsMod } = this.fb;
     const { collection, onSnapshot, query, where } = fsMod;
-    return onSnapshot(query(collection(this.db, 'bests'), where('banned', '==', false)), (snap) => {
+    this.boardsUnsub = onSnapshot(query(collection(this.db, 'bests'), where('courseId', 'in', COURSE_IDS)), (snap) => {
       const boards = {}, cleared = {}, myBests = {};
       snap.forEach((d) => {
         const r = d.data();
-        if (!r || typeof r.timeMs !== 'number' || !r.courseId) return;
+        if (!r || r.banned || typeof r.timeMs !== 'number' || !r.courseId) return;
         const t = migrateLegacyTime(r.timeMs / 1000);
         (boards[r.courseId] = boards[r.courseId] || []).push({
           n: r.displayName || 'Driver', t, d: r.updatedMs || 0, uid: r.uid
@@ -2405,7 +2413,25 @@ const Cloud = {
       });
       for (const k in boards) boards[k].sort((a, b) => a.t - b.t);
       onChange({ boards, cleared, myBests });
-    });
+    }, (e) => { console.warn('aiPolytrack: leaderboard listener', e && e.message); if (onError) onError(e); });
+    return this.boardsUnsub;
+  },
+  stopBoards() { if (this.boardsUnsub) { this.boardsUnsub(); this.boardsUnsub = null; } },
+
+  /** this player's own times on the archived Season 1 maps (for the
+   *  engraving on a Season 1 trophy) — read only when one is shown */
+  async fetchMySeason1() {
+    if (!this.on || !this.user) return null;
+    try {
+      const { fsMod } = this.fb;
+      const snap = await fsMod.getDocs(fsMod.query(fsMod.collection(this.db, 'bests'), fsMod.where('uid', '==', this.user.uid)));
+      let count = 0, total = 0;
+      snap.forEach((d) => {
+        const r = d.data();
+        if (/^c\d+$/.test(r.courseId || '') && typeof r.timeMs === 'number') { count++; total += migrateLegacyTime(r.timeMs / 1000); }
+      });
+      return count ? { count, total } : null;
+    } catch (e) { return null; }
   },
 
   /**
@@ -2478,11 +2504,18 @@ const Cloud = {
   /** the admin-awarded Season 1 podium: { gold, silver, bronze } of { uid, name } */
   async fetchSeasonAwards() {
     if (!this.on || !this.user) return null;
+    const key = 'aipolytrack.awards.' + this.user.uid;
     try {
       const { fsMod } = this.fb;
       const snap = await fsMod.getDoc(fsMod.doc(this.db, 'seasonAwards', 's1'));
-      return snap.exists() ? snap.data() : null;
-    } catch (e) { return null; }
+      const data = snap.exists() ? snap.data() : {};
+      try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) { /* storage blocked */ }
+      return data;
+    } catch (e) {
+      // offline or out of quota: fall back to what this account last saw
+      console.warn('aiPolytrack: could not read season awards', e && e.message);
+      try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (x) { return null; }
+    }
   },
 
   /** this player's saved car colors, or the default red/dark-red pair if
@@ -2515,12 +2548,16 @@ const Cloud = {
   async fetchCarColorsOf(uid) {
     const fallback = { primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 } };
     if (!this.on || !uid) return fallback;
+    // cached for a few minutes: the menu's leader car asks on every visit
+    const c = (this._colorCache || (this._colorCache = new Map())).get(uid);
+    if (c && Date.now() - c.at < 300000) return c.v;
     try {
       const { fsMod } = this.fb;
       const snap = await fsMod.getDoc(fsMod.doc(this.db, 'carCustomization', uid));
-      if (!snap.exists()) return fallback;
-      const d = snap.data();
-      return { primary: d.primary || fallback.primary, secondary: d.secondary || fallback.secondary };
+      const d = snap.exists() ? snap.data() : {};
+      const v = { primary: d.primary || fallback.primary, secondary: d.secondary || fallback.secondary };
+      this._colorCache.set(uid, { v, at: Date.now() });
+      return v;
     } catch (e) { return fallback; }
   },
 
@@ -2626,7 +2663,7 @@ class PhysicsWorld {
     this.grid = new Map();
     this.stamp = 0;
     this.groundY = GROUND_Y;
-    this.groundGrip = 0.5;       // grass: drivable, but slow (see CAR.grassDrag)
+    this.groundGrip = 0.5;       // grass: low grip, and see CAR.rollGrass
   }
   clear() { this.tris.length = 0; this.grid.clear(); }
 
@@ -3024,18 +3061,28 @@ const CAR = {
   // velocity and yaw rate beyond what the steering asks for. Off while
   // the handbrake is held so a deliberate slide still works.
   assistLat: 2.7, assistYaw: 5.0, assistSlip: 0.12, assistRoll: 6.0,
-  // Grass: heavy rolling drag, so cutting across it is never faster.
-  grassDrag: 1.2, grassGrip: 0.5,
+  // Surface rolling resistance, as a fraction of each tyre's load. Grass is
+  // simply a very draggy, low-grip material (its grip lives on the
+  // surface itself): nothing caps speed on it, the car just can't be fast.
+  // Loose ground resists more the faster you roll through it (sinkage),
+  // so grass: 0.30 + 0.04 per m/s of the tyre's own rolling speed.
+  rollTrack: 0.015, rollGrass: 0.30, rollGrassSpeed: 0.04,
+  // Brake drift: braking while steering at speed.
+  driftMinSpeed: 12, driftHoldSlip: 0.12,
   // Six-speed gearbox with a real torque curve rather than a flat force. Top
   // speed comes out of the balance between drive and drag, not a cap.
   gears: [3.6, 2.4, 1.75, 1.35, 1.10, 0.92],
   finalDrive: 4.1, driveEff: 0.92,
   idleRpm: 850, redline: 7200, shiftUp: 6700, shiftDown: 3100, shiftTime: 0.14,
-  torquePeak: 270, torqueRpm: 4200, torqueSpread: 3000, engineBrake: 900,
+  torquePeak: 270, torqueRpm: 4200, torqueSpread: 3000, engineBrake: 900, launchRpm: 3000,
   vTop: 46, revForce: 5200, vTopRev: 13,
-  boostForce: 11000, boostTotal: 3.0,
+  // Boost pushes with a small fixed part plus a part proportional to how
+  // fast the car already is (acceleration = boostAccel + boostMul * v), so
+  // it multiplies speed you have earned rather than adding the same kick
+  // anywhere — spending it all off the line is the weakest use of it.
+  boostAccel: 4.2, boostMul: 0.19, boostTotal: 3.0,
   brakeFront: 5400, brakeRear: 3300, handbrake: 9500,
-  rollResist: 0.015,        // fraction of wheel load, as in a real tyre
+
   drag: 0.62,
   maxSteer: 0.58, minSteer: 0.26, steerRef: 40, steerRate: 7.5,
   airPitch: 3600, airYaw: 3000,
@@ -3290,6 +3337,7 @@ class Vehicle {
     this.hullDepth = 0;
     this.heading = 0;
     this.brakeLight = 0;
+    this.drift = 0; this.slipAngle = 0;
 
     // hull contact points: 8 corners of the collision box
     this.corners = [];
@@ -3379,6 +3427,7 @@ class Vehicle {
     this.scrapeImpact = 0;
     this.airTime = 0;
     this.stuckTime = 0;
+    this.drift = 0; this.slipAngle = 0;
     this.heading = heading;
     for (const w of this.wheels) {
       w.comp = 0; w.load = 0; w.contact = false; w.slip = 0; w.onTrack = true;
@@ -3480,6 +3529,7 @@ class Vehicle {
     /* --- tyre friction impulses ---------------------------------------- */
     this.slipMax = 0;
     this.wheelspin = 0;
+    this._updateDrift(dt, input, vFwd);
     this._tyreForces(dt, input, vFwd);
     this._assist(dt, input);
 
@@ -3558,6 +3608,28 @@ class Vehicle {
     this.addForceAt(this._v3.copy(w.normal).multiplyScalar(load), rel);
   }
 
+  /**
+   * Brake drift. Braking while steering at speed puts the rear brakes and
+   * the rear tyres' friction budget first: a tyre that is using its grip
+   * to brake has less left to hold sideways, so the rear steps out — the
+   * same friction-circle trade a real car makes. The slide carries on for
+   * as long as the car is actually sideways (throttle and counter-steer
+   * hold or catch it) and ends by itself once it straightens up. Pure
+   * state + inputs: identical inputs always drift identically.
+   */
+  _updateDrift(dt, input, vFwd) {
+    const vL = this.vel.dot(this.left);
+    const beta = Math.atan2(Math.abs(vL), Math.max(Math.abs(vFwd), 0.5));
+    this.slipAngle = beta;
+    if (this.grounded && input.brake && input.steer && vFwd > CAR.driftMinSpeed) {
+      this.drift = Math.min(1, (this.drift || 0) + dt * 8);
+    } else if ((this.drift || 0) > 0 && this.grounded && beta > CAR.driftHoldSlip && this.speed > 8) {
+      // still sideways: stay in the slide
+    } else {
+      this.drift = Math.max(0, (this.drift || 0) - dt * 2.5);
+    }
+  }
+
   /** gearbox, torque curve, engine braking and the boost budget */
   _drivetrain(dt, input, vFwd) {
     if (this.shiftTimer > 0) this.shiftTimer -= dt;
@@ -3577,7 +3649,11 @@ class Vehicle {
       const t = clamp(-vFwd / CAR.vTopRev, 0, 1);
       drive = -CAR.revForce * (1 - t * t);
     } else if (input.throttle && this.shiftTimer <= 0) {
-      drive = engineTorque(this.rpm) * ratio * CAR.driveEff / CAR.wheelR;
+      // pulling away in first, the clutch slips so the engine can sit at
+      // its launch revs while the wheels catch up (no clutch model meant
+      // a standing start made idle torque only)
+      const effRpm = this.gear === 0 ? Math.max(this.rpm, CAR.launchRpm) : this.rpm;
+      drive = engineTorque(effRpm) * ratio * CAR.driveEff / CAR.wheelR;
       if (this.rpm >= CAR.redline - 60) drive *= 0.25;      // limiter
     } else if (vFwd > 1) {
       drive = -CAR.engineBrake;                             // trailing throttle
@@ -3587,7 +3663,7 @@ class Vehicle {
     if (input.boost && this.boostLeft > 0 && vFwd > -0.5) {
       this.boosting = true;
       this.boostLeft = Math.max(0, this.boostLeft - dt);
-      drive += CAR.boostForce;
+      drive += this.mass * (CAR.boostAccel + CAR.boostMul * Math.max(vFwd, 0));
     }
     this.driveForce = drive;
     return drive;
@@ -3640,6 +3716,7 @@ class Vehicle {
         1 - CAR.muLoadSens * (w.load / CAR.loadRef - 1), 0.8, 1.1);
       w.mu = muEff;
       const hb = input.handbrake && !w.front;
+      const dr = this.drift || 0;
       const axle = w.front ? 1 : (hb ? 0.45 : CAR.rearGrip);
       const budget = muEff * w.load * w.grip * axle * dt;
       const mLong = this.effMass(rel, f);
@@ -3647,27 +3724,40 @@ class Vehicle {
 
       let jLong = drive * share * dt;
       let brakeF = 0;
-      if (braking) brakeF = w.front ? CAR.brakeFront : CAR.brakeRear;
-      if (hb) brakeF = Math.max(brakeF, CAR.handbrake);
-      if (brakeF > 0) {
-        const cancel = -vLong * mLong;
-        jLong += clamp(cancel, -brakeF * dt, brakeF * dt);
-      } else if (!input.throttle) {
-        const rr = CAR.rollResist * w.load * dt;
-        const cancel = -vLong * mLong;
-        jLong += clamp(cancel, -rr, rr);
+      if (braking) {
+        // drifting moves brake bias rearward: the fronts keep steering,
+        // the rears lock up and let go sideways
+        brakeF = w.front ? CAR.brakeFront * (1 - 0.65 * dr) : CAR.brakeRear * (1 + 1.6 * dr);
       }
+      if (hb) brakeF = Math.max(brakeF, CAR.handbrake);
+      const cancel = -vLong * mLong;
+      if (brakeF > 0) jLong += clamp(cancel, -brakeF * dt, brakeF * dt);
+      // rolling resistance of the surface under this tyre, always acting
+      const crr = w.onTrack ? (input.throttle ? 0 : CAR.rollTrack) : CAR.rollGrass + CAR.rollGrassSpeed * Math.abs(vLong);
+      const rr = crr * w.load * dt;
+      if (rr > 0) jLong += clamp(cancel - clamp(cancel, -brakeF * dt, brakeF * dt), -rr, rr);
       const latWant = -vLat * mLat;
-
-      // Lateral grip gets first call on the friction budget, so throttle or
-      // braking mid-corner can't strip the tyre of the sideways grip that
-      // keeps the car on its line. Longitudinal force gets what is left,
-      // with a small floor so the car can always accelerate and brake.
-      let jLat = clamp(latWant, -budget, budget);
-      const longCap = Math.max(Math.sqrt(Math.max(budget * budget - jLat * jLat, 0)), budget * 0.3);
       const longWant = jLong;
-      jLong = clamp(jLong, -longCap, longCap);
-      const over = Math.max(Math.abs(latWant) - budget, 0) + Math.max(Math.abs(longWant) - longCap, 0);
+      let jLat;
+      if (!w.front && dr > 0) {
+        // In a drift the rear tyres spend their grip on braking/driving
+        // first and hold sideways with what is left (the friction circle).
+        const lg = clamp(jLong, -budget, budget);
+        const latLeft = Math.sqrt(Math.max(budget * budget - lg * lg, 0));
+        const latCap = lerp(budget, Math.max(latLeft, budget * 0.18), dr);
+        jLat = clamp(latWant, -latCap, latCap);
+        const longCap = Math.max(Math.sqrt(Math.max(budget * budget - jLat * jLat, 0)), budget * 0.3);
+        jLong = clamp(jLong, -Math.max(longCap, Math.abs(lg) * dr), Math.max(longCap, Math.abs(lg) * dr));
+      } else {
+        // Lateral grip gets first call on the friction budget, so throttle
+        // or braking mid-corner can't strip the tyre of the sideways grip
+        // that keeps the car on its line. Longitudinal force gets what is
+        // left, with a small floor so the car can always accelerate/brake.
+        jLat = clamp(latWant, -budget, budget);
+        const longCap = Math.max(Math.sqrt(Math.max(budget * budget - jLat * jLat, 0)), budget * 0.3);
+        jLong = clamp(jLong, -longCap, longCap);
+      }
+      const over = Math.max(Math.abs(latWant) - Math.abs(jLat), 0) + Math.max(Math.abs(longWant) - Math.abs(jLong), 0);
       w.slip = budget > 1e-9 ? clamp(over / budget, 0, 2) : 0;
       this.slipMax = Math.max(this.slipMax, w.slip);
 
@@ -3696,19 +3786,16 @@ class Vehicle {
    * and pay a heavy rolling drag on top.
    */
   _assist(dt, input) {
-    let track = 0, grass = 0;
+    // how much tyre is on the ground, weighted by each surface's own grip
+    let grip = 0, touching = 0;
     for (const w of this.wheels) {
       if (!w.contact || w.load <= 1) continue;
-      if (w.onTrack) track++; else grass++;
+      grip += Math.min(w.grip, 1); touching++;
     }
-    if (grass) {
-      const k = Math.exp(-CAR.grassDrag * (grass / 4) * dt);
-      this.vel.x *= k; this.vel.z *= k;
-      if (this.vel.y > 0) this.vel.y *= k;
-    }
-    const frac = (track + grass * 0.35) / 4;
-    const yawFrac = track + grass > 0 ? 1 : 0;
-    if (yawFrac <= 0 || input.handbrake) return;
+    const drift = this.drift || 0;
+    const frac = (grip / 4) * (1 - 0.85 * drift);
+    const yawFrac = touching > 0 ? 1 - 0.85 * drift : 0;
+    if (touching === 0 || input.handbrake) return;
     const vF = this.vel.dot(this.fwd);
     const vL = this.vel.dot(this.left);
     const allow = CAR.assistSlip * Math.abs(vF) + 0.4;
@@ -4392,7 +4479,7 @@ function buildCourse(data, scene, world) {
       kind: g.kind, mesh,
       pos: new THREE.Vector3().fromArray(g.pos),
       dir: new THREE.Vector3(Math.sin(g.heading), 0, Math.cos(g.heading)),
-      heading: g.heading, radius: g.radius,
+      heading: g.heading, radius: g.radius, width: g.width || 12,
       index: g.kind === 'finish' ? -1 : cp++,
       passed: false
     });
@@ -5478,16 +5565,12 @@ const courseDetailPreview = makePlayerCarPreview('cdCarCanvas');
 const PLACE = ['1st', '2nd', '3rd'];
 const PLACE_TITLE = ['Champion', 'Runner-up', 'Third place'];
 const Trophies = {
-  compute(awards) {
+  compute(awards, s1) {
     const uid = Cloud.user && Cloud.user.uid;
     const me = Records.driver();
     const mine = (e) => (uid && e.uid) ? e.uid === uid : (!uid && e.n === me);
     const out = [];
     if (awards && uid) {
-      // Season 1 is archived; its maps' times still sit in the pulled boards
-      const s1ids = [];
-      for (let k = 1; k <= 33; k++) s1ids.push('c' + k);
-      const s1 = Records.overall(s1ids).find(mine);
       ['gold', 'silver', 'bronze'].forEach((p, k) => {
         const a = awards[p];
         if (a && a.uid === uid) {
@@ -5525,20 +5608,52 @@ const Trophies = {
 
 /**
  * The trophy room: its own renderer on its own canvas, so it costs nothing
- * unless open. Your car sits in the middle; one light-blue gem per credit
- * rains down onto it and piles up around it under a small physics engine
- * (every gem collides with every other gem, the car, the pedestals and
+ * unless open. Your car sits in the middle; your exact credit balance
+ * rains down onto it as gems (gemBreakdown says which) and piles up
+ * around it under a small physics engine (every gem collides with every other gem, the car, the pedestals and
  * the cups, and a weak pull draws them back toward the centre). Trophies
  * stand still on engraved pedestals, laid out on rings around the car —
  * each ring only takes as many as its circumference fits, so any number
  * of trophies spaces itself out. Drag to spin the room.
  */
-const GEM_R = 0.14;           // collision radius of one credit gem
-const GEM_MAX = 320;          // most gems simulated at once (the number shows the real total)
+const GEM_R = 0.14;           // collision radius of a 1-credit gem
+const GEM_PILE = 300;         // about how many gems a balance is shown as
+// Gem sizes: each is worth ten of the one before it, is a different
+// colour, and is a little bigger.
+const GEM_DENOMS = [
+  { v: 1, color: 0x1f8fc4, glow: 0x0b7fc0, css: '#2fb4ec', scale: 1 },
+  { v: 10, color: 0x22b86a, glow: 0x0c8f4a, css: '#34d17f', scale: 1.22 },
+  { v: 100, color: 0x7b4dff, glow: 0x5a2fe0, css: '#9a78ff', scale: 1.48 },
+  { v: 1000, color: 0xffb020, glow: 0xd07a00, css: '#ffbe3d', scale: 1.8 },
+  { v: 10000, color: 0xff3d6e, glow: 0xc01848, css: '#ff5f86', scale: 2.15 },
+  { v: 100000, color: 0xe8f2ff, glow: 0x8fb6ff, css: '#eef5ff', scale: 2.55 },
+  { v: 1000000, color: 0x151515, glow: 0x6a00ff, css: '#3a2a66', scale: 3 }
+];
+/**
+ * How many gems of each size a balance drops. The values always add up
+ * to exactly the balance. Starting from the fewest gems that make the
+ * total, big gems are broken into ten of the next size down for as long
+ * as the pile stays around GEM_PILE gems — so 250 credits is 250 one-
+ * credit gems, and 10,000 is 78 hundreds and 220 tens rather than one
+ * lonely gem (or, as it used to be, 320 gems that were just a cap).
+ */
+function gemBreakdown(total, limit = GEM_PILE) {
+  let left = Math.max(0, Math.floor(total || 0));
+  const counts = GEM_DENOMS.map(() => 0);
+  for (let i = GEM_DENOMS.length - 1; i >= 0; i--) {
+    counts[i] = Math.floor(left / GEM_DENOMS[i].v);
+    left -= counts[i] * GEM_DENOMS[i].v;
+  }
+  let n = counts.reduce((a, b) => a + b, 0);
+  for (let i = GEM_DENOMS.length - 1; i >= 1; i--) {
+    while (counts[i] > 0 && n + 9 <= limit) { counts[i]--; counts[i - 1] += 10; n += 9; }
+  }
+  return counts;
+}
 const TrophyRoom = {
   renderer: null, scene: null, camera: null, root: null, running: false,
   yaw: 0, yawTarget: 0, dragging: false, lastX: 0, idle: 0, clock: 0,
-  gems: [], gemMesh: null, boxes: [], cyls: [], spawnLeft: 0, spawnAcc: 0, outerR: 5,
+  gems: [], gemMeshes: [], queue: [], total: 0, dropped: 0, boxes: [], cyls: [], spawnLeft: 0, spawnAcc: 0, outerR: 5,
 
   ensureBuilt() {
     if (this.renderer) return;
@@ -5590,7 +5705,7 @@ const TrophyRoom = {
         std(0xcd7f45, { metalness: 1, roughness: 0.28, envMap: env })],
       plinth: std(0x070a12, { metalness: 0.1, roughness: 0.7 }),
       plinthTop: std(0x121a2c, { metalness: 0.2, roughness: 0.45 }),
-      gem: std(0x1f8fc4, { metalness: 0.15, roughness: 0.18, emissive: 0x0b7fc0, emissiveIntensity: 0.7 }),
+      gems: GEM_DENOMS.map((d) => std(d.color, { metalness: 0.15, roughness: 0.18, emissive: d.glow, emissiveIntensity: d.v === 1000000 ? 1.1 : 0.7 })),
       floor: std(0x03050a, { metalness: 0.05, roughness: 0.9 })
     };
     this.floor = new THREE.Mesh(new THREE.CircleGeometry(1, 64), this.mats.floor);
@@ -5603,8 +5718,12 @@ const TrophyRoom = {
     this.car.position.y = 0.45;
     this.car.rotation.y = deg(-30);
     this.scene.add(this.car);
-    this.gemGeo = new THREE.OctahedronGeometry(0.16, 0);
-    this.gemGeo.scale(1, 1.4, 1);
+    this.gemGeos = GEM_DENOMS.map((d) => {
+      const g = new THREE.OctahedronGeometry(0.16 * d.scale, 0);
+      g.scale(1, 1.4, 1);
+      return g;
+    });
+    this.gemMeshes = [];
 
     const stage = canvas.parentElement;
     stage.addEventListener('pointerdown', (e) => { this.dragging = true; this.lastX = e.clientX; stage.setPointerCapture(e.pointerId); });
@@ -5677,6 +5796,14 @@ const TrophyRoom = {
   },
 
   build(data) {
+    // every pedestal, plaque and cup is built fresh: free the old ones'
+    // GPU buffers and textures (the shared room materials stay)
+    const shared = new Set(Object.values(this.mats).flat());
+    this.root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.geometry.dispose();
+      if (!shared.has(o.material)) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    });
     while (this.root.children.length) this.root.remove(this.root.children[0]);
     this.boxes = []; this.cyls = [];
     // the car's own collision boxes (its local frame is rotated by car.rotation.y)
@@ -5751,25 +5878,64 @@ const TrophyRoom = {
     });
     this.floor.scale.setScalar(this.outerR + 6);
 
-    // the credits, dropped fresh every visit
-    if (this.gemMesh) { this.scene.remove(this.gemMesh); this.gemMesh.dispose(); }
-    const n = Math.max(0, Math.min(GEM_MAX, Math.floor(data.credits || 0)));
-    this.gems = [];
-    this.gemMesh = n ? new THREE.InstancedMesh(this.gemGeo, this.mats.gem, n) : null;
-    if (this.gemMesh) {
-      this.gemMesh.count = 0;
-      this.gemMesh.frustumCulled = false;
-      this.scene.add(this.gemMesh);
-    }
-    this.spawnLeft = n; this.spawnAcc = 0;
+    // the credits, dropped fresh every visit: every gem carries its
+    // value, and together they are exactly the balance
+    const total = Math.max(0, Math.floor(data.credits || 0));
+    // a redraw while the room is open (the season awards arriving) keeps
+    // the pile that is already falling rather than dropping it again
+    if (this.running && total === this.total && this.counter === !!data.counter && this.gemMeshes.some(Boolean)) return;
+    for (const m of this.gemMeshes) if (m) { this.scene.remove(m); m.dispose(); }
+    this.total = total;
+    const counts = gemBreakdown(this.total);
+    this.gemMeshes = counts.map((c, i) => {
+      if (!c) return null;
+      const m = new THREE.InstancedMesh(this.gemGeos[i], this.mats.gems[i], c);
+      m.count = 0;
+      m.frustumCulled = false;
+      this.scene.add(m);
+      return m;
+    });
     this.seed = 12345;
+    // the drop order: sizes shuffled together (a fixed seed, so every
+    // visit with the same balance looks the same)
+    const queue = [];
+    counts.forEach((c, i) => { for (let k = 0; k < c; k++) queue.push(i); });
+    for (let i = queue.length - 1; i > 0; i--) {
+      const j = Math.floor(this.rnd() * (i + 1));
+      const t = queue[i]; queue[i] = queue[j]; queue[j] = t;
+    }
+    this.queue = queue;
+    this.gems = [];
+    this.maxR = GEM_R;
+    counts.forEach((c, i) => { if (c) this.maxR = Math.max(this.maxR, GEM_R * GEM_DENOMS[i].scale); });
+    this.spawnLeft = queue.length; this.spawnAcc = 0;
+    // the number counts up by each gem's value as it falls, landing on
+    // exactly the balance with the last one
+    this.dropped = 0;
+    this.counter = !!data.counter;
+    if (this.counter) $('trophyCreditNum').textContent = '0';
+    const key = $('trophyGemKey');
+    if (key) {
+      const parts = [];
+      for (let i = GEM_DENOMS.length - 1; i >= 0; i--) {
+        if (!counts[i]) continue;
+        parts.push('<span class="gk"><span class="gem2d" style="background:' + GEM_DENOMS[i].css + '"></span>' +
+          counts[i].toLocaleString('en-US') + ' × ' + GEM_DENOMS[i].v.toLocaleString('en-US') + '</span>');
+      }
+      key.innerHTML = this.counter && parts.length && !(parts.length === 1 && counts[0]) ? parts.join('<span class="gkPlus">+</span>') : '';
+    }
   },
   rnd() { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 4294967296; },
 
   /* ------------------------------------------------------ gem physics */
   spawn() {
+    const d = this.queue[this.queue.length - this.spawnLeft];
+    const k = GEM_DENOMS[d].scale;
     const a = this.rnd() * Math.PI * 2, r = Math.sqrt(this.rnd()) * 1.6;
+    this.dropped += GEM_DENOMS[d].v;
+    if (this.counter) $('trophyCreditNum').textContent = this.dropped.toLocaleString('en-US');
     this.gems.push({
+      d, r: GEM_R * k, m: k * k * k,
       x: Math.cos(a) * r, y: 6 + this.rnd() * 4, z: Math.sin(a) * r,
       vx: 0, vy: -2 - this.rnd() * 2, vz: 0,
       rx: this.rnd() * 6, ry: this.rnd() * 6, rz: this.rnd() * 6,
@@ -5795,26 +5961,27 @@ const TrophyRoom = {
     const qx = clamp(lx, -b.hx, b.hx), qy = clamp(dy, -b.hy, b.hy), qz = clamp(lz, -b.hz, b.hz);
     let nx = lx - qx, ny = dy - qy, nz = lz - qz;
     let d = Math.sqrt(nx * nx + ny * ny + nz * nz);
-    if (d > GEM_R) return;
+    const R = g.r;
+    if (d > R) return;
     let pen;
     if (d < 1e-6) {
       // centre inside the box: out through the nearest face
       const px = b.hx - Math.abs(lx), py = b.hy - Math.abs(dy), pz = b.hz - Math.abs(lz);
       nx = ny = nz = 0;
-      if (py <= px && py <= pz) { ny = dy >= 0 ? 1 : -1; pen = py + GEM_R; }
-      else if (px <= pz) { nx = lx >= 0 ? 1 : -1; pen = px + GEM_R; }
-      else { nz = lz >= 0 ? 1 : -1; pen = pz + GEM_R; }
-    } else { nx /= d; ny /= d; nz /= d; pen = GEM_R - d; }
+      if (py <= px && py <= pz) { ny = dy >= 0 ? 1 : -1; pen = py + R; }
+      else if (px <= pz) { nx = lx >= 0 ? 1 : -1; pen = px + R; }
+      else { nz = lz >= 0 ? 1 : -1; pen = pz + R; }
+    } else { nx /= d; ny /= d; nz /= d; pen = R - d; }
     const wx = nx * b.c + nz * b.s, wz = -nx * b.s + nz * b.c;
     g.x += wx * pen; g.y += ny * pen; g.z += wz * pen;
     this.bounce(g, wx, ny, wz, 0.35);
   },
   collideCyl(g, c) {
-    if (g.y < c.y0 - GEM_R || g.y > c.y1 + GEM_R) return;
-    const dx = g.x - c.x, dz = g.z - c.z, d = Math.hypot(dx, dz), need = c.r + GEM_R;
+    if (g.y < c.y0 - g.r || g.y > c.y1 + g.r) return;
+    const dx = g.x - c.x, dz = g.z - c.z, d = Math.hypot(dx, dz), need = c.r + g.r;
     if (d >= need) return;
     if (g.y > c.y1 && d < c.r) {             // resting on the rim of the bowl
-      g.y = c.y1 + GEM_R; this.bounce(g, 0, 1, 0, 0.3); return;
+      g.y = c.y1 + g.r; this.bounce(g, 0, 1, 0, 0.3); return;
     }
     const nx = d > 1e-6 ? dx / d : 1, nz = d > 1e-6 ? dz / d : 0;
     g.x = c.x + nx * need; g.z = c.z + nz * need;
@@ -5831,7 +5998,7 @@ const TrophyRoom = {
       g.rx += g.wx * h; g.ry += g.wy * h; g.rz += g.wz * h;
     }
     // gem against gem, through a spatial hash so it stays cheap
-    const cell = GEM_R * 2, grid = new Map();
+    const cell = (this.maxR || GEM_R) * 2, grid = new Map();
     const key = (i, j, k) => i * 73856093 ^ j * 19349663 ^ k * 83492791;
     for (let i = 0; i < n; i++) {
       const g = G[i];
@@ -5848,16 +6015,18 @@ const TrophyRoom = {
           if (j <= i) continue;
           const o = G[j];
           const dx = o.x - g.x, dy = o.y - g.y, dz = o.z - g.z;
-          const d2 = dx * dx + dy * dy + dz * dz, min = GEM_R * 2;
+          const d2 = dx * dx + dy * dy + dz * dz, min = g.r + o.r;
           if (d2 >= min * min || d2 < 1e-12) continue;
-          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d, pen = (min - d) / 2;
-          g.x -= nx * pen; g.y -= ny * pen; g.z -= nz * pen;
-          o.x += nx * pen; o.y += ny * pen; o.z += nz * pen;
+          // heavier (bigger) gems get pushed less and shove harder
+          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d, pen = min - d;
+          const wg = o.m / (g.m + o.m), wo = g.m / (g.m + o.m);
+          g.x -= nx * pen * wg; g.y -= ny * pen * wg; g.z -= nz * pen * wg;
+          o.x += nx * pen * wo; o.y += ny * pen * wo; o.z += nz * pen * wo;
           const rv = (o.vx - g.vx) * nx + (o.vy - g.vy) * ny + (o.vz - g.vz) * nz;
           if (rv < 0) {
-            const jn = -(1 + 0.25) * rv / 2;
-            g.vx -= jn * nx; g.vy -= jn * ny; g.vz -= jn * nz;
-            o.vx += jn * nx; o.vy += jn * ny; o.vz += jn * nz;
+            const jn = -(1 + 0.25) * rv;
+            g.vx -= jn * wg * nx; g.vy -= jn * wg * ny; g.vz -= jn * wg * nz;
+            o.vx += jn * wo * nx; o.vy += jn * wo * ny; o.vz += jn * wo * nz;
             if (-rv > 0.4) { g.rest = 0; o.rest = 0; }
           }
         }
@@ -5866,8 +6035,8 @@ const TrophyRoom = {
     for (const g of G) {
       for (const b of this.boxes) this.collideBox(g, b);
       for (const c of this.cyls) this.collideCyl(g, c);
-      if (g.y < GEM_R) {
-        g.y = GEM_R;
+      if (g.y < g.r) {
+        g.y = g.r;
         this.bounce(g, 0, 1, 0, 0.3);
         g.vx *= 0.96; g.vz *= 0.96;           // floor friction lets the heap settle
       }
@@ -5877,16 +6046,21 @@ const TrophyRoom = {
     }
   },
   syncGems() {
-    if (!this.gemMesh) return;
     const m = this._m || (this._m = new THREE.Matrix4()), q = this._q || (this._q = new THREE.Quaternion());
     const e = this._e || (this._e = new THREE.Euler()), p = this._p || (this._p = new THREE.Vector3());
     const one = this._one || (this._one = new THREE.Vector3(1, 1, 1));
-    this.gems.forEach((g, i) => {
+    const used = this.gemMeshes.map(() => 0);
+    for (const g of this.gems) {
+      const mesh = this.gemMeshes[g.d];
+      if (!mesh) continue;
       q.setFromEuler(e.set(g.rx, g.ry, g.rz));
-      this.gemMesh.setMatrixAt(i, m.compose(p.set(g.x, g.y, g.z), q, one));
+      mesh.setMatrixAt(used[g.d]++, m.compose(p.set(g.x, g.y, g.z), q, one));
+    }
+    this.gemMeshes.forEach((mesh, i) => {
+      if (!mesh) return;
+      mesh.count = used[i];
+      mesh.instanceMatrix.needsUpdate = true;
     });
-    this.gemMesh.count = this.gems.length;
-    this.gemMesh.instanceMatrix.needsUpdate = true;
   },
 
   resize() {
@@ -5903,9 +6077,11 @@ const TrophyRoom = {
     this.resize();
     if (this.running) return;
     this.running = true;
+    // one loop at a time, even if the room is left and reopened within a frame
+    const gen = this.gen = (this.gen || 0) + 1;
     let last = performance.now();
     const loop = (now) => {
-      if (!this.running) return;
+      if (!this.running || gen !== this.gen) return;
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       this.clock += dt;
@@ -5914,6 +6090,10 @@ const TrophyRoom = {
       this.spawnAcc += dt * 45;
       while (this.spawnAcc >= 1 && this.spawnLeft > 0) { this.spawn(); this.spawnLeft--; this.spawnAcc -= 1; }
       if (this.spawnLeft <= 0) this.spawnAcc = 0;
+      if (this.counter && this.spawnLeft <= 0 && this.dropped !== this.total) {
+        this.dropped = this.total;
+        $('trophyCreditNum').textContent = this.total.toLocaleString('en-US');
+      }
       const H = 1 / 120;
       const steps = Math.min(4, Math.max(1, Math.round(dt / H)));
       for (let k = 0; k < steps; k++) this.stepGems(H);
@@ -7101,7 +7281,6 @@ const Game = {
   _lockedRaceId: null, _settlingRace: null, _nextLobbyTimer: null,
   _startingCountdownFor: null, _startingRaceFor: null,
   _joinedRaceId: null, _joinedEntry: null,
-  boardsUnwatch: null,
   garageSlot: 'primary', _garageRolling: false,
   // Leaderboard screen state: which tab is open, and which uids are
   // checked via the multi-select checkboxes — kept per-courseId so a
@@ -7258,7 +7437,8 @@ const Game = {
       if (knownGoodUid) return; // an explicit signOut() clears confirmedUid itself
       Cloud.credits = 0;
       if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
-      this.stopWatchingBoards();
+      Cloud.stopBoards();
+      this.seasonAwards = null; this.s1Mine = null;
       this.lobby = null; this.lobbyEntries = [];
       UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate'; return;
     }
@@ -8300,19 +8480,23 @@ const Game = {
     Sound.stopEngine();
     UI.show('trophies');
     const draw = () => {
-      const list = Trophies.compute(this.seasonAwards);
+      const list = Trophies.compute(this.seasonAwards, this.s1Mine);
       UI.trophyList(list);
-      $('trophyCreditNum').textContent = Cloud.on ? Records.credits : '—';
-      TrophyRoom.start({ credits: Cloud.on ? Records.credits : 0, trophies: list });
+      if (!Cloud.on) $('trophyCreditNum').textContent = '—';   // signed in, the room counts it up
+      TrophyRoom.start({ credits: Cloud.on ? Records.credits : 0, counter: Cloud.on, trophies: list });
     };
     draw();
     if (Cloud.on) {
       this.seasonAwards = await Cloud.fetchSeasonAwards();
+      const a = this.seasonAwards, uid = Cloud.user && Cloud.user.uid;
+      if (a && uid && ['gold', 'silver', 'bronze'].some((k) => a[k] && a[k].uid === uid) && !this.s1Mine) {
+        this.s1Mine = await Cloud.fetchMySeason1();
+      }
       if (this.state === 'trophies') draw();
     }
   },
   trophyTileText() {
-    const n = Trophies.compute(this.seasonAwards).length;
+    const n = Trophies.compute(this.seasonAwards, this.s1Mine).length;
     $('tileTrophies').textContent = n ? n + (n === 1 ? ' trophy' : ' trophies') : 'your awards';
   },
   toMenu() {
@@ -8323,7 +8507,6 @@ const Game = {
     this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
     this.hideAllTags(); // a race's own name tags are DOM elements, not part of the 3D scene — they don't clear on their own
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
-    this.stopWatchingBoards();
     GaragePreview.stop();
     courseDetailPreview.stop();
     UI.show('menu');
@@ -8334,13 +8517,11 @@ const Game = {
     this.trophyTileText();
     this.flushPendingAuth();
   },
-  /** tears down the live boards subscription — called from toMenu() since
-   *  that is the one place every path away from this screen passes
-   *  through (the "watch this run" button leads to spectate, but exiting
-   *  spectate returns to toSelect() again, so the subscription should
-   *  survive that round trip rather than restarting for no reason). */
-  stopWatchingBoards() {
-    if (this.boardsUnwatch) { this.boardsUnwatch(); this.boardsUnwatch = null; }
+  /** called whenever the live leaderboard changes: redraw whatever shows it */
+  onBoardsChanged() {
+    if (this.state === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
+    else if (this.state === 'courseDetail') UI.courseDetail(this.courseDetailIndex);
+    else if (this.state === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
   },
   /**
    * Courses and Leaderboards used to be two separate screens; they're one
@@ -8365,22 +8546,6 @@ const Game = {
     this.setSelectTab(tab || this.selectTab);
     UI.show('select');
     this.flushPendingAuth();
-    // Live-updates the leaderboard pane with no reload needed — started
-    // once per visit regardless of which tab is showing right now (the
-    // player can switch to the boards tab later without leaving this
-    // screen), and harmless to call again: watchBoards() only ever runs
-    // one onSnapshot per call, and the previous one was already torn down
-    // by toMenu() on the way out, or was never started in local/offline
-    // mode.
-    if (Cloud.on && !this.boardsUnwatch) {
-      this.boardsUnwatch = Cloud.watchBoards((remote) => {
-        Records.data.boards = remote.boards;
-        Records.data.cleared = remote.cleared;
-        Records.data.myBests = remote.myBests;
-        if (this.state === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
-        else if (this.state === 'courseDetail') UI.courseDetail(this.courseDetailIndex);
-      });
-    }
   },
   setSelectTab(tab) {
     this.selectTab = tab === 'boards' ? 'boards' : 'courses';
@@ -8839,7 +9004,10 @@ const Game = {
   noseInGate(g) {
     const n = this._nose;
     const lateral = Math.abs((n.x - g.pos.x) * g.dir.z - (n.z - g.pos.z) * g.dir.x);
-    return lateral <= Math.max(3.2, g.width / 2) + 1.6 && Math.abs(n.y - g.pos.y) < 7;
+    // between the gate posts (they stand half the deck width plus a metre
+    // out), and at deck height
+    const half = Math.max(3.2, (g.width || 12) / 2) + 1.6;
+    return lateral <= half && Math.abs(n.y - g.pos.y) < 9;
   },
 
 
@@ -9158,6 +9326,13 @@ const Game = {
     for (let i = lo; i <= hi; i++) {
       const d = path[i].distanceToSquared(this.car.pos);
       if (d < bd) { bd = d; best = i; }
+    }
+    // lost the car (a long jump, a slow frame)? look further ahead, never back
+    if (bd > 30 * 30) {
+      for (let i = hi + 1; i <= Math.min(path.length - 1, this.pathIdx + 80); i++) {
+        const d = path[i].distanceToSquared(this.car.pos);
+        if (d < bd) { bd = d; best = i; }
+      }
     }
     this.pathIdx = best;
     const dist = this.course.cum[best];
