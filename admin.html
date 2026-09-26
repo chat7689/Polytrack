@@ -339,7 +339,11 @@ const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query
   orderBy, limit, serverTimestamp, deleteField, getAggregateFromServer, sum } = await import(SDK + 'firebase-firestore.js');
 
 const $ = (id) => document.getElementById(id);
-const app = initializeApp(CONFIG);
+// Its own named app, so its own saved login. The game and this panel live
+// on the same site, and with the default app they shared one session:
+// signing in here switched the game tab to the admin account (balance 0)
+// or signed it out, and the other way round.
+const app = initializeApp(CONFIG, 'aipolytrack-admin');
 const auth = getAuth(app);
 const db = getFirestore(app);
 const say = (el, text, kind) => { $(el).textContent = text; $(el).className = 'msg ' + (kind || ''); };
