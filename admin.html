@@ -115,7 +115,7 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
   <div class="card" id="cardAuth" style="max-width:640px">
     <h2>Sign in</h2>
     <div class="row">
-      <div><label for="email">Username</label><input type="text" id="email" autocomplete="username"></div>
+      <div><label for="email">Game username</label><input type="text" id="email" name="game-username" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       <div><label for="pass">Password</label><input type="password" id="pass"></div>
       <button class="primary" id="btnIn">Sign in</button>
     </div>
@@ -423,10 +423,22 @@ function authErrorMessage(e) {
 $('btnIn').addEventListener('click', async () => {
   say('authMsg', 'Working…');
   const who = $('email').value.trim();
-  // a game username, or a full address for an account made another way
+  // Every account is a game account now. An email address here is almost
+  // always the browser filling in the old Firebase admin login it saved
+  // for this page (and its old password with it).
+  if (who.includes('@') && !who.toLowerCase().endsWith(USERNAME_DOMAIN)) {
+    say('authMsg', 'Type your game username (not an email address), and your game password — ' +
+      'not a password your browser fills in from the old Firebase admin login.', 'err');
+    return;
+  }
   const email = who.includes('@') ? who.toLowerCase() : who.toLowerCase() + USERNAME_DOMAIN;
   const { error } = await sb.auth.signInWithPassword({ email, password: $('pass').value });
-  if (error) say('authMsg', authErrorMessage(error), 'err');
+  if (error) {
+    say('authMsg', authErrorMessage(error) === 'That username and password do not match.'
+      ? 'That username and password do not match. Use the password you made in the game — your browser may be ' +
+        'filling in the old Firebase admin password for this page.'
+      : authErrorMessage(error), 'err');
+  }
 });
 $('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnIn').click(); });
 $('btnOut').addEventListener('click', () => sb.auth.signOut({ scope: 'local' }));
