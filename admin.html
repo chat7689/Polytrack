@@ -115,14 +115,13 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
   <div class="card" id="cardAuth" style="max-width:640px">
     <h2>Sign in</h2>
     <div class="row">
-      <div><label for="email">Email</label><input type="email" id="email"></div>
+      <div><label for="email">Username</label><input type="text" id="email" autocomplete="username"></div>
       <div><label for="pass">Password</label><input type="password" id="pass"></div>
       <button class="primary" id="btnIn">Sign in</button>
     </div>
     <div class="msg" id="authMsg"></div>
-    <div class="row" id="resetRow" style="margin-top:10px;display:none">
-      <button id="btnReset">Email me a password reset link</button>
-    </div>
+    <small class="hint">Your game username and password. The account must be listed as an admin in Supabase
+      (see supabase/SETUP.md).</small>
   </div>
 
   <div id="panel" class="hide">
@@ -169,7 +168,8 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
         <div class="msg" id="pMsg"></div>
       </div>
       <div class="detail hide" id="playerDetail"></div>
-      <small class="hint">Passwords can't be reset from here (usernames map to a private address with no inbox).</small>
+      <small class="hint">A player who forgot their password: <b>Password</b> sets a new one for them to use
+        (there is no reset email — logins have no inbox).</small>
     </section>
 
     <!-- RUN HISTORY -->
@@ -253,11 +253,23 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
 
     <!-- SETTINGS -->
     <section class="page hide" id="page-settings">
-      <h2>Export everything</h2>
+      <h2>Bring in the Firebase data</h2>
       <div class="card">
-        <p class="note">Downloads every player, time, ghost, credit, car colour, trophy, real name and
-          the invite code as one file, for moving the game to Supabase. Reads everything once.</p>
-        <div class="row"><button class="primary" id="btnExport">Export all data</button></div>
+        <p class="note">Pick the file the old admin page's <b>Export all data</b> saved
+          (aipolytrack-export-….json). Every player, time, ghost, credit, colour, trophy and real name comes
+          across. Players get it all back by signing up again with their old username (no invite code
+          needed). Safe to run more than once — nothing is doubled, and a faster time is never replaced by
+          a slower one. A backup file from below loads the same way.</p>
+        <div class="row"><input type="file" id="importFile" accept=".json,application/json" style="width:auto">
+          <button class="primary" id="btnImport">Import</button></div>
+        <div class="msg" id="importMsg"></div>
+      </div>
+      <h2>Backup</h2>
+      <div class="card">
+        <p class="note">The free Supabase plan keeps no backups you can download. This saves everything
+          (players, times, ghosts, credits, colours, trophies, real names, run history and settings) as one
+          file; <b>Import</b> above loads it back.</p>
+        <div class="row"><button id="btnExport">Download a backup</button></div>
         <div class="msg" id="exportMsg"></div>
       </div>
       <h2>Invite code</h2>
@@ -281,7 +293,7 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
           <button class="primary" id="btnPcSave">Save passcode</button>
         </div>
         <div class="msg" id="pcMsg"></div>
-        <small class="hint">Stored only as a salted SHA-256 hash in config/admin, which only admins can read.</small>
+        <small class="hint">Stored only as a salted SHA-256 hash in the settings table, which only admins can read.</small>
       </div>
     </section>
   </div>
@@ -305,15 +317,13 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
 </div>
 
 <script type="module">
-const CONFIG = {
-  apiKey: 'AIzaSyAeDQFyJvnV9TiVQMnhX6PkcPkXoXzhm-I',
-  authDomain: 'polytrack-918a0.firebaseapp.com',
-  projectId: 'polytrack-918a0',
-  storageBucket: 'polytrack-918a0.firebasestorage.app',
-  messagingSenderId: '928788678841',
-  appId: '1:928788678841:web:12475f136c4acd28887368'
+const SUPABASE = {
+  sdk: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm',
+  url: 'https://tkjiivodmmjeruhxspcz.supabase.co',
+  // the project's public key (what it may do is decided by supabase/schema.sql)
+  key: 'sb_publishable_ZdsFehUaa1KE1jzlRxbLIA_QgiOju7q'
 };
-const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const USERNAME_DOMAIN = '@chat7689.github.io';     // the same as the game's
 
 // Season 1 (archived) and Season 2 (current) map lists — ids match the game.
 const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Stepping Stones','The Wall',
@@ -339,20 +349,31 @@ S2.forEach((c) => { COURSE_NAME[c.id] = c.tag + ' ' + c.name; });
   ['s2c9', 'High Wire'], ['s2c12', 'Corkscrew Ridge'], ['s2c13', 'Velocity'], ['s2c15', 'Sky Harbor']]
   .forEach(([id, name]) => { COURSE_NAME[id] = name + ' (retired)'; });
 
-const { initializeApp } = await import(SDK + 'firebase-app.js');
-const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
-  await import(SDK + 'firebase-auth.js');
-const { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, writeBatch,
-  orderBy, limit, serverTimestamp, deleteField, getAggregateFromServer, sum } = await import(SDK + 'firebase-firestore.js');
+const { createClient } = await import(SUPABASE.sdk);
 
 const $ = (id) => document.getElementById(id);
-// Its own named app, so its own saved login. The game and this panel live
-// on the same site, and with the default app they shared one session:
-// signing in here switched the game tab to the admin account (balance 0)
-// or signed it out, and the other way round.
-const app = initializeApp(CONFIG, 'aipolytrack-admin');
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Its own saved login (storageKey). The game and this panel live on the
+// same site, and sharing one session meant signing in here switched the
+// game tab to the admin account or signed it out, and the other way round.
+const sb = createClient(SUPABASE.url, SUPABASE.key, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'aipolytrack-admin' }
+});
+/** a query's rows, or a thrown Error with the server's words */
+async function q(builder) {
+  const { data, error } = await builder;
+  if (error) throw new Error(error.message || String(error));
+  return data;
+}
+async function rpc(name, args) { return q(sb.rpc(name, args || {})); }
+/** every row, 1000 at a time (the server's page size) */
+async function all(make) {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const page = await q(make().range(from, from + 999));
+    out.push(...page);
+    if (page.length < 1000) return out;
+  }
+}
 const say = (el, text, kind) => { $(el).textContent = text; $(el).className = 'msg ' + (kind || ''); };
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -368,7 +389,6 @@ const fmt = (ms) => {
   const t = ms / 1000, m = Math.floor(t / 60), s = Math.floor(t % 60);
   return m + ':' + String(s).padStart(2, '0') + '.' + String(Math.round((t % 1) * 1000) % 1000).padStart(3, '0');
 };
-const tsMillis = (v) => !v ? 0 : typeof v.toMillis === 'function' ? v.toMillis() : typeof v.seconds === 'number' ? v.seconds * 1000 : 0;
 const pad = (n) => String(n).padStart(2, '0');
 const fmtWhen = (ms) => {
   if (!ms) return '—';
@@ -394,37 +414,45 @@ const kmhOf = (r) => r.topKmh != null ? r.topKmh : (r.topMph != null ? Math.roun
 
 /* ---------------------------------------------------------------- auth */
 function authErrorMessage(e) {
-  const c = (e && e.code) || '';
-  if (/invalid-credential|wrong-password|user-not-found/.test(c)) return 'That email and password do not match.';
-  if (c.includes('invalid-email')) return 'That is not a valid email address.';
-  if (c.includes('too-many-requests')) return 'Too many attempts — wait a few minutes.';
-  if (c.includes('network')) return 'No connection to Firebase.';
+  const c = String((e && (e.code || e.error_code)) || '');
+  if (c === 'invalid_credentials' || /invalid login/i.test((e && e.message) || '')) return 'That username and password do not match.';
+  if (/rate_limit/.test(c) || (e && e.status === 429)) return 'Too many attempts — wait a few minutes.';
+  if ((e && e.name === 'AuthRetryableFetchError') || /fetch/i.test((e && e.message) || '')) return 'No connection to Supabase.';
   return (e && e.message) || 'Something went wrong.';
 }
 $('btnIn').addEventListener('click', async () => {
   say('authMsg', 'Working…');
-  $('resetRow').style.display = 'none';
-  try { await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value); }
-  catch (e) { say('authMsg', authErrorMessage(e), 'err'); $('resetRow').style.display = ''; }
+  const who = $('email').value.trim();
+  // a game username, or a full address for an account made another way
+  const email = who.includes('@') ? who.toLowerCase() : who.toLowerCase() + USERNAME_DOMAIN;
+  const { error } = await sb.auth.signInWithPassword({ email, password: $('pass').value });
+  if (error) say('authMsg', authErrorMessage(error), 'err');
 });
 $('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnIn').click(); });
-$('btnReset').addEventListener('click', async () => {
-  const email = $('email').value.trim();
-  if (!email) { say('authMsg', 'Type the email address first.', 'err'); return; }
-  try { await sendPasswordResetEmail(auth, email); say('authMsg', 'Reset email sent to ' + email + '.', 'ok'); }
-  catch (e) { say('authMsg', authErrorMessage(e), 'err'); }
-});
-$('btnOut').addEventListener('click', () => signOut(auth));
+$('btnOut').addEventListener('click', () => sb.auth.signOut({ scope: 'local' }));
 
-onAuthStateChanged(auth, async (user) => {
+let shownFor = null;
+sb.auth.onAuthStateChange((event, session) => {
+  // Supabase holds a lock while calling this: the work runs on the next turn
+  setTimeout(() => onSession(session && session.user), 0);
+});
+async function onSession(user) {
   if (!user) {
+    shownFor = null;
     $('panel').classList.add('hide'); $('cardAuth').classList.remove('hide');
     $('btnOut').classList.add('hide'); $('whoami').textContent = '';
     return;
   }
-  try { await getDoc(doc(db, 'config', 'invite')); }
-  catch (e) { say('authMsg', 'That account is not an admin (its uid must be in firestore.rules).', 'err'); await signOut(auth); return; }
-  $('whoami').textContent = user.email;
+  if (shownFor === user.id) return;              // a token refresh, not a new sign-in
+  let admin = false;
+  try { admin = await rpc('is_admin'); } catch (e) { say('authMsg', 'Could not check that account: ' + e.message, 'err'); return; }
+  if (!admin) {
+    say('authMsg', 'That account is not an admin. Add it in Supabase (supabase/SETUP.md, step 5).', 'err');
+    await sb.auth.signOut({ scope: 'local' });
+    return;
+  }
+  shownFor = user.id;
+  $('whoami').textContent = (user.email || '').replace(USERNAME_DOMAIN, '');
   $('btnOut').classList.remove('hide');
   $('cardAuth').classList.add('hide');
   $('panel').classList.remove('hide');
@@ -433,7 +461,7 @@ onAuthStateChanged(auth, async (user) => {
   route();
   await loadAll();
   await loadRuns();
-});
+}
 
 /* --------------------------------------------------------------- pages */
 const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'settings'];
@@ -469,33 +497,27 @@ let players = [], byUid = {}, bests = [], creditTotals = { earned: 0, spent: 0 }
 async function loadAll() {
   say('pMsg', 'Loading…');
   try {
-    // Credits are summed on the server (one aggregate read per player)
-    // rather than downloading every credit event, which grows by one per
-    // finished run and used to burn through the free daily read quota.
-    const [inv, profs, bs, aw, notes] = await Promise.all([
-      getDoc(doc(db, 'config', 'invite')),
-      getDocs(collection(db, 'profiles')),
-      getDocs(collection(db, 'bests')),
-      getDoc(doc(db, 'seasonAwards', 's1')),
-      getDocs(collection(db, 'adminNotes')).catch(() => null)
+    // players come with their balance and real name, totalled by the server
+    const [inv, profs, bs, aw, totals] = await Promise.all([
+      q(sb.from('settings').select('value').eq('key', 'invite').maybeSingle()),
+      rpc('admin_players'),
+      all(() => sb.from('bests').select('uid, course_id, display_name, banned, time_ms, updated_ms').order('uid').order('course_id')),
+      q(sb.from('season_awards').select('data').eq('season', 's1').maybeSingle()),
+      rpc('admin_credit_totals')
     ]);
-    $('curCode').textContent = inv.exists() ? inv.data().code : 'not set';
-    awards = aw.exists() ? aw.data() : {};
+    $('curCode').textContent = inv && inv.value && inv.value.code ? inv.value.code : 'not set';
+    awards = (aw && aw.data) || {};
     players = []; byUid = {};
-    profs.forEach((d) => { const p = { uid: d.id, ...d.data(), credits: 0, s2: 0, s1: 0, runs: 0, lastMs: 0 }; players.push(p); byUid[p.uid] = p; });
-    const sumOf = async (q) => (await getAggregateFromServer(q, { t: sum('delta') })).data().t || 0;
-    await Promise.all(players.map(async (p) => {
-      p.credits = Math.floor(await sumOf(query(collection(db, 'creditEvents'), where('uid', '==', p.uid))) + 1e-9);
-    }));
-    const [earnedAll, spentAll] = await Promise.all([
-      sumOf(query(collection(db, 'creditEvents'), where('delta', '>', 0))),
-      sumOf(query(collection(db, 'creditEvents'), where('delta', '<', 0)))
-    ]);
-    creditTotals = { earned: earnedAll, spent: -spentAll };
-    if (notes) notes.forEach((d) => { if (byUid[d.id]) byUid[d.id].realName = d.data().realName || ''; });
+    profs.forEach((r) => {
+      const p = { uid: r.id, displayName: r.display_name, banned: !!r.banned, legacy: !!r.legacy, realName: r.real_name || '',
+        credits: Number(r.credits) || 0, s2: 0, s1: 0, runs: 0, lastMs: 0 };
+      players.push(p); byUid[p.uid] = p;
+    });
+    creditTotals = { earned: Number(totals.earned) || 0, spent: Number(totals.spent) || 0 };
     bests = [];
-    bs.forEach((d) => {
-      const v = { id: d.id, ...d.data() };
+    bs.forEach((r) => {
+      const v = { id: r.uid + '_' + r.course_id, uid: r.uid, courseId: r.course_id, displayName: r.display_name,
+        banned: !!r.banned, timeMs: r.time_ms, updatedMs: Number(r.updated_ms) || 0 };
       bests.push(v);
       const p = byUid[v.uid];
       if (p) { if (S2_IDS.has(v.courseId)) p.s2++; else if (!String(v.courseId).startsWith('s2')) p.s1++; }
@@ -508,26 +530,36 @@ async function loadAll() {
 }
 
 /* After a single change, redraw from what is already loaded rather than
-   calling loadAll(): a full reload reads every best, every profile and every
-   player's credit total — several hundred reads of the free plan's 50,000 a
-   day, on every click. */
+   reloading everything. */
 function redrawAll() { renderPlayers(); renderTimes(); renderSeasons(); renderOverview(); }
-async function refreshCredits(p) {
-  const agg = await getAggregateFromServer(query(collection(db, 'creditEvents'), where('uid', '==', p.uid)), { t: sum('delta') });
-  p.credits = Math.floor((agg.data().t || 0) + 1e-9);
+async function refreshTotals() {
+  const t = await rpc('admin_credit_totals');
+  creditTotals = { earned: Number(t.earned) || 0, spent: Number(t.spent) || 0 };
 }
 async function refreshAwards() {
-  const aw = await getDoc(doc(db, 'seasonAwards', 's1'));
-  awards = aw.exists() ? aw.data() : {};
+  const aw = await q(sb.from('season_awards').select('data').eq('season', 's1').maybeSingle());
+  awards = (aw && aw.data) || {};
+}
+async function saveAwards(next) {
+  await q(sb.from('season_awards').upsert({ season: 's1', data: next }, { onConflict: 'season' }));
 }
 
 async function loadRuns() {
   say('runMsg', 'Loading…');
   try {
     const n = parseInt($('rfLimit').value, 10) || 300;
-    const snap = await getDocs(query(collection(db, 'runLog'), orderBy('createdAt', 'desc'), limit(n)));
-    runs = [];
-    snap.forEach((d) => runs.push({ id: d.id, ...d.data(), ms: tsMillis(d.data().createdAt) }));
+    const rows = [];
+    for (let from = 0; from < n; from += 1000) {
+      const page = await q(sb.from('run_log').select('*').order('created_at', { ascending: false })
+        .range(from, Math.min(n, from + 1000) - 1));
+      rows.push(...page);
+      if (page.length < 1000) break;
+    }
+    // the fields the game sent besides the fixed ones live in data
+    runs = rows.map((r) => Object.assign({}, r.data || {}, {
+      id: String(r.legacy_id || r.id), uid: r.uid, displayName: r.display_name, kind: r.kind, courseId: r.course_id,
+      outcome: r.outcome || undefined, timeMs: r.time_ms, ms: Date.parse(r.created_at) || 0
+    }));
     players.forEach((p) => { p.runs = 0; p.lastMs = 0; });
     runs.forEach((r) => { const p = byUid[r.uid]; if (p) { p.runs++; if (r.ms > p.lastMs) p.lastMs = r.ms; } });
     renderPlayers();
@@ -570,7 +602,9 @@ function renderPlayers() {
     tr.innerHTML = '<td class="name"><b>' + esc(p.displayName || '—') + '</b>' +
       (p.realName ? ' <span class="real">' + esc(p.realName) + '</span>' : '') +
       '<br><span class="mono">' + esc(p.uid) + '</span></td>' +
-      '<td><span class="pill' + (p.banned ? ' on' : '') + '">' + (p.banned ? 'banned' : 'active') + '</span></td>' +
+      '<td><span class="pill' + (p.banned ? ' on' : '') + '"' + (p.legacy && !p.banned ? ' title="Moved over from Firebase; ' +
+        'becomes theirs when they sign up again with this username"' : '') + '>' +
+        (p.banned ? 'banned' : p.legacy ? 'not back yet' : 'active') + '</span></td>' +
       '<td class="mono r">' + p.credits + '</td><td class="mono r">' + p.s2 + ' / ' + S2.length + '</td>' +
       '<td class="mono r">' + p.runs + '</td><td class="mono" title="' + fmtWhen(p.lastMs) + '">' + ago(p.lastMs) + '</td>' +
       '<td>' + (trophyText(p.uid) || '<span class="mono">—</span>') + '</td><td class="r" style="white-space:nowrap"></td>';
@@ -583,6 +617,7 @@ function renderPlayers() {
     };
     btn('Name', '', () => setRealName(p));
     btn('Credits', '', () => setCredits(p));
+    if (!p.legacy) btn('Password', '', () => setPassword(p));
     btn(p.banned ? 'Unban' : 'Ban', p.banned ? '' : 'danger', () => setBanned(p, !p.banned));
     btn('Delete', 'danger', () => openDelete(p));
     tr.addEventListener('click', () => showPlayer(p));
@@ -619,14 +654,14 @@ function showPlayer(p) {
 }
 
 /** The admin's private note of who a player really is. Stored in
- *  adminNotes/{uid}, which only admins can read or write. */
+ *  admin_notes, which only admins can read or write. */
 async function setRealName(p) {
   const v = prompt('Real name for ' + (p.displayName || p.uid) + ' (only you can see this):', p.realName || '');
   if (v === null) return;
   const realName = v.trim().slice(0, 80);
   try {
-    if (realName) await setDoc(doc(db, 'adminNotes', p.uid), { realName, updatedAt: serverTimestamp() });
-    else await deleteDoc(doc(db, 'adminNotes', p.uid));
+    if (realName) await q(sb.from('admin_notes').upsert({ uid: p.uid, real_name: realName, updated_at: new Date().toISOString() }, { onConflict: 'uid' }));
+    else await q(sb.from('admin_notes').delete().eq('uid', p.uid));
     p.realName = realName;
     // the name shows everywhere that player appears
     renderPlayers(); renderTimes(); renderSeasons(); if (runs.length) renderRuns();
@@ -638,11 +673,7 @@ async function setRealName(p) {
 async function setBanned(p, banned) {
   say('pMsg', banned ? 'Banning…' : 'Unbanning…');
   try {
-    const mine = await getDocs(query(collection(db, 'bests'), where('uid', '==', p.uid)));
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'profiles', p.uid), { banned });
-    mine.forEach((d) => batch.update(d.ref, { banned }));
-    await batch.commit();
+    await rpc('admin_set_banned', { p_uid: p.uid, p_banned: banned });
     p.banned = banned;
     bests.forEach((b) => { if (b.uid === p.uid) b.banned = banned; });
     redrawAll();
@@ -663,21 +694,26 @@ async function setCredits(p) {
   if (!Number.isSafeInteger(target) || target > 1e9) { say('pMsg', 'That number is too big.', 'err'); return; }
   say('pMsg', 'Setting credits…');
   try {
-    // the live balance, summed on the server (one read, however many events)
-    const agg = await getAggregateFromServer(query(collection(db, 'creditEvents'), where('uid', '==', p.uid)), { t: sum('delta') });
-    const live = agg.data().t || 0;
-    const delta = target - live;
-    if (Math.abs(delta) < 1e-9) { say('pMsg', 'Already at ' + target.toLocaleString('en-US') + '.', 'ok'); return; }
-    const id = p.uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_adjust';
-    // kind: 'adjust' is what the player's game listens for, so their
-    // balance updates on screen straight away
-    await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, kind: 'adjust', note: 'admin set to ' + target, createdAt: serverTimestamp() });
-    if (delta > 0) creditTotals.earned += delta; else creditTotals.spent -= delta;
-    await refreshCredits(p);
+    // the server writes one adjustment against the live balance; the
+    // player's game sees it arrive and updates on screen straight away
+    p.credits = Number(await rpc('admin_set_credits', { p_uid: p.uid, p_target: target }));
+    await refreshTotals();
     redrawAll();
     const now = p.credits;
     say('pMsg', (p.displayName || 'Player') + ' now has ' + Number(now).toLocaleString('en-US') + ' credits.', now === target ? 'ok' : 'err');
   } catch (e) { say('pMsg', 'Could not set credits: ' + e.message, 'err'); }
+}
+
+/** A new password for a player who forgot theirs, told to them in person. */
+async function setPassword(p) {
+  const v = prompt('New password for ' + (p.displayName || 'this player') + ' (at least 6 characters). ' +
+    'Tell it to them; they can change it in the game\'s Settings.');
+  if (v === null) return;
+  if (v.length < 6) { say('pMsg', 'Use at least 6 characters.', 'err'); return; }
+  try {
+    await rpc('admin_set_password', { p_uid: p.uid, p_password: v });
+    say('pMsg', (p.displayName || 'Player') + '\'s password is changed.', 'ok');
+  } catch (e) { say('pMsg', 'Could not set the password: ' + e.message, 'err'); }
 }
 
 /* -------------------------------------------------------- delete account */
@@ -695,9 +731,9 @@ $('delPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnD
 $('btnDelGo').addEventListener('click', async () => {
   const p = delTarget;
   if (!p) return;
-  const cfg = await getDoc(doc(db, 'config', 'admin'));
-  if (!cfg.exists() || !cfg.data().passHash) { say('delMsg', 'Set an admin passcode first (Settings).', 'err'); return; }
-  const ok = (await hashPass($('delPass').value, cfg.data().salt)) === cfg.data().passHash;
+  const cfg = await readPasscode();
+  if (!cfg || !cfg.passHash) { say('delMsg', 'Set an admin passcode first (Settings).', 'err'); return; }
+  const ok = (await hashPass($('delPass').value, cfg.salt)) === cfg.passHash;
   if (!ok) { say('delMsg', 'Wrong passcode.', 'err'); return; }
   $('btnDelGo').disabled = true;
   try {
@@ -705,49 +741,16 @@ $('btnDelGo').addEventListener('click', async () => {
     $('delModal').classList.add('hide');
     $('playerDetail').classList.add('hide');
     await loadAll(); await loadRuns();
-    say('pMsg', (p.displayName || 'Player') + ' deleted (' + n + ' documents).', 'ok');
+    say('pMsg', (p.displayName || 'Player') + ' deleted (' + n + ' rows).', 'ok');
   } catch (e) { say('delMsg', e.message, 'err'); }
   $('btnDelGo').disabled = false;
 });
 
-/** Removes every document tied to a uid, then leaves a tombstone so the
- *  account can never create a profile again. */
+/** Removes everything tied to a player, their login included (done by the
+ *  server in one step). Races still running keep going for everyone else. */
 async function deleteAccount(p, progress) {
-  const uid = p.uid;
-  const refs = [];
-  const byUidQ = async (col) => (await getDocs(query(collection(db, col), where('uid', '==', uid)))).forEach((d) => refs.push(d.ref));
-  progress('Finding their data…');
-  await byUidQ('bests'); await byUidQ('ghosts'); await byUidQ('creditEvents'); await byUidQ('runLog');
-  // the newest races only: the full list grows by one every race, and each
-  // one costs an extra read to check for an entry
-  const races = await getDocs(query(collection(db, 'races'), orderBy('createdAt', 'desc'), limit(100)));
-  for (const r of races.docs) {
-    const e = await getDoc(doc(db, 'races', r.id, 'entries', uid));
-    if (e.exists()) refs.push(e.ref);
-  }
-  // settled races they opened or settled are history nobody needs; a live
-  // one stays so it can finish for everyone else in it
-  for (const r of races.docs) {
-    const d = r.data();
-    if (d.state === 'settled' && (d.createdBy === uid || d.settledBy === uid)) {
-      (await getDocs(collection(db, 'races', r.id, 'entries'))).forEach((e) => { if (!refs.some((x) => x.path === e.ref.path)) refs.push(e.ref); });
-      refs.push(r.ref);
-    }
-  }
-  refs.push(doc(db, 'carCustomization', uid), doc(db, 'claims', uid), doc(db, 'adminNotes', uid), doc(db, 'profiles', uid));
-  progress('Deleting ' + refs.length + ' documents…');
-  for (let i = 0; i < refs.length; i += 400) {
-    const batch = writeBatch(db);
-    refs.slice(i, i + 400).forEach((ref) => batch.delete(ref));
-    await batch.commit();
-  }
-  const cleared = {};
-  ['gold', 'silver', 'bronze'].forEach((k) => { if (awards[k] && awards[k].uid === uid) cleared[k] = deleteField(); });
-  if (Object.keys(cleared).length) await setDoc(doc(db, 'seasonAwards', 's1'), cleared, { merge: true });
-  // an empty marker, only readable by that same login, so the game can
-  // finish removing the login itself if it is ever used again
-  await setDoc(doc(db, 'deleted', uid), { at: serverTimestamp() });
-  return refs.length;
+  progress('Deleting…');
+  return Number(await rpc('admin_delete_player', { p_uid: p.uid })) || 0;
 }
 
 /* ----------------------------------------------------------- run history */
@@ -900,8 +903,10 @@ function renderTimes() {
     del.className = 'small danger'; del.textContent = 'Delete';
     del.addEventListener('click', async () => {
       if (!confirm('Delete ' + (r.displayName || 'this') + '\'s time on ' + courseName(id) + '?')) return;
-      await deleteDoc(doc(db, 'bests', r.id));
-      try { await deleteDoc(doc(db, 'ghosts', r.id)); } catch (e) { /* no ghost */ }
+      try {
+        await q(sb.from('bests').delete().eq('uid', r.uid).eq('course_id', r.courseId));
+        await q(sb.from('ghosts').delete().eq('uid', r.uid).eq('course_id', r.courseId));
+      } catch (e) { alert('Could not delete: ' + e.message); return; }
       bests = bests.filter((b) => b.id !== r.id);
       const owner = byUid[r.uid];
       if (owner) { if (S2_IDS.has(r.courseId)) owner.s2--; else if (!String(r.courseId).startsWith('s2')) owner.s1--; }
@@ -958,9 +963,10 @@ async function award(key, uid) {
   const other = PLACES.map((x) => x[0]).find((k) => k !== key && awards[k] && awards[k].uid === uid);
   if (other && !confirm(p.displayName + ' already holds the ' + other + ' trophy. Move it to ' + key + '?')) return;
   try {
-    const patch = { [key]: { uid, name: p.displayName || uid, at: Date.now() } };
-    if (other) patch[other] = deleteField();
-    await setDoc(doc(db, 'seasonAwards', 's1'), patch, { merge: true });
+    await refreshAwards();
+    const next = Object.assign({}, awards, { [key]: { uid, name: p.displayName || uid, at: Date.now() } });
+    if (other) delete next[other];
+    await saveAwards(next);
     await refreshAwards();
     redrawAll();
     say('awardMsg', 'Season 1 ' + place[2].toLowerCase() + ' trophy awarded to ' + p.displayName + '.', 'ok');
@@ -969,49 +975,121 @@ async function award(key, uid) {
 async function revoke(key) {
   if (!confirm('Remove the ' + key + ' trophy from ' + awards[key].name + '?')) return;
   try {
-    await setDoc(doc(db, 'seasonAwards', 's1'), { [key]: deleteField() }, { merge: true });
+    await refreshAwards();
+    const next = Object.assign({}, awards);
+    delete next[key];
+    await saveAwards(next);
     await refreshAwards();
     redrawAll();
     say('awardMsg', 'Removed.', 'ok');
   } catch (e) { say('awardMsg', e.message, 'err'); }
 }
 
-/* --------------------------------------------------------------- export */
-// Everything the game keeps, as plain JSON (timestamps as milliseconds), for
-// the move to Supabase. Races are left out: they are finished history.
+/* ------------------------------------------------------- backup / import */
+// A backup is written in the same shape as the old Firebase export (one list
+// per kind of record, timestamps as milliseconds), so one Import button
+// loads either.
 $('btnExport').addEventListener('click', async () => {
   $('btnExport').disabled = true;
   try {
-    const plain = (v) => {
-      if (v && typeof v === 'object') {
-        if (typeof v.toMillis === 'function') return v.toMillis();
-        if (Array.isArray(v)) return v.map(plain);
-        const o = {};
-        for (const k in v) o[k] = plain(v[k]);
-        return o;
-      }
-      return v;
+    const ms = (t) => (t ? Date.parse(t) || 0 : 0);
+    const read = async (label, make) => { say('exportMsg', 'Reading ' + label + '…'); return all(make); };
+    const profs = await read('players', () => sb.from('profiles').select('*').order('id'));
+    const bs = await read('times', () => sb.from('bests').select('*').order('uid').order('course_id'));
+    const gs = await read('ghosts', () => sb.from('ghosts').select('*').order('uid').order('course_id'));
+    const ce = await read('credits', () => sb.from('credit_events').select('*').order('id'));
+    const cc = await read('colours', () => sb.from('car_customization').select('*').order('uid'));
+    const sa = await read('trophies', () => sb.from('season_awards').select('*').order('season'));
+    const an = await read('real names', () => sb.from('admin_notes').select('*').order('uid'));
+    const rl = await read('run history', () => sb.from('run_log').select('*').order('id'));
+    const st = await read('settings', () => sb.from('settings').select('*').order('key'));
+    const setting = (k) => { const r = st.find((x) => x.key === k); return r ? r.value : null; };
+    const out = {
+      format: 'aipolytrack-supabase-backup', version: 1, exportedAt: Date.now(),
+      collections: {
+        profiles: profs.map((r) => ({ id: r.id, displayName: r.display_name, banned: r.banned, legacy: r.legacy, createdAt: ms(r.created_at) })),
+        bests: bs.map((r) => ({ id: r.uid + '_' + r.course_id, uid: r.uid, courseId: r.course_id, displayName: r.display_name,
+          banned: r.banned, timeMs: r.time_ms, updatedMs: Number(r.updated_ms) || 0 })),
+        ghosts: gs.map((r) => ({ id: r.uid + '_' + r.course_id, uid: r.uid, courseId: r.course_id, timeMs: r.time_ms, samples: r.samples, v: r.v })),
+        creditEvents: ce.map((r) => ({ id: r.legacy_id || 'sb' + r.id, uid: r.uid, delta: Number(r.delta), kind: r.kind,
+          raceId: r.race_id || undefined, note: r.note || undefined, createdAt: ms(r.created_at) })),
+        carCustomization: cc.map((r) => ({ id: r.uid, uid: r.uid, unlocked: r.unlocked, primary: r.primary_color, secondary: r.secondary_color })),
+        seasonAwards: sa.map((r) => Object.assign({ id: r.season }, r.data)),
+        adminNotes: an.map((r) => ({ id: r.uid, realName: r.real_name })),
+        runLog: rl.map((r) => Object.assign({}, r.data || {}, { id: r.legacy_id || 'sb' + r.id, uid: r.uid, displayName: r.display_name,
+          kind: r.kind, courseId: r.course_id, outcome: r.outcome || undefined, timeMs: r.time_ms, createdAt: ms(r.created_at) }))
+      },
+      config: { invite: setting('invite'), admin: setting('admin_passcode') }
     };
-    const out = { format: 'aipolytrack-firebase-export', version: 1, exportedAt: Date.now(), collections: {} };
-    for (const name of ['profiles', 'bests', 'ghosts', 'creditEvents', 'carCustomization', 'seasonAwards', 'adminNotes', 'runLog']) {
-      say('exportMsg', 'Reading ' + name + '…');
-      const snap = await getDocs(collection(db, name));
-      out.collections[name] = snap.docs.map((d) => ({ id: d.id, ...plain(d.data()) }));
-    }
-    say('exportMsg', 'Reading settings…');
-    const [inv, adm] = await Promise.all([getDoc(doc(db, 'config', 'invite')), getDoc(doc(db, 'config', 'admin'))]);
-    out.config = { invite: inv.exists() ? plain(inv.data()) : null, admin: adm.exists() ? plain(adm.data()) : null };
     const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'aipolytrack-export-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = 'aipolytrack-backup-' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     const c = out.collections;
     say('exportMsg', 'Saved: ' + c.profiles.length + ' players, ' + c.bests.length + ' times, ' + c.ghosts.length + ' ghosts, ' +
       c.creditEvents.length + ' credit events, ' + c.runLog.length + ' logged runs (' + Math.round(blob.size / 1024) + ' KB).', 'ok');
-  } catch (e) { say('exportMsg', 'Export failed: ' + e.message, 'err'); }
+  } catch (e) { say('exportMsg', 'Backup failed: ' + e.message, 'err'); }
   $('btnExport').disabled = false;
+});
+
+/**
+ * Loads an export into the database in small parts (each part is one
+ * server call, kept well inside its time limit). Players go first, so
+ * everything after can be matched to them. Running it again changes
+ * nothing that is already there.
+ */
+$('btnImport').addEventListener('click', async () => {
+  const file = $('importFile').files[0];
+  if (!file) { say('importMsg', 'Pick the export file first.', 'err'); return; }
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { say('importMsg', 'That file is not readable JSON.', 'err'); return; }
+  if (!data || !data.collections || !/^aipolytrack-(firebase-export|supabase-backup)$/.test(data.format || '')) {
+    say('importMsg', 'That is not an aiPolytrack export or backup file.', 'err'); return;
+  }
+  const c = data.collections, cfg = data.config || {};
+  if (!confirm('Import ' + (c.profiles || []).length + ' players, ' + (c.bests || []).length + ' times, ' +
+    (c.ghosts || []).length + ' ghosts and ' + (c.creditEvents || []).length + ' credit events?')) return;
+  $('btnImport').disabled = true;
+  const done = {};
+  const add = (r) => { for (const k in r) done[k] = (done[k] || 0) + (Number(r[k]) || 0); };
+  // parts: a count cap, and a size cap for ghosts (each can be ~400 KB)
+  const parts = (list, n, maxChars) => {
+    const out = [];
+    let cur = [], size = 0;
+    for (const x of list || []) {
+      const len = maxChars ? JSON.stringify(x).length : 0;
+      if (cur.length && (cur.length >= n || (maxChars && size + len > maxChars))) { out.push(cur); cur = []; size = 0; }
+      cur.push(x); size += len;
+    }
+    if (cur.length) out.push(cur);
+    return out;
+  };
+  try {
+    say('importMsg', 'Players, colours, trophies and settings…');
+    add(await rpc('admin_import', { p: {
+      profiles: c.profiles || [], carCustomization: c.carCustomization || [], adminNotes: c.adminNotes || [],
+      seasonAwards: c.seasonAwards || [], invite: cfg.invite || undefined, adminPasscode: cfg.admin || undefined
+    } }));
+    const steps = [['bests', 'times', 400, 0], ['ghosts', 'ghosts', 40, 1500000], ['creditEvents', 'credits', 800, 0], ['runLog', 'run history', 400, 0]];
+    for (const [key, label, n, maxChars] of steps) {
+      const ps = parts(c[key], n, maxChars);
+      for (let i = 0; i < ps.length; i++) {
+        say('importMsg', 'Importing ' + label + ' (' + (i + 1) + ' of ' + ps.length + ')…');
+        add(await rpc('admin_import', { p: { [key]: ps[i] } }));
+      }
+    }
+    const total = Object.values(done).reduce((s, v) => s + v, 0);
+    say('importMsg', total === 0 ? 'Done — nothing new: everything in that file is already here.'
+      : 'Done. Added ' + (done.profiles || 0) + ' players, ' + (done.bests || 0) + ' times (new or faster), ' + (done.ghosts || 0) +
+        ' ghosts, ' + (done.creditEvents || 0) + ' credit events, ' + (done.carCustomization || 0) + ' car colours, ' +
+        (done.adminNotes || 0) + ' real names and ' + (done.runLog || 0) + ' logged runs.', 'ok');
+    await loadAll(); await loadRuns();
+  } catch (e) {
+    say('importMsg', 'Import stopped: ' + e.message + '. Press Import again to carry on — nothing is doubled.', 'err');
+  }
+  $('btnImport').disabled = false;
 });
 
 /* ------------------------------------------------------------- settings */
@@ -1027,7 +1105,7 @@ $('btnSaveCode').addEventListener('click', async () => {
   const code = $('newCode').value.trim();
   if (code.length < 8) { say('codeMsg', 'Use at least 8 characters.', 'err'); return; }
   try {
-    await setDoc(doc(db, 'config', 'invite'), { code });
+    await q(sb.from('settings').upsert({ key: 'invite', value: { code } }, { onConflict: 'key' }));
     $('curCode').textContent = code; $('newCode').value = '';
     say('codeMsg', 'Invite code updated.', 'ok');
   } catch (e) { say('codeMsg', e.message, 'err'); }
@@ -1038,12 +1116,13 @@ async function hashPass(pass, salt) {
   const buf = await crypto.subtle.digest('SHA-256', data);
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
+async function readPasscode() {
+  const row = await q(sb.from('settings').select('value').eq('key', 'admin_passcode').maybeSingle());
+  return row ? row.value : null;
+}
 let pcCfg = null;
 async function loadSettings() {
-  try {
-    const cfg = await getDoc(doc(db, 'config', 'admin'));
-    pcCfg = cfg.exists() ? cfg.data() : null;
-  } catch (e) { pcCfg = null; }
+  try { pcCfg = await readPasscode(); } catch (e) { pcCfg = null; }
   const has = !!(pcCfg && pcCfg.passHash);
   $('pcOldWrap').classList.toggle('hide', !has);
   $('pcState').textContent = has ? 'A passcode is set. Needed to delete accounts.' : 'No passcode yet — set one to enable account deletion.';
@@ -1058,7 +1137,8 @@ $('btnPcSave').addEventListener('click', async () => {
   }
   const salt = [...crypto.getRandomValues(new Uint8Array(12))].map((x) => x.toString(16).padStart(2, '0')).join('');
   try {
-    await setDoc(doc(db, 'config', 'admin'), { salt, passHash: await hashPass(a, salt), updatedAt: serverTimestamp() });
+    await q(sb.from('settings').upsert({ key: 'admin_passcode', value: { salt, passHash: await hashPass(a, salt), updatedAt: Date.now() } },
+      { onConflict: 'key' }));
     $('pcOld').value = $('pcNew').value = $('pcNew2').value = '';
     await loadSettings();
     say('pcMsg', 'Passcode saved.', 'ok');

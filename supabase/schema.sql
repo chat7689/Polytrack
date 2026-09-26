@@ -217,7 +217,7 @@ begin
   end if;
   select * into leg from public.profiles where legacy and lower(display_name) = lower(p_name) for update;
   if found then
-    perform public._adopt(leg.id, me, p_name);
+    perform public._adopt(leg.id, me, leg.display_name);          -- their name as it always was
     return jsonb_build_object('ok', true, 'adopted', true);
   end if;
   if exists (select 1 from public.profiles where lower(display_name) = lower(p_name)) then
@@ -225,7 +225,9 @@ begin
   end if;
   select value ->> 'code' into inv from public.settings where key = 'invite';
   if inv is null or not (trim(typed) = inv or upper(regexp_replace(typed, '\s', '', 'g')) = upper(inv)) then
-    delete from auth.users where id = me;
+    -- the login goes too, so the name is free again (if this project's
+    -- rules ever refuse that, a retry with the right code still works)
+    begin delete from auth.users where id = me; exception when others then null; end;
     return jsonb_build_object('ok', false, 'error', 'invite');
   end if;
   insert into public.profiles (id, display_name) values (me, p_name);
@@ -466,31 +468,47 @@ begin
   update public.bests set banned = p_banned where uid = p_uid;
 end $$;
 
+-- a new password for a player who forgot theirs (logins have no inbox, so
+-- there is no reset email); bcrypt, the same as Supabase's own sign-up
+create or replace function public.admin_set_password(p_uid uuid, p_password text) returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  perform public._require_admin();
+  if length(coalesce(p_password, '')) < 6 then raise exception 'Use at least 6 characters.' using errcode = 'P0001'; end if;
+  update auth.users set encrypted_password = extensions.crypt(p_password, extensions.gen_salt('bf')), updated_at = now()
+    where id = p_uid;
+  if not found then
+    raise exception 'That player has no login yet (they have not signed up since the move).' using errcode = 'P0001';
+  end if;
+end $$;
+
 -- removes a player completely, login included
 create or replace function public.admin_delete_player(p_uid uuid) returns integer
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare n integer := 0; k integer;
+declare n integer := 0; added integer;
 begin
   perform public._require_admin();
-  delete from public.bests where uid = p_uid; get diagnostics k = row_count; n := n + k;
-  delete from public.ghosts where uid = p_uid; get diagnostics k = row_count; n := n + k;
-  delete from public.credit_events where uid = p_uid; get diagnostics k = row_count; n := n + k;
-  delete from public.run_log where uid = p_uid; get diagnostics k = row_count; n := n + k;
-  delete from public.race_entries where uid = p_uid; get diagnostics k = row_count; n := n + k;
-  delete from public.car_customization where uid = p_uid; get diagnostics k = row_count; n := n + k;
-  delete from public.admin_notes where uid = p_uid; get diagnostics k = row_count; n := n + k;
+  delete from public.bests where uid = p_uid; get diagnostics added = row_count; n := n + added;
+  delete from public.ghosts where uid = p_uid; get diagnostics added = row_count; n := n + added;
+  delete from public.credit_events where uid = p_uid; get diagnostics added = row_count; n := n + added;
+  delete from public.run_log where uid = p_uid; get diagnostics added = row_count; n := n + added;
+  delete from public.race_entries where uid = p_uid; get diagnostics added = row_count; n := n + added;
+  delete from public.car_customization where uid = p_uid; get diagnostics added = row_count; n := n + added;
+  delete from public.admin_notes where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admins where user_id = p_uid;
   update public.season_awards set data = (
     select coalesce(jsonb_object_agg(key, value), '{}') from jsonb_each(data) where value ->> 'uid' is distinct from p_uid::text);
-  delete from public.profiles where id = p_uid; get diagnostics k = row_count; n := n + k;
+  delete from public.profiles where id = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.legacy_ids where new_id = p_uid;
-  delete from auth.users where id = p_uid;
+  begin delete from auth.users where id = p_uid; exception when others then null; end;
   return n;
 end $$;
 
--- Loads one chunk of a Firebase export (the admin page sends it in parts).
--- Safe to run again: nothing is duplicated. A player who already signed up
--- again under their old name gets their old data straight away.
+-- Loads one chunk of a Firebase export or a backup (the admin page sends it
+-- in parts), and says how many rows were added. Safe to run again: nothing
+-- is duplicated, and a faster time is never replaced by a slower one. A
+-- player who already signed up again under their old name gets their old
+-- data straight away.
 create or replace function public.admin_import(p jsonb) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare
@@ -498,6 +516,7 @@ declare
   id_of uuid;
   counts jsonb := '{}';
   n integer;
+  added integer;
 begin
   perform public._require_admin();
 
@@ -518,7 +537,7 @@ begin
       values (id_of, r ->> 'displayName', coalesce((r ->> 'banned')::boolean, false), true,
               coalesce(to_timestamp((r ->> 'createdAt')::numeric / 1000), now()))
       on conflict do nothing;
-      n := n + 1;
+      get diagnostics added = row_count; n := n + added;
     end if;
   end loop;
   counts := counts || jsonb_build_object('profiles', n);
@@ -533,7 +552,7 @@ begin
     on conflict (uid, course_id) do update
       set time_ms = excluded.time_ms, updated_ms = excluded.updated_ms
       where excluded.time_ms < public.bests.time_ms;
-    n := n + 1;
+    get diagnostics added = row_count; n := n + added;
   end loop;
   counts := counts || jsonb_build_object('bests', n);
 
@@ -546,7 +565,7 @@ begin
     on conflict (uid, course_id) do update
       set time_ms = excluded.time_ms, samples = excluded.samples, v = excluded.v
       where excluded.time_ms < public.ghosts.time_ms;
-    n := n + 1;
+    get diagnostics added = row_count; n := n + added;
   end loop;
   counts := counts || jsonb_build_object('ghosts', n);
 
@@ -560,7 +579,7 @@ begin
             r ->> 'raceId', r ->> 'note', r ->> 'id',
             coalesce(to_timestamp((r ->> 'createdAt')::numeric / 1000), now()))
     on conflict (legacy_id) do nothing;
-    n := n + 1;
+    get diagnostics added = row_count; n := n + added;
   end loop;
   counts := counts || jsonb_build_object('creditEvents', n);
 
@@ -571,7 +590,7 @@ begin
     insert into public.car_customization (uid, unlocked, primary_color, secondary_color)
     values (id_of, coalesce(r -> 'unlocked', '[]'), r -> 'primary', r -> 'secondary')
     on conflict (uid) do nothing;
-    n := n + 1;
+    get diagnostics added = row_count; n := n + added;
   end loop;
   counts := counts || jsonb_build_object('carCustomization', n);
 
@@ -580,7 +599,7 @@ begin
     select new_id into id_of from public.legacy_ids where old_uid = r ->> 'id';
     if id_of is null or coalesce(r ->> 'realName', '') = '' then continue; end if;
     insert into public.admin_notes (uid, real_name) values (id_of, r ->> 'realName') on conflict (uid) do nothing;
-    n := n + 1;
+    get diagnostics added = row_count; n := n + added;
   end loop;
   counts := counts || jsonb_build_object('adminNotes', n);
 
@@ -594,7 +613,7 @@ begin
             r - 'uid' - 'displayName' - 'kind' - 'courseId' - 'outcome' - 'timeMs' - 'createdAt' - 'id',
             r ->> 'id', coalesce(to_timestamp((r ->> 'createdAt')::numeric / 1000), now()))
     on conflict (legacy_id) do nothing;
-    n := n + 1;
+    get diagnostics added = row_count; n := n + added;
   end loop;
   counts := counts || jsonb_build_object('runLog', n);
 
@@ -676,6 +695,7 @@ create policy own_run_insert on public.run_log for insert to authenticated
               and (outcome is null or outcome in ('finished', 'restarted', 'terminated')));
 
 -- table access for the API roles (the policies above decide the rows)
+grant usage on schema public to authenticated;
 revoke all on all tables in schema public from anon;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
@@ -692,6 +712,9 @@ alter table public.race_entries replica identity full;
 do $$
 declare t text;
 begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
   foreach t in array array['bests', 'credit_events', 'races', 'race_entries'] loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);
