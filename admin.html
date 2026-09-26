@@ -253,6 +253,13 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
 
     <!-- SETTINGS -->
     <section class="page hide" id="page-settings">
+      <h2>Export everything</h2>
+      <div class="card">
+        <p class="note">Downloads every player, time, ghost, credit, car colour, trophy, real name and
+          the invite code as one file, for moving the game to Supabase. Reads everything once.</p>
+        <div class="row"><button class="primary" id="btnExport">Export all data</button></div>
+        <div class="msg" id="exportMsg"></div>
+      </div>
       <h2>Invite code</h2>
       <div class="card">
         <p class="note">Anyone signing up must type this. Changing it doesn't affect existing players.</p>
@@ -968,6 +975,44 @@ async function revoke(key) {
     say('awardMsg', 'Removed.', 'ok');
   } catch (e) { say('awardMsg', e.message, 'err'); }
 }
+
+/* --------------------------------------------------------------- export */
+// Everything the game keeps, as plain JSON (timestamps as milliseconds), for
+// the move to Supabase. Races are left out: they are finished history.
+$('btnExport').addEventListener('click', async () => {
+  $('btnExport').disabled = true;
+  try {
+    const plain = (v) => {
+      if (v && typeof v === 'object') {
+        if (typeof v.toMillis === 'function') return v.toMillis();
+        if (Array.isArray(v)) return v.map(plain);
+        const o = {};
+        for (const k in v) o[k] = plain(v[k]);
+        return o;
+      }
+      return v;
+    };
+    const out = { format: 'aipolytrack-firebase-export', version: 1, exportedAt: Date.now(), collections: {} };
+    for (const name of ['profiles', 'bests', 'ghosts', 'creditEvents', 'carCustomization', 'seasonAwards', 'adminNotes', 'runLog']) {
+      say('exportMsg', 'Reading ' + name + '…');
+      const snap = await getDocs(collection(db, name));
+      out.collections[name] = snap.docs.map((d) => ({ id: d.id, ...plain(d.data()) }));
+    }
+    say('exportMsg', 'Reading settings…');
+    const [inv, adm] = await Promise.all([getDoc(doc(db, 'config', 'invite')), getDoc(doc(db, 'config', 'admin'))]);
+    out.config = { invite: inv.exists() ? plain(inv.data()) : null, admin: adm.exists() ? plain(adm.data()) : null };
+    const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'aipolytrack-export-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    const c = out.collections;
+    say('exportMsg', 'Saved: ' + c.profiles.length + ' players, ' + c.bests.length + ' times, ' + c.ghosts.length + ' ghosts, ' +
+      c.creditEvents.length + ' credit events, ' + c.runLog.length + ' logged runs (' + Math.round(blob.size / 1024) + ' KB).', 'ok');
+  } catch (e) { say('exportMsg', 'Export failed: ' + e.message, 'err'); }
+  $('btnExport').disabled = false;
+});
 
 /* ------------------------------------------------------------- settings */
 $('btnRandom').addEventListener('click', () => {
