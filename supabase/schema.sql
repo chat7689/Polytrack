@@ -506,8 +506,10 @@ begin
   delete from public.car_customization where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admin_notes where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admins where user_id = p_uid;
+  -- (Supabase refuses any UPDATE or DELETE without a WHERE of its own)
   update public.season_awards set data = (
-    select coalesce(jsonb_object_agg(key, value), '{}') from jsonb_each(data) where value ->> 'uid' is distinct from p_uid::text);
+    select coalesce(jsonb_object_agg(key, value), '{}') from jsonb_each(data) where value ->> 'uid' is distinct from p_uid::text)
+    where data::text like '%' || p_uid::text || '%';
   delete from public.profiles where id = p_uid; get diagnostics added = row_count; n := n + added;
   update public.legacy_ids set deleted = true where new_id = p_uid;
   begin delete from auth.users where id = p_uid; exception when others then null; end;
