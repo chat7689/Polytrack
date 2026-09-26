@@ -21,6 +21,10 @@ Wait a minute for GitHub Pages, then open the live `admin.html`. Go to
 (`aipolytrack-export-YYYY-MM-DD.json`). Runs played after this moment don't
 come across, so do it right before switching.
 
+The export reads every record once. If it fails with a quota message, the
+day's Firebase reads are used up. Try again after midnight Pacific time,
+when they reset.
+
 ## 2. Create the database
 
 In Supabase, open **SQL Editor** and click **New query**. Paste the whole of
