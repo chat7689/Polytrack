@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:radial-gradient(120% 100% at 50% -10%,#131f38,var(--bg));color:var(--ink);
   font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:100vh}
-.wrap{max-width:1180px;margin:0 auto;padding:26px 24px 60px}
+.wrap{max-width:1500px;margin:0 auto;padding:26px 28px 60px}
 h1{font-size:24px;letter-spacing:-.03em}
 h1 span{color:var(--ember)}
 h2{font-size:13px;letter-spacing:.1em;color:var(--ember);margin:26px 0 10px;font-weight:600;text-transform:uppercase}
@@ -64,10 +64,23 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
 .statTile{background:rgba(255,255,255,.03);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
 .statTile .n{font-family:var(--mono);font-size:21px;color:var(--aqua)}
 .statTile .l{font-size:10.5px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
-.chartGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
-.chartBox{background:rgba(255,255,255,.02);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
-.chartBox h4{font-size:11.5px;font-weight:600;color:var(--dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.chartGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:18px}
+@media(max-width:640px){.chartGrid{grid-template-columns:1fr}}
+.chartBox{background:rgba(255,255,255,.02);border:1px solid var(--rule);border-radius:8px;padding:16px 18px}
+.chartBox h4{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:.02em}
 .chartBox svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .grid{stroke:rgba(234,240,248,.08)}
+.chart .tk{fill:#8798b5;font-size:12px;font-family:var(--mono)}
+.chart .lb{fill:#c5d0e0;font-size:12.5px}
+.chart .vl{fill:#eaf0f8;font-size:12px;font-family:var(--mono)}
+.chart .ax{fill:#aebbd0;font-size:13px;font-weight:600}
+.chart .hp{cursor:pointer;transition:opacity .1s}
+.chart .hp.hot,.chart .hp.pin{opacity:1!important;stroke:#fff;stroke-width:2}
+.chart .pt.hot,.chart .pt.pin{r:8}
+.chartTip{position:fixed;z-index:60;pointer-events:none;background:rgba(7,11,24,.96);border:1px solid var(--rule);
+  border-radius:6px;padding:7px 10px;font-family:var(--mono);font-size:12.5px;color:var(--ink);white-space:nowrap;
+  box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.chartTip.pinned{border-color:var(--aqua)}
 .empty{font-size:12.5px;color:var(--dimmer);padding:16px 0;text-align:center}
 .tableWrap{overflow-x:auto}
 .detail{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;margin-top:12px}
@@ -155,9 +168,7 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
         <div class="msg" id="pMsg"></div>
       </div>
       <div class="detail hide" id="playerDetail"></div>
-      <small class="hint">Passwords can't be reset from here (usernames map to a private address with no inbox).
-        Deleting an account erases every document tied to it and blocks it from ever signing up again; the
-        username itself stays taken.</small>
+      <small class="hint">Passwords can't be reset from here (usernames map to a private address with no inbox).</small>
     </section>
 
     <!-- RUN HISTORY -->
@@ -185,7 +196,7 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
       <div class="card tableWrap">
         <table>
           <thead><tr><th>When</th><th>Driver</th><th>Map</th><th>Kind</th><th>Outcome</th><th class="r">Time</th>
-            <th>Progress</th><th class="r">Top mph</th><th class="r">Boost</th><th class="r">Grass</th><th class="r">#</th></tr></thead>
+            <th>Progress</th><th class="r">Top km/h</th><th class="r">Boost</th><th class="r">Grass</th><th class="r">#</th></tr></thead>
           <tbody id="runRows"></tbody>
         </table>
         <div class="msg" id="runMsg"></div>
@@ -268,11 +279,13 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
   </div>
 </div>
 
+<div class="chartTip" id="chartTip" hidden></div>
 <div class="modalBack hide" id="delModal">
   <div class="modal">
     <h3>Delete <span id="delName"></span>?</h3>
-    <p class="note">Erases their profile, times, ghosts, credits, colors, run history, race entries and
-      trophies, and blocks the account from ever signing up again. This can't be undone.</p>
+    <p class="note">Permanently erases the account and everything tied to it: profile, times, ghosts,
+      credits, colors, run history, races and trophies. Its leaderboard places disappear everywhere, and if
+      the login is ever used again it is removed too. This can't be undone.</p>
     <label for="delPass">Admin passcode</label>
     <input type="password" id="delPass" style="width:100%">
     <div class="msg" id="delMsg"></div>
@@ -351,6 +364,8 @@ const OUTCOME = { finished: ['Finished', 'fin'], restarted: ['Restarted', 'rst']
 const REASON = { restart: 'pressed R', offtrack: 'off the track', stuck: 'stuck', fell: 'fell', error: 'physics reset',
   menu: 'quit to menu', closed: 'closed the page', finished: 'crossed the line' };
 const outcomeOf = (r) => r.outcome || 'finished';
+// runs logged before the switch back to km/h carried topMph
+const kmhOf = (r) => r.topKmh != null ? r.topKmh : (r.topMph != null ? Math.round(r.topMph * 1.609344) : null);
 
 /* ---------------------------------------------------------------- auth */
 function authErrorMessage(e) {
@@ -631,6 +646,15 @@ async function deleteAccount(p, progress) {
     const e = await getDoc(doc(db, 'races', r.id, 'entries', uid));
     if (e.exists()) refs.push(e.ref);
   }
+  // settled races they opened or settled are history nobody needs; a live
+  // one stays so it can finish for everyone else in it
+  for (const r of races.docs) {
+    const d = r.data();
+    if (d.state === 'settled' && (d.createdBy === uid || d.settledBy === uid)) {
+      (await getDocs(collection(db, 'races', r.id, 'entries'))).forEach((e) => { if (!refs.some((x) => x.path === e.ref.path)) refs.push(e.ref); });
+      refs.push(r.ref);
+    }
+  }
   refs.push(doc(db, 'carCustomization', uid), doc(db, 'claims', uid), doc(db, 'profiles', uid));
   progress('Deleting ' + refs.length + ' documents…');
   for (let i = 0; i < refs.length; i += 400) {
@@ -641,7 +665,9 @@ async function deleteAccount(p, progress) {
   const cleared = {};
   ['gold', 'silver', 'bronze'].forEach((k) => { if (awards[k] && awards[k].uid === uid) cleared[k] = deleteField(); });
   if (Object.keys(cleared).length) await setDoc(doc(db, 'seasonAwards', 's1'), cleared, { merge: true });
-  await setDoc(doc(db, 'deleted', uid), { name: p.displayName || '', at: serverTimestamp(), by: auth.currentUser.uid });
+  // an empty marker, only readable by that same login, so the game can
+  // finish removing the login itself if it is ever used again
+  await setDoc(doc(db, 'deleted', uid), { at: serverTimestamp() });
   return refs.length;
 }
 
@@ -669,10 +695,10 @@ function renderRuns() {
   const tiles = $('runTiles');
   const tile = (n, l) => '<div class="statTile"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></div>';
   const avgProg = rows.length ? rows.reduce((s, r) => s + (typeof r.progress === 'number' ? r.progress : 1), 0) / rows.length : 0;
-  const top = rows.reduce((m, r) => Math.max(m, r.topMph || 0), 0);
+  const top = rows.reduce((m, r) => Math.max(m, kmhOf(r) || 0), 0);
   tiles.innerHTML = tile(rows.length, 'attempts shown') + tile(fin.length, 'finished') + tile(rst.length, 'restarted') +
     tile(trm.length, 'ended early') + tile(rows.length ? Math.round(fin.length / rows.length * 100) + '%' : '—', 'finish rate') +
-    tile(Math.round(avgProg * 100) + '%', 'avg progress') + tile(top ? top + ' mph' : '—', 'top speed') +
+    tile(Math.round(avgProg * 100) + '%', 'avg progress') + tile(top ? top + ' km/h' : '—', 'top speed') +
     tile(new Set(rows.map((r) => r.uid)).size, 'drivers');
   const tb = $('runRows');
   tb.innerHTML = '';
@@ -689,7 +715,7 @@ function renderRuns() {
       '<td class="mono r">' + fmt(r.timeMs) + '</td>' +
       '<td>' + (prog === null ? '<span class="mono">—</span>' : '<div class="bar" title="' + Math.round(prog * 100) + '%"><i style="width:' +
         Math.round(prog * 100) + '%"></i></div>') + '</td>' +
-      '<td class="mono r">' + (r.topMph != null ? r.topMph : '—') + '</td>' +
+      '<td class="mono r">' + (kmhOf(r) != null ? kmhOf(r) : '—') + '</td>' +
       '<td class="mono r">' + (r.boostUsed != null ? r.boostUsed + 's' : '—') + '</td>' +
       '<td class="mono r">' + (r.grassSec != null ? r.grassSec + 's' : '—') + '</td>' +
       '<td class="mono r">' + (r.attempt || '—') + '</td>';
@@ -706,7 +732,7 @@ function showRun(r) {
     '</h2><button class="small" id="rdClose">Close</button></div><div class="kv" style="margin-top:12px">' +
     kv('when', fmtWhen(r.ms)) + kv('outcome', oc[0]) + kv('why', REASON[r.reason] || r.reason) + kv('kind', KIND[r.kind] || r.kind) +
     kv('time', fmt(r.timeMs)) + kv('progress', typeof r.progress === 'number' ? Math.round(r.progress * 100) + '%' : '') +
-    kv('top speed', r.topMph != null ? r.topMph + ' mph' : '') + kv('boost used', r.boostUsed != null ? r.boostUsed + ' s of 3' : '') +
+    kv('top speed', kmhOf(r) != null ? kmhOf(r) + ' km/h' : '') + kv('boost used', r.boostUsed != null ? r.boostUsed + ' s of 3' : '') +
     kv('on grass', r.grassSec != null ? r.grassSec + ' s' : '') + kv('airborne', r.airSec != null ? r.airSec + ' s' : '') +
     kv('attempt #', r.attempt) + kv('racing', r.vs) + kv('race id', r.raceId) + kv('frame rate', r.fps ? r.fps + ' fps' : '') +
     kv('season', r.season) + kv('uid', r.uid) + kv('log id', r.id) + '</div>';
@@ -715,11 +741,11 @@ function showRun(r) {
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 $('btnRunCsv').addEventListener('click', () => {
-  const cols = ['when', 'driver', 'uid', 'map', 'courseId', 'kind', 'outcome', 'reason', 'timeMs', 'progress', 'topMph',
+  const cols = ['when', 'driver', 'uid', 'map', 'courseId', 'kind', 'outcome', 'reason', 'timeMs', 'progress', 'topKmh',
     'boostUsed', 'grassSec', 'airSec', 'attempt', 'vs', 'raceId', 'fps'];
   const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   const lines = [cols.join(',')].concat(filteredRuns().map((r) => [fmtWhen(r.ms), r.displayName, r.uid, courseName(r.courseId),
-    r.courseId, r.kind, outcomeOf(r), r.reason, r.timeMs, r.progress, r.topMph, r.boostUsed, r.grassSec, r.airSec, r.attempt,
+    r.courseId, r.kind, outcomeOf(r), r.reason, r.timeMs, r.progress, kmhOf(r), r.boostUsed, r.grassSec, r.airSec, r.attempt,
     r.vs, r.raceId, r.fps].map(q).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
@@ -746,22 +772,23 @@ function renderOverview() {
   const charts = $('ovCharts');
   charts.innerHTML = '';
   const box = (title, svg) => { const d = document.createElement('div'); d.className = 'chartBox'; d.innerHTML = '<h4>' + esc(title) + '</h4>' + svg; charts.appendChild(d); };
-  box('Attempt outcomes', barChart(Object.keys(OUTCOME).map((k) => ({ label: OUTCOME[k][0], value: runs.filter((r) => outcomeOf(r) === k).length }))));
+  box('Attempt outcomes', barChart(Object.keys(OUTCOME).map((k) => ({ label: OUTCOME[k][0], value: runs.filter((r) => outcomeOf(r) === k).length })), false, 'outcome', 'attempts'));
   const reasons = {};
   runs.filter((r) => outcomeOf(r) !== 'finished').forEach((r) => { const k = REASON[r.reason] || r.reason || '?'; reasons[k] = (reasons[k] || 0) + 1; });
-  box('Why runs didn\'t finish', barChart(Object.entries(reasons).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value })), true));
+  box('Why runs didn\'t finish', barChart(Object.entries(reasons).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value })), true, 'reason', 'attempts'));
   const byDay = {};
   runs.forEach((r) => { if (!r.ms) return; const d = new Date(r.ms).toISOString().slice(0, 10); byDay[d] = (byDay[d] || 0) + 1; });
-  box('Attempts per day', lineChart(Object.keys(byDay).sort().map((d) => ({ label: d.slice(5), value: byDay[d] }))));
+  box('Attempts per day', lineChart(Object.keys(byDay).sort().map((d) => ({ label: d.slice(5), value: byDay[d] })), 'date (month-day)', 'attempts'));
   const byHour = new Array(24).fill(0);
   runs.forEach((r) => { if (r.ms) byHour[new Date(r.ms).getHours()]++; });
-  box('Attempts by hour', barChart(byHour.map((v, h) => ({ label: pad(h), value: v }))));
+  box('Attempts by hour', barChart(byHour.map((v, h) => ({ label: pad(h), value: v })), false, 'hour of day', 'attempts'));
   const rst = {};
   runs.filter((r) => outcomeOf(r) === 'restarted').forEach((r) => { rst[r.courseId] = (rst[r.courseId] || 0) + 1; });
-  box('Most restarted maps', barChart(Object.entries(rst).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => ({ label: courseName(k), value: v })), true));
+  box('Most restarted maps', barChart(Object.entries(rst).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => ({ label: courseName(k), value: v })), true, 'map', 'restarts'));
   const drivers = {};
   runs.forEach((r) => { const k = r.displayName || r.uid; drivers[k] = (drivers[k] || 0) + 1; });
-  box('Most active drivers', barChart(Object.entries(drivers).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([label, value]) => ({ label, value })), true));
+  box('Most active drivers', barChart(Object.entries(drivers).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([label, value]) => ({ label, value })), true, 'driver', 'attempts'));
+  bindChartTips(charts);
 
   const tb = $('ovCourses');
   tb.innerHTML = S2.map((c) => {
@@ -918,41 +945,109 @@ $('btnPcSave').addEventListener('click', async () => {
 });
 
 /* --------------------------------------------------------------- charts */
-function barChart(data, horizontal) {
+/**
+ * Charts: plain inline SVG, big enough to read, with both axes titled and
+ * ticked. Every bar and point carries its exact value — hover to see it,
+ * click to pin it (click again or anywhere else to unpin).
+ */
+const niceMax = (v) => {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+};
+function barChart(data, horizontal, xTitle, yTitle) {
   if (!data.length || data.every((d) => !d.value)) return '<div class="empty">No data yet.</div>';
-  const max = Math.max(...data.map((d) => d.value), 1);
+  const max = niceMax(Math.max(...data.map((d) => d.value), 1));
   if (horizontal) {
-    const rowH = 22, gap = 6, W = 460, labelW = 150;
-    const H = data.length * (rowH + gap);
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '">' + data.map((d, i) => {
-      const y = i * (rowH + gap), w = Math.max(2, (d.value / max) * (W - labelW - 50));
-      return '<text x="0" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#8798b5">' + esc(String(d.label).slice(0, 22)) + '</text>' +
-        '<rect x="' + labelW + '" y="' + y + '" width="' + w + '" height="' + rowH + '" rx="3" fill="#3ddbb8" opacity=".85"/>' +
-        '<text x="' + (labelW + w + 6) + '" y="' + (y + rowH * 0.7) + '" font-size="11" fill="#eaf0f8">' + d.value + '</text>';
-    }).join('') + '</svg>';
+    const rowH = 30, gap = 8, W = 680, labelW = 170, padR = 50, top = 8, bottom = 44;
+    const H = top + data.length * (rowH + gap) + bottom;
+    const X = (v) => labelW + (v / max) * (W - labelW - padR);
+    let h = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart">';
+    for (let k = 0; k <= 5; k++) {
+      const v = (max * k) / 5, x = X(v);
+      h += '<line x1="' + x + '" x2="' + x + '" y1="' + top + '" y2="' + (H - bottom) + '" class="grid"/>' +
+        '<text x="' + x + '" y="' + (H - bottom + 16) + '" class="tk" text-anchor="middle">' + fmtNum(v) + '</text>';
+    }
+    data.forEach((d, i) => {
+      const y = top + i * (rowH + gap), w = Math.max(2, X(d.value) - labelW);
+      h += '<text x="' + (labelW - 8) + '" y="' + (y + rowH * 0.66) + '" class="lb" text-anchor="end">' + esc(String(d.label).slice(0, 24)) + '</text>' +
+        '<rect x="' + labelW + '" y="' + y + '" width="' + w + '" height="' + rowH + '" rx="3" fill="#3ddbb8" opacity=".85" class="hp" data-tip="' +
+        esc(xTitle + ': ' + d.label + ' — ' + yTitle + ': ' + d.value) + '"/>' +
+        '<text x="' + (labelW + w + 6) + '" y="' + (y + rowH * 0.66) + '" class="vl">' + d.value + '</text>';
+    });
+    h += '<text x="' + ((labelW + W - padR) / 2) + '" y="' + (H - 6) + '" class="ax" text-anchor="middle">' + esc(yTitle) + '</text>' +
+      '<text x="12" y="' + ((top + H - bottom) / 2) + '" class="ax" text-anchor="middle" transform="rotate(-90 12 ' + ((top + H - bottom) / 2) + ')">' + esc(xTitle) + '</text>';
+    return h + '</svg>';
   }
-  const W = 460, H = 160, baseY = 130, gap = 6;
-  const barW = Math.max(8, Math.min(46, W / data.length - gap));
-  const x0 = (W - data.length * (barW + gap) + gap) / 2;
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '">' + data.map((d, i) => {
-    const x = x0 + i * (barW + gap), h = (d.value / max) * (baseY - 14);
-    return '<rect x="' + x + '" y="' + (baseY - h) + '" width="' + barW + '" height="' + h + '" rx="2" fill="#f2733f" opacity=".85"/>' +
-      '<text x="' + (x + barW / 2) + '" y="' + (baseY - h - 5) + '" font-size="10" fill="#eaf0f8" text-anchor="middle">' + d.value + '</text>' +
-      '<text x="' + (x + barW / 2) + '" y="' + (baseY + 15) + '" font-size="9.5" fill="#8798b5" text-anchor="middle">' + esc(String(d.label).slice(0, 11)) + '</text>';
-  }).join('') + '</svg>';
+  const W = 680, H = 320, L = 58, R = 14, T = 14, B = 56;
+  const slot = (W - L - R) / data.length, barW = Math.max(4, Math.min(56, slot * 0.72));
+  const Y = (v) => T + (1 - v / max) * (H - T - B);
+  let h = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart">';
+  for (let k = 0; k <= 5; k++) {
+    const v = (max * k) / 5;
+    h += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" class="grid"/>' +
+      '<text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" class="tk" text-anchor="end">' + fmtNum(v) + '</text>';
+  }
+  const every = Math.ceil(data.length / 14);
+  data.forEach((d, i) => {
+    const cx = L + slot * (i + 0.5), top = Y(d.value);
+    h += '<rect x="' + (cx - barW / 2) + '" y="' + top + '" width="' + barW + '" height="' + (Y(0) - top) + '" rx="3" fill="#f2733f" opacity=".88" class="hp" data-tip="' +
+      esc(xTitle + ': ' + d.label + ' — ' + yTitle + ': ' + d.value) + '"/>';
+    if (data.length <= 12) h += '<text x="' + cx + '" y="' + (top - 6) + '" class="vl" text-anchor="middle">' + d.value + '</text>';
+    if (i % every === 0) h += '<text x="' + cx + '" y="' + (H - B + 18) + '" class="tk" text-anchor="middle">' + esc(String(d.label).slice(0, 12)) + '</text>';
+  });
+  h += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 10) + '" class="ax" text-anchor="middle">' + esc(xTitle) + '</text>' +
+    '<text x="16" y="' + ((T + H - B) / 2) + '" class="ax" text-anchor="middle" transform="rotate(-90 16 ' + ((T + H - B) / 2) + ')">' + esc(yTitle) + '</text>';
+  return h + '</svg>';
 }
-function lineChart(data) {
+function lineChart(data, xTitle, yTitle) {
   if (!data.length) return '<div class="empty">No data yet.</div>';
-  const W = 460, H = 160, padL = 24, padB = 20, padT = 14;
-  const max = Math.max(...data.map((d) => d.value), 1);
-  const stepX = data.length > 1 ? (W - padL - 10) / (data.length - 1) : 0;
-  const y = (v) => padT + (1 - v / max) * (H - padT - padB);
-  const pts = data.map((d, i) => (padL + i * stepX) + ',' + y(d.value)).join(' ');
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '"><polyline points="' + pts + '" fill="none" stroke="#f2733f" stroke-width="2"/>' +
-    data.map((d, i) => '<circle cx="' + (padL + i * stepX) + '" cy="' + y(d.value) + '" r="2.5" fill="#3ddbb8"/>' +
-      ((i === 0 || i === data.length - 1 || i % Math.ceil(data.length / 6) === 0) ? '<text x="' + (padL + i * stepX) + '" y="' +
-        (H - 4) + '" font-size="9" fill="#8798b5" text-anchor="middle">' + esc(d.label) + '</text>' : '')).join('') + '</svg>';
+  const W = 680, H = 320, L = 58, R = 18, T = 14, B = 56;
+  const max = niceMax(Math.max(...data.map((d) => d.value), 1));
+  const X = (i) => L + (data.length > 1 ? (i / (data.length - 1)) : 0.5) * (W - L - R);
+  const Y = (v) => T + (1 - v / max) * (H - T - B);
+  let h = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart">';
+  for (let k = 0; k <= 5; k++) {
+    const v = (max * k) / 5;
+    h += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" class="grid"/>' +
+      '<text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" class="tk" text-anchor="end">' + fmtNum(v) + '</text>';
+  }
+  h += '<polyline points="' + data.map((d, i) => X(i) + ',' + Y(d.value)).join(' ') + '" fill="none" stroke="#f2733f" stroke-width="2.5"/>';
+  const every = Math.ceil(data.length / 10);
+  data.forEach((d, i) => {
+    h += '<circle cx="' + X(i) + '" cy="' + Y(d.value) + '" r="5" fill="#3ddbb8" class="hp pt" data-tip="' +
+      esc(xTitle + ': ' + d.label + ' — ' + yTitle + ': ' + d.value) + '"/>';
+    if (i % every === 0 || i === data.length - 1) h += '<text x="' + X(i) + '" y="' + (H - B + 18) + '" class="tk" text-anchor="middle">' + esc(d.label) + '</text>';
+  });
+  h += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 10) + '" class="ax" text-anchor="middle">' + esc(xTitle) + '</text>' +
+    '<text x="16" y="' + ((T + H - B) / 2) + '" class="ax" text-anchor="middle" transform="rotate(-90 16 ' + ((T + H - B) / 2) + ')">' + esc(yTitle) + '</text>';
+  return h + '</svg>';
 }
+function fmtNum(v) { return Math.abs(v) >= 1000 ? (v / 1000).toFixed(v % 1000 ? 1 : 0) + 'k' : String(Math.round(v * 100) / 100); }
+let pinnedTip = null;
+function bindChartTips(root) {
+  const tip = $('chartTip');
+  const place = (e) => {
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 10) + 'px';
+    tip.style.top = Math.max(8, e.clientY - 40) + 'px';
+  };
+  root.querySelectorAll('.hp').forEach((el) => {
+    el.addEventListener('mouseenter', (e) => { if (pinnedTip) return; tip.textContent = el.dataset.tip; tip.classList.remove('pinned'); tip.hidden = false; place(e); el.classList.add('hot'); });
+    el.addEventListener('mousemove', (e) => { if (!pinnedTip) place(e); });
+    el.addEventListener('mouseleave', () => { el.classList.remove('hot'); if (!pinnedTip) tip.hidden = true; });
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (pinnedTip === el) { pinnedTip.classList.remove('pin'); pinnedTip = null; tip.hidden = true; return; }
+      if (pinnedTip) pinnedTip.classList.remove('pin');
+      pinnedTip = el; el.classList.add('pin');
+      tip.textContent = el.dataset.tip + '  (pinned)'; tip.classList.add('pinned'); tip.hidden = false; place(e);
+    });
+  });
+}
+document.addEventListener('click', () => {
+  if (!pinnedTip) return;
+  pinnedTip.classList.remove('pin'); pinnedTip = null; $('chartTip').hidden = true;
+});
 </script>
 </body>
 </html>

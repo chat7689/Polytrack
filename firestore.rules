@@ -44,12 +44,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Tombstone written when the admin deletes an account. A deleted account
-    // can never create a profile again, and the game reads this to tell
-    // that player plainly what happened.
+    // Empty marker written when the admin deletes an account. Nobody can
+    // list these or read anyone else's; only that same login can see its
+    // own, which is how the game finishes the job by removing the login
+    // itself the next time it is used. It also stops a profile ever being
+    // recreated under the old uid.
     match /deleted/{uid} {
-      allow get: if isAdmin() || (signedIn() && request.auth.uid == uid);
-      allow list, create, update, delete: if isAdmin();
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update: if isAdmin() && request.resource.data.keys().hasOnly(['at']);
+      allow list, delete: if false;
     }
 
     // Admin-awarded season podiums, e.g. seasonAwards/s1 =
@@ -108,10 +111,10 @@ service cloud.firestore {
     // Four shapes of credit event, every one create-only and never mutable:
     //   {uid}_{courseId}_clear   campaign clear bonus, delta==100, once per
     //                            course (the doc id itself is the lock).
-    //   {uid}_{anything}_grind   credits-grind mode: +1 per completed random
-    //                            course, intentionally repeatable, so unlike
-    //                            _clear the id has no fixed course/lock —
-    //                            the cap is delta==1 exactly, every time.
+    //   {uid}_{anything}_grind   +1 for finishing any non-race course,
+    //                            intentionally repeatable — the cap is
+    //                            delta==1 exactly, every time.
+    //   {uid}_{anything}_crun    a credit run: +3, delta==3 exactly.
     //   {uid}_{raceId}_buyin     a player staking into a race they joined —
     //                            a self-authorised debit, delta<0. Not
     //                            cross-checked against the entry doc's own
@@ -155,6 +158,8 @@ service cloud.firestore {
             && request.resource.data.delta == 100)
           || (docId.matches(request.auth.uid + '_.+_grind')
             && request.resource.data.delta == 1)
+          || (docId.matches(request.auth.uid + '_.+_crun')
+            && request.resource.data.delta == 3)
           || (docId == request.auth.uid + '_' + request.resource.data.raceId + '_buyin'
             && request.resource.data.delta is number
             && request.resource.data.delta < 0 && request.resource.data.delta > -1000000)
@@ -301,7 +306,8 @@ service cloud.firestore {
              .hasOnly(['state', 'settledBy'])
         && request.resource.data.settledBy == request.auth.uid;
 
-      allow delete: if false;
+      // only the admin, when erasing a deleted account's finished races
+      allow delete: if isAdmin() && resource.data.state == 'settled';
 
       match /entries/{uid} {
         allow get, list: if signedIn();

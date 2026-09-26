@@ -49,13 +49,31 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   border:1px solid rgba(234,240,248,.18)}
 .boost i{display:block;height:100%;width:100%;background:var(--aqua);transition:width .1s linear}
 .boost.spent i{background:var(--dimmer)}
-.tele{position:absolute;left:24px;bottom:54px;display:flex;gap:18px;align-items:flex-end;
-  font-family:var(--mono);text-shadow:0 1px 12px rgba(8,20,38,.9)}
+.tele{position:absolute;left:24px;bottom:50px;display:flex;gap:10px;align-items:stretch;
+  font-family:var(--mono);text-shadow:none}
+.tele .tBlock{background:rgba(7,11,24,.62);border:1px solid rgba(234,240,248,.12);border-radius:8px;
+  padding:8px 11px;min-width:84px;display:flex;flex-direction:column;justify-content:space-between}
+.tele .tBlock span{font-size:9.5px;letter-spacing:.16em;color:var(--dim)}
+.tele .tBlock b{font-size:25px;font-weight:500;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}
+.tele .tBlock small{font-size:10px;color:var(--dim)}
+.tele .tG{min-width:124px}
+.tele .tG small{white-space:nowrap;font-size:9.5px}
+.tele .tG svg{width:74px;height:74px;display:block;margin:3px auto}
+.tele .tG .ring{fill:none;stroke:rgba(234,240,248,.18);stroke-width:1}
+.tele #tGtrail{fill:none;stroke:rgba(61,219,184,.45);stroke-width:2}
+.tele #tGdot{fill:var(--aqua)}
+.tele .tIn{min-width:130px}
+.tele .tRow{display:flex;align-items:center;gap:6px;margin-top:5px}
+.tele .tRow em{font-style:normal;font-size:9.5px;color:var(--dim);width:24px}
+.tele .tBar{flex:1;height:6px;background:rgba(234,240,248,.12);border-radius:3px;position:relative;overflow:hidden}
+.tele .tBar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--aqua);border-radius:3px}
+.tele .tBar.brk i{background:var(--ember)}
+.tele .tBar.bst i{background:#58d2ff}
+.tele .tBar.str i{left:50%;background:var(--signal)}
+.tele .tyres{display:grid;grid-template-columns:18px 18px;gap:10px 16px;justify-content:center;margin:6px 0}
+.tele .tyres i{display:block;width:18px;height:26px;border-radius:4px;background:#3ddbb8;
+  border:1px solid rgba(255,255,255,.25);transition:background .08s}
 .tele[hidden]{display:none}
-.tele .cell{min-width:74px}
-.tele .cell span{display:block;font-size:9.5px;letter-spacing:.16em;color:var(--dim);margin-bottom:1px}
-.tele .cell b{display:block;font-size:25px;font-weight:500;line-height:1;color:var(--ink);
-  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .tele .rpmbar{height:3px;width:100%;background:rgba(234,240,248,.16);margin-top:5px}
 .tele .rpmbar i{display:block;height:100%;width:0;background:var(--aqua)}
 .tele .rpmbar i.red{background:var(--ember)}
@@ -83,17 +101,16 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
    and this is the one nearby spot that's clear on the driving HUD as well
    as on every menu/garage/boards screen, where .hud-tl is simply absent
    and this just reads as an ordinary top-left badge. */
-.creditBadge{position:absolute;top:76px;left:24px;z-index:40;display:flex;align-items:baseline;
-  gap:6px;padding:7px 13px;background:rgba(7,11,24,.78);border:1px solid rgba(255,207,92,.4);
+.creditBadge{position:absolute;top:76px;left:24px;z-index:40;display:flex;align-items:center;
+  gap:6px;padding:7px 13px;background:rgba(7,11,24,.78);border:1px solid rgba(88,210,255,.45);
   border-radius:999px;font-family:var(--mono);pointer-events:none;
   box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
 .creditBadge[hidden]{display:none}
-.creditBadge .ic{color:var(--signal);font-size:11px}
-.creditBadge b{color:var(--signal);font-size:15px;font-weight:700}
+.creditBadge b{color:#7fe3ff;font-size:15px;font-weight:700}
 .creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
 @keyframes creditPop{
   0%{transform:scale(1)}
-  35%{transform:scale(1.22);box-shadow:0 6px 22px rgba(255,207,92,.55)}
+  35%{transform:scale(1.22);box-shadow:0 6px 22px rgba(88,210,255,.6)}
   100%{transform:scale(1)}
 }
 .creditBadge.bump{animation:creditPop .5s ease-out}
@@ -182,7 +199,68 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   display:flex;align-items:center;gap:10px}
 .specBar input[type=range]{flex:1;accent-color:var(--ember)}
 .specBar span{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
-.specCtl{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.specCtl{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;
+  pointer-events:auto}
+.specCtl button{background:rgba(7,11,24,.75)}
+.rateBtns{display:flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-left:6px}
+.rateBtns button{border:0;border-radius:0;padding:5px 9px;font-size:12px;font-family:var(--mono);color:var(--dim)}
+.rateBtns button.on{background:var(--ember);color:#1d0a02}
+#spectate .specBar,#spectate .specTop button{pointer-events:auto}
+/* ---------- compare ---------- */
+#spectate.comparing .specGraph,#spectate.comparing #specRoster{display:none}
+#spectate.comparing .specCtl,#spectate.comparing .specBar,#spectate.comparing .keys,#spectate.comparing #specCamHint,
+#spectate.comparing #specDirectorHint{left:calc((100vw - 460px) / 2)}
+#spectate.comparing .clock{left:calc((100vw - 460px) / 2) !important}
+#cmpPanel{position:absolute;top:0;right:0;bottom:0;width:460px;overflow-y:auto;padding:16px 16px 30px;
+  background:rgba(7,11,24,.86);border-left:1px solid var(--rule);pointer-events:auto;font-size:12.5px}
+#cmpPanel[hidden],#cmpMap[hidden]{display:none}
+.cmpHead{display:flex;align-items:baseline;gap:10px;font-size:17px;font-weight:700;margin-bottom:10px}
+.cmpHead .vs{color:var(--dimmer);font-size:12px;font-weight:400}
+.ca{color:#ff8a58} .cb{color:#58d2ff}
+.cmpBig{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cmpBig div{background:rgba(255,255,255,.04);border:1px solid var(--rule-2);border-radius:6px;padding:7px 8px}
+.cmpBig span{display:block;font-size:8.5px;letter-spacing:.1em;color:var(--dim)}
+.cmpBig b{font-family:var(--mono);font-size:15px;color:var(--ink)}
+.cmpAhead{margin:8px 0 4px;color:var(--dim)} .cmpAhead b{color:var(--signal)}
+.cmpT{width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--mono);margin-bottom:6px}
+.cmpT th{font-size:10px;padding:0 6px 5px 0}
+.cmpT td{padding:4px 6px 4px 0;border-bottom:1px solid var(--rule-2)}
+.cmpT td.win{color:var(--aqua);font-weight:700}
+.cmpT td.dd{color:var(--dim)}
+.cmpInputs{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.cmpInputs div{display:flex;gap:4px;align-items:center}
+.cmpInputs div > span{width:14px;font-weight:700}
+.ip{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;border:1px solid var(--rule);color:var(--dimmer)}
+.ip.on{color:#1d0a02;border-color:transparent}
+.ip.thr{background:#3ddbb8} .ip.brk{background:#f2733f} .ip.str{background:#ffcf5c} .ip.bst{background:#58d2ff} .ip.hb{background:#c79bff}
+.cmpTimes{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;margin:4px 0 8px}
+.cmpSec{font-size:11px;letter-spacing:.12em;color:var(--ember);margin:14px 0 6px;text-transform:uppercase}
+.cmpSec small{color:var(--dimmer);letter-spacing:0;text-transform:none;font-weight:400}
+.cmpNote{color:var(--dim);font-size:11.5px}
+.cmpBox{background:rgba(255,255,255,.025);border:1px solid var(--rule-2);border-radius:6px;padding:8px 8px 4px;margin-bottom:8px}
+.cmpBox h4{font-size:11px;color:var(--dim);font-weight:600;margin-bottom:2px}
+.cmpChart{width:100%;height:auto;display:block;overflow:visible}
+.cmpChart .grid{stroke:rgba(234,240,248,.07)}
+.cmpChart .zero{stroke:rgba(234,240,248,.35);stroke-dasharray:3 3}
+.cmpChart .tk{fill:#8798b5;font-size:9px;font-family:var(--mono)}
+.cmpChart .ax{fill:#aebbd0;font-size:9.5px}
+.cmpChart .head{stroke:#ff8a58;stroke-width:1.2}
+.cmpChart .head.b{stroke:#58d2ff}
+.cmpChart .hp{opacity:0;cursor:crosshair}
+.cmpChart .hp:hover{opacity:1}
+#cmpMap{position:absolute;left:24px;top:84px;width:200px;height:200px;background:rgba(7,11,24,.7);
+  border:1px solid var(--rule);border-radius:8px}
+#cmpMap svg{width:100%;height:100%}
+#cmpMap .trk{fill:none;stroke:rgba(234,240,248,.5);stroke-width:3;stroke-linejoin:round}
+#cmpMap .st{fill:#3ddbb8} #cmpMap .fin{fill:#ffcf5c}
+#cmpMap line{stroke:#fff;stroke-width:1;stroke-dasharray:2 2}
+.cmpDistTag{position:absolute;transform:translate(-50%,-100%);padding:3px 9px;border-radius:999px;pointer-events:none;
+  background:rgba(7,11,24,.85);border:1px solid rgba(255,255,255,.6);font-family:var(--mono);font-size:12px;color:#fff;z-index:21}
+.cmpDistTag[hidden]{display:none}
+.chartTip{position:fixed;z-index:100;pointer-events:none;background:rgba(7,11,24,.95);border:1px solid var(--rule);
+  border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:11.5px;color:var(--ink);white-space:nowrap}
+.chartTip[hidden]{display:none}
+.cmpBtn{border-color:rgba(88,210,255,.6)!important;color:#7fe3ff}
 .specGraph{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:min(70vw,520px);
   height:40px;display:flex;align-items:center;gap:10px}
 .specGraph svg{flex:1;height:40px;background:rgba(7,11,24,.45);border:1px solid var(--rule);
@@ -193,8 +271,8 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 /* ---------- panels ---------- */
 .scrim{position:absolute;inset:0;background:
   radial-gradient(130% 100% at 50% 0%,rgba(7,11,24,.5),rgba(7,11,24,.94))}
-.panel{position:relative;width:min(960px,94vw);max-height:92vh;overflow-y:auto;
-  padding:42px 46px 38px;background:rgba(10,17,36,.86);border:1px solid var(--rule);
+.panel{position:relative;width:min(1320px,94vw);max-height:94vh;overflow-y:auto;
+  padding:40px 48px 36px;background:rgba(10,17,36,.86);border:1px solid var(--rule);
   backdrop-filter:blur(7px);border-radius:3px;
   box-shadow:0 24px 64px rgba(3,7,18,.55),0 2px 0 rgba(255,255,255,.03) inset}
 .panel::-webkit-scrollbar{width:8px}
@@ -238,14 +316,14 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 
 /* ---------- course grid ---------- */
 .courses{display:grid;grid-template-columns:repeat(auto-fill,minmax(222px,1fr));gap:11px}
-.card{position:relative;text-align:left;padding:15px 17px 14px;width:100%;
+.card{position:relative;text-align:left;padding:18px 20px 16px;width:100%;
   border:1px solid var(--rule);background:rgba(255,255,255,.022);border-radius:2px;
   transition:background .14s,border-color .14s,transform .14s}
 .card:not([disabled]):hover{background:rgba(255,255,255,.045);border-color:rgba(234,240,248,.3);
   transform:translateY(-1px)}
 .card .idx{font-family:var(--mono);font-size:10.5px;color:var(--ember);letter-spacing:.16em}
-.card .ttl{font-size:16.5px;font-weight:600;margin:3px 0 5px;letter-spacing:-.012em}
-.card .desc{font-size:12px;color:var(--dim);line-height:1.45;min-height:3.4em}
+.card .ttl{font-size:18px;font-weight:600;margin:3px 0 5px;letter-spacing:-.012em}
+.card .desc{font-size:12.5px;color:var(--dim);line-height:1.45;min-height:3.4em}
 .card .foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:11px;
   font-family:var(--mono);font-size:11px;color:var(--dimmer)}
 .card .best{color:var(--aqua)}
@@ -334,23 +412,24 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .result .row{margin-top:26px}
 #fatal .panel{max-width:580px} #fatal h2{font-size:25px;margin-bottom:12px;letter-spacing:-.02em}
 
-/* Credits-run payoff: a coin pops in with a single clean spin-and-settle,
-   a soft ring of sparks eases outward behind it, and a "+1" rises and
-   fades — all pure CSS so it costs nothing to run and needs no asset.
-   Kept to one full rotation and a gentle overshoot rather than several
-   spins, so it reads as one smooth, deliberate motion instead of a flurry
-   of separate ones. Fires once per successful award (see
-   Game.playCreditBurst); an unsuccessful award (offline, write failed)
-   never triggers this, matching how the sub-text already only says
-   "+1 credit" on genuine success. */
+/* The credit, everywhere it appears: the same light-blue diamond as the
+   3D gems in the trophy room, drawn flat. */
+.gem2d{display:inline-block;width:.78em;height:.78em;transform:rotate(45deg);vertical-align:-.02em;
+  margin:0 .12em;border-radius:2px;border:1px solid rgba(220,248,255,.75);
+  background:linear-gradient(135deg,#d7f7ff 0%,#7fe3ff 38%,#2fb4ec 70%,#1587c4 100%);
+  box-shadow:0 0 8px rgba(88,210,255,.55)}
+
+/* Credit payoff: the diamond pops in with one spin-and-settle, sparks ring
+   outward and the amount floats up. .mini is the small, quick version
+   played for the +1 on every finished course. */
 .creditBurst{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
   width:0;height:0;pointer-events:none;z-index:5}
 .creditBurst[hidden]{display:none}
 .creditBurst .coin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);
-  width:60px;height:60px;line-height:60px;text-align:center;border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#ffe9a8,var(--signal) 60%,#c9930d 100%);
-  color:#3a2704;font-size:26px;font-weight:700;box-shadow:0 0 0 3px rgba(255,207,92,.3),
-  0 10px 26px rgba(255,207,92,.45);animation:creditCoinPop .8s cubic-bezier(.25,1.15,.4,1) forwards}
+  width:64px;height:64px;display:flex;align-items:center;justify-content:center;
+  animation:creditCoinPop .8s cubic-bezier(.25,1.15,.4,1) forwards}
+.creditBurst .coin .gem2d{width:42px;height:42px;margin:0;border-radius:5px;border-width:2px;
+  box-shadow:0 0 22px rgba(88,210,255,.75),0 0 0 4px rgba(88,210,255,.18)}
 @keyframes creditCoinPop{
   0%{transform:translate(-50%,-50%) scale(0) rotateY(0deg);opacity:0}
   12%{opacity:1}
@@ -358,20 +437,25 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   100%{transform:translate(-50%,-50%) scale(1) rotateY(360deg)}
 }
 .creditBurst .plusOne{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  font-family:var(--mono);font-size:21px;font-weight:700;color:var(--signal);opacity:0;
-  text-shadow:0 2px 10px rgba(255,207,92,.55);animation:creditPlusFloat 1s ease-out .2s forwards}
+  font-family:var(--mono);font-size:22px;font-weight:700;color:#7fe3ff;opacity:0;white-space:nowrap;
+  text-shadow:0 2px 10px rgba(88,210,255,.6);animation:creditPlusFloat 1s ease-out .2s forwards}
 @keyframes creditPlusFloat{
   0%{opacity:0;transform:translate(-50%,-45%) scale(.7)}
   30%{opacity:1;transform:translate(-50%,-80%) scale(1)}
   100%{opacity:0;transform:translate(-50%,-150%) scale(1)}
 }
-.creditBurst .spark{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;
-  background:var(--signal);box-shadow:0 0 6px 1px rgba(255,207,92,.7);opacity:0;
+.creditBurst .spark{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:1px;
+  transform:rotate(45deg);background:#7fe3ff;box-shadow:0 0 6px 1px rgba(88,210,255,.75);opacity:0;
   animation:creditSpark .6s ease-out forwards}
 @keyframes creditSpark{
   0%{opacity:.9;transform:translate(-50%,-50%) translate(0,0) scale(1)}
   100%{opacity:0;transform:translate(-50%,-50%) var(--sparkTo) scale(.4)}
 }
+.creditBurst.mini{top:27%}
+.creditBurst.mini .coin{width:36px;height:36px;animation-duration:.42s}
+.creditBurst.mini .coin .gem2d{width:22px;height:22px;border-radius:3px;border-width:1px}
+.creditBurst.mini .plusOne{font-size:15px;animation-duration:.6s;animation-delay:.08s}
+.creditBurst.mini .spark{width:4px;height:4px;animation-duration:.38s}
 #fatal p{color:var(--dim);font-size:14px;line-height:1.65}
 .gate{width:min(430px,94vw);padding:34px 34px 30px}
 .gate h2{font-size:27px;letter-spacing:-.03em;margin-bottom:6px}
@@ -386,7 +470,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   color:var(--dim);margin-bottom:18px}
 .who[hidden]{display:none}
 .who b{color:var(--ink);font-weight:500}
-.who .cr{color:var(--signal)}
+.who .cr{color:#7fe3ff}
 .race-lobby-card{padding:16px 18px;margin-bottom:22px;background:rgba(242,115,63,.08);
   border:1px solid rgba(242,115,63,.35);border-radius:2px}
 .race-lobby-card[hidden]{display:none}
@@ -472,7 +556,13 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .garageSliderRow input[type=range]{width:100%;accent-color:var(--aqua);cursor:pointer}
 
 /* ---------- season 2 menu ---------- */
-.menuPanel{width:min(1040px,95vw);padding:34px 38px 30px}
+.menuPanel{width:min(1440px,95vw);padding:40px 48px 36px}
+.widePanel{width:min(1320px,94vw)}
+.garageCols{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:start}
+@media(max-width:900px){.garageCols{grid-template-columns:1fr}}
+.garageBig{height:min(46vh,460px)}
+.gh{font-size:13px;font-weight:600;margin-bottom:8px}
+.garageCols .garageGrid{max-width:min(460px,100%)}
 .menuTop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
 .menuTop .brand{margin-bottom:0;align-items:center}
 .menuTop .brand h1{font-size:clamp(40px,6.4vw,72px)}
@@ -480,22 +570,22 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .seasonTag{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:#1d0a02;background:var(--signal);
   padding:5px 10px;border-radius:999px;font-weight:700;align-self:center;white-space:nowrap}
 .menuTop .who{margin:6px 0 0;gap:12px;align-items:center}
-.menuTop .who .cr b{color:var(--signal)}
+.menuTop .who .cr b{color:#7fe3ff}
 .menuGrid{display:grid;grid-template-columns:1.25fr .9fr;gap:26px}
 @media(max-width:820px){.menuGrid{grid-template-columns:1fr}}
-.playBtn{display:flex;align-items:center;gap:18px;width:100%;text-align:left;padding:20px 24px;
+.playBtn{display:flex;align-items:center;gap:22px;width:100%;text-align:left;padding:28px 30px;
   background:linear-gradient(135deg,#ff8a58,var(--ember));border:0;border-radius:6px;color:#1d0a02;
   box-shadow:0 10px 28px rgba(242,115,63,.35);margin-bottom:14px}
 .playBtn:hover{background:linear-gradient(135deg,#ffa07a,#ff8a58);border:0;box-shadow:0 12px 32px rgba(242,115,63,.45)}
-.playIcon{font-size:30px;line-height:1}
-.playText b{display:block;font-size:26px;letter-spacing:-.02em}
-.playText small{display:block;font-size:13px;opacity:.75;margin-top:2px}
-.menuTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.playIcon{font-size:38px;line-height:1}
+.playText b{display:block;font-size:34px;letter-spacing:-.02em}
+.playText small{display:block;font-size:15px;opacity:.75;margin-top:2px}
+.menuTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:560px){.menuTiles{grid-template-columns:repeat(2,1fr)}}
-.tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px 16px;
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:22px 22px;
   border-radius:6px;background:rgba(255,255,255,.035);border:1px solid var(--rule)}
-.tile b{font-size:15px;font-weight:600}
-.tile small{font-size:11.5px;color:var(--dim)}
+.tile b{font-size:18px;font-weight:600}
+.tile small{font-size:12.5px;color:var(--dim)}
 .tile:hover{background:rgba(255,255,255,.07);border-color:rgba(234,240,248,.32)}
 #bTrophies{border-color:rgba(255,207,92,.45);background:linear-gradient(160deg,rgba(255,207,92,.1),rgba(255,207,92,.02))}
 #bTrophies b{color:var(--signal)}
@@ -512,8 +602,8 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .lcKick{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--signal)}
 .lcHead .leaderTime{font-family:var(--mono);font-size:11.5px;color:var(--aqua)}
 .lcBody{display:flex;align-items:center;gap:14px}
-.lcCar{width:132px;height:92px;flex:none;margin-bottom:0}
-.lcName{font-size:20px;font-weight:700;letter-spacing:-.02em;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lcCar{width:200px;height:130px;flex:none;margin-bottom:0}
+.lcName{font-size:24px;font-weight:700;letter-spacing:-.02em;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .lcName .crown{color:var(--signal);font-size:16px}
 .sectionLeaders{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .secLead{padding:9px 12px;border-radius:5px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025)}
@@ -553,7 +643,8 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .podium .none{color:var(--dimmer);font-style:italic}
 .moreBtn{margin-top:10px}
 .moreBtn[hidden]{display:none}
-.cdBest{font-family:var(--mono);font-size:13px;color:var(--aqua)}
+.cdBest{font-family:var(--mono);font-size:14px;color:var(--aqua)}
+.cdCar{height:min(40vh,380px)}
 .cdLeader{margin-top:8px;font-size:15px;font-weight:600}
 .cdLeader .crown{color:var(--signal)}
 .leadersGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:18px}
@@ -564,8 +655,8 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .boardsHd{font-size:13px;font-weight:600;margin:22px 0 4px}
 
 /* ---------- trophy room ---------- */
-.trophyPanel{width:min(1040px,95vw)}
-.trophyStage{position:relative;width:100%;height:min(46vh,380px);border-radius:8px;overflow:hidden;
+.trophyPanel{width:min(1440px,95vw)}
+.trophyStage{position:relative;width:100%;height:min(64vh,680px);border-radius:8px;overflow:hidden;
   border:1px solid var(--rule);background:radial-gradient(120% 120% at 50% 10%,#1d2c48,#070b18);cursor:grab;
   touch-action:none}
 .trophyStage:active{cursor:grabbing}
@@ -598,10 +689,11 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   <div id="flash"></div>
 
   <div class="creditBadge" id="creditBadge" hidden>
-    <span class="ic">◆</span><b id="creditBadgeAmt">0</b><small>credits</small>
+    <span class="gem2d"></span><b id="creditBadgeAmt">0</b><small>credits</small>
   </div>
 
   <svg id="ghostTagLines"><g id="ghostTagLinesG"></g></svg>
+  <div class="chartTip" id="chartTip" hidden></div>
   <div id="ghostTags"></div>
 
   <div class="layer" id="hud" hidden>
@@ -610,19 +702,41 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       <div class="hud-tc"><div class="clock" id="hClock">0:00.000</div><div class="split" id="hSplit"></div>
         <div class="hudTimes"><span class="pb" id="hPB">PB —</span><span class="wr" id="hWR"></span></div></div>
       <div class="hud-tr">
-        <div class="spd" id="hSpd">0<small>mph</small></div>
+        <div class="spd" id="hSpd">0<small>km/h</small></div>
         <div class="gear" id="hGrip"></div>
         <div class="boostRow"><div class="boost" id="hBoostBar"><i id="hBoost"></i></div><b class="boostPct" id="hBoostPct">100%</b></div>
         <div class="gear" id="hBoostTxt">BOOST</div>
       </div>
       <div class="tele" id="tele">
-        <div class="cell">
+        <div class="tBlock">
           <span>GEAR</span><b id="tGear">1</b>
           <div class="rpmbar"><i id="tRpmBar"></i></div>
+          <small id="tRpm">850 rpm</small>
         </div>
-        <div class="cell"><span>RPM</span><b id="tRpm">850</b></div>
-        <div class="cell"><span>LATERAL G</span><b id="tGLat">0.00</b></div>
-        <div class="cell"><span>TYRE SLIP</span><b id="tSlip">0%</b></div>
+        <div class="tBlock">
+          <span>SPEED</span><b id="tSpd">0.0</b><small>km/h</small>
+        </div>
+        <div class="tBlock tG">
+          <span>G-FORCE</span>
+          <svg id="tGsvg" viewBox="-50 -50 100 100" aria-hidden="true">
+            <circle r="46" class="ring"/><circle r="30.7" class="ring"/><circle r="15.3" class="ring"/>
+            <line x1="-46" y1="0" x2="46" y2="0" class="ring"/><line x1="0" y1="-46" x2="0" y2="46" class="ring"/>
+            <polyline id="tGtrail" points=""/><circle id="tGdot" r="4.5"/>
+          </svg>
+          <small id="tGtxt">lat 0.00 · lon 0.00</small>
+        </div>
+        <div class="tBlock tIn">
+          <span>INPUTS</span>
+          <div class="tRow"><em>THR</em><div class="tBar"><i id="tThr"></i></div></div>
+          <div class="tRow"><em>BRK</em><div class="tBar brk"><i id="tBrk"></i></div></div>
+          <div class="tRow"><em>STR</em><div class="tBar str"><i id="tStr"></i></div></div>
+          <div class="tRow"><em>BST</em><div class="tBar bst"><i id="tBst"></i></div></div>
+        </div>
+        <div class="tBlock tTy">
+          <span>TYRES</span>
+          <div class="tyres"><i id="tW1"></i><i id="tW0"></i><i id="tW3"></i><i id="tW2"></i></div>
+          <small id="tSlip">slip 0%</small>
+        </div>
       </div>
       </div>
       <div class="hud-bl" id="hKeys"></div>
@@ -660,15 +774,23 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         <div class="k boost" data-k="boost">SPC</div>
       </div>
       <div class="specCtl">
-        <button class="ghost small" id="bSpecPlay">Pause</button>
-        <button class="ghost small" id="bSpecRestart">Restart</button>
+        <button class="small" id="bSpecStop" title="Stop and go back to the start">■ Stop</button>
+        <button class="small" id="bSpecPlay">⏸ Pause</button>
+        <button class="ghost small" id="bSpecRestart" hidden>Restart</button>
+        <div class="rateBtns" id="specRates">
+          <button data-rate="0.25">0.25×</button><button data-rate="0.5">0.5×</button><button data-rate="1" class="on">1×</button>
+          <button data-rate="2">2×</button><button data-rate="4">4×</button>
+        </div>
       </div>
+      <div id="cmpPanel" hidden></div>
+      <div id="cmpMap" hidden></div>
+      <div class="cmpDistTag" id="cmpDistTag" hidden></div>
       <div class="specGraph">
         <svg id="specSpeedSvg" viewBox="0 0 300 40" preserveAspectRatio="none">
           <path id="specSpeedPath" d="" fill="none" stroke="#3ddbb8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
           <line id="specSpeedHead" x1="0" y1="0" x2="0" y2="40" stroke="#f2733f" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
         </svg>
-        <span class="specGraphLabel" id="specSpeedNow">0 mph</span>
+        <span class="specGraphLabel" id="specSpeedNow">0 km/h</span>
       </div>
       <div class="specBar">
         <span id="specT0">0:00</span>
@@ -724,7 +846,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         </div>
         <div class="who" id="who" hidden>
           <span><b id="whoName">—</b></span>
-          <span class="cr">◆ <b id="whoCredits">0</b></span>
+          <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
           <button class="ghost small" id="whoOut">Sign out</button>
         </div>
       </div>
@@ -738,7 +860,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           <div class="menuTiles">
             <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
             <button class="tile" id="bTrophies"><b>Trophy room</b><small id="tileTrophies">your awards</small></button>
-            <button class="tile" id="bCreditsRun"><b>Credit run</b><small>random map, +1 credit</small></button>
+            <button class="tile" id="bCreditsRun"><b>Credit run</b><small>random map, +3 credits</small></button>
             <button class="tile" id="bGarage"><b>Garage</b><small>paint your car</small></button>
             <button class="tile" id="bSettings"><b>Settings</b><small>account</small></button>
             <button class="tile" id="bSound"><b>Sound</b><small id="bSoundState">on</small></button>
@@ -773,7 +895,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
             <div id="lobbyMineBox" class="race-mine" hidden>You're in for <b id="lobbyMineBuyIn">0</b> credits.</div>
             <div id="lobbyJoinBox" hidden>
               <p class="lede" style="font-size:12.5px;margin-bottom:8px">Stake credits (you have
-                <b id="lobbyJoinCredits">0</b>). Map is hidden until it starts.</p>
+                <span class="gem2d"></span><b id="lobbyJoinCredits">0</b>). Map is hidden until it starts.</p>
               <div class="row">
                 <input type="text" id="lobbyBuyIn" inputmode="numeric" style="width:110px" placeholder="Credits">
                 <button class="primary" id="bLobbyJoin">Join</button>
@@ -824,6 +946,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           <button class="ghost small" id="bBoardClearSel">Clear</button>
           <button class="ghost small" id="bBoardWatchSel">Watch</button>
           <button class="small" id="bBoardRaceSel">Race</button>
+          <button class="small cmpBtn" id="bBoardCmpSel" hidden>Compare</button>
         </div>
       </div>
 
@@ -856,7 +979,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         </div>
         <div>
           <div class="kick" id="cdLeaderHeading">FIRST PLACE</div>
-          <div class="garagePreviewWrap"><canvas id="cdCarCanvas"></canvas></div>
+          <div class="garagePreviewWrap cdCar"><canvas id="cdCarCanvas"></canvas></div>
           <p class="cdLeader" id="cdLeaderNote"></p>
         </div>
       </div>
@@ -875,7 +998,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
       </div>
       <div class="trophyStage">
         <canvas id="trophyCanvas"></canvas>
-        <div class="trophyCredits"><span class="tcNum" id="trophyCreditNum">0</span><span class="tcLbl">credits</span></div>
+        <div class="trophyCredits"><span class="gem2d"></span><span class="tcNum" id="trophyCreditNum">0</span><span class="tcLbl">credits</span></div>
       </div>
       <p class="lede trophyHint" id="trophyHint">Drag to spin the room.</p>
       <div class="trophyList" id="trophyList"></div>
@@ -884,7 +1007,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 
   <div class="layer" id="settings" hidden>
     <div class="scrim"></div>
-    <div class="panel" style="width:min(560px,94vw)">
+    <div class="panel" style="width:min(760px,94vw)">
       <h2 class="big">Settings</h2>
       <p class="lede" style="margin-bottom:26px">Signed in as <b id="setUser">—</b>.</p>
 
@@ -921,54 +1044,52 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 
   <div class="layer" id="garage" hidden>
     <div class="scrim"></div>
-    <div class="panel" style="width:min(720px,94vw)">
-      <h2 class="big">Garage</h2>
+    <div class="panel widePanel">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <h2 class="big">Garage</h2>
+        <button class="ghost" id="bGarageBack">← Menu</button>
+      </div>
       <p class="lede" style="margin-bottom:18px">A hue pack (10 credits) unlocks a random hue. Click any
         hue you own to use it. Sliders are free.</p>
-
-      <div class="garagePreviewWrap">
-        <canvas id="gPreviewCanvas"></canvas>
-      </div>
-
-      <div class="row" style="gap:18px;margin-bottom:20px">
-        <button class="garageSlot" id="gSlotPrimary" data-slot="primary">
-          <span class="swatch" id="gSwatchPrimary"></span>
-          <span>Primary<br><small class="dim">hull, nose, roof</small></span>
-        </button>
-        <button class="garageSlot" id="gSlotSecondary" data-slot="secondary">
-          <span class="swatch" id="gSwatchSecondary"></span>
-          <span>Secondary<br><small class="dim">splitter, sill, wing</small></span>
-        </button>
-      </div>
-
-      <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">
-        EDITING <span id="gActiveSlotName">PRIMARY</span> — <span id="gCredits">0</span> credits
-      </h3>
-
-      <div class="err" id="gBuyMsg"></div>
-
-      <h3 style="font-size:13px;font-weight:600;margin:18px 0 6px">HUE</h3>
-      <p class="lede" style="font-size:12px;margin-bottom:8px">Click a bright square to use it on
-        <span id="gHueSlotName">primary</span>. Crossed-out squares are locked.</p>
-      <div class="row" style="margin-bottom:10px">
-        <button class="primary" id="gBuyHue">Buy a hue pack — 10 credits</button>
-      </div>
-      <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
-
-      <h3 style="font-size:13px;font-weight:600;margin:20px 0 6px">SATURATION / BRIGHTNESS — FREE</h3>
-      <p class="lede" style="font-size:12px;margin-bottom:12px">Tune <span id="gSatLightSlotName">primary</span>.</p>
-      <div class="garageSliderRow">
-        <label for="gSatSlider">Saturation <b id="gSatVal">65%</b></label>
-        <input type="range" id="gSatSlider" min="0" max="100" value="65">
-      </div>
-      <div class="garageSliderRow">
-        <label for="gLightSlider">Brightness <b id="gLightVal">55%</b></label>
-        <input type="range" id="gLightSlider" min="0" max="100" value="55">
-      </div>
-
-      <div class="rule"></div>
-      <div class="row">
-        <button class="ghost" id="bGarageBack">← Menu</button>
+      <div class="garageCols">
+        <div>
+          <div class="garagePreviewWrap garageBig">
+            <canvas id="gPreviewCanvas"></canvas>
+          </div>
+          <div class="row" style="gap:14px;margin-bottom:18px">
+            <button class="garageSlot" id="gSlotPrimary" data-slot="primary">
+              <span class="swatch" id="gSwatchPrimary"></span>
+              <span>Primary<br><small class="dim">hull, nose, roof</small></span>
+            </button>
+            <button class="garageSlot" id="gSlotSecondary" data-slot="secondary">
+              <span class="swatch" id="gSwatchSecondary"></span>
+              <span>Secondary<br><small class="dim">splitter, sill, wing</small></span>
+            </button>
+          </div>
+          <h3 class="gh">SATURATION / BRIGHTNESS — FREE</h3>
+          <p class="lede" style="font-size:12px;margin-bottom:12px">Tune <span id="gSatLightSlotName">primary</span>.</p>
+          <div class="garageSliderRow">
+            <label for="gSatSlider">Saturation <b id="gSatVal">65%</b></label>
+            <input type="range" id="gSatSlider" min="0" max="100" value="65">
+          </div>
+          <div class="garageSliderRow">
+            <label for="gLightSlider">Brightness <b id="gLightVal">55%</b></label>
+            <input type="range" id="gLightSlider" min="0" max="100" value="55">
+          </div>
+        </div>
+        <div>
+          <h3 class="gh">
+            EDITING <span id="gActiveSlotName">PRIMARY</span> — <span class="gem2d"></span> <span id="gCredits">0</span>
+          </h3>
+          <div class="err" id="gBuyMsg"></div>
+          <h3 class="gh" style="margin-top:14px">HUE</h3>
+          <p class="lede" style="font-size:12px;margin-bottom:8px">Click a bright square to use it on
+            <span id="gHueSlotName">primary</span>. Crossed-out squares are locked.</p>
+          <div class="row" style="margin-bottom:12px">
+            <button class="primary" id="gBuyHue">Buy a hue pack — 10 credits</button>
+          </div>
+          <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1020,7 +1141,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         <button class="ghost" id="bCreditsRunBack">Menu</button>
       </div>
       <div class="creditBurst" id="creditBurst" hidden>
-        <div class="coin">◆</div>
+        <div class="coin"><span class="gem2d"></span></div>
         <div class="plusOne" id="creditBurstAmt">+1</div>
       </div>
     </div>
@@ -1056,7 +1177,7 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 const approach = (rate, dt) => 1 - Math.exp(-rate * dt);
 const deg = (d) => (d * Math.PI) / 180;
-const MPH = 2.23694;            // metres per second -> miles per hour
+const KMH = 3.6;                // metres per second -> km/h
 const AXES = ['x', 'y', 'z'];
 const sign = (v) => (v < 0 ? -1 : 1);
 // Race timestamp fields are Firestore Timestamps (needed so firestore.rules
@@ -1794,6 +1915,10 @@ const Sound = {
   /** A quick, bright two-note "coin" chime for the credits-run payoff —
    *  short and percussive rather than finish()'s longer fanfare, so it
    *  reads as a small, frequent reward rather than a course-clear event. */
+  creditTick() {
+    this.tone(1318.5, 0, 0.08, 0.06, 'sine');
+    this.tone(1760, 0.04, 0.1, 0.05, 'triangle');
+  },
   creditWin() {
     this.tone(1046.5, 0, 0.14, 0.09, 'sine');
     this.tone(1568, 0.05, 0.22, 0.085, 'triangle');
@@ -1882,10 +2007,14 @@ const Cloud = {
     const cred = await this.fb.authMod.signInWithEmailAndPassword(
       this.auth, usernameToEmail(username), pass);
     this.user = cred.user;
-    try { await this.loadProfile(); } catch (e) { this.error = e.message; }
+    try { await this.loadProfile(); } catch (e) {
+      this.error = e.message;
+      if (e.code === 'auth/invalid-credential') throw e;
+    }
   },
   async signOut() {
     Game.confirmedUid = null;
+    this.credits = 0;
     await this.fb.authMod.signOut(this.auth);
     // A player clicking "Sign out" is a deliberate, explicit action, not
     // an incidental auth blip — it must take effect immediately regardless
@@ -1937,16 +2066,18 @@ const Cloud = {
     Records.wipe();
   },
 
-  /** +1 credit for a completed credits-grind run. Repeatable by design (the
-   *  id is unique per call, not per course), capped server-side at exactly
-   *  delta==1 so a write can never claim more than one credit at a time. */
-  async grindCredit() {
-    if (!this.user || !this.on || this.banned()) return;
+  /** +1 credit for finishing any non-race course, or +3 for a credit
+   *  run. Each is its own event shape, capped server-side at exactly that
+   *  amount (see creditEvents in firestore.rules). */
+  async grindCredit(amount) {
+    if (!this.user || !this.on || this.banned()) return false;
+    const n = amount === 3 ? 3 : 1;
     const { fsMod } = this.fb;
     const uid = this.user.uid;
-    const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_grind';
-    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: 1, createdAt: fsMod.serverTimestamp() });
-    this.credits += 1;
+    const id = uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + (n === 3 ? '_crun' : '_grind');
+    await fsMod.setDoc(fsMod.doc(this.db, 'creditEvents', id), { uid, delta: n, createdAt: fsMod.serverTimestamp() });
+    this.credits += n;
+    return true;
   },
 
   /** live-subscribes to whichever race is currently open (lobby, starting
@@ -2189,7 +2320,17 @@ const Cloud = {
       this.profile = null;
       let gone = false;
       try { gone = (await fsMod.getDoc(fsMod.doc(this.db, 'deleted', this.user.uid))).exists(); } catch (e) { /* not readable */ }
-      throw new Error(gone ? 'This account was deleted.' : 'This account has no profile yet — it needs a valid invite code.');
+      if (gone) {
+        // The admin erased this account. Finish the job by removing the
+        // login itself, and answer exactly as if it had never existed.
+        try { await this.user.delete(); } catch (e) { /* needs a fresh sign-in; happens next time */ }
+        try { await this.fb.authMod.signOut(this.auth); } catch (e) { /* already gone */ }
+        this.user = null;
+        const err = new Error('That username and password do not match.');
+        err.code = 'auth/invalid-credential';
+        throw err;
+      }
+      throw new Error('This account has no profile yet — it needs a valid invite code.');
     }
     this.profile = snap.data();
     return this.profile;
@@ -2873,7 +3014,7 @@ const CAR = {
   downforce: 3.4,        // ~5400 N at 40 m/s: grip grows with speed
   antiRollFront: 12000, antiRollRear: 9000,
   gravity: 13.5,          // heavier than Earth: jumps arc quickly, no float
-  mu: 2.6,
+  mu: 2.42,
   // Only a little grip lost as load rises, so weight transfer mid-corner
   // doesn't snap the rear loose.
   muLoadSens: 0.04, loadRef: 3020,
@@ -2882,9 +3023,9 @@ const CAR = {
   // Stability assist (the car goes where it points): bleeds off sideways
   // velocity and yaw rate beyond what the steering asks for. Off while
   // the handbrake is held so a deliberate slide still works.
-  assistLat: 3.2, assistYaw: 5.0, assistSlip: 0.10, assistRoll: 6.0,
+  assistLat: 2.7, assistYaw: 5.0, assistSlip: 0.12, assistRoll: 6.0,
   // Grass: heavy rolling drag, so cutting across it is never faster.
-  grassDrag: 1.35, grassGrip: 0.5,
+  grassDrag: 1.2, grassGrip: 0.5,
   // Six-speed gearbox with a real torque curve rather than a flat force. Top
   // speed comes out of the balance between drive and drag, not a cap.
   gears: [3.6, 2.4, 1.75, 1.35, 1.10, 0.92],
@@ -2910,6 +3051,7 @@ const CAR = {
 // CoM near 0.44 m and the rollover threshold (wheelX/comH) at ~1.75 g — safely
 // above mu, so the car slides before it trips over itself.
 CAR.comHeight = CAR.susRest + CAR.wheelR - CAR.mountY;
+const NOSE_Z = 2.03;     // front of the splitter, forward of the car's origin
 
 /**
  * A three-layer boost plume per exhaust (soft outer flame, hot core,
@@ -3169,6 +3311,18 @@ class Vehicle {
     this._corr = new THREE.Vector3();
     this._m = new THREE.Matrix4();
     this._q = new THREE.Quaternion();
+    // render pose: interpolated between the last two physics steps
+    this.prevPos = new THREE.Vector3(); this.prevQuat = new THREE.Quaternion();
+    this.rPos = new THREE.Vector3(); this.rQuat = new THREE.Quaternion();
+  }
+  savePrev() { this.prevPos.copy(this.pos); this.prevQuat.copy(this.quat); }
+  /** a = 0 draws the previous step, 1 the latest; the leftover fraction of
+   *  a step each frame lands in between, so motion is smooth at any
+   *  refresh rate instead of stepping in 1/360 s jumps */
+  setRenderAlpha(a) {
+    a = clamp(a, 0, 1);
+    this.rPos.lerpVectors(this.prevPos, this.pos, a);
+    this.rQuat.copy(this.prevQuat).slerp(this.quat, a);
   }
 
   /* ---- rigid body helpers ---- */
@@ -3237,6 +3391,8 @@ class Vehicle {
     for (let i = 0; i < this.corners.length; i++) {
       this._prevCorners[i].copy(this.corners[i]).applyQuaternion(this.quat).add(this.pos);
     }
+    this.savePrev();
+    this.setRenderAlpha(1);
     this.syncMesh(0);
   }
 
@@ -3330,10 +3486,13 @@ class Vehicle {
     /* --- accelerometer readings for the telemetry panel ----------------- */
     this._accel.subVectors(this.vel, this._prevVel).multiplyScalar(1 / dt);
     this._prevVel.copy(this.vel);
-    const aEMA = approach(6, dt);
-    this.gLong = lerp(this.gLong, this._accel.dot(this.fwd) / 9.81, aEMA);
-    this.gLat = lerp(this.gLat, this._accel.dot(this.left) / 9.81, aEMA);
-    this.gVert = lerp(this.gVert, (this._accel.dot(this.up) + CAR.gravity) / 9.81, aEMA);
+    const aEMA = approach(9, dt);
+    // specific force = acceleration minus gravity: what the driver feels, so
+    // a banked turn reads its true sideways load and resting reads 1 g down
+    this._accel.y += CAR.gravity;
+    this.gLong = lerp(this.gLong, this._accel.dot(this.fwd) / CAR.gravity, aEMA);
+    this.gLat = lerp(this.gLat, this._accel.dot(this.left) / CAR.gravity, aEMA);
+    this.gVert = lerp(this.gVert, this._accel.dot(this.up) / CAR.gravity, aEMA);
 
     /* --- integrate pose ------------------------------------------------- */
     const om = this.omega.length();
@@ -3656,8 +3815,8 @@ class Vehicle {
 
   /** visuals only — physics never reads anything written here */
   syncMesh(dt) {
-    this.mesh.position.copy(this.pos);
-    this.mesh.quaternion.copy(this.quat);
+    this.mesh.position.copy(this.rPos);
+    this.mesh.quaternion.copy(this.rQuat);
     const full = CAR.susRest + CAR.susDroop;
     for (const w of this.wheels) {
       const target = w.contact ? clamp(w.hitDist - CAR.wheelR, 0.02, full) : full;
@@ -4707,7 +4866,7 @@ class ChaseCamera {
   anchorFor(car, dist, out) {
     const sn = clamp(car.speed / CAR.vTop, 0, 1);
     this._d.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));
-    out.copy(car.pos).addScaledVector(this._d, -dist);
+    out.copy(car.rPos || car.pos).addScaledVector(this._d, -dist);
     out.y += CAM.height + sn * CAM.heightSpeed + (car.grounded ? 0 : 0.5)
       + clamp(car.vel.y * 0.05, -0.8, 1.3);
     return out;
@@ -4718,7 +4877,7 @@ class ChaseCamera {
     while (lead < -Math.PI) lead += Math.PI * 2;
     const ly = this.yaw + clamp(lead * CAM.lookLead, -CAM.lookLeadMax, CAM.lookLeadMax);
     this._d.set(Math.sin(ly), 0, Math.cos(ly));
-    out.copy(car.pos).addScaledVector(this._d, CAM.lookAhead);
+    out.copy(car.rPos || car.pos).addScaledVector(this._d, CAM.lookAhead);
     out.y += CAM.lookHeight + clamp(car.vel.y * 0.05, -1.1, 1.1);
     return out;
   }
@@ -4767,7 +4926,7 @@ class ChaseCamera {
   updateOcclusion(dt, car, ideal) {
     let want = 1;
     if (car.grounded) {
-      const from = this._a.copy(car.pos); from.y += 1.1;
+      const from = this._a.copy(car.rPos || car.pos); from.y += 1.1;
       const to = this.anchorFor(car, ideal, this._tmp);
       const dir = this._b.copy(to).sub(from);
       const len = dir.length();
@@ -4787,54 +4946,54 @@ class ChaseCamera {
     this.apply();
   }
   /**
-   * The multi-watch "overview" camera mode: frames every given point (one
-   * per car currently in the session) from a raised, slowly-orbiting
-   * vantage, backing off exactly as far as the spread of cars needs so as
-   * many of them as possible stay on screen at once, tightening back in
-   * when they bunch up again. Distance/height are smoothed the same way
-   * the chase camera already smooths its own follow distance, so cars
-   * pulling apart or back together never causes a sudden camera snap.
+   * "All cars" camera for watching several runs: sits behind the field
+   * (along the cars' average heading) and backs off exactly as far as it
+   * must for a sphere around every car to fit the view vertically and
+   * horizontally. It widens instantly when the cars spread (so nobody is
+   * ever cut off) and closes back in smoothly when they bunch up.
    */
-  frameAll(dt, points, time) {
-    if (!points.length) return;
-    this._a.set(0, 0, 0);
-    for (const p of points) this._a.add(p);
-    this._a.multiplyScalar(1 / points.length); // centroid
-    let spread = 0;
-    for (const p of points) spread = Math.max(spread, this._a.distanceTo(p));
-    const dist = clamp(24 + spread * 2.1, 26, 140);
-    const height = clamp(16 + spread * 1.1, 16, 90);
-    const ang = time * 0.06; // slow orbit — enough to read as "surveying the field", not dizzying
-    const wantPos = this._b.set(
-      this._a.x + Math.sin(ang) * dist, this._a.y + height, this._a.z + Math.cos(ang) * dist);
-    this.pos.x = smoothDamp(this.pos.x, wantPos.x, this.vel, 'x', 0.9, dt);
-    this.pos.y = smoothDamp(this.pos.y, wantPos.y, this.vel, 'y', 0.9, dt);
-    this.pos.z = smoothDamp(this.pos.z, wantPos.z, this.vel, 'z', 0.9, dt);
-    this.look.x = smoothDamp(this.look.x, this._a.x, this.lookVel, 'x', 0.6, dt);
-    this.look.y = smoothDamp(this.look.y, this._a.y, this.lookVel, 'y', 0.6, dt);
-    this.look.z = smoothDamp(this.look.z, this._a.z, this.lookVel, 'z', 0.6, dt);
-    const wantFov = clamp(CAM.fovBase + spread * 0.35, CAM.fovBase, CAM.fovBase + 22);
-    this.fov = lerp(this.fov, wantFov, approach(2, dt));
-    if (Math.abs(this.cam.fov - this.fov) > 0.05) { this.cam.fov = this.fov; this.cam.updateProjectionMatrix(); }
+  frameAll(dt, rigs) {
+    if (!rigs.length) return;
+    const c = this._a.set(0, 0, 0);
+    let sx = 0, sz = 0;
+    for (const r of rigs) {
+      c.add(r.pos);
+      const w = 0.5 + Math.min(r.speed || 0, 40) / 40;
+      sx += Math.sin(r.heading) * w; sz += Math.cos(r.heading) * w;
+    }
+    c.multiplyScalar(1 / rigs.length);
+    if (!this.allInit) {
+      this.allC = c.clone(); this.allYaw = Math.atan2(sx, sz); this.allD = 30; this.allInit = true;
+    }
+    // a scrub or restart can move the field far in one frame: jump with it
+    if (this.allC.distanceTo(c) > 40) { this.allC.copy(c); this.allD = 20; }
+    const k = approach(3.5, dt);
+    this.allC.lerp(c, k);
+    let dy = Math.atan2(sx, sz) - this.allYaw;
+    while (dy > Math.PI) dy -= Math.PI * 2;
+    while (dy < -Math.PI) dy += Math.PI * 2;
+    if (sx * sx + sz * sz > 0.01) this.allYaw += dy * approach(1.2, dt);
+    let r = 0;
+    for (const p of rigs) r = Math.max(r, this.allC.distanceTo(p.pos));
+    r += 4;                                       // the cars themselves, plus a margin
+    const vf = (this.cam.fov * Math.PI) / 360;
+    const hf = Math.atan(Math.tan(vf) * this.cam.aspect * (this.aspectScale || 1));
+    const need = Math.max(20, r / Math.sin(Math.min(vf, hf)) * 1.08);
+    this.allD = need > this.allD ? need : lerp(this.allD, need, approach(1.5, dt));
+    const el = deg(28);
+    this.pos.set(this.allC.x - Math.sin(this.allYaw) * Math.cos(el) * this.allD,
+      this.allC.y + Math.sin(el) * this.allD,
+      this.allC.z - Math.cos(this.allYaw) * Math.cos(el) * this.allD);
+    this.look.copy(this.allC);
+    if (Math.abs(this.cam.fov - CAM.fovBase) > 0.05) { this.cam.fov = this.fov = CAM.fovBase; this.cam.updateProjectionMatrix(); }
     this.apply();
   }
-  /** snaps frameAll's smoothed state straight to its target with no
-   *  interpolation — used the moment overview mode is (re)entered so it
-   *  never visibly flies in from wherever the camera happened to be. */
-  snapAll(points, time) {
-    this.vel.x = this.vel.y = this.vel.z = 0;
-    this.lookVel.x = this.lookVel.y = this.lookVel.z = 0;
-    if (points.length) {
-      this._a.set(0, 0, 0);
-      for (const p of points) this._a.add(p);
-      this._a.multiplyScalar(1 / points.length);
-      this.pos.copy(this._a).add(new THREE.Vector3(0, 40, 60));
-      this.look.copy(this._a);
-    }
-    this.fov = CAM.fovBase;
-    this.cam.fov = this.fov;
+  /** re-seats the all-cars camera straight onto the field */
+  snapAll(rigs) {
+    this.allInit = false;
+    this.cam.fov = this.fov = CAM.fovBase;
     this.cam.updateProjectionMatrix();
-    this.frameAll(0.0001, points, time);
+    this.frameAll(1, rigs);
   }
   /**
    * The free-roam "director" mode: WASD+Shift/Space fly the camera itself
@@ -5120,6 +5279,7 @@ const App = {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(h, 1);
     this.camera.updateProjectionMatrix();
+    if (Compare.runs) Compare.offsetView(true);
   },
   aimLight(t) {
     const gx = Math.round(t.x), gy = Math.round(t.y), gz = Math.round(t.z);
@@ -5324,23 +5484,39 @@ const Trophies = {
     const mine = (e) => (uid && e.uid) ? e.uid === uid : (!uid && e.n === me);
     const out = [];
     if (awards && uid) {
+      // Season 1 is archived; its maps' times still sit in the pulled boards
+      const s1ids = [];
+      for (let k = 1; k <= 33; k++) s1ids.push('c' + k);
+      const s1 = Records.overall(s1ids).find(mine);
       ['gold', 'silver', 'bronze'].forEach((p, k) => {
         const a = awards[p];
         if (a && a.uid === uid) {
-          out.push({ kind: 'season', tier: k, size: 3, title: 'Season 1 ' + PLACE_TITLE[k], sub: 'Final standings' });
+          out.push({ kind: 'season', tier: k, size: 3, title: 'Season 1 ' + PLACE_TITLE[k], sub: 'Final standings',
+            plaque: 'SEASON 1', time: s1 ? s1.total : null, note: s1 ? s1.count + ' maps' : '' });
         }
       });
     }
     const ov = Records.overall(COURSE_IDS);
     const r = ov.findIndex(mine);
-    if (r >= 0 && r < 3) out.push({ kind: 'season', tier: r, size: 3, title: 'Season 2 ' + PLACE[r] + ' place', sub: 'Current overall standings' });
+    if (r >= 0 && r < 3) {
+      out.push({ kind: 'season', tier: r, size: 3, title: 'Season 2 ' + PLACE[r] + ' place', sub: 'Current overall standings',
+        plaque: 'SEASON 2', time: ov[r].total, note: ov[r].count + '/' + COURSE_IDS.length + ' maps' });
+    }
     SECTIONS.forEach((name, sec) => {
-      const k = Records.overall(sectionIds(sec)).findIndex(mine);
-      if (k >= 0 && k < 3) out.push({ kind: 'section', tier: k, size: 2, title: name + ' · ' + PLACE[k], sub: 'Section standings' });
+      const st = Records.overall(sectionIds(sec));
+      const k = st.findIndex(mine);
+      if (k >= 0 && k < 3) {
+        out.push({ kind: 'section', tier: k, size: 2, title: name + ' · ' + PLACE[k], sub: 'Section standings',
+          plaque: name.toUpperCase(), time: st[k].total, note: st[k].count + '/' + sectionIds(sec).length + ' maps' });
+      }
     });
     LEVELS.forEach((lv, i) => {
-      const k = Records.board(lv.id).findIndex(mine);
-      if (k >= 0 && k < 3) out.push({ kind: 'map', tier: k, size: 1, title: lv.name, sub: courseTag(i) + ' · ' + PLACE[k] + ' place' });
+      const b = Records.board(lv.id);
+      const k = b.findIndex(mine);
+      if (k >= 0 && k < 3) {
+        out.push({ kind: 'map', tier: k, size: 1, title: lv.name, sub: courseTag(i) + ' · ' + PLACE[k] + ' place',
+          plaque: lv.name.toUpperCase(), time: b[k].t, note: courseTag(i) });
+      }
     });
     out.sort((a, b) => (b.size - a.size) || (a.tier - b.tier));
     return out;
@@ -5348,14 +5524,21 @@ const Trophies = {
 };
 
 /**
- * The trophy room: its own renderer on its own canvas (like the garage
- * preview), so it costs nothing unless open. Credits are a heap of
- * glowing light-blue gems sized to the balance, trophies stand on
- * pedestals in an arc behind them, biggest in the middle. Drag to spin.
+ * The trophy room: its own renderer on its own canvas, so it costs nothing
+ * unless open. Your car sits in the middle; one light-blue gem per credit
+ * rains down onto it and piles up around it under a small physics engine
+ * (every gem collides with every other gem, the car, the pedestals and
+ * the cups, and a weak pull draws them back toward the centre). Trophies
+ * stand still on engraved pedestals, laid out on rings around the car —
+ * each ring only takes as many as its circumference fits, so any number
+ * of trophies spaces itself out. Drag to spin the room.
  */
+const GEM_R = 0.14;           // collision radius of one credit gem
+const GEM_MAX = 320;          // most gems simulated at once (the number shows the real total)
 const TrophyRoom = {
   renderer: null, scene: null, camera: null, root: null, running: false,
-  yaw: 0, yawTarget: 0, dragging: false, lastX: 0, idle: 0, clock: 0, hero: null, spinners: [],
+  yaw: 0, yawTarget: 0, dragging: false, lastX: 0, idle: 0, clock: 0,
+  gems: [], gemMesh: null, boxes: [], cyls: [], spawnLeft: 0, spawnAcc: 0, outerR: 5,
 
   ensureBuilt() {
     if (this.renderer) return;
@@ -5366,7 +5549,7 @@ const TrophyRoom = {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+    this.camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
 
     // a soft studio environment so the metal actually reflects something
     const envScene = new THREE.Scene();
@@ -5392,10 +5575,10 @@ const TrophyRoom = {
 
     this.scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x0a0d14, 0.35));
     const key = new THREE.DirectionalLight(0xfff4e0, 0.95);
-    key.position.set(3, 6, 8);
+    key.position.set(3, 8, 6);
     this.scene.add(key);
-    const blue = new THREE.PointLight(0x5fd8ff, 1.6, 7);
-    blue.position.set(0, 1.4, 2.2);
+    const blue = new THREE.PointLight(0x5fd8ff, 1.4, 12);
+    blue.position.set(0, 3, 0);
     this.scene.add(blue);
 
     // only the trophy metal reflects the studio; everything else is lit
@@ -5407,15 +5590,21 @@ const TrophyRoom = {
         std(0xcd7f45, { metalness: 1, roughness: 0.28, envMap: env })],
       plinth: std(0x070a12, { metalness: 0.1, roughness: 0.7 }),
       plinthTop: std(0x121a2c, { metalness: 0.2, roughness: 0.45 }),
-      gem: std(0x1f8fc4, { metalness: 0.15, roughness: 0.18, emissive: 0x0b7fc0, emissiveIntensity: 0.7,
-        transparent: true, opacity: 0.95 }),
+      gem: std(0x1f8fc4, { metalness: 0.15, roughness: 0.18, emissive: 0x0b7fc0, emissiveIntensity: 0.7 }),
       floor: std(0x03050a, { metalness: 0.05, roughness: 0.9 })
     };
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(12, 48), this.mats.floor);
-    floor.rotation.x = -Math.PI / 2;
-    this.scene.add(floor);
+    this.floor = new THREE.Mesh(new THREE.CircleGeometry(1, 64), this.mats.floor);
+    this.floor.rotation.x = -Math.PI / 2;
+    this.scene.add(this.floor);
     this.root = new THREE.Group();
     this.scene.add(this.root);
+    // your own car, in whatever you've painted it (shared MAT.body/bodyDark)
+    this.car = buildCarMesh().group;
+    this.car.position.y = 0.45;
+    this.car.rotation.y = deg(-30);
+    this.scene.add(this.car);
+    this.gemGeo = new THREE.OctahedronGeometry(0.16, 0);
+    this.gemGeo.scale(1, 1.4, 1);
 
     const stage = canvas.parentElement;
     stage.addEventListener('pointerdown', (e) => { this.dragging = true; this.lastX = e.clientX; stage.setPointerCapture(e.pointerId); });
@@ -5431,13 +5620,12 @@ const TrophyRoom = {
     addEventListener('resize', () => { if (this.running) this.resize(); });
   },
 
-  /** a cup: lathe-turned bowl and stem, two handles, on a stepped base */
+  /** a cup: lathe-turned bowl and stem, two handles, star on the big ones */
   cup(mat, big) {
     const g = new THREE.Group();
     const prof = [[0, 0], [0.34, 0], [0.34, 0.06], [0.12, 0.12], [0.07, 0.2], [0.06, 0.5], [0.1, 0.58],
       [0.28, 0.68], [0.42, 0.88], [0.48, 1.14], [0.5, 1.2], [0.44, 1.2], [0.4, 1.0], [0.26, 0.8], [0, 0.74]];
-    const bowl = new THREE.Mesh(new THREE.LatheGeometry(prof.map((p) => new THREE.Vector2(p[0], p[1])), 28), mat);
-    g.add(bowl);
+    g.add(new THREE.Mesh(new THREE.LatheGeometry(prof.map((p) => new THREE.Vector2(p[0], p[1])), 28), mat));
     for (const sx of [-1, 1]) {
       const h = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 8, 20, Math.PI), mat);
       h.position.set(sx * 0.48, 0.92, 0);
@@ -5457,64 +5645,248 @@ const TrophyRoom = {
     return g;
   },
 
+  /** the engraved plate on the front of a pedestal: what, where, and your time */
+  plaque(t, w, h) {
+    const cv = document.createElement('canvas');
+    cv.width = 512; cv.height = 256;
+    const x = cv.getContext('2d');
+    const tint = ['#d9b04a', '#b9c3cf', '#b8703d'][t.tier];
+    const grd = x.createLinearGradient(0, 0, 0, 256);
+    grd.addColorStop(0, tint); grd.addColorStop(1, '#3a2e18');
+    x.fillStyle = grd; x.fillRect(0, 0, 512, 256);
+    x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 8; x.strokeRect(10, 10, 492, 236);
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    // engraved: dark letters with a light lower edge
+    const engrave = (txt, y, px) => {
+      x.font = '700 ' + px + 'px Helvetica, Arial, sans-serif';
+      let size = px;
+      while (x.measureText(txt).width > 470 && size > 20) { size -= 2; x.font = '700 ' + size + 'px Helvetica, Arial, sans-serif'; }
+      x.fillStyle = 'rgba(255,255,255,.45)'; x.fillText(txt, 256, y + 2);
+      x.fillStyle = '#1b1407'; x.fillText(txt, 256, y);
+    };
+    engrave(t.plaque || t.title, 62, 46);
+    engrave((PLACE[t.tier] || '') + ' PLACE' + (t.note ? '  ·  ' + t.note : ''), 128, 34);
+    engrave(t.time ? formatTime(t.time) : '—', 196, 52);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.anisotropy = 4;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.45,
+        metalness: 0.3, roughness: 0.45 }));
+    return m;
+  },
+
   build(data) {
     while (this.root.children.length) this.root.remove(this.root.children[0]);
-    this.spinners = [];
-    // --- the credit heap: one gem per credit up to 160, piled in rings
-    const n = Math.max(0, Math.min(160, Math.floor(data.credits || 0)));
-    const gemGeo = new THREE.OctahedronGeometry(0.16, 0);
-    const heap = new THREE.Group();
-    let placed = 0, layer = 0;
-    while (placed < n && layer < 12) {
-      const r = Math.max(0.05, 0.95 - layer * 0.09);
-      const per = Math.max(1, Math.floor(r * 2 * Math.PI / 0.24));
-      for (let k = 0; k < per && placed < n; k++, placed++) {
-        const a = (k / per) * Math.PI * 2 + layer * 0.37;
-        const rr = r * (0.55 + ((k * 37 + layer * 11) % 10) / 22);
-        const m = new THREE.Mesh(gemGeo, this.mats.gem);
-        m.position.set(Math.cos(a) * rr, 0.13 + layer * 0.16, Math.sin(a) * rr);
-        m.rotation.set(k * 1.3, a, layer * 0.7);
-        m.scale.y = 1.4;
-        heap.add(m);
-      }
-      layer++;
-    }
-    heap.position.set(0, 0, 1.1);
-    this.root.add(heap);
-    // the hero gem floats above the heap and turns slowly
-    this.hero = new THREE.Mesh(new THREE.OctahedronGeometry(0.34, 0), this.mats.gem);
-    this.hero.scale.y = 1.45;
-    this.hero.position.set(0, 0.75 + layer * 0.16, 1.1);
-    this.root.add(this.hero);
+    this.boxes = []; this.cyls = [];
+    // the car's own collision boxes (its local frame is rotated by car.rotation.y)
+    const cy = this.car.rotation.y;
+    const carBox = (lx, ly, lz, hx, hy, hz) => this.boxes.push({
+      cx: lx * Math.cos(cy) + lz * Math.sin(cy), cy: 0.45 + ly, cz: -lx * Math.sin(cy) + lz * Math.cos(cy),
+      hx, hy, hz, c: Math.cos(cy), s: Math.sin(cy) });
+    carBox(0, -0.18, 0, 1.0, 0.27, 1.9);      // wheels and floor
+    carBox(0, 0.1, 0, 0.99, 0.2, 1.84);       // body
+    carBox(0, 0.4, -0.25, 0.63, 0.2, 0.72);   // cabin and roof
 
-    // --- trophies in an arc, biggest in the middle
+    // Trophies on rings around the car, biggest first. Each trophy's
+    // footprint is the circle that holds its whole pedestal and cup
+    // handles; neighbours on a ring are spaced by the exact angle whose
+    // chord clears both circles, and a ring that is full starts the next
+    // one further out — so any number of trophies lays itself out.
     const list = data.trophies || [];
-    const order = [];
-    list.forEach((t, k) => { if (k % 2 === 0) order.push(t); else order.unshift(t); });
-    const count = order.length;
-    const spread = Math.min(Math.PI * 0.9, Math.max(0.5, count * 0.22));
-    order.forEach((t, k) => {
-      const f = count > 1 ? k / (count - 1) - 0.5 : 0;
-      const a = f * spread;
-      const R = 3.6;
-      const scale = t.size === 3 ? 1.35 : t.size === 2 ? 0.95 : 0.7;
-      const plinthH = t.size === 3 ? 0.9 : t.size === 2 ? 0.6 : 0.4;
-      const holder = new THREE.Group();
-      holder.position.set(Math.sin(a) * R, 0, -Math.cos(a) * R + 1.2);
-      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.9 * scale, plinthH, 0.9 * scale), this.mats.plinth);
-      plinth.position.y = plinthH / 2;
-      holder.add(plinth);
-      const top = new THREE.Mesh(new THREE.BoxGeometry(0.98 * scale, 0.06, 0.98 * scale), this.mats.plinthTop);
-      top.position.y = plinthH + 0.03;
-      holder.add(top);
-      const cup = this.cup(this.mats.metal[t.tier], t.size === 3);
-      cup.scale.setScalar(scale);
-      cup.position.y = plinthH + 0.06;
-      cup.rotation.y = k * 0.9;
-      holder.add(cup);
-      this.spinners.push(cup);
-      this.root.add(holder);
+    const scaleOf = (t) => (t.size === 3 ? 1.35 : t.size === 2 ? 0.95 : 0.7);
+    const rad = (t) => Math.max((0.98 * scaleOf(t) + 0.08) / 2 * Math.SQRT2, 0.73 * scaleOf(t)) + 0.2;
+    const gapAng = (r, p, q) => 2 * Math.asin(Math.min(1, (rad(p) + rad(q)) / (2 * r)));
+    const rings = [];
+    let ringR = 2.4 + Math.max(0, ...list.map(rad)) + 1.2, cur = [];
+    const fits = (items, r) => {
+      if (items.length < 2) return true;
+      let tot = 0;
+      for (let k = 0; k < items.length; k++) tot += gapAng(r, items[k], items[(k + 1) % items.length]);
+      return tot <= Math.PI * 2;
+    };
+    for (const t of list) {
+      if (!fits(cur.concat([t]), ringR)) {
+        rings.push({ r: ringR, items: cur });
+        ringR += Math.max(...cur.map(rad)) + Math.max(...cur.map(rad)) + 0.4;
+        cur = [];
+      }
+      cur.push(t);
+    }
+    if (cur.length) rings.push({ r: ringR, items: cur });
+    this.outerR = rings.length ? rings[rings.length - 1].r + 1.5 : 4;
+    rings.forEach((rg, ri) => {
+      const items = rg.items, n = items.length;
+      // exact gaps, with whatever is left over shared out evenly
+      const gaps = items.map((t, k) => n > 1 ? gapAng(rg.r, t, items[(k + 1) % n]) : 0);
+      const spare = n > 1 ? (Math.PI * 2 - gaps.reduce((x, y) => x + y, 0)) / n : 0;
+      let a = Math.PI + ri * 0.4;             // the first trophy faces the camera
+      items.forEach((t, k) => {
+        if (k) a += gaps[k - 1] + spare;
+        const scale = scaleOf(t);
+        const plinthH = t.size === 3 ? 0.9 : t.size === 2 ? 0.62 : 0.45;
+        const w = 0.98 * scale;
+        const holder = new THREE.Group();
+        holder.position.set(Math.sin(a) * rg.r, 0, Math.cos(a) * rg.r);
+        holder.rotation.y = a;                  // local +z (the plaque) faces outward
+        holder.userData.rad = rad(t);
+        const plinth = new THREE.Mesh(new THREE.BoxGeometry(w, plinthH, w), this.mats.plinth);
+        plinth.position.y = plinthH / 2;
+        holder.add(plinth);
+        const top = new THREE.Mesh(new THREE.BoxGeometry(w + 0.08, 0.06, w + 0.08), this.mats.plinthTop);
+        top.position.y = plinthH + 0.03;
+        holder.add(top);
+        const pl = this.plaque(t, w * 0.92, Math.min(plinthH * 0.8, w * 0.46));
+        pl.position.set(0, plinthH * 0.5, w / 2 + 0.006);
+        holder.add(pl);
+        const cup = this.cup(this.mats.metal[t.tier], t.size === 3);
+        cup.scale.setScalar(scale);
+        cup.position.y = plinthH + 0.06;
+        holder.add(cup);
+        this.root.add(holder);
+        this.boxes.push({ cx: holder.position.x, cy: (plinthH + 0.06) / 2, cz: holder.position.z,
+          hx: (w + 0.08) / 2, hy: (plinthH + 0.06) / 2, hz: (w + 0.08) / 2, c: Math.cos(a), s: Math.sin(a) });
+        this.cyls.push({ x: holder.position.x, z: holder.position.z, r: 0.5 * scale, y0: plinthH + 0.06, y1: plinthH + 0.06 + 1.25 * scale });
+      });
     });
+    this.floor.scale.setScalar(this.outerR + 6);
+
+    // the credits, dropped fresh every visit
+    if (this.gemMesh) { this.scene.remove(this.gemMesh); this.gemMesh.dispose(); }
+    const n = Math.max(0, Math.min(GEM_MAX, Math.floor(data.credits || 0)));
+    this.gems = [];
+    this.gemMesh = n ? new THREE.InstancedMesh(this.gemGeo, this.mats.gem, n) : null;
+    if (this.gemMesh) {
+      this.gemMesh.count = 0;
+      this.gemMesh.frustumCulled = false;
+      this.scene.add(this.gemMesh);
+    }
+    this.spawnLeft = n; this.spawnAcc = 0;
+    this.seed = 12345;
+  },
+  rnd() { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 4294967296; },
+
+  /* ------------------------------------------------------ gem physics */
+  spawn() {
+    const a = this.rnd() * Math.PI * 2, r = Math.sqrt(this.rnd()) * 1.6;
+    this.gems.push({
+      x: Math.cos(a) * r, y: 6 + this.rnd() * 4, z: Math.sin(a) * r,
+      vx: 0, vy: -2 - this.rnd() * 2, vz: 0,
+      rx: this.rnd() * 6, ry: this.rnd() * 6, rz: this.rnd() * 6,
+      wx: (this.rnd() - 0.5) * 8, wy: (this.rnd() - 0.5) * 8, wz: (this.rnd() - 0.5) * 8,
+      rest: 0
+    });
+  },
+  bounce(g, nx, ny, nz, e) {
+    const vn = g.vx * nx + g.vy * ny + g.vz * nz;
+    if (vn < 0) {
+      g.vx -= (1 + e) * vn * nx; g.vy -= (1 + e) * vn * ny; g.vz -= (1 + e) * vn * nz;
+      // friction along the surface and a little spin loss on every hit
+      const tx = g.vx - (g.vx * nx + g.vy * ny + g.vz * nz) * nx;
+      const ty = g.vy - (g.vx * nx + g.vy * ny + g.vz * nz) * ny;
+      const tz = g.vz - (g.vx * nx + g.vy * ny + g.vz * nz) * nz;
+      g.vx -= tx * 0.12; g.vy -= ty * 0.12; g.vz -= tz * 0.12;
+      g.wx *= 0.85; g.wy *= 0.85; g.wz *= 0.85;
+    }
+  },
+  collideBox(g, b) {
+    const dx = g.x - b.cx, dy = g.y - b.cy, dz = g.z - b.cz;
+    const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c;
+    const qx = clamp(lx, -b.hx, b.hx), qy = clamp(dy, -b.hy, b.hy), qz = clamp(lz, -b.hz, b.hz);
+    let nx = lx - qx, ny = dy - qy, nz = lz - qz;
+    let d = Math.sqrt(nx * nx + ny * ny + nz * nz);
+    if (d > GEM_R) return;
+    let pen;
+    if (d < 1e-6) {
+      // centre inside the box: out through the nearest face
+      const px = b.hx - Math.abs(lx), py = b.hy - Math.abs(dy), pz = b.hz - Math.abs(lz);
+      nx = ny = nz = 0;
+      if (py <= px && py <= pz) { ny = dy >= 0 ? 1 : -1; pen = py + GEM_R; }
+      else if (px <= pz) { nx = lx >= 0 ? 1 : -1; pen = px + GEM_R; }
+      else { nz = lz >= 0 ? 1 : -1; pen = pz + GEM_R; }
+    } else { nx /= d; ny /= d; nz /= d; pen = GEM_R - d; }
+    const wx = nx * b.c + nz * b.s, wz = -nx * b.s + nz * b.c;
+    g.x += wx * pen; g.y += ny * pen; g.z += wz * pen;
+    this.bounce(g, wx, ny, wz, 0.35);
+  },
+  collideCyl(g, c) {
+    if (g.y < c.y0 - GEM_R || g.y > c.y1 + GEM_R) return;
+    const dx = g.x - c.x, dz = g.z - c.z, d = Math.hypot(dx, dz), need = c.r + GEM_R;
+    if (d >= need) return;
+    if (g.y > c.y1 && d < c.r) {             // resting on the rim of the bowl
+      g.y = c.y1 + GEM_R; this.bounce(g, 0, 1, 0, 0.3); return;
+    }
+    const nx = d > 1e-6 ? dx / d : 1, nz = d > 1e-6 ? dz / d : 0;
+    g.x = c.x + nx * need; g.z = c.z + nz * need;
+    this.bounce(g, nx, 0, nz, 0.4);
+  },
+  stepGems(h) {
+    const G = this.gems, n = G.length;
+    for (const g of G) {
+      if (g.rest > 1.2) continue;             // asleep until something knocks it
+      g.vy -= 9.8 * h;
+      // the weak pull back toward the middle, only once it's down low
+      if (g.y < 1.4) { g.vx -= g.x * 0.85 * h; g.vz -= g.z * 0.85 * h; }
+      g.x += g.vx * h; g.y += g.vy * h; g.z += g.vz * h;
+      g.rx += g.wx * h; g.ry += g.wy * h; g.rz += g.wz * h;
+    }
+    // gem against gem, through a spatial hash so it stays cheap
+    const cell = GEM_R * 2, grid = new Map();
+    const key = (i, j, k) => i * 73856093 ^ j * 19349663 ^ k * 83492791;
+    for (let i = 0; i < n; i++) {
+      const g = G[i];
+      const k = key(Math.floor(g.x / cell), Math.floor(g.y / cell), Math.floor(g.z / cell));
+      let arr = grid.get(k); if (!arr) { arr = []; grid.set(k, arr); } arr.push(i);
+    }
+    for (let i = 0; i < n; i++) {
+      const g = G[i];
+      const ci = Math.floor(g.x / cell), cj = Math.floor(g.y / cell), ck = Math.floor(g.z / cell);
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) {
+        const arr = grid.get(key(ci + a, cj + b, ck + c));
+        if (!arr) continue;
+        for (const j of arr) {
+          if (j <= i) continue;
+          const o = G[j];
+          const dx = o.x - g.x, dy = o.y - g.y, dz = o.z - g.z;
+          const d2 = dx * dx + dy * dy + dz * dz, min = GEM_R * 2;
+          if (d2 >= min * min || d2 < 1e-12) continue;
+          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d, pen = (min - d) / 2;
+          g.x -= nx * pen; g.y -= ny * pen; g.z -= nz * pen;
+          o.x += nx * pen; o.y += ny * pen; o.z += nz * pen;
+          const rv = (o.vx - g.vx) * nx + (o.vy - g.vy) * ny + (o.vz - g.vz) * nz;
+          if (rv < 0) {
+            const jn = -(1 + 0.25) * rv / 2;
+            g.vx -= jn * nx; g.vy -= jn * ny; g.vz -= jn * nz;
+            o.vx += jn * nx; o.vy += jn * ny; o.vz += jn * nz;
+            if (-rv > 0.4) { g.rest = 0; o.rest = 0; }
+          }
+        }
+      }
+    }
+    for (const g of G) {
+      for (const b of this.boxes) this.collideBox(g, b);
+      for (const c of this.cyls) this.collideCyl(g, c);
+      if (g.y < GEM_R) {
+        g.y = GEM_R;
+        this.bounce(g, 0, 1, 0, 0.3);
+        g.vx *= 0.96; g.vz *= 0.96;           // floor friction lets the heap settle
+      }
+      const sp = g.vx * g.vx + g.vy * g.vy + g.vz * g.vz;
+      g.rest = sp < 0.02 ? g.rest + h : 0;
+      if (g.rest > 1.2) { g.vx = g.vy = g.vz = 0; g.wx = g.wy = g.wz = 0; }
+    }
+  },
+  syncGems() {
+    if (!this.gemMesh) return;
+    const m = this._m || (this._m = new THREE.Matrix4()), q = this._q || (this._q = new THREE.Quaternion());
+    const e = this._e || (this._e = new THREE.Euler()), p = this._p || (this._p = new THREE.Vector3());
+    const one = this._one || (this._one = new THREE.Vector3(1, 1, 1));
+    this.gems.forEach((g, i) => {
+      q.setFromEuler(e.set(g.rx, g.ry, g.rz));
+      this.gemMesh.setMatrixAt(i, m.compose(p.set(g.x, g.y, g.z), q, one));
+    });
+    this.gemMesh.count = this.gems.length;
+    this.gemMesh.instanceMatrix.needsUpdate = true;
   },
 
   resize() {
@@ -5538,16 +5910,19 @@ const TrophyRoom = {
       last = now;
       this.clock += dt;
       this.idle += dt;
+      // rain: a steady stream until every credit has fallen
+      this.spawnAcc += dt * 45;
+      while (this.spawnAcc >= 1 && this.spawnLeft > 0) { this.spawn(); this.spawnLeft--; this.spawnAcc -= 1; }
+      if (this.spawnLeft <= 0) this.spawnAcc = 0;
+      const H = 1 / 120;
+      const steps = Math.min(4, Math.max(1, Math.round(dt / H)));
+      for (let k = 0; k < steps; k++) this.stepGems(H);
+      this.syncGems();
       if (!this.dragging && this.idle > 2.5) this.yawTarget += dt * 0.12;
       this.yaw += (this.yawTarget - this.yaw) * Math.min(1, dt * 6);
-      const R = 7.0;
-      this.camera.position.set(Math.sin(this.yaw) * R, 2.9, Math.cos(this.yaw) * R + 0.4);
-      this.camera.lookAt(0, 0.7, -0.3);
-      if (this.hero) {
-        this.hero.rotation.y += dt * 0.9;
-        this.hero.position.y += Math.sin(this.clock * 1.8) * 0.002;
-      }
-      for (const c of this.spinners) c.rotation.y += dt * 0.35;
+      const R = Math.max(9, this.outerR * 1.55 + 3);
+      this.camera.position.set(Math.sin(this.yaw) * R, R * 0.42, Math.cos(this.yaw) * R);
+      this.camera.lookAt(0, 0.6, 0);
       this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(loop);
     };
@@ -5555,6 +5930,410 @@ const TrophyRoom = {
   },
 
   stop() { this.running = false; }
+};
+
+
+/**
+ * Compare mode: two recorded runs side by side, with everything derivable
+ * from their 20 Hz samples laid out as live readouts, a summary, sector
+ * splits, graphs over the whole run (with a playhead), a minimap, and a
+ * line in the world joining the two cars labelled with the gap in metres.
+ * Car A is always orange, car B always blue, everywhere.
+ */
+const CMP_COL = ['#ff8a58', '#58d2ff'];
+const G_REF = 13.5;          // the game's gravity, so 1 g = the car's weight
+const Compare = {
+  runs: null, pair: null, line: null, graphs: [],
+
+  /** per-run arrays derived once from the ghost samples */
+  analyzeRun(g, course) {
+    const S = g.s, n = S.length / GHOST_STRIDE;
+    const x = new Float32Array(n), y = new Float32Array(n), z = new Float32Array(n);
+    const hd = new Float32Array(n), bits = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const o = i * GHOST_STRIDE;
+      x[i] = S[o]; y[i] = S[o + 1]; z[i] = S[o + 2];
+      const qx = S[o + 3], qy = S[o + 4], qz = S[o + 5], qw = S[o + 6];
+      hd[i] = Math.atan2(2 * (qx * qz + qw * qy), 1 - 2 * (qx * qx + qy * qy));
+      bits[i] = S[o + 7] | 0;
+    }
+    const v = new Float32Array(n), lon = new Float32Array(n), lat = new Float32Array(n);
+    const pd = (i, j) => Math.hypot(x[j] - x[i], y[j] - y[i], z[j] - z[i]);
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1);
+      v[i] = b > a ? pd(a, b) * GHOST_HZ / (b - a) : 0;
+    }
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1);
+      const dtab = (b - a) / GHOST_HZ || 1;
+      lon[i] = (v[b] - v[a]) / dtab / G_REF;
+      let dh = hd[b] - hd[a];
+      while (dh > Math.PI) dh -= Math.PI * 2;
+      while (dh < -Math.PI) dh += Math.PI * 2;
+      lat[i] = v[i] * (dh / dtab) / G_REF;
+    }
+    // distance along the course: nearest point on the centreline segments,
+    // searched in a moving window so it never jumps to another part
+    const P = course.path, C = course.cum;
+    const s = new Float32Array(n), sm = new Float32Array(n);
+    let seg = 0;
+    for (let i = 0; i < n; i++) {
+      let best = Infinity, bs = 0;
+      const lo = Math.max(0, seg - 3), hi = Math.min(P.length - 2, seg + 25);
+      for (let k = lo; k <= hi; k++) {
+        const ax = P[k].x, az = P[k].z, bx = P[k + 1].x, bz = P[k + 1].z;
+        const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
+        const u = clamp(((x[i] - ax) * dx + (z[i] - az) * dz) / L2, 0, 1);
+        const qx = ax + dx * u - x[i], qz = az + dz * u - z[i];
+        const d2 = qx * qx + qz * qz + (P[k].y + (P[k + 1].y - P[k].y) * u - y[i]) ** 2 * 0.25;
+        if (d2 < best) { best = d2; seg = k; bs = C[k] + Math.sqrt(L2) * u; }
+      }
+      s[i] = bs;
+      sm[i] = i ? Math.max(bs, sm[i - 1]) : bs;
+    }
+    // odometer and input totals
+    const odo = new Float32Array(n);
+    for (let i = 1; i < n; i++) odo[i] = odo[i - 1] + pd(i - 1, i);
+    return { n, T: g.t, x, y, z, v, lon, lat, s, sm, odo, bits };
+  },
+
+  at(arr, n, t) {
+    const f = clamp(t * GHOST_HZ, 0, n - 1);
+    const i = Math.floor(f), u = f - i;
+    return i >= n - 1 ? arr[n - 1] : arr[i] + (arr[i + 1] - arr[i]) * u;
+  },
+  /** when a run first reached course distance d (its own finish time if never) */
+  timeAt(r, d) {
+    const sm = r.sm;
+    if (d <= sm[0]) return 0;
+    if (d > sm[r.n - 1]) return r.T;
+    let lo = 0, hi = r.n - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (sm[m] < d) lo = m; else hi = m; }
+    const u = sm[hi] > sm[lo] ? (d - sm[lo]) / (sm[hi] - sm[lo]) : 0;
+    return Math.min((lo + u) / GHOST_HZ, r.T);
+  },
+  /** input bit fraction and duration up to time t */
+  bitTime(r, mask, t) {
+    const m = Math.min(r.n, Math.ceil(clamp(t, 0, r.T) * GHOST_HZ));
+    let c = 0;
+    for (let i = 0; i < m; i++) if (r.bits[i] & mask) c++;
+    return c / GHOST_HZ;
+  },
+
+  start(spec, course) {
+    const [ca, cb] = spec.cars;
+    const A = this.analyzeRun(ca.data, course), B = this.analyzeRun(cb.data, course);
+    this.runs = [A, B];
+    this.names = [ca.name, cb.name];
+    this.course = course;
+    const L = course.length;
+    this.L = L;
+    // pairwise series sampled on a common time base
+    const T = Math.max(A.T, B.T), m = Math.ceil(T * GHOST_HZ) + 1;
+    const dist = new Float32Array(m), dv = new Float32Array(m), lead = new Float32Array(m);
+    let leadA = 0, changes = 0, lastSign = 0;
+    for (let i = 0; i < m; i++) {
+      const t = i / GHOST_HZ;
+      const ax = this.at(A.x, A.n, t), ay = this.at(A.y, A.n, t), az = this.at(A.z, A.n, t);
+      const bx = this.at(B.x, B.n, t), by = this.at(B.y, B.n, t), bz = this.at(B.z, B.n, t);
+      dist[i] = Math.hypot(ax - bx, ay - by, az - bz);
+      dv[i] = (this.at(A.v, A.n, t) - this.at(B.v, B.n, t)) * KMH;
+      lead[i] = this.at(A.sm, A.n, Math.min(t, A.T)) - this.at(B.sm, B.n, Math.min(t, B.T));
+      if (t <= Math.min(A.T, B.T)) {
+        if (lead[i] > 0) leadA++;
+        const sg = Math.sign(Math.round(lead[i] * 2));
+        if (sg && lastSign && sg !== lastSign) changes++;
+        if (sg) lastSign = sg;
+      }
+    }
+    // time delta by track position: + means A got there first
+    const K = 200, gap = [];
+    for (let k = 0; k <= K; k++) {
+      const d = (L * k) / K;
+      gap.push({ x: d, y: this.timeAt(B, d) - this.timeAt(A, d) });
+    }
+    this.pair = { m, dist, dv, lead, gap, leadFrac: leadA / Math.max(1, Math.ceil(Math.min(A.T, B.T) * GHOST_HZ)), changes };
+
+    // 3D line between the cars, always drawn on top
+    if (!this.line) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
+      this.line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 }));
+      this.line.renderOrder = 999;
+      this.line.frustumCulled = false;
+      App.scene.add(this.line);
+    }
+    this.line.visible = true;
+    this.renderStatic();
+    this.offsetView(true);
+    $('cmpPanel').hidden = false;
+    $('cmpMap').hidden = false;
+    $('cmpDistTag').hidden = false;
+  },
+
+  /** keep the cars centred in the part of the screen the panel leaves free */
+  offsetView(on) {
+    const cam = App.camera;
+    if (on && innerWidth > 700) {
+      cam.setViewOffset(innerWidth, innerHeight, 230, 0, innerWidth, innerHeight);
+      Game.chase.aspectScale = (innerWidth - 460) / innerWidth;
+    } else {
+      if (cam.view) cam.clearViewOffset();
+      Game.chase.aspectScale = 1;
+    }
+  },
+  stop() {
+    if (this.runs) this.offsetView(false);
+    if (this.line) this.line.visible = false;
+    $('cmpPanel').hidden = true;
+    $('cmpMap').hidden = true;
+    $('cmpDistTag').hidden = true;
+    this.runs = null;
+  },
+
+  /* ------------------------------------------------------------ drawing */
+  /** a labelled line chart: both axes titled and ticked, a playhead, and
+   *  every point hoverable for its exact values */
+  chart(id, title, xLabel, yLabel, series, opts) {
+    opts = opts || {};
+    const W = 400, H = 150, L = 42, R = 8, Tp = 8, Bt = 30;
+    let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+    for (const sr of series) for (const p of sr.pts) {
+      if (p.x < xmin) xmin = p.x; if (p.x > xmax) xmax = p.x;
+      if (p.y < ymin) ymin = p.y; if (p.y > ymax) ymax = p.y;
+    }
+    if (opts.zero) { ymin = Math.min(ymin, 0); ymax = Math.max(ymax, 0); }
+    if (opts.sym) { const a = Math.max(Math.abs(ymin), Math.abs(ymax)) || 1; ymin = -a; ymax = a; }
+    if (!(ymax > ymin)) { ymax = ymin + 1; }
+    const pad = (ymax - ymin) * 0.06; ymin -= pad; ymax += pad;
+    if (!(xmax > xmin)) xmax = xmin + 1;
+    const X = (v) => L + ((v - xmin) / (xmax - xmin)) * (W - L - R);
+    const Y = (v) => Tp + (1 - (v - ymin) / (ymax - ymin)) * (H - Tp - Bt);
+    const tick = (a, b, k) => { const out = []; for (let i = 0; i <= k; i++) out.push(a + ((b - a) * i) / k); return out; };
+    const fmtN = (v) => Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2);
+    let h = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="cmpChart" data-id="' + id + '">';
+    for (const tv of tick(ymin, ymax, 4)) {
+      h += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(tv).toFixed(1) + '" y2="' + Y(tv).toFixed(1) + '" class="grid"/>' +
+        '<text x="' + (L - 4) + '" y="' + (Y(tv) + 3).toFixed(1) + '" class="tk" text-anchor="end">' + fmtN(tv) + '</text>';
+    }
+    for (const tv of tick(xmin, xmax, 5)) {
+      h += '<text x="' + X(tv).toFixed(1) + '" y="' + (H - Bt + 12) + '" class="tk" text-anchor="middle">' + fmtN(tv) + '</text>';
+    }
+    if (ymin < 0 && ymax > 0) h += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" class="zero"/>';
+    h += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 3) + '" class="ax" text-anchor="middle">' + xLabel + '</text>' +
+      '<text x="10" y="' + ((Tp + H - Bt) / 2) + '" class="ax" text-anchor="middle" transform="rotate(-90 10 ' + ((Tp + H - Bt) / 2) + ')">' + yLabel + '</text>';
+    series.forEach((sr) => {
+      const pts = sr.pts;
+      const step = Math.max(1, Math.floor(pts.length / 260));
+      let d = '';
+      for (let i = 0; i < pts.length; i += step) d += (d ? 'L' : 'M') + X(pts[i].x).toFixed(1) + ',' + Y(pts[i].y).toFixed(1);
+      h += '<path d="' + d + '" fill="none" stroke="' + sr.color + '" stroke-width="1.6"/>';
+      // hover targets: a handful of points per series carry exact values
+      const hstep = Math.max(1, Math.floor(pts.length / 60));
+      for (let i = 0; i < pts.length; i += hstep) {
+        h += '<circle cx="' + X(pts[i].x).toFixed(1) + '" cy="' + Y(pts[i].y).toFixed(1) + '" r="3.2" fill="' + sr.color +
+          '" class="hp" data-tip="' + escapeHtml(sr.name + ' · ' + xLabel + ' ' + fmtN(pts[i].x) + ' · ' + yLabel + ' ' + fmtN(pts[i].y)) + '"/>';
+      }
+    });
+    h += '<line class="head" id="' + id + 'Head" x1="0" x2="0" y1="' + Tp + '" y2="' + (H - Bt) + '"/>';
+    if (opts.head2) h += '<line class="head b" id="' + id + 'Head2" x1="0" x2="0" y1="' + Tp + '" y2="' + (H - Bt) + '"/>';
+    h += '</svg>';
+    this.graphs.push({ id, X, xmin, xmax });
+    return '<div class="cmpBox"><h4>' + title + '</h4>' + h + '</div>';
+  },
+
+  renderStatic() {
+    const [A, B] = this.runs, P = this.pair, names = this.names;
+    this.graphs = [];
+    const ser = (r, arr, f, name, col) => {
+      const pts = [];
+      for (let i = 0; i < r.n && i / GHOST_HZ <= r.T; i++) pts.push({ x: i / GHOST_HZ, y: f(arr[i]) });
+      return { pts, color: col, name };
+    };
+    const tSer = (arr, f, name, col) => {
+      const pts = [];
+      for (let i = 0; i < P.m; i++) pts.push({ x: i / GHOST_HZ, y: f(arr[i]) });
+      return { pts, color: col, name };
+    };
+    const id = (v) => v;
+    const kmh = (v) => v * KMH;
+    // --- summary numbers
+    const stat = (r) => {
+      let top = 0, maxLon = 0, maxBrk = 0, maxLat = 0, sum = 0, cnt = 0;
+      for (let i = 0; i < r.n && i / GHOST_HZ <= r.T; i++) {
+        top = Math.max(top, r.v[i]); maxLon = Math.max(maxLon, r.lon[i]); maxBrk = Math.min(maxBrk, r.lon[i]);
+        maxLat = Math.max(maxLat, Math.abs(r.lat[i])); sum += r.v[i]; cnt++;
+      }
+      return {
+        top: top * KMH, avg: (sum / Math.max(cnt, 1)) * KMH, maxLon, maxBrk: -maxBrk, maxLat,
+        thr: this.bitTime(r, 1, r.T) / r.T * 100, brk: this.bitTime(r, 2, r.T) / r.T * 100,
+        steer: this.bitTime(r, 12, r.T) / r.T * 100, boost: this.bitTime(r, 16, r.T), hb: this.bitTime(r, 32, r.T),
+        odo: r.odo[Math.min(r.n - 1, Math.floor(r.T * GHOST_HZ))]
+      };
+    };
+    const sa = stat(A), sb = stat(B);
+    const row = (label, a, b, fmt, better) => {
+      const fa = fmt(a), fb = fmt(b);
+      const win = better === 0 ? -1 : (better > 0 ? (a > b ? 0 : a < b ? 1 : -1) : (a < b ? 0 : a > b ? 1 : -1));
+      return '<tr><td>' + label + '</td><td class="' + (win === 0 ? 'win' : '') + '">' + fa + '</td><td class="' +
+        (win === 1 ? 'win' : '') + '">' + fb + '</td><td class="dd">' + (better === 0 ? '' : fmtDiff(a - b, fmt)) + '</td></tr>';
+    };
+    const fmtDiff = (d, fmt) => (d > 0 ? '+' : d < 0 ? '−' : '±') + fmt(Math.abs(d));
+    const f1 = (v) => v.toFixed(1), f2 = (v) => v.toFixed(2), f0 = (v) => v.toFixed(0), ft = (v) => formatTime(v);
+    let h = '<div class="cmpHead"><span class="ca">' + escapeHtml(names[0]) + '</span><span class="vs">vs</span><span class="cb">' +
+      escapeHtml(names[1]) + '</span></div>';
+    h += '<div class="cmpLive" id="cmpLive"></div>';
+    h += '<h4 class="cmpSec">Summary</h4><table class="cmpT"><thead><tr><th></th><th class="ca">A</th><th class="cb">B</th><th>A−B</th></tr></thead><tbody>' +
+      row('Finish', A.T, B.T, ft, -1) + row('Top speed km/h', sa.top, sb.top, f1, 1) + row('Avg speed km/h', sa.avg, sb.avg, f1, 1) +
+      row('Full throttle %', sa.thr, sb.thr, f0, 1) + row('Braking %', sa.brk, sb.brk, f0, -1) + row('Steering %', sa.steer, sb.steer, f0, -1) +
+      row('Boost used s', sa.boost, sb.boost, f2, 0) + row('Handbrake s', sa.hb, sb.hb, f2, 0) +
+      row('Peak accel g', sa.maxLon, sb.maxLon, f2, 1) + row('Peak braking g', sa.maxBrk, sb.maxBrk, f2, 0) +
+      row('Peak lateral g', sa.maxLat, sb.maxLat, f2, 1) + row('Distance driven m', sa.odo, sb.odo, f0, -1) +
+      '</tbody></table>';
+    h += '<p class="cmpNote">A led for ' + Math.round(P.leadFrac * 100) + '% of the run · lead changed ' + P.changes + ' time' + (P.changes === 1 ? '' : 's') + '</p>';
+    // --- sectors: four equal lengths of the course
+    const secs = [];
+    for (let k = 0; k < 4; k++) {
+      const d0 = (this.L * k) / 4, d1 = (this.L * (k + 1)) / 4;
+      const ta = (k === 3 ? A.T : this.timeAt(A, d1)) - this.timeAt(A, d0);
+      const tb = (k === 3 ? B.T : this.timeAt(B, d1)) - this.timeAt(B, d0);
+      secs.push([ta, tb]);
+    }
+    h += '<h4 class="cmpSec">Sectors</h4><table class="cmpT"><thead><tr><th></th><th class="ca">A</th><th class="cb">B</th><th>A−B</th></tr></thead><tbody>' +
+      secs.map((p, k) => row('S' + (k + 1) + ' (' + Math.round(this.L * k / 4) + '–' + Math.round(this.L * (k + 1) / 4) + ' m)', p[0], p[1], (v) => v.toFixed(3) + 's', -1)).join('') +
+      '</tbody></table>';
+    // --- graphs
+    h += '<h4 class="cmpSec">Graphs <small>hover a point for exact values</small></h4>';
+    h += this.chart('gSpd', 'Speed', 'time s', 'km/h', [ser(A, A.v, kmh, names[0], CMP_COL[0]), ser(B, B.v, kmh, names[1], CMP_COL[1])]);
+    h += this.chart('gDv', 'Speed difference (A − B)', 'time s', 'km/h', [tSer(P.dv, id, 'A − B', '#ffcf5c')], { sym: true });
+    h += this.chart('gGap', 'Time gap by track position (+ = A ahead)', 'track m', 'sec', [{ pts: P.gap, color: '#ffcf5c', name: 'gap' }], { sym: true, head2: true });
+    h += this.chart('gLead', 'Lead on track (+ = A ahead)', 'time s', 'metres', [tSer(P.lead, id, 'lead', '#c79bff')], { sym: true });
+    h += this.chart('gDist', 'Distance between cars', 'time s', 'metres', [tSer(P.dist, id, 'distance', '#eaf0f8')], { zero: true });
+    h += this.chart('gLon', 'Longitudinal g (accel +, braking −)', 'time s', 'g', [ser(A, A.lon, id, names[0], CMP_COL[0]), ser(B, B.lon, id, names[1], CMP_COL[1])], { sym: true });
+    h += this.chart('gLat', 'Lateral g', 'time s', 'g', [ser(A, A.lat, id, names[0], CMP_COL[0]), ser(B, B.lat, id, names[1], CMP_COL[1])], { sym: true });
+    h += this.inputsStrip();
+    $('cmpPanel').innerHTML = h;
+    this.bindTips($('cmpPanel'));
+    this.drawMap();
+  },
+
+  /** throttle / brake / boost / steering bands for both runs over time */
+  inputsStrip() {
+    const [A, B] = this.runs, T = Math.max(A.T, B.T), W = 400, L = 42, R = 8;
+    const X = (t) => L + (t / T) * (W - L - R);
+    const rows = [['A throttle', A, 1, CMP_COL[0]], ['A brake', A, 2, '#f2733f'], ['A boost', A, 16, '#58d2ff'], ['A steer', A, 12, '#ffcf5c'],
+      ['B throttle', B, 1, CMP_COL[1]], ['B brake', B, 2, '#f2733f'], ['B boost', B, 16, '#58d2ff'], ['B steer', B, 12, '#ffcf5c']];
+    const rh = 12, H = rows.length * rh + 26;
+    let h = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="cmpChart" data-id="gIn">';
+    rows.forEach(([label, r, mask, col], k) => {
+      const y = k * rh + 2;
+      h += '<text x="' + (L - 4) + '" y="' + (y + 8) + '" class="tk" text-anchor="end">' + label + '</text>';
+      let i = 0;
+      while (i < r.n) {
+        if (r.bits[i] & mask) {
+          let j = i; while (j < r.n && (r.bits[j] & mask)) j++;
+          h += '<rect x="' + X(i / GHOST_HZ).toFixed(1) + '" y="' + y + '" width="' + Math.max(0.8, X(j / GHOST_HZ) - X(i / GHOST_HZ)).toFixed(1) +
+            '" height="' + (rh - 3) + '" fill="' + col + '" opacity=".85" class="hp" data-tip="' + escapeHtml(label + ' ' + (i / GHOST_HZ).toFixed(2) + '–' + (j / GHOST_HZ).toFixed(2) + ' s') + '"/>';
+          i = j;
+        } else i++;
+      }
+    });
+    for (let k = 0; k <= 5; k++) h += '<text x="' + X((T * k) / 5).toFixed(1) + '" y="' + (H - 12) + '" class="tk" text-anchor="middle">' + ((T * k) / 5).toFixed(1) + '</text>';
+    h += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 1) + '" class="ax" text-anchor="middle">time s</text>';
+    h += '<line class="head" id="gInHead" x1="0" x2="0" y1="0" y2="' + (rows.length * rh) + '"/></svg>';
+    this.graphs.push({ id: 'gIn', X: (t) => X(t), xmin: 0, xmax: T });
+    return '<div class="cmpBox"><h4>Inputs</h4>' + h + '</div>';
+  },
+
+  /** top-down map of the course with both cars as dots */
+  drawMap() {
+    const P = this.course.path;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of P) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); }
+    const span = Math.max(x1 - x0, z1 - z0) || 1, S = 180 / span;
+    this.mapT = (x, z) => [10 + (x1 - x) * S + (180 - (x1 - x0) * S) / 2, 10 + (z1 - z) * S + (180 - (z1 - z0) * S) / 2];
+    const d = P.map((p, i) => { const [mx, my] = this.mapT(p.x, p.z); return (i ? 'L' : 'M') + mx.toFixed(1) + ',' + my.toFixed(1); }).join('');
+    const fin = this.course.gates.find((g) => g.kind === 'finish');
+    const [fx, fy] = fin ? this.mapT(fin.pos.x, fin.pos.z) : [0, 0];
+    const [sx, sy] = this.mapT(P[0].x, P[0].z);
+    $('cmpMap').innerHTML = '<svg viewBox="0 0 200 200"><path d="' + d + '" class="trk"/><circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) +
+      '" r="4" class="st"/><rect x="' + (fx - 4).toFixed(1) + '" y="' + (fy - 4).toFixed(1) + '" width="8" height="8" class="fin"/>' +
+      '<line id="cmpMapLine" x1="0" y1="0" x2="0" y2="0"/><circle id="cmpDotA" r="5" fill="' + CMP_COL[0] + '"/><circle id="cmpDotB" r="5" fill="' + CMP_COL[1] + '"/></svg>';
+  },
+
+  bindTips(root) {
+    const tip = $('chartTip');
+    root.querySelectorAll('.hp').forEach((el) => {
+      el.addEventListener('mouseenter', (e) => { tip.textContent = el.dataset.tip; tip.hidden = false; this.moveTip(e); });
+      el.addEventListener('mousemove', (e) => this.moveTip(e));
+      el.addEventListener('mouseleave', () => { tip.hidden = true; });
+    });
+  },
+  moveTip(e) {
+    const tip = $('chartTip');
+    tip.style.left = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8) + 'px';
+    tip.style.top = (e.clientY - 34) + 'px';
+  },
+
+  /** per frame: live numbers, playheads, map dots and the 3D line */
+  update(spec, t) {
+    if (!this.runs) return;
+    const [A, B] = this.runs, P = this.pair;
+    const ta = Math.min(t, A.T), tb = Math.min(t, B.T);
+    const va = t >= A.T ? 0 : this.at(A.v, A.n, t) * KMH, vb = t >= B.T ? 0 : this.at(B.v, B.n, t) * KMH;
+    const sa = this.at(A.sm, A.n, ta), sb = this.at(B.sm, B.n, tb);
+    const dist = this.at(P.dist, P.m, t);
+    // time gap: how far behind the trailing car is, measured at its own position
+    const gap = sa >= sb ? t - this.timeAt(A, sb) : t - this.timeAt(B, sa);
+    const bitsAt = (r, tt) => (tt >= r.T ? 0 : r.bits[Math.min(r.n - 1, Math.floor(tt * GHOST_HZ))]);
+    const ba = bitsAt(A, t), bb = bitsAt(B, t);
+    const pill = (on, txt, cls) => '<span class="ip' + (on ? ' on ' + cls : '') + '">' + txt + '</span>';
+    const inputs = (b) => pill(b & 1, 'THR', 'thr') + pill(b & 2, 'BRK', 'brk') + pill(b & 4, '◀', 'str') + pill(b & 8, '▶', 'str') +
+      pill(b & 16, 'BST', 'bst') + pill(b & 32, 'HB', 'hb');
+    const boostLeft = (r, tt) => Math.max(0, CAR.boostTotal - this.bitTime(r, 16, tt));
+    const cell = (r, v, s, tt) => '<td>' + v.toFixed(1) + '</td><td>' + s.toFixed(0) + ' m</td><td>' +
+      Math.round(clamp(s / this.L, 0, 1) * 100) + '%</td><td>' + this.at(r.lon, r.n, tt).toFixed(2) + '</td><td>' +
+      this.at(r.lat, r.n, tt).toFixed(2) + '</td><td>' + (boostLeft(r, tt) / CAR.boostTotal * 100).toFixed(0) + '%</td>';
+    const ahead = sa > sb + 0.5 ? this.names[0] : sb > sa + 0.5 ? this.names[1] : 'level';
+    $('cmpLive').innerHTML =
+      '<div class="cmpBig"><div><span>DISTANCE APART</span><b>' + dist.toFixed(1) + ' m</b></div><div><span>TIME GAP</span><b>' +
+      Math.abs(gap).toFixed(3) + ' s</b></div><div><span>LEAD ON TRACK</span><b>' + Math.abs(sa - sb).toFixed(1) + ' m</b></div>' +
+      '<div><span>SPEED DIFF</span><b>' + (va - vb >= 0 ? '+' : '−') + Math.abs(va - vb).toFixed(1) + '</b></div></div>' +
+      '<p class="cmpAhead">Ahead: <b>' + escapeHtml(ahead) + '</b></p>' +
+      '<table class="cmpT live"><thead><tr><th></th><th>km/h</th><th>track</th><th>%</th><th>lon g</th><th>lat g</th><th>boost</th></tr></thead><tbody>' +
+      '<tr class="ra"><td class="ca">A</td>' + cell(A, va, sa, ta) + '</tr><tr class="rb"><td class="cb">B</td>' + cell(B, vb, sb, tb) + '</tr></tbody></table>' +
+      '<div class="cmpInputs"><div><span class="ca">A</span>' + inputs(ba) + '</div><div><span class="cb">B</span>' + inputs(bb) + '</div></div>' +
+      '<div class="cmpTimes"><span class="ca">A ' + formatTime(ta) + (t >= A.T ? ' ✓' : '') + '</span><span class="cb">B ' + formatTime(tb) + (t >= B.T ? ' ✓' : '') + '</span></div>';
+    for (const g of this.graphs) {
+      const el = $(g.id + 'Head');
+      if (!el) continue;
+      const xv = g.id === 'gGap' ? sa : t;
+      const px = g.X(clamp(xv, g.xmin, g.xmax)).toFixed(1);
+      el.setAttribute('x1', px); el.setAttribute('x2', px);
+      const el2 = $(g.id + 'Head2');
+      if (el2) { const p2 = g.X(clamp(sb, g.xmin, g.xmax)).toFixed(1); el2.setAttribute('x1', p2); el2.setAttribute('x2', p2); }
+    }
+    // minimap
+    const pa = spec.cars[0].rig.pos, pb = spec.cars[1].rig.pos;
+    const [ax, ay] = this.mapT(pa.x, pa.z), [bx, by] = this.mapT(pb.x, pb.z);
+    $('cmpDotA').setAttribute('cx', ax.toFixed(1)); $('cmpDotA').setAttribute('cy', ay.toFixed(1));
+    $('cmpDotB').setAttribute('cx', bx.toFixed(1)); $('cmpDotB').setAttribute('cy', by.toFixed(1));
+    const ml = $('cmpMapLine');
+    ml.setAttribute('x1', ax.toFixed(1)); ml.setAttribute('y1', ay.toFixed(1)); ml.setAttribute('x2', bx.toFixed(1)); ml.setAttribute('y2', by.toFixed(1));
+    // the line in the world, raised to roof height, with its length on it
+    const pos = this.line.geometry.attributes.position;
+    pos.setXYZ(0, pa.x, pa.y + 1.2, pa.z); pos.setXYZ(1, pb.x, pb.y + 1.2, pb.z);
+    pos.needsUpdate = true;
+    this.line.geometry.computeBoundingSphere();
+    const mid = this._mid || (this._mid = new THREE.Vector3());
+    mid.set((pa.x + pb.x) / 2, (pa.y + pb.y) / 2 + 1.6, (pa.z + pb.z) / 2).project(App.camera);
+    const tag = $('cmpDistTag');
+    if (mid.z > 1 || mid.z < -1) { tag.style.display = 'none'; return; }
+    tag.style.display = '';
+    tag.style.left = ((mid.x * 0.5 + 0.5) * innerWidth).toFixed(0) + 'px';
+    tag.style.top = ((-mid.y * 0.5 + 0.5) * innerHeight).toFixed(0) + 'px';
+    tag.textContent = dist.toFixed(1) + ' m';
+  }
 };
 
 /* ---------------------------------------------------------------- 11. ui */
@@ -5620,7 +6399,7 @@ const UI = {
     $('hClock').textContent = formatTime(t);
     $('hClock').classList.toggle('stop', !!stopped);
   },
-  speed(v) { $('hSpd').innerHTML = Math.round(Math.abs(v) * MPH) + '<small>mph</small>'; },
+  speed(v) { $('hSpd').innerHTML = Math.round(Math.abs(v) * KMH) + '<small>km/h</small>'; },
   state(car) {
     const el = $('hGrip');
     if (!car.grounded) { el.textContent = 'airborne'; el.className = 'gear air'; }
@@ -5686,7 +6465,7 @@ const UI = {
     const anchors = [];
     cars.forEach((c, k) => {
       const key = 'watch' + k;
-      const kmh = c.rig.speed * MPH;
+      const kmh = c.rig.speed * KMH;
       // updateGhostTag already lifts the tag Game.TAG_LIFT px above the
       // car and draws the leader line down to it — this function only
       // has to push a tag FURTHER when it would otherwise land on top of
@@ -5758,7 +6537,7 @@ const UI = {
     // already shown, cheap to derive from data already on each car.
     const leader = cars.find((c) => c.place === 1);
     $('specRosterList').innerHTML = cars.map((c, k) => {
-      const kmh = Math.round(c.rig.speed * MPH);
+      const kmh = Math.round(c.rig.speed * KMH);
       const dotColor = k === camIdx ? 'var(--ember)' : 'var(--aqua)';
       let timeStr, subStr = '';
       if (c.finished) {
@@ -5777,7 +6556,7 @@ const UI = {
       return '<div class="rRow' + (k === camIdx ? ' active' : '') + '" data-k="' + k + '">' +
         '<span class="rDot" style="background:' + dotColor + '"></span>' +
         '<span class="rName">' + (c.place ? c.place + '. ' : '') + escapeHtml(c.name) + '</span>' +
-        '<span class="rSpeed">' + kmh + ' mph</span>' +
+        '<span class="rSpeed">' + kmh + ' km/h</span>' +
         '<span class="rSub">' + subStr + '</span>' +
         '<span class="rTime' + (c.finished ? ' done' : '') + '">' + timeStr + '</span></div>';
     }).join('');
@@ -5794,7 +6573,7 @@ const UI = {
     const el = $('specCamHint');
     if (!Game.spec || Game.spec.cars.length < 2) { el.hidden = true; return; }
     el.hidden = false;
-    $('specCamName').textContent = mode === 'overview' ? 'Overview'
+    $('specCamName').textContent = mode === 'overview' ? 'All cars'
       : mode === 'director' ? 'Director (WASD + Shift/Space)' : followName;
     // the movement-key legend only makes sense while actually flying the
     // director camera around — every other mode's own controls are just
@@ -5811,19 +6590,46 @@ const UI = {
    * at a glance: which gear, how close to the limiter, how hard the car is
    * cornering, and how much the tyres are letting go. Refreshed at 10 Hz.
    */
-  telemetry(car) {
+  telemetry(car, input) {
     if (!this.teleOn) return;
-    let peakSlip = 0;
-    for (const w of car.wheels) peakSlip = Math.max(peakSlip, w.slip);
-    $('tGear').textContent = car.shiftTimer > 0 ? '--' : String(car.gear + 1);
-    $('tRpm').textContent = Math.round(car.rpm);
+    $('tGear').textContent = car.shiftTimer > 0 ? '–' : (car.speedFwd < -0.5 ? 'R' : String(car.gear + 1));
+    $('tRpm').textContent = Math.round(car.rpm) + ' rpm';
     const rf = clamp((car.rpm - CAR.idleRpm) / (CAR.redline - CAR.idleRpm), 0, 1);
     const bar = $('tRpmBar');
     bar.style.width = (rf * 100) + '%';
     bar.className = car.rpm > CAR.shiftUp ? 'red' : '';
-    $('tGLat').textContent = Math.abs(car.gLat).toFixed(2);
-    $('tSlip').textContent = Math.round(clamp(peakSlip, 0, 2) * 100) + '%';
+    $('tSpd').textContent = (Math.abs(car.speedFwd) * KMH).toFixed(1);
+    // G-meter: lateral across (left positive), longitudinal up (braking down)
+    const G = 3, R = 46;
+    const gx = clamp(-car.gLat / G, -1, 1) * R, gy = clamp(-car.gLong / G, -1, 1) * R;
+    const tr = this._gTrail || (this._gTrail = []);
+    tr.push(gx.toFixed(1) + ',' + gy.toFixed(1));
+    if (tr.length > 16) tr.shift();
+    $('tGtrail').setAttribute('points', tr.join(' '));
+    $('tGdot').setAttribute('cx', gx.toFixed(1));
+    $('tGdot').setAttribute('cy', gy.toFixed(1));
+    $('tGtxt').textContent = 'lat ' + Math.abs(car.gLat).toFixed(2) + ' · lon ' + car.gLong.toFixed(2) + ' g';
+    const inp = input || Input;
+    $('tThr').style.width = (inp.throttle ? 100 : 0) + '%';
+    $('tBrk').style.width = (inp.brake ? 100 : 0) + '%';
+    const st = clamp(car.steer / CAR.maxSteer, -1, 1);   // the actual rack position, left positive
+    const sb = $('tStr');
+    sb.style.width = (Math.abs(st) * 50) + '%';
+    sb.style.left = st > 0 ? (50 - Math.abs(st) * 50) + '%' : '50%';
+    $('tBst').style.width = (clamp(car.boostLeft / CAR.boostTotal, 0, 1) * 100) + '%';
+    let peakSlip = 0;
+    car.wheels.forEach((w, i) => {
+      peakSlip = Math.max(peakSlip, w.slip);
+      const el = $('tW' + i);
+      if (!w.contact) { el.style.background = 'rgba(234,240,248,.12)'; return; }
+      // green -> yellow -> red with slip, darker when the tyre is barely loaded
+      const hue = 160 - clamp(w.slip, 0, 1) * 160;
+      const light = 30 + clamp(w.load / (CAR.loadRef * 2), 0, 1) * 30;
+      el.style.background = w.onTrack ? 'hsl(' + hue + ',75%,' + light + '%)' : 'hsl(95,45%,32%)';
+    });
+    $('tSlip').textContent = !car.grounded ? 'airborne' : 'slip ' + Math.round(clamp(peakSlip, 0, 2) * 100) + '%';
   },
+
 
   prompt(text) {
     const n = $('hPrompt');
@@ -5840,19 +6646,20 @@ const UI = {
    *  spawned fresh each call (their spread has to vary), everything else
    *  is CSS-driven. Restarting mid-play (running the credits mode twice
    *  quickly) just replaces the previous burst outright. */
-  playCreditBurst(amount) {
+  playCreditBurst(amount, mini) {
     const box = $('creditBurst');
+    box.classList.toggle('mini', !!mini);
     box.querySelectorAll('.spark').forEach((s) => s.remove());
     // Evenly spaced around the ring (not randomized angles) reads as one
     // clean burst rather than a scattered flurry; a small random distance
     // and a short, tight delay window is enough variation to still feel
     // organic without looking messy.
-    const n = 10;
+    const n = mini ? 6 : 10;
     for (let i = 0; i < n; i++) {
       const s = document.createElement('div');
       s.className = 'spark';
       const ang = (i / n) * Math.PI * 2;
-      const dist = 46 + Math.random() * 18;
+      const dist = (mini ? 26 : 46) + Math.random() * (mini ? 8 : 18);
       s.style.setProperty('--sparkTo', (Math.cos(ang) * dist).toFixed(1) + 'px, ' + (Math.sin(ang) * dist).toFixed(1) + 'px');
       s.style.animationDelay = (0.15 + Math.random() * 0.06).toFixed(2) + 's';
       box.appendChild(s);
@@ -6101,6 +6908,7 @@ const UI = {
     const sel = courseIndexOf(Game.boardTab) >= 0 ? Game.boardSel[Game.boardTab] : null;
     const n = sel ? sel.size : 0;
     $('boardMultiBar').hidden = n < 1;
+    $('bBoardCmpSel').hidden = n !== 2;
     if (n < 1) return;
     $('boardMultiCount').textContent = n + (n === 1 ? ' run selected' : ' runs selected');
   },
@@ -6114,7 +6922,8 @@ const UI = {
     const cls = ['gold', 'silver', 'bronze'];
     el.innerHTML = list.map((t) => '<div class="trophyItem' + (t.size > 1 ? ' big' : '') + '">' +
       '<span class="medal ' + cls[t.tier] + '">' + (t.tier + 1) + '</span>' +
-      '<span class="ti"><b>' + escapeHtml(t.title) + '</b><small>' + escapeHtml(t.sub) + '</small></span></div>').join('');
+      '<span class="ti"><b>' + escapeHtml(t.title) + '</b><small>' + escapeHtml(t.sub) +
+      (t.time ? ' · ' + formatTime(t.time) : '') + '</small></span></div>').join('');
   },
 
   /** Redraws the whole garage screen from CarColor's current state — safe
@@ -6447,6 +7256,7 @@ const Game = {
     const knownGoodUid = this.confirmedUid;
     if (!user) {
       if (knownGoodUid) return; // an explicit signOut() clears confirmedUid itself
+      Cloud.credits = 0;
       if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
       this.stopWatchingBoards();
       this.lobby = null; this.lobbyEntries = [];
@@ -6819,29 +7629,41 @@ const Game = {
     $('bSpecBack').addEventListener('click', () => this.exitSpectate());
     $('bSpecPlay').addEventListener('click', () => {
       if (!this.spec) return;
-      if (this.spec.t >= this.spec.data.t) { this.spec.t = 0; this.spec.playing = true; }
+      if (this.spec.t >= this.spec.longestT) { this.spec.t = 0; this.spec.playing = true; }
       else this.spec.playing = !this.spec.playing;
-      $('bSpecPlay').textContent = this.spec.playing ? 'Pause' : 'Play';
+      $('bSpecPlay').textContent = this.spec.playing ? '⏸ Pause' : '▶ Play';
     });
     $('bSpecRestart').addEventListener('click', () => {
       if (!this.spec) return;
       this.spec.t = 0;
       this.spec.playing = true;
-      $('bSpecPlay').textContent = 'Pause';
+      $('bSpecPlay').textContent = '⏸ Pause';
+    });
+    $('bSpecStop').addEventListener('click', () => {
+      if (!this.spec) return;
+      this.spec.t = 0;
+      this.spec.playing = false;
+      $('bSpecPlay').textContent = '▶ Play';
+    });
+    document.querySelectorAll('#specRates button').forEach((b) =>
+      b.addEventListener('click', () => this.setPlaybackRate(+b.dataset.rate)));
+    $('bBoardCmpSel').addEventListener('click', () => {
+      const sel = [...(this.boardSel[this.boardTab] || [])];
+      if (sel.length === 2) this.spectateMany(this.boardTab, sel, true);
     });
     const scrub = $('specScrub');
     const beginScrub = () => { if (this.spec) this.spec.scrubbing = true; };
     const endScrub = () => {
       if (!this.spec) return;
       this.spec.scrubbing = false;
-      this.spec.t = clamp(parseInt(scrub.value, 10) / 1000, 0, this.spec.data.t);
+      this.spec.t = clamp(parseInt(scrub.value, 10) / 1000, 0, this.spec.longestT);
     };
     scrub.addEventListener('mousedown', beginScrub);
     scrub.addEventListener('touchstart', beginScrub);
     scrub.addEventListener('input', () => {
       if (!this.spec) return;
       this.spec.scrubbing = true;
-      this.spec.t = clamp(parseInt(scrub.value, 10) / 1000, 0, this.spec.data.t);
+      this.spec.t = clamp(parseInt(scrub.value, 10) / 1000, 0, this.spec.longestT);
     });
     scrub.addEventListener('change', endScrub);
     scrub.addEventListener('mouseup', endScrub);
@@ -6998,7 +7820,7 @@ const Game = {
       kind, courseId: lv.id, courseName: lv.name, season: SEASON, outcome, reason: reason || outcome,
       timeMs: this.time * 1000,
       progress: Math.round(clamp(outcome === 'finished' ? 1 : rs.far, 0, 1) * 1000) / 1000,
-      topMph: Math.round(rs.top * MPH),
+      topKmh: Math.round(rs.top * KMH),
       boostUsed: Math.round((CAR.boostTotal - this.car.boostLeft) * 10) / 10,
       grassSec: Math.round(rs.grass * 10) / 10,
       airSec: Math.round(rs.air * 10) / 10,
@@ -7220,7 +8042,7 @@ const Game = {
     $('specSpeedHead').setAttribute('x1', x.toFixed(1));
     $('specSpeedHead').setAttribute('x2', x.toFixed(1));
     const i = Math.min(n - 1, Math.round(f));
-    $('specSpeedNow').textContent = Math.round(sp.speeds[i] * MPH) + ' mph';
+    $('specSpeedNow').textContent = Math.round(sp.speeds[i] * KMH) + ' km/h';
   },
 
   /**
@@ -7242,7 +8064,6 @@ const Game = {
       const f = clamp((finished ? g.t : t) * GHOST_HZ, 0, n - 1.001);
       const i = Math.floor(f), u = f - i, a = i * GHOST_STRIDE, b = a + GHOST_STRIDE;
       const rig = c.rig;
-      const prevPos = rig.pos.clone();
       rig.pos.set(lerp(s[a], s[b], u), lerp(s[a + 1], s[b + 1], u), lerp(s[a + 2], s[b + 2], u));
       c.mesh.position.copy(rig.pos);
       _gq1.set(s[a + 3], s[a + 4], s[a + 5], s[a + 6]);
@@ -7251,7 +8072,8 @@ const Game = {
       const fwd = this._specFwd || (this._specFwd = new THREE.Vector3());
       fwd.set(0, 0, 1).applyQuaternion(c.mesh.quaternion);
       if (fwd.x * fwd.x + fwd.z * fwd.z > 0.06) rig.heading = Math.atan2(fwd.x, fwd.z);
-      rig.speed = (rig._hasPos && !finished) ? prevPos.distanceTo(rig.pos) * GHOST_HZ : (finished ? 0 : rig.speed);
+      // speed across the sample interval the car is in, not per frame
+      rig.speed = finished ? 0 : Math.hypot(s[b] - s[a], s[b + 1] - s[a + 1], s[b + 2] - s[a + 2]) * GHOST_HZ;
       rig._hasPos = true;
       rig.vel.y = 0;
       rig.grounded = true;
@@ -7294,11 +8116,11 @@ const Game = {
       if (Input.tapped('ArrowLeft')) this.cycleSpecCamera(-1);
     }
     if (!this.spec.scrubbing && this.spec.playing) {
-      this.spec.t += dt;
+      this.spec.t += dt * (this.spec.rate || 1);
       if (this.spec.t >= this.spec.longestT) {
         this.spec.t = this.spec.longestT;
         this.spec.playing = false;
-        $('bSpecPlay').textContent = 'Replay';
+        $('bSpecPlay').textContent = '↺ Replay';
       }
     }
     const followRig = this.syncSpectate(this.spec.t);
@@ -7314,12 +8136,13 @@ const Game = {
       };
       this.chase.updateDirector(dt, move, pts);
     } else {
-      this.chase.frameAll(dt, pts, this.spec.t);
+      this.chase.frameAll(dt, this.spec.cars.map((c) => c.rig));
     }
     UI.specClock(this.spec.t);
+    if (this.spec.compare) Compare.update(this.spec, this.spec.t);
     this.updateSpeedHead(this.spec.t);
     UI.layoutGhostTags(this.spec.cars, this.spec.camIdx);
-    UI.specRoster(this.spec.cars, this.spec.camIdx, this.spec.t);
+    if (!this.spec.compare) UI.specRoster(this.spec.cars, this.spec.camIdx, this.spec.t);
   },
 
   /** Left/Right arrow handling: -1/+1 cycles camIdx through -2 (director),
@@ -7360,7 +8183,7 @@ const Game = {
     if (idx === -2) {
       this.chase.snapDirector(pts());
     } else if (idx === -1) {
-      this.chase.snapAll(pts(), this.spec.t);
+      this.chase.snapAll(this.spec.cars.map((c) => c.rig));
     } else {
       const c = this.spec.cars[idx];
       this.spec.data = c.data;
@@ -7384,7 +8207,7 @@ const Game = {
    *  car is painted in its own real, translucent colors and labeled with
    *  a floating name tag, and Left/Right switches which
    *  camera (overview, or locked onto any one car) is active. */
-  async spectateMany(courseId, uids) {
+  async spectateMany(courseId, uids, compare) {
     if (!uids || !uids.length) { UI.toast('Check at least one row first.'); return; }
     const idx = courseIndexOf(courseId);
     if (!this.playable[idx]) { UI.toast('That course could not be loaded — try another.'); return; }
@@ -7413,7 +8236,8 @@ const Game = {
     const longestT = Math.max(...cars.map((c) => c.data.t));
     this.spec = {
       data: cars[0].data, courseId, t: 0, playing: true, longestT,
-      name: cars[0].name, scrubbing: false, cars,
+      name: cars[0].name, scrubbing: false, cars, rate: (this.spec && this.spec.rate) || this.lastRate || 1,
+      compare: !!compare && cars.length === 2,
       camMode: cars.length > 1 ? 'overview' : 'follow', camIdx: cars.length > 1 ? -1 : 0
     };
     this.state = 'spectate';
@@ -7423,7 +8247,7 @@ const Game = {
     $('specT1').textContent = formatTime(cars[0].data.t);
     $('specScrub').max = String(Math.round(longestT * 1000));
     $('specScrub').value = '0';
-    $('bSpecPlay').textContent = 'Pause';
+    $('bSpecPlay').textContent = '⏸ Pause';
     this.buildSpeedGraph(cars[0].data);
     this.hideAllTags();
     cars.forEach((c, k) => {
@@ -7440,11 +8264,24 @@ const Game = {
     UI.specRoster(cars, this.spec.camIdx);
     UI.specCamMode(this.spec.camMode, this.spec.camMode === 'follow' ? cars[0].name : null);
     if (this.spec.camMode === 'follow') this.chase.snap(cars[0].rig);
-    else this.chase.snapAll(cars.map((c) => c.rig.pos), 0);
+    else this.chase.snapAll(cars.map((c) => c.rig));
     UI.show('spectate');
+    this.setPlaybackRate(this.spec.rate);
+    document.getElementById('spectate').classList.toggle('comparing', !!this.spec.compare);
+    if (this.spec.compare) Compare.start(this.spec, this.course);
+    else Compare.stop();
+  },
+  /** watch/compare playback speed */
+  setPlaybackRate(r) {
+    if (!this.spec) return;
+    this.spec.rate = r;
+    document.querySelectorAll('#specRates button').forEach((b) => b.classList.toggle('on', +b.dataset.rate === r));
   },
 
   exitSpectate() {
+    if (this.spec) this.lastRate = this.spec.rate;
+    Compare.stop();
+    $('chartTip').hidden = true;
     if (this.spec) this.spec.cars.forEach((c) => { c.mesh.visible = false; setGhostFlame(c.mesh, false, 1); });
     this.spec = null;
     this.hideAllTags();
@@ -7809,7 +8646,7 @@ const Game = {
   },
 
   /** solo credits-grind mode: a random course from all 32, no leaderboard
-   *  or ghost side effects, +1 credit for any finish regardless of time. */
+   *  or ghost side effects, +3 credits for any finish regardless of time. */
   toCreditsRun() {
     if (!Cloud.on || !Cloud.user) { UI.toast('Sign in to run for credits.'); return; }
     if (Cloud.banned()) { UI.toast('This account is suspended.'); return; }
@@ -7839,7 +8676,7 @@ const Game = {
     UI.delta(null);
     UI.progress(0);
     UI.prompt('Hold W to launch');
-    UI.toast('Credit run: finish for +1 credit');
+    UI.toast('Credit run: finish for +3 credits');
     Sound.init(); Sound.resume(); Sound.startEngine();
   },
 
@@ -7849,14 +8686,14 @@ const Game = {
     Sound.stopEngine();
     Sound.finish(false);
     this.logAttempt('finished');
-    $('rKick').textContent = 'Credits run';
+    $('rKick').textContent = 'Credit run';
     $('rName').textContent = LEVELS[this.levelIndex].name;
     $('rTime').textContent = formatTime(this.time);
     // Awarding the credit is asynchronous, so the result screen must not
     // just say "you got a credit" and hope — it shows "Awarding…" first,
     // then the real outcome once the write actually resolves, so the
     // credit landing (or not) is never only a toast that can be missed.
-    $('rSub').textContent = 'Awarding your credit…';
+    $('rSub').textContent = 'Awarding your credits…';
     $('rBoardHd').textContent = '';
     $('rBoard').innerHTML = '';
     $('rCampaignRow').hidden = true;
@@ -7866,16 +8703,10 @@ const Game = {
     UI.show('result');
     UI.clock(this.time, true);
     try {
-      await Cloud.grindCredit();
-      // Cloud.grindCredit() bumps Cloud.credits internally, but the HUD
-      // reads Records.credits — without this sync the write genuinely
-      // succeeds yet the on-screen balance never visibly moves until the
-      // next full sign-in re-hydrates it.
-      Records.credits = Cloud.credits;
+      await Cloud.grindCredit(3);
       UI.who(Cloud.name(), Records.credits);
-      $('rSub').textContent = '+1 credit · you have ' + Records.credits + '.';
-      UI.toast('+1 credit');
-      UI.playCreditBurst(1);
+      $('rSub').textContent = '+3 credits · you have ' + Records.credits + '.';
+      UI.playCreditBurst(3);
       Sound.creditWin();
     } catch (e) {
       console.warn('aiPolytrack: could not award the credits-run credit', e && e.message);
@@ -7972,26 +8803,45 @@ const Game = {
     $('bNext').hidden = this.nextPlayable(this.levelIndex) < 0;
     $('rCampaignRow').hidden = false;
     $('rCreditsRunRow').hidden = true;
+    $('creditBurst').hidden = true;
     UI.show('result');
     UI.clock(this.time, true);
+    this.awardCompletion();
+  },
+  /** +1 credit for any finished course that isn't a race attempt */
+  async awardCompletion() {
+    if (!Cloud.on || !Cloud.user || Cloud.banned()) return;
+    try {
+      if (!(await Cloud.grindCredit(1))) return;
+      UI.who(Cloud.name(), Records.credits);
+      if (this.state === 'result') { UI.playCreditBurst(1, true); Sound.creditTick(); }
+    } catch (e) { console.warn('aiPolytrack: could not award the finish credit', e && e.message); }
   },
 
-  checkFinish() {
-    const car = this.car;
+  /** the finish gate, once enough of the course is behind the car that
+   *  it can count (so the line can never be cut short), else null */
+  finishGateDue() {
     const travelled = this.course.cum[this.pathIdx] / Math.max(this.course.length, 1);
-    for (const g of this.course.gates) {
-      if (g.passed || g.kind !== 'finish') continue;
-      if (travelled < 0.55) continue;              // cannot be cut short
-      if (Math.abs(car.pos.y - g.pos.y) > 7) continue;
-      if (car.pos.distanceToSquared(g.pos) > g.radius * g.radius) continue;
-      if (car.speed > 1.5 && car.vel.dot(g.dir) < 0) continue;
-      g.passed = true;
-      if (this.state === 'race') this.finishRaceAttempt(this.time);
-      else if (this.state === 'creditsrun') this.finishCreditsRun();
-      else this.finishLevel();
-      return;
-    }
+    if (travelled < 0.55) return null;
+    return this.course.gates.find((g) => g.kind === 'finish' && !g.passed) || null;
   },
+  /** the very front of the car's nose, in world space */
+  nosePoint(out) {
+    return out.set(0, 0, NOSE_Z).applyQuaternion(this.car.quat).add(this.car.pos);
+  },
+  /** signed distance from the nose to the finish gate's mid-plane
+   *  (negative before the line, positive past it) */
+  noseToGate(g) {
+    const n = this.nosePoint(this._nose || (this._nose = new THREE.Vector3()));
+    return (n.x - g.pos.x) * g.dir.x + (n.z - g.pos.z) * g.dir.z;
+  },
+  /** the nose is between the gate's posts and at deck height */
+  noseInGate(g) {
+    const n = this._nose;
+    const lateral = Math.abs((n.x - g.pos.x) * g.dir.z - (n.z - g.pos.z) * g.dir.x);
+    return lateral <= Math.max(3.2, g.width / 2) + 1.6 && Math.abs(n.y - g.pos.y) < 7;
+  },
+
 
   recordGhost(dt) {
     // Land each sample exactly on the 20 Hz grid by interpolating between last
@@ -8080,7 +8930,7 @@ const Game = {
     // leaderboard's Race button) is named — the player's own best-run
     // ghost chasing itself has no "who is this" question to answer, so
     // the tag stays hidden for that ordinary case.
-    const kmh = this._raceGhostSpeed(g, this.time) * MPH;
+    const kmh = this._raceGhostSpeed(g, this.time) * KMH;
     this.updateGhostTag('race', !!this.ghostOverrideName, mesh, this.ghostOverrideName,
       this.ghostOverrideName ? { kmh } : null);
     this.updateExtraRaceGhosts(dt);
@@ -8158,7 +9008,7 @@ const Game = {
       _gq2.set(s[b + 3], s[b + 4], s[b + 5], s[b + 6]);
       slot.mesh.quaternion.copy(_gq1).slerp(_gq2, u);
       setGhostFlame(slot.mesh, !!((s[a + 7] | 0) & 16), dt);
-      const kmh = this._raceGhostSpeed(g, this.time) * MPH;
+      const kmh = this._raceGhostSpeed(g, this.time) * KMH;
       this.updateGhostTag(key, true, slot.mesh, rec.name, { kmh, place });
     }
   },
@@ -8176,7 +9026,7 @@ const Game = {
       el = document.createElement('div');
       el.className = 'ghostTag';
       el.hidden = true;
-      el.innerHTML = '<span class="tagName"></span><span class="kmh"><b></b> mph</span>';
+      el.innerHTML = '<span class="tagName"></span><span class="kmh"><b></b> km/h</span>';
       $('ghostTags').appendChild(el);
       this.ghostTagPool[key] = el;
     }
@@ -8350,10 +9200,19 @@ const Game = {
     }
     const input = this.started ? Input : { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
 
+    // The clock advances with the physics itself (one tick per 1/360 s
+    // step), and the finish is found inside the step where the nose of the
+    // car crosses the finish gate's mid-plane, interpolated to the exact
+    // instant — not "somewhere near the gate on the frame it was noticed".
     this.accum += dt;
     const H = 1 / 360;
     let steps = 0;
+    const t0 = this.time;
+    const gate = this.started ? this.finishGateDue() : null;
+    let finishAt = null;
     while (this.accum >= H && steps < 18) {
+      this.car.savePrev();
+      const d0 = gate ? this.noseToGate(gate) : 0;
       if (!this.car.step(H, this.world, input)) {
         console.warn('aiPolytrack: vehicle state went non-finite, restarting');
         this.restartRun('Restarted', 'error');
@@ -8361,8 +9220,29 @@ const Game = {
         break;
       }
       this.accum -= H; steps++;
+      if (this.started) {
+        this.time += H;
+        if (gate) {
+          const d1 = this.noseToGate(gate);
+          if (d0 < 0 && d1 >= 0 && this.noseInGate(gate)) {
+            finishAt = this.time - H + H * (-d0 / Math.max(d1 - d0, 1e-9));
+            break;
+          }
+        }
+      }
     }
     if (steps === 18) this.accum = 0;
+    this.car.setRenderAlpha(finishAt !== null ? 1 : this.accum / H);
+    if (finishAt !== null) {
+      this.time = finishAt;
+      this.recordGhost(Math.max(this.time - t0, 1e-6));
+      gate.passed = true;
+      if (this.state === 'race') this.finishRaceAttempt(this.time);
+      else if (this.state === 'creditsrun') this.finishCreditsRun();
+      else this.finishLevel();
+      return;
+    }
+    const stepDt = this.time - t0;
 
     if (this.car.landImpact > 0.22) { Sound.land(this.car.landImpact); this.car.landImpact *= 0.25; }
     const bottomed = this.car.wheels.some((w) => w.comp >= CAR.susMaxComp - 0.004);
@@ -8383,8 +9263,7 @@ const Game = {
     else if (this.offTrack > 4) this.restartRun('Off the track — restarted', 'offtrack');
 
     if (this.started) {
-      this.time += dt;
-      this.recordGhost(dt);
+      this.recordGhost(Math.max(stepDt, 1e-6));
       const rs = this.runStats;
       if (rs) {
         rs.top = Math.max(rs.top, this.car.speed);
@@ -8393,7 +9272,6 @@ const Game = {
         rs.far = Math.max(rs.far, this.course.cum[this.pathIdx] / Math.max(this.course.length, 1));
       }
     }
-    this.checkFinish();
     if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') this.updateProgress();
   },
 
@@ -8429,7 +9307,7 @@ const Game = {
         this.marks.update(this.car);
         this.updateGhost(dt);
         this.teleAcc += dt;
-        if (this.teleAcc >= 0.1) { UI.telemetry(this.car); this.teleAcc = 0; }
+        if (this.teleAcc >= 0.05) { UI.telemetry(this.car, this.started ? Input : null); this.teleAcc = 0; }
         const onGrass = this.car.wheels.some((w) => w.contact && !w.onTrack);
         Sound.engine(this.car, Input.throttle, onGrass);
         if (this.car.gear !== this.lastGear) {
@@ -8444,7 +9322,8 @@ const Game = {
       this.accum += dt;
       const H = 1 / 240;
       let steps = 0;
-      while (this.accum >= H && steps < 8) { this.car.step(H, this.world, input); this.accum -= H; steps++; }
+      while (this.accum >= H && steps < 8) { this.car.savePrev(); this.car.step(H, this.world, input); this.accum -= H; steps++; }
+      this.car.setRenderAlpha(this.accum / H);
       this.car.syncMesh(dt);
       this.chase.update(dt, this.car);
       UI.speed(this.car.speedFwd);
