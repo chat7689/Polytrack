@@ -1637,7 +1637,10 @@ const CarColor = {
    *  ever one "owned" cell per hue rather than 256 separate s/l cells to
    *  separately unlock underneath it. */
   lockedHueCells() {
-    const owned = new Set(this.unlocked.map((h) => this.hueCellOf(h)));
+    // unlocked holds grid cells already (see load's migration); treating
+    // them as hue angles here offered the wrong squares for sale, so a
+    // pack could re-land on a colour already owned
+    const owned = new Set(this.unlocked);
     const free = [];
     for (let i = 0; i < 256; i++) if (!owned.has(i)) free.push(i);
     return free;
@@ -2680,6 +2683,16 @@ const Cloud = {
   /** saves the whole customization (after every purchase or equip) */
   async saveCarColors(state) {
     if (!this.on || !this.user) return;
+    // Colours unlocked somewhere this session hasn't seen (another tab, or
+    // the admin's import of the old Firebase data) are kept, not
+    // overwritten with this session's shorter list.
+    const cur = await this.q(this.sb.from('car_customization').select('unlocked').eq('uid', this.user.uid).maybeSingle());
+    if (cur && Array.isArray(cur.unlocked) && Array.isArray(state.unlocked)) {
+      for (const u of cur.unlocked) {
+        const cell = typeof u === 'number' ? u : (u && typeof u.h === 'number' ? CarColor.hueCellOf(u.h) : null);
+        if (cell !== null && !state.unlocked.includes(cell)) state.unlocked.push(cell);   // the caller's own list
+      }
+    }
     await this.q(this.sb.from('car_customization').upsert({
       uid: this.user.uid, unlocked: state.unlocked, primary_color: state.primary, secondary_color: state.secondary,
       updated_at: new Date().toISOString()

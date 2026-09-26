@@ -595,9 +595,18 @@ begin
   for r in select * from jsonb_array_elements(coalesce(p -> 'carCustomization', '[]')) loop
     select new_id into id_of from public.legacy_ids where old_uid = coalesce(r ->> 'uid', r ->> 'id');
     if id_of is null or not public.valid_hsl(r -> 'primary') or not public.valid_hsl(r -> 'secondary') then continue; end if;
+    -- A player who signed up before the import already has starter
+    -- colours: their old ones join the list and are put back on the car.
+    -- Once merged, the old list is contained in theirs, so a repeat import
+    -- leaves whatever they have chosen since alone.
     insert into public.car_customization (uid, unlocked, primary_color, secondary_color)
     values (id_of, coalesce(r -> 'unlocked', '[]'), r -> 'primary', r -> 'secondary')
-    on conflict (uid) do nothing;
+    on conflict (uid) do update
+      set unlocked = (select coalesce(jsonb_agg(distinct x), '[]') from (
+            select jsonb_array_elements(excluded.unlocked) x
+            union select jsonb_array_elements(public.car_customization.unlocked)) u),
+          primary_color = excluded.primary_color, secondary_color = excluded.secondary_color, updated_at = now()
+      where not (public.car_customization.unlocked @> excluded.unlocked);
     get diagnostics added = row_count; n := n + added;
   end loop;
   counts := counts || jsonb_build_object('carCustomization', n);

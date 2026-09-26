@@ -447,7 +447,7 @@ async function onSession(user) {
   let admin = false;
   try { admin = await rpc('is_admin'); } catch (e) { say('authMsg', 'Could not check that account: ' + e.message, 'err'); return; }
   if (!admin) {
-    say('authMsg', 'That account is not an admin. Add it in Supabase (supabase/SETUP.md, step 5).', 'err');
+    say('authMsg', 'That account is not an admin. Add it in Supabase (supabase/SETUP.md, step 7).', 'err');
     await sb.auth.signOut({ scope: 'local' });
     return;
   }
@@ -1081,6 +1081,7 @@ $('btnImport').addEventListener('click', async () => {
       }
     }
     const total = Object.values(done).reduce((s, v) => s + v, 0);
+    loadSettings();                                // the old admin passcode may have come across
     say('importMsg', total === 0 ? 'Done — nothing new: everything in that file is already here.'
       : 'Done. Added ' + (done.profiles || 0) + ' players, ' + (done.bests || 0) + ' times (new or faster), ' + (done.ghosts || 0) +
         ' ghosts, ' + (done.creditEvents || 0) + ' credit events, ' + (done.carCustomization || 0) + ' car colours, ' +
