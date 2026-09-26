@@ -876,7 +876,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
           </div>
           <div class="keysStrip">
             <span><b>W</b> gas</span><span><b>S</b> brake</span><span><b>A D</b> steer</span>
-            <span><b>Space</b> boost</span><span><b>Shift</b> drift</span><span><b>R</b> restart</span>
+            <span><b>Space</b> boost</span><span><b>S</b> + <b>A D</b> drift</span><span><b>Shift</b> handbrake</span><span><b>R</b> restart</span>
             <span><b>Esc</b> menu</span>
           </div>
         </div>
@@ -1248,8 +1248,12 @@ function formatDelta(d) {
  * as it's loaded off disk/Firestore, never on a time already run through
  * it in memory.
  */
-function migrateLegacyTime(t) {
+function migrateLegacyTime(t, courseId) {
   if (typeof t !== 'number' || !isFinite(t)) return t;
+  // Only Season 1 maps ever had hundredths timing. Season 2 was timed to
+  // the millisecond from day one, where a time ending in 0 is just a time
+  // (converting those showed and ranked one run in ten 9 ms slow).
+  if (!/^cd+$/.test(courseId || '')) return t;
   const ms = Math.round(t * 1000);
   return (ms % 10 === 0) ? (ms + 9) / 1000 : t;
 }
@@ -1318,13 +1322,13 @@ const Records = {
           this.data.boards = (p.boards && typeof p.boards === 'object') ? p.boards : {};
           for (const k in this.data.boards) {
             const list = this.data.boards[k];
-            if (Array.isArray(list)) list.forEach((e) => { if (e && typeof e.t === 'number') e.t = migrateLegacyTime(e.t); });
+            if (Array.isArray(list)) list.forEach((e) => { if (e && typeof e.t === 'number') e.t = migrateLegacyTime(e.t, k); });
           }
           this.data.cleared = (p.cleared && typeof p.cleared === 'object') ? p.cleared : {};
           this.data.ghosts = (p.ghosts && typeof p.ghosts === 'object') ? p.ghosts : {};
           for (const k in this.data.ghosts) {
             const g = this.data.ghosts[k];
-            if (g && typeof g.t === 'number') g.t = migrateLegacyTime(g.t);
+            if (g && typeof g.t === 'number') g.t = migrateLegacyTime(g.t, k);
           }
         }
       } catch (e) { console.warn('aiPolytrack: stored records were unreadable, starting fresh'); }
@@ -2402,7 +2406,7 @@ const Cloud = {
       snap.forEach((d) => {
         const r = d.data();
         if (!r || r.banned || typeof r.timeMs !== 'number' || !r.courseId) return;
-        const t = migrateLegacyTime(r.timeMs / 1000);
+        const t = migrateLegacyTime(r.timeMs / 1000, r.courseId);
         (boards[r.courseId] = boards[r.courseId] || []).push({
           n: r.displayName || 'Driver', t, d: r.updatedMs || 0, uid: r.uid
         });
@@ -2428,7 +2432,7 @@ const Cloud = {
       let count = 0, total = 0;
       snap.forEach((d) => {
         const r = d.data();
-        if (/^c\d+$/.test(r.courseId || '') && typeof r.timeMs === 'number') { count++; total += migrateLegacyTime(r.timeMs / 1000); }
+        if (/^c\d+$/.test(r.courseId || '') && typeof r.timeMs === 'number') { count++; total += migrateLegacyTime(r.timeMs / 1000, r.courseId); }
       });
       return count ? { count, total } : null;
     } catch (e) { return null; }
@@ -2497,7 +2501,7 @@ const Cloud = {
       const s = String(d.samples || '').split(',').map(Number);
       if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
         || s.some((v) => !isFinite(v))) return null;
-      return { t: migrateLegacyTime(d.timeMs / 1000), s };
+      return { t: migrateLegacyTime(d.timeMs / 1000, courseId), s };
     } catch (e) { return null; }
   },
 
@@ -2569,6 +2573,8 @@ const Cloud = {
     await fsMod.setDoc(fsMod.doc(this.db, 'carCustomization', this.user.uid), {
       uid: this.user.uid, unlocked: state.unlocked, primary: state.primary, secondary: state.secondary
     });
+    // your own car on a leader card shows the new paint straight away
+    if (this._colorCache) this._colorCache.set(this.user.uid, { v: { primary: state.primary, secondary: state.secondary }, at: Date.now() });
   },
 
   /** buys one color pack for 10 credits: the debit and the color purchase
@@ -3069,6 +3075,16 @@ const CAR = {
   rollTrack: 0.015, rollGrass: 0.30, rollGrassSpeed: 0.04,
   // Brake drift: braking while steering at speed.
   driftMinSpeed: 12, driftHoldSlip: 0.12,
+  // how the slide is shared out: brake bias shift toward the rear, the
+  // share of a rear tyre's sideways grip it always keeps, the largest
+  // slip angle the stability assist lets a drift reach (it catches the
+  // car past that rather than letting it spin), and how much of the
+  // assist's yaw damping is released so the car can rotate into it
+  driftFrontBrake: 0.5, driftRearBrake: 0.9, driftRearHold: 0.35,
+  driftAngle: 0.5, driftYawFree: 0.7, driftCatch: 3,
+  // a sliding rear tyre has kinetic, not peak, friction; the steering
+  // range either side of the travel line in a slide; the steering lock
+  driftRearMu: 0.6, driftSteer: 0.3, steerLock: 0.7,
   // Six-speed gearbox with a real torque curve rather than a flat force. Top
   // speed comes out of the balance between drive and drag, not a cap.
   gears: [3.6, 2.4, 1.75, 1.35, 1.10, 0.92],
@@ -3461,7 +3477,16 @@ class Vehicle {
 
     /* --- steering: rate limited, less angle the faster you go ---------- */
     const maxS = lerp(CAR.maxSteer, CAR.minSteer, clamp(spd / CAR.steerRef, 0, 1));
-    const want = -input.steer * maxS;                 // local +X is the car's left
+    let want = -input.steer * maxS;                   // local +X is the car's left
+    // In a slide the front wheels castor round to follow the direction the
+    // car is actually travelling (self-aligning torque), and the steering
+    // input then works either side of that line — the counter-steer a
+    // driver gives in a drift, rather than scrubbing the fronts sideways.
+    const dr = this.drift || 0;
+    if (dr > 0 && vFwd > 1) {
+      const travel = Math.atan2(this.vel.dot(this.left), vFwd);
+      want = lerp(want, clamp(travel - input.steer * CAR.driftSteer, -CAR.steerLock, CAR.steerLock), dr);
+    }
     const rate = CAR.steerRate * dt;
     this.steer += clamp(want - this.steer, -rate, rate);
 
@@ -3717,7 +3742,7 @@ class Vehicle {
       w.mu = muEff;
       const hb = input.handbrake && !w.front;
       const dr = this.drift || 0;
-      const axle = w.front ? 1 : (hb ? 0.45 : CAR.rearGrip);
+      const axle = w.front ? 1 : (hb ? 0.45 : CAR.rearGrip * lerp(1, CAR.driftRearMu, dr));
       const budget = muEff * w.load * w.grip * axle * dt;
       const mLong = this.effMass(rel, f);
       const mLat = this.effMass(rel, s);
@@ -3727,7 +3752,7 @@ class Vehicle {
       if (braking) {
         // drifting moves brake bias rearward: the fronts keep steering,
         // the rears lock up and let go sideways
-        brakeF = w.front ? CAR.brakeFront * (1 - 0.65 * dr) : CAR.brakeRear * (1 + 1.6 * dr);
+        brakeF = w.front ? CAR.brakeFront * (1 - CAR.driftFrontBrake * dr) : CAR.brakeRear * (1 + CAR.driftRearBrake * dr);
       }
       if (hb) brakeF = Math.max(brakeF, CAR.handbrake);
       const cancel = -vLong * mLong;
@@ -3744,7 +3769,7 @@ class Vehicle {
         // first and hold sideways with what is left (the friction circle).
         const lg = clamp(jLong, -budget, budget);
         const latLeft = Math.sqrt(Math.max(budget * budget - lg * lg, 0));
-        const latCap = lerp(budget, Math.max(latLeft, budget * 0.18), dr);
+        const latCap = lerp(budget, Math.max(latLeft, budget * CAR.driftRearHold), dr);
         jLat = clamp(latWant, -latCap, latCap);
         const longCap = Math.max(Math.sqrt(Math.max(budget * budget - jLat * jLat, 0)), budget * 0.3);
         jLong = clamp(jLong, -Math.max(longCap, Math.abs(lg) * dr), Math.max(longCap, Math.abs(lg) * dr));
@@ -3792,13 +3817,19 @@ class Vehicle {
       if (!w.contact || w.load <= 1) continue;
       grip += Math.min(w.grip, 1); touching++;
     }
+    // In a drift the assist lets the car slide up to CAR.driftAngle
+    // (instead of straightening it) and frees most of its yaw damping so
+    // the car can rotate; anything past that angle it still catches.
     const drift = this.drift || 0;
-    const frac = (grip / 4) * (1 - 0.85 * drift);
-    const yawFrac = touching > 0 ? 1 - 0.85 * drift : 0;
     if (touching === 0 || input.handbrake) return;
     const vF = this.vel.dot(this.fwd);
     const vL = this.vel.dot(this.left);
-    const allow = CAR.assistSlip * Math.abs(vF) + 0.4;
+    // yaw is only freed while the slide is inside the drift angle
+    const room = clamp((CAR.driftAngle - (this.slipAngle || 0)) / 0.12, 0, 1);
+    const frac = (grip / 4) * (1 + CAR.driftCatch * drift);
+    const yawFrac = 1 - CAR.driftYawFree * drift * room;
+    const grippy = CAR.assistSlip * Math.abs(vF) + 0.4;
+    const allow = lerp(grippy, Math.max(grippy, Math.tan(CAR.driftAngle) * Math.abs(vF)), drift);
     if (Math.abs(vL) > allow) {
       const excess = vL - Math.sign(vL) * allow;
       this.vel.addScaledVector(this.left, -excess * approach(CAR.assistLat * frac, dt));
@@ -6583,7 +6614,9 @@ const UI = {
   state(car) {
     const el = $('hGrip');
     if (!car.grounded) { el.textContent = 'airborne'; el.className = 'gear air'; }
-    else if (car.slipMax > 0.3) { el.textContent = 'sliding'; el.className = 'gear air'; }
+    else if (car.drift > 0.5 && car.slipAngle > CAR.driftHoldSlip) {
+      el.textContent = 'drift ' + Math.round(car.slipAngle * 57.3) + '°'; el.className = 'gear air';
+    } else if (car.slipMax > 0.3) { el.textContent = 'sliding'; el.className = 'gear air'; }
     else { el.textContent = ''; el.className = 'gear'; }
   },
   progress(f) {
@@ -7358,7 +7391,7 @@ const Game = {
       return false;
     }
 
-    $('hKeys').innerHTML = '<b>W A S D</b> drive &nbsp; <b>Space</b> boost &nbsp; ' +
+    $('hKeys').innerHTML = '<b>W A S D</b> drive &nbsp; <b>S</b>+steer drift &nbsp; <b>Space</b> boost &nbsp; ' +
       '<b>Shift</b> handbrake &nbsp; <b>R</b> restart &nbsp; <b>T</b> telemetry &nbsp; ' +
       '<b>Esc</b> menu';
     this.wire();
@@ -8487,6 +8520,12 @@ const Game = {
     };
     draw();
     if (Cloud.on) {
+      // the balance can change from outside this session (an admin
+      // adjustment), so re-total it: one aggregate read
+      try {
+        const c = await Cloud.sumCredits();
+        if (c !== Records.credits) { Cloud.credits = c; UI.who(Cloud.name(), Records.credits); }
+      } catch (e) { /* keep the balance from sign-in */ }
       this.seasonAwards = await Cloud.fetchSeasonAwards();
       const a = this.seasonAwards, uid = Cloud.user && Cloud.user.uid;
       if (a && uid && ['gold', 'silver', 'bronze'].some((k) => a[k] && a[k].uid === uid) && !this.s1Mine) {
@@ -8520,7 +8559,7 @@ const Game = {
   /** called whenever the live leaderboard changes: redraw whatever shows it */
   onBoardsChanged() {
     if (this.state === 'select') { UI.courseList(this.playable, (i) => this.toCourseDetail(i)); UI.boards(); }
-    else if (this.state === 'courseDetail') UI.courseDetail(this.courseDetailIndex);
+    else if (this.state === 'courseDetail') { UI.courseDetail(this.courseDetailIndex); this.paintCourseLeader(this.courseDetailIndex); }
     else if (this.state === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
   },
   /**
@@ -8584,8 +8623,11 @@ const Game = {
     UI.courseDetail(i);
     this.flushPendingAuth();
     courseDetailPreview.start();
-    const id = this.id(i);
-    const list = Records.board(id);
+    await this.paintCourseLeader(i);
+  },
+  /** paints the course page's car in the current first-place driver's colours */
+  async paintCourseLeader(i) {
+    const list = Records.board(this.id(i));
     // A row with no uid (local/offline board entry) leaves the widget in
     // its default color rather than guessing whose car it is.
     const colors = (list && list.length && list[0].uid) ? await Cloud.fetchCarColorsOf(list[0].uid) : null;

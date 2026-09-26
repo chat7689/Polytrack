@@ -44,7 +44,7 @@ td.r,th.r{text-align:right}
 tr.banned td{color:var(--dimmer)}
 tr.banned td.name b{text-decoration:line-through}
 tr.click{cursor:pointer}
-td.name .real{color:var(--signal);font-size:12.5px;font-style:italic;margin-left:6px}
+.real{color:var(--signal);font-size:12.5px;font-style:italic;margin-left:6px}
 .pill{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border:1px solid var(--rule);border-radius:999px;color:var(--dim);white-space:nowrap}
 .pill.on{border-color:var(--ember);color:var(--ember)}
 .pill.fin{border-color:rgba(61,219,184,.5);color:var(--aqua)}
@@ -337,8 +337,12 @@ const say = (el, text, kind) => { $(el).textContent = text; $(el).className = 'm
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const courseName = (id) => COURSE_NAME[id] || id || '—';
-// Older runs were only ever timed to the hundredth; the game shows those with +9 ms.
-const legacyMs = (ms) => (Math.round(ms) % 10 === 0 ? ms + 9 : ms);
+// the admin's private note of who a player really is, shown beside their username
+const realOf = (uid) => (byUid[uid] && byUid[uid].realName) || '';
+const realTag = (uid) => (realOf(uid) ? ' <span class="real">' + esc(realOf(uid)) + '</span>' : '');
+// Season 1 runs were only ever timed to the hundredth; the game shows those
+// with +9 ms. Season 2 has always been timed to the millisecond.
+const legacyMs = (ms, courseId) => (/^cd+$/.test(courseId || '') && Math.round(ms) % 10 === 0 ? ms + 9 : ms);
 const fmt = (ms) => {
   if (!isFinite(ms)) return '—';
   const t = ms / 1000, m = Math.floor(t / 60), s = Math.floor(t % 60);
@@ -509,7 +513,7 @@ function standings(ids) {
     if (b.banned || !set.has(b.courseId) || typeof b.timeMs !== 'number') return;
     const k = b.uid;
     const p = per[k] || (per[k] = { uid: k, name: b.displayName || '—', count: 0, total: 0 });
-    p.count++; p.total += legacyMs(b.timeMs);
+    p.count++; p.total += legacyMs(b.timeMs, b.courseId);
   });
   return Object.values(per).sort((a, b) => (b.count - a.count) || (a.total - b.total));
 }
@@ -561,7 +565,7 @@ function showPlayer(p) {
     const b = mine.find((x) => x.courseId === c.id);
     const board = bests.filter((x) => x.courseId === c.id && !x.banned).sort((x, y) => x.timeMs - y.timeMs);
     const rank = b ? board.findIndex((x) => x.uid === p.uid) + 1 : 0;
-    return '<tr><td>' + esc(c.tag + ' ' + c.name) + '</td><td class="mono r">' + (b ? fmt(legacyMs(b.timeMs)) : '—') +
+    return '<tr><td>' + esc(c.tag + ' ' + c.name) + '</td><td class="mono r">' + (b ? fmt(legacyMs(b.timeMs, b.courseId)) : '—') +
       '</td><td class="mono r">' + (rank ? '#' + rank + ' of ' + board.length : '—') + '</td></tr>';
   }).join('');
   el.innerHTML = '<div class="spread"><h2 style="margin:0">' + esc(p.displayName) + '</h2><button class="small" id="pdClose">Close</button></div>' +
@@ -590,7 +594,8 @@ async function setRealName(p) {
     if (realName) await setDoc(doc(db, 'adminNotes', p.uid), { realName, updatedAt: serverTimestamp() });
     else await deleteDoc(doc(db, 'adminNotes', p.uid));
     p.realName = realName;
-    renderPlayers();
+    // the name shows everywhere that player appears
+    renderPlayers(); renderTimes(); renderSeasons(); if (runs.length) renderRuns();
     say('pMsg', realName ? 'Saved: ' + (p.displayName || '') + ' is ' + realName + '.' : 'Real name cleared.', 'ok');
   } catch (e) { say('pMsg', e.message, 'err'); }
 }
@@ -703,7 +708,7 @@ function filteredRuns() {
   const drv = $('rfDriver').value.trim().toLowerCase(), within = parseInt($('rfWhen').value, 10) || 0;
   const now = Date.now();
   return runs.filter((r) => (!kind || r.kind === kind) && (!out || outcomeOf(r) === out) &&
-    (!course || r.courseId === course) && (!drv || (r.displayName || '').toLowerCase().includes(drv)) &&
+    (!course || r.courseId === course) && (!drv || (r.displayName || '').toLowerCase().includes(drv) || realOf(r.uid).toLowerCase().includes(drv)) &&
     (!within || now - r.ms <= within));
 }
 let loadedLimit = 300;
@@ -734,7 +739,7 @@ function renderRuns() {
     const tr = document.createElement('tr');
     tr.className = 'click';
     tr.innerHTML = '<td class="mono" title="' + fmtWhen(r.ms) + '">' + fmtWhen(r.ms) + '</td>' +
-      '<td>' + esc(r.displayName || '—') + '</td><td>' + esc(courseName(r.courseId)) + '</td>' +
+      '<td>' + esc(r.displayName || '—') + realTag(r.uid) + '</td><td>' + esc(courseName(r.courseId)) + '</td>' +
       '<td><span class="pill">' + esc(KIND[r.kind] || r.kind) + '</span></td>' +
       '<td><span class="pill ' + oc[1] + '">' + oc[0] + '</span>' + (r.reason && r.reason !== outcomeOf(r) ?
         ' <span class="mono">' + esc(REASON[r.reason] || r.reason) + '</span>' : '') + '</td>' +
@@ -754,7 +759,7 @@ function showRun(r) {
   const el = $('runDetail');
   const oc = OUTCOME[outcomeOf(r)] || OUTCOME.finished;
   const kv = (k, v) => '<div><span>' + esc(k) + '</span><b>' + esc(v == null || v === '' ? '—' : v) + '</b></div>';
-  el.innerHTML = '<div class="spread"><h2 style="margin:0">' + esc(r.displayName) + ' · ' + esc(courseName(r.courseId)) +
+  el.innerHTML = '<div class="spread"><h2 style="margin:0">' + esc(r.displayName) + realTag(r.uid) + ' · ' + esc(courseName(r.courseId)) +
     '</h2><button class="small" id="rdClose">Close</button></div><div class="kv" style="margin-top:12px">' +
     kv('when', fmtWhen(r.ms)) + kv('outcome', oc[0]) + kv('why', REASON[r.reason] || r.reason) + kv('kind', KIND[r.kind] || r.kind) +
     kv('time', fmt(r.timeMs)) + kv('progress', typeof r.progress === 'number' ? Math.round(r.progress * 100) + '%' : '') +
@@ -767,10 +772,10 @@ function showRun(r) {
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 $('btnRunCsv').addEventListener('click', () => {
-  const cols = ['when', 'driver', 'uid', 'map', 'courseId', 'kind', 'outcome', 'reason', 'timeMs', 'progress', 'topKmh',
+  const cols = ['when', 'driver', 'realName', 'uid', 'map', 'courseId', 'kind', 'outcome', 'reason', 'timeMs', 'progress', 'topKmh',
     'boostUsed', 'grassSec', 'airSec', 'attempt', 'vs', 'raceId', 'fps'];
   const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const lines = [cols.join(',')].concat(filteredRuns().map((r) => [fmtWhen(r.ms), r.displayName, r.uid, courseName(r.courseId),
+  const lines = [cols.join(',')].concat(filteredRuns().map((r) => [fmtWhen(r.ms), r.displayName, realOf(r.uid), r.uid, courseName(r.courseId),
     r.courseId, r.kind, outcomeOf(r), r.reason, r.timeMs, r.progress, kmhOf(r), r.boostUsed, r.grassSec, r.airSec, r.attempt,
     r.vs, r.raceId, r.fps].map(q).join(',')));
   const a = document.createElement('a');
@@ -825,7 +830,7 @@ function renderOverview() {
       '</td><td class="mono r">' + (rs.length ? Math.round(f.length / rs.length * 100) + '%' : '—') + '</td><td class="mono r">' +
       rs.filter((r) => outcomeOf(r) === 'restarted').length + '</td><td class="mono r">' + new Set(rs.map((r) => r.uid)).size +
       '</td><td class="mono r">' + (med ? fmt(med) : '—') + '</td><td class="mono r">' +
-      (board[0] ? fmt(legacyMs(board[0].timeMs)) + ' ' + esc(board[0].displayName || '') : '—') + '</td></tr>';
+      (board[0] ? fmt(legacyMs(board[0].timeMs, c.id)) + ' ' + esc(board[0].displayName || '') + realTag(board[0].uid) : '—') + '</td></tr>';
   }).join('');
 }
 
@@ -840,8 +845,8 @@ function renderTimes() {
   tt.innerHTML = '';
   rows.forEach((r, k) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td class="mono">' + (k + 1) + '</td><td>' + esc(r.displayName || '—') +
-      (r.banned ? ' <span class="pill on">hidden</span>' : '') + '</td><td class="mono r">' + fmt(legacyMs(r.timeMs)) +
+    tr.innerHTML = '<td class="mono">' + (k + 1) + '</td><td>' + esc(r.displayName || '—') + realTag(r.uid) +
+      (r.banned ? ' <span class="pill on">hidden</span>' : '') + '</td><td class="mono r">' + fmt(legacyMs(r.timeMs, r.courseId)) +
       '</td><td class="mono">' + (r.updatedMs ? fmtWhen(r.updatedMs) : '—') + '</td><td class="r"></td>';
     const del = document.createElement('button');
     del.className = 'small danger'; del.textContent = 'Delete';
@@ -861,20 +866,20 @@ function renderTimes() {
 const PLACES = [['gold', '1st', 'Champion'], ['silver', '2nd', 'Runner-up'], ['bronze', '3rd', 'Third place']];
 function renderSeasons() {
   const s1 = standings(S1.map((c) => c.id));
-  $('s1Standings').innerHTML = s1.slice(0, 30).map((r, k) => '<tr><td class="mono">' + (k + 1) + '</td><td>' + esc(r.name) +
+  $('s1Standings').innerHTML = s1.slice(0, 30).map((r, k) => '<tr><td class="mono">' + (k + 1) + '</td><td>' + esc(r.name) + realTag(r.uid) +
     '</td><td class="mono r">' + r.count + ' / ' + S1.length + '</td><td class="mono r">' + fmt(r.total) + '</td><td class="r">' +
     (k < 3 ? '<button class="small" data-quick="' + k + '" data-uid="' + esc(r.uid) + '">Award ' + PLACES[k][1] + '</button>' : '') +
     '</td></tr>').join('') || '<tr><td colspan="5" class="empty">No Season 1 times.</td></tr>';
   $('s1Standings').querySelectorAll('[data-quick]').forEach((b) => b.addEventListener('click', () =>
     award(PLACES[+b.dataset.quick][0], b.dataset.uid)));
   const s2 = standings(S2.map((c) => c.id));
-  $('s2Standings').innerHTML = s2.slice(0, 15).map((r, k) => '<tr><td class="mono">' + (k + 1) + '</td><td>' + esc(r.name) +
+  $('s2Standings').innerHTML = s2.slice(0, 15).map((r, k) => '<tr><td class="mono">' + (k + 1) + '</td><td>' + esc(r.name) + realTag(r.uid) +
     '</td><td class="mono r">' + r.count + ' / ' + S2.length + '</td><td class="mono r">' + fmt(r.total) + '</td></tr>').join('') ||
     '<tr><td colspan="4" class="empty">No Season 2 times yet.</td></tr>';
   $('s2Sections').innerHTML = SECTIONS.map((name, sec) => {
     const top = standings(S2.filter((c) => c.sec === sec).map((c) => c.id))[0];
     return '<div class="spread" style="padding:6px 0;border-bottom:1px solid var(--rule2)"><span>' + esc(name) + '</span><span class="mono">' +
-      (top ? esc(top.name) + ' · ' + top.count + '/4 · ' + fmt(top.total) : '—') + '</span></div>';
+      (top ? esc(top.name) + realTag(top.uid) + ' · ' + top.count + '/4 · ' + fmt(top.total) : '—') + '</span></div>';
   }).join('');
 
   const sorted = players.slice().sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
@@ -883,8 +888,8 @@ function renderSeasons() {
     return '<div class="award"><div><span class="medal ' + key + '">' + ord.charAt(0) + '</span><b>' + title + '</b></div>' +
       '<div class="row" style="align-items:center"><select id="aw-' + key + '"><option value="">— pick a player —</option>' +
       sorted.map((p) => '<option value="' + esc(p.uid) + '"' + (cur && cur.uid === p.uid ? ' selected' : '') + '>' +
-        esc(p.displayName || p.uid) + '</option>').join('') + '</select>' +
-      '<span class="mono">' + (cur ? 'held by <b style="color:var(--ink)">' + esc(cur.name) + '</b>' : 'not awarded') + '</span></div>' +
+        esc((p.displayName || p.uid) + (p.realName ? ' (' + p.realName + ')' : '')) + '</option>').join('') + '</select>' +
+      '<span class="mono">' + (cur ? 'held by <b style="color:var(--ink)">' + esc(cur.name) + '</b>' + realTag(cur.uid) : 'not awarded') + '</span></div>' +
       '<div class="row"><button class="primary small" data-award="' + key + '">Award</button>' +
       (cur ? '<button class="small danger" data-revoke="' + key + '">Remove</button>' : '') + '</div></div>';
   }).join('');
