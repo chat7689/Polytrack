@@ -76,6 +76,8 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() >= 1
         && request.resource.data.displayName.size() <= 14
+        // the same shape the sign-up form requires, so a name can never carry markup
+        && request.resource.data.displayName.matches('^[A-Za-z0-9_-]{3,14}$')
         && request.resource.data.banned == false
         && !exists(/databases/$(database)/documents/deleted/$(uid));
       // displayName is fixed to the username at signup and never editable —

@@ -1351,6 +1351,24 @@ const Records = {
     this.data.cleared = this.localCleared || {};
     this.data.ghosts = this.localGhosts || {};
   },
+  /** the server turned out to hold a faster best than this device knew
+   *  (its copy of your bests hadn't loaded): show that one, not the slower run */
+  useServerBest(id, t) {
+    const uid = Cloud.user && Cloud.user.uid;
+    if (!uid) return;
+    this.data.myBests[id] = t;
+    const list = this.board(id).filter((e) => e.uid !== uid);
+    list.push({ n: Cloud.name(), t, d: Date.now(), uid });
+    list.sort((a, b) => a.t - b.t);
+    this.data.boards[id] = list;
+  },
+  /** after a score reset: this player's rows go, everyone else's stay */
+  forgetPlayer(uid) {
+    for (const k in this.data.boards) this.data.boards[k] = this.board(k).filter((e) => e.uid !== uid);
+    this.data.cleared = {};
+    this.data.myBests = {};
+    this.data.ghosts = {};
+  },
   /** signing out: nothing of the previous account's may carry over */
   resetSession() {
     this.data.boards = {};
@@ -2072,6 +2090,7 @@ const Cloud = {
       if (!user) this.profile = null;
       else if (!same) {
         this.profile = null;
+        this.error = '';                         // no stale message from an earlier attempt
         try { await this.loadProfile(); } catch (e) { this.error = this.error || e.message; }
       }
       onChange(this.user, this.profile);
@@ -2079,6 +2098,7 @@ const Cloud = {
   },
 
   async signIn(username, pass) {
+    this.error = '';
     const cred = await this.fb.authMod.signInWithEmailAndPassword(
       this.auth, usernameToEmail(username), pass);
     this.user = cred.user;
@@ -2141,7 +2161,10 @@ const Cloud = {
       batch.delete(fsMod.doc(this.db, 'ghosts', id));
     }
     await batch.commit();
-    Records.wipe();
+    // only this player's rows: clearing the whole board here left everyone
+    // else's times missing until a reload (the live listener only sends
+    // what changed, and nothing of theirs did)
+    Records.forgetPlayer(uid);
   },
 
   /** +1 credit for finishing any non-race course, or +3 for a credit
@@ -2172,7 +2195,8 @@ const Cloud = {
     // Only the newest few races by creation time — the current one is
     // always the newest — rather than every race ever settled, which grew
     // forever and was re-read on every sign-in.
-    const unRace = onSnapshot(
+    let unRace = null, retry = null, stopped = false;
+    const subscribe = () => { unRace = onSnapshot(
       query(collection(this.db, 'races'), fsMod.orderBy('createdAt', 'desc'), fsMod.limit(3)),
       (snap) => {
         let d0 = null, best = -1;
@@ -2198,12 +2222,21 @@ const Cloud = {
               entries = [];
               esnap.forEach((e) => entries.push({ uid: e.id, ...e.data() }));
               fire();
-            });
+            }, (e) => console.warn('aiPolytrack: race entries listener', e && e.message));
           }
         }
         fire();
-      });
-    return () => { unRace(); if (unEntries) unEntries(); };
+      }, (e) => {
+        // a dropped feed would freeze the lobby card: reconnect shortly
+        console.warn('aiPolytrack: race listener', e && e.code, e && e.message);
+        this.noteError(e);
+        raceId = null;
+        if (unEntries) { unEntries(); unEntries = null; }
+        clearTimeout(retry);
+        if (!stopped) retry = setTimeout(() => { if (!stopped) subscribe(); }, 15000);
+      }); };
+    subscribe();
+    return () => { stopped = true; clearTimeout(retry); if (unRace) unRace(); if (unEntries) unEntries(); };
   },
 
   /** Opens the next lobby. Any signed-in client may call this the moment
@@ -2285,7 +2318,7 @@ const Cloud = {
       for (const e of entries) {
         batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: null, payout: e.buyIn });
         batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-          { uid: e.uid, raceId, delta: e.buyIn, createdAt: fsMod.serverTimestamp() });
+          { uid: e.uid, raceId, delta: e.buyIn, kind: 'payout', createdAt: fsMod.serverTimestamp() });
       }
     } else {
       const d = pot / denom;
@@ -2295,7 +2328,7 @@ const Cloud = {
         e.payout = payout;
         batch.update(fsMod.doc(this.db, 'races', raceId, 'entries', e.uid), { placement: e.placement, payout });
         batch.set(fsMod.doc(this.db, 'creditEvents', e.uid + '_' + raceId + '_payout'),
-          { uid: e.uid, raceId, delta: payout, createdAt: fsMod.serverTimestamp() });
+          { uid: e.uid, raceId, delta: payout, kind: 'payout', createdAt: fsMod.serverTimestamp() });
       }
       // Non-finishing entrants stay unranked with no payout — their stake
       // was absorbed into the pot the finishers just split.
@@ -2346,6 +2379,7 @@ const Cloud = {
     const valid = attempts.filter((t) => typeof t === 'number' && isFinite(t));
     const bestTimeMs = valid.length ? Math.min(...valid) : null;
     await fsMod.updateDoc(ref, { attempts, bestTimeMs });
+    return attempts.length;               // attempts used, including this one
   },
 
   /**
@@ -2478,26 +2512,35 @@ const Cloud = {
   },
 
   /**
-   * An admin setting this player's balance shows up straight away. Only
-   * admin adjustments are listened to (a handful of tiny documents, not
-   * every credit event); when one arrives the balance is re-totalled.
+   * Credits other people give this player show up straight away: an admin
+   * setting the balance, and race payouts (written by whichever racer's
+   * game settles the race, so usually not this one). Only those events are
+   * listened to — a handful of small documents, not every credit event —
+   * and when one arrives the balance is re-totalled.
    */
   watchAdjust() {
     if (!this.on || !this.user) return;
     this.stopAdjust();
     const { fsMod } = this.fb;
-    let first = true;
-    this.adjustUnsub = fsMod.onSnapshot(fsMod.query(fsMod.collection(this.db, 'creditEvents'),
-      fsMod.where('uid', '==', this.user.uid), fsMod.where('kind', '==', 'adjust')), async () => {
-      if (first) { first = false; return; }      // the balance was just totalled at sign-in
+    const uid = this.user.uid;
+    const refresh = async () => {
+      if (!this.user || this.user.uid !== uid) return;
       try {
         this.credits = await this.sumCredits();
         UI.who(this.name(), Records.credits);
         if (Game.state === 'garage') UI.garage();
-      } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); }
-    }, (e) => console.warn('aiPolytrack: credit listener', e && e.message));
+      } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); this.noteError(e); }
+    };
+    this.adjustUnsubs = ['adjust', 'payout'].map((kind) => {
+      let first = true;
+      return fsMod.onSnapshot(fsMod.query(fsMod.collection(this.db, 'creditEvents'),
+        fsMod.where('uid', '==', uid), fsMod.where('kind', '==', kind)), () => {
+        if (first) { first = false; return; }    // the balance was just totalled at sign-in
+        refresh();
+      }, (e) => console.warn('aiPolytrack: credit listener', e && e.message));
+    });
   },
-  stopAdjust() { if (this.adjustUnsub) { this.adjustUnsub(); this.adjustUnsub = null; } },
+  stopAdjust() { (this.adjustUnsubs || []).forEach((u) => u()); this.adjustUnsubs = null; },
 
   /** the player's balance: the sum of their credit events, done by the server */
   async sumCredits() {
@@ -2610,14 +2653,17 @@ const Cloud = {
     // blind write then overwrote a faster time on the server with a
     // slower one. The rules enforce the same thing.
     const ref = fsMod.doc(this.db, 'bests', id);
+    let serverMs = null;
     const improved = await fsMod.runTransaction(this.db, async (tx) => {
       const cur = await tx.get(ref);
-      const had = cur.exists() ? cur.data().timeMs : null;
-      if (typeof had === 'number' && had <= timeMs) return false;
+      serverMs = cur.exists() ? cur.data().timeMs : null;
+      if (typeof serverMs === 'number' && serverMs <= timeMs) return false;
       tx.set(ref, { uid, courseId, displayName: this.name(), banned: false, timeMs, updatedMs: Date.now() });
       return true;
     });
-    if (!improved) return false;          // the server already has a faster run (and its ghost)
+    // the server already has a faster run (and its ghost): say what it is,
+    // so this device's board stops showing the slower one as your best
+    if (!improved) return { improved: false, serverMs };
     // First-clearing a course no longer pays a credit bonus (see
     // Game.finishLevel — firstClear is still computed and passed in for
     // the result screen's own "first clean run" messaging, it just no
@@ -3565,7 +3611,7 @@ class Vehicle {
     this.hullDepth = 0;
     this.heading = 0;
     this.brakeLight = 0;
-    this.drift = 0; this.slipAngle = 0;
+    this.drift = 0; this.slipAngle = 0; this.onStrip = false;
 
     // hull contact points: 8 corners of the collision box
     this.corners = [];
@@ -3655,10 +3701,10 @@ class Vehicle {
     this.scrapeImpact = 0;
     this.airTime = 0;
     this.stuckTime = 0;
-    this.drift = 0; this.slipAngle = 0;
+    this.drift = 0; this.slipAngle = 0; this.onStrip = false;
     this.heading = heading;
     for (const w of this.wheels) {
-      w.comp = 0; w.load = 0; w.contact = false; w.slip = 0; w.onTrack = true;
+      w.comp = 0; w.load = 0; w.contact = false; w.slip = 0; w.onTrack = true; w.strip = 0;
       w.spin = 0; w.spinVel = 0; w.steerAngle = 0;
       w.hitDist = CAR.susRest + CAR.wheelR;
       w.drop = CAR.susRest;
@@ -9375,15 +9421,22 @@ const Game = {
     const raceId = this._lockedRaceId;
     Sound.stopEngine();
     Sound.finish(false);
+    // Attempts used comes from what was actually written. Counting the live
+    // entry list and adding one double-counted whenever the listener had
+    // already delivered this attempt (it usually has, the moment the write
+    // is made), which ended the race for the player after two attempts.
+    let attemptsUsed = null;
     try {
-      await Cloud.recordRaceAttempt(raceId, Math.round(timeSec * 1000));
+      attemptsUsed = await Cloud.recordRaceAttempt(raceId, Math.round(timeSec * 1000));
     } catch (e) {
       console.warn('aiPolytrack: could not record race attempt', e && e.message);
-      UI.toast('Could not save that attempt — check your connection.');
+      UI.toast('Could not save that attempt. ' + Cloud.errText(e));
     }
     this.logAttempt('finished');
-    const mine = this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
-    const attemptsUsed = mine ? (mine.attempts || []).length + 1 : 1;
+    if (typeof attemptsUsed !== 'number') {
+      const mine = this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
+      attemptsUsed = mine ? Math.max(1, (mine.attempts || []).length) : 1;
+    }
     this.state = 'raceBetween';
     $('betweenTime').textContent = formatTime(timeSec);
     if (attemptsUsed >= 3) {
@@ -9512,8 +9565,10 @@ const Game = {
     const res = Records.submit(id, this.time);
     this.logAttempt('finished');
     if (Cloud.on && Cloud.user && !Cloud.banned() && (!prevBest || this.time < prevBest)) {
-      Cloud.pushBest(id, this.time, this.rec).then(() => {
+      Cloud.pushBest(id, this.time, this.rec).then((r) => {
+        if (r && r.improved === false && typeof r.serverMs === 'number') Records.useServerBest(id, r.serverMs / 1000);
         UI.who(Cloud.name(), Records.credits);
+        this.onBoardsChanged();
       }).catch((e) => {
         console.warn('aiPolytrack: could not publish the time', e && e.message);
         // A silent failure here means the run looks saved (this device
@@ -10049,8 +10104,15 @@ const Game = {
     if (onDeck) this.offTrack = 0;
     else if (this.car.grounded) this.offTrack += dt;
 
+    // Hung up with the driven (rear) wheels touching nothing — landed short
+    // with the tail in a jump's gap and the front on the landing lip — the
+    // car can't pull itself out however hard the throttle is pressed.
+    const rearFree = this.car.wheels.every((w) => w.front || !w.contact);
+    if (this.started && input.throttle && rearFree && this.car.grounded && this.car.speed < 0.8) this.hungTime = (this.hungTime || 0) + dt;
+    else this.hungTime = 0;
+
     if (this.car.pos.y < GROUND_Y - 8) this.restartRun('Restarted', 'fell');
-    else if (this.car.stuckTime > 0.9) this.restartRun('Stuck — restarted', 'stuck');
+    else if (this.car.stuckTime > 0.9 || this.hungTime > 1.5) { this.hungTime = 0; this.restartRun('Stuck — restarted', 'stuck'); }
     else if (this.offTrack > 4) this.restartRun('Off the track — restarted', 'offtrack');
 
     if (this.started) {
