@@ -152,7 +152,7 @@ begin
   if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
   select * into p from public.profiles where id = auth.uid();
   if not found then raise exception 'no profile' using errcode = '28000'; end if;
-  if p.banned then raise exception 'this account is suspended' using errcode = '42501'; end if;
+  if p.banned then raise exception 'This account is suspended.' using errcode = 'P0001'; end if;
   return p;
 end $$;
 
