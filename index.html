@@ -1543,6 +1543,7 @@ const CARCOLOR_KEY = 'skyframe.carcolor.v1';
 const DEFAULT_PRIMARY = { h: 0, s: 80, l: 55 };
 const DEFAULT_SECONDARY = { h: 0, s: 60, l: 37 };
 const CarColor = {
+  loadedUid: null,           // whose colours were last read from the server
   unlocked: [],
   primary: { ...DEFAULT_PRIMARY },
   secondary: { ...DEFAULT_SECONDARY },
@@ -1555,8 +1556,9 @@ const CarColor = {
   async load() {
     let remote = null, isNew = false;
     if (Cloud.on && Cloud.user) {
-      remote = await Cloud.fetchCarColors();
+      remote = await Cloud.fetchCarColors();       // throws if it couldn't be read
       isNew = remote.isNew;
+      this.loadedUid = Cloud.user.uid;             // from here on, saves reflect what the account owns
     } else {
       try {
         const raw = localStorage.getItem(CARCOLOR_KEY);
@@ -1604,6 +1606,10 @@ const CarColor = {
 
   async save() {
     if (Cloud.on && Cloud.user) {
+      // Never write colours this session hasn't read: the whole document is
+      // replaced on save, so saving the defaults shown after a failed load
+      // would wipe every colour the player had bought.
+      if (this.loadedUid !== Cloud.user.uid) throw new Error('Your colours have not loaded yet. Try again in a moment.');
       await Cloud.saveCarColors({ unlocked: this.unlocked, primary: this.primary, secondary: this.secondary });
     } else {
       try {
@@ -1670,6 +1676,9 @@ const CarColor = {
    *  already owned) — checked BEFORE spending, so a maxed-out account can
    *  never be charged for nothing. */
   async buy(slot) {
+    // load the account's colours first if this session hasn't managed to,
+    // so the purchase is added to what they own rather than replacing it
+    if (Cloud.on && Cloud.user && this.loadedUid !== Cloud.user.uid) await this.load();
     const pool = this.lockedHueCells();
     if (!pool.length) throw new Error('Every hue is already unlocked.');
     await Cloud.payForColor();
@@ -8052,6 +8061,7 @@ const Game = {
       Cloud.credits = 0;
       clearTimeout(this._cloudRetry);
       this._colorsLoaded = false;
+      CarColor.loadedUid = null;
       Records.resetSession();
       if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
       Cloud.stopBoards(); Cloud.stopAdjust();
