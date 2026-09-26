@@ -314,14 +314,23 @@ const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Steppi
   'Needle Pass','Kettle Bowl','Splinter Row','Blackwater','Anvil Yard','Cinder Loop','Longshadow','Furrow',
   'Gallows Reach','Slate Vault','Pilot Light','Wraith Line','Ironclad','Deadfall','Hollow Bend','Last Ember',
   'Endless Horizon'].map((name, i) => ({ id: 'c' + (i + 1), name }));
-const S2 = ['Launch Pad','Coastline','Redline Bank','Hopscotch','Quarry Run','Stormwall','Glass Mile',
-  'Switchyard','High Wire','Thunder Bowl','Drop Zone','Corkscrew Ridge','Velocity','Knife Edge','Sky Harbor',
-  'Apex Predator'].map((name, i) => ({ id: 's2c' + (i + 1), name, sec: Math.floor(i / 4),
-    tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
+// Season 2's current maps in play order (must match LEVELS in index.html).
+// Eight were replaced with new maps under new ids, so old times on the
+// retired maps never show up on the new ones.
+const S2 = [['s2c1', 'Launch Pad'], ['s2c17', 'Ribbon Road'], ['s2c18', 'Pinwheel'], ['s2c4', 'Hopscotch'],
+  ['s2c19', 'Slipstream'], ['s2c6', 'Stormwall'], ['s2c20', 'Frostbite'], ['s2c8', 'Switchyard'],
+  ['s2c21', 'Switchback'], ['s2c10', 'Thunder Bowl'], ['s2c11', 'Drop Zone'], ['s2c22', 'Whirlpool'],
+  ['s2c23', 'Gauntlet'], ['s2c14', 'Knife Edge'], ['s2c24', 'Overdrive'], ['s2c16', 'Apex Predator']]
+  .map(([id, name], i) => ({ id, name, sec: Math.floor(i / 4), tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
+const S2_IDS = new Set(S2.map((c) => c.id));
 const COURSE_NAME = {};
 S1.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (S1)'; });
 S2.forEach((c) => { COURSE_NAME[c.id] = c.tag + ' ' + c.name; });
+// the retired Season 2 maps, so old runs in the history still read sensibly
+[['s2c2', 'Coastline'], ['s2c3', 'Redline Bank'], ['s2c5', 'Quarry Run'], ['s2c7', 'Glass Mile'],
+  ['s2c9', 'High Wire'], ['s2c12', 'Corkscrew Ridge'], ['s2c13', 'Velocity'], ['s2c15', 'Sky Harbor']]
+  .forEach(([id, name]) => { COURSE_NAME[id] = name + ' (retired)'; });
 
 const { initializeApp } = await import(SDK + 'firebase-app.js');
 const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } =
@@ -342,7 +351,7 @@ const realOf = (uid) => (byUid[uid] && byUid[uid].realName) || '';
 const realTag = (uid) => (realOf(uid) ? ' <span class="real">' + esc(realOf(uid)) + '</span>' : '');
 // Season 1 runs were only ever timed to the hundredth; the game shows those
 // with +9 ms. Season 2 has always been timed to the millisecond.
-const legacyMs = (ms, courseId) => (/^cd+$/.test(courseId || '') && Math.round(ms) % 10 === 0 ? ms + 9 : ms);
+const legacyMs = (ms, courseId) => (/^c\d+$/.test(courseId || '') && Math.round(ms) % 10 === 0 ? ms + 9 : ms);
 const fmt = (ms) => {
   if (!isFinite(ms)) return '—';
   const t = ms / 1000, m = Math.floor(t / 60), s = Math.floor(t % 60);
@@ -478,7 +487,7 @@ async function loadAll() {
       const v = { id: d.id, ...d.data() };
       bests.push(v);
       const p = byUid[v.uid];
-      if (p) { if (String(v.courseId).startsWith('s2')) p.s2++; else p.s1++; }
+      if (p) { if (S2_IDS.has(v.courseId)) p.s2++; else if (!String(v.courseId).startsWith('s2')) p.s1++; }
     });
     renderPlayers();
     renderTimes();
@@ -616,22 +625,30 @@ async function setBanned(p, banned) {
 
 /** Credits are a sum of append-only events: setting a balance writes one adjustment. */
 async function setCredits(p) {
-  const input = prompt((p.displayName || 'Player') + ' has ' + p.credits + ' credits. Set their balance to:', String(p.credits));
+  const input = prompt((p.displayName || 'Player') + ' has ' + p.credits.toLocaleString('en-US') +
+    ' credits. Set their balance to:', String(p.credits));
   if (input === null) return;
-  const target = parseInt(input, 10);
-  if (!Number.isFinite(target)) { say('pMsg', 'Enter a whole number.', 'err'); return; }
+  // "10,000", "10 000" and "10_000" all mean ten thousand (parseInt stops
+  // at the comma, which used to turn 10,000 into 10)
+  const clean = input.replace(/[\s,_]/g, '');
+  if (!/^\d+$/.test(clean)) { say('pMsg', 'Enter a whole number of credits, like 10000.', 'err'); return; }
+  const target = Number(clean);
+  if (!Number.isSafeInteger(target) || target > 1e9) { say('pMsg', 'That number is too big.', 'err'); return; }
   say('pMsg', 'Setting credits…');
   try {
-    const ceSnap = await getDocs(query(collection(db, 'creditEvents'), where('uid', '==', p.uid)));
-    let live = 0;
-    ceSnap.forEach((d) => { const v = d.data(); if (typeof v.delta === 'number') live += v.delta; });
+    // the live balance, summed on the server (one read, however many events)
+    const agg = await getAggregateFromServer(query(collection(db, 'creditEvents'), where('uid', '==', p.uid)), { t: sum('delta') });
+    const live = agg.data().t || 0;
     const delta = target - live;
-    if (Math.abs(delta) < 1e-9) { say('pMsg', 'Already at ' + target + '.', 'ok'); return; }
+    if (Math.abs(delta) < 1e-9) { say('pMsg', 'Already at ' + target.toLocaleString('en-US') + '.', 'ok'); return; }
     const id = p.uid + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36) + '_adjust';
-    await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, note: 'admin set to ' + target, createdAt: serverTimestamp() });
+    // kind: 'adjust' is what the player's game listens for, so their
+    // balance updates on screen straight away
+    await setDoc(doc(db, 'creditEvents', id), { uid: p.uid, delta, kind: 'adjust', note: 'admin set to ' + target, createdAt: serverTimestamp() });
     await loadAll();
-    say('pMsg', (p.displayName || 'Player') + ' now has ' + target + ' credits.', 'ok');
-  } catch (e) { say('pMsg', e.message, 'err'); }
+    const now = (byUid[p.uid] || p).credits;
+    say('pMsg', (p.displayName || 'Player') + ' now has ' + Number(now).toLocaleString('en-US') + ' credits.', now === target ? 'ok' : 'err');
+  } catch (e) { say('pMsg', 'Could not set credits: ' + e.message, 'err'); }
 }
 
 /* -------------------------------------------------------- delete account */
@@ -796,7 +813,7 @@ function renderOverview() {
   $('ovTiles').innerHTML = tile(players.length, 'players') + tile(players.filter((p) => p.banned).length, 'banned') +
     tile(active24, 'active last 24h') + tile(runs.filter((r) => now - r.ms < 3600000).length, 'attempts last hour') +
     tile(s2runs.length, 'season 2 attempts') + tile(s2runs.length ? Math.round(fin.length / s2runs.length * 100) + '%' : '—', 'finish rate') +
-    tile(bests.filter((b) => String(b.courseId).startsWith('s2')).length, 'season 2 times') +
+    tile(bests.filter((b) => S2_IDS.has(b.courseId)).length, 'season 2 times') +
     tile(Math.floor(earned), 'credits earned') + tile(Math.floor(spent), 'credits spent');
 
   const charts = $('ovCharts');

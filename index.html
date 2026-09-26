@@ -106,6 +106,8 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   border-radius:999px;font-family:var(--mono);pointer-events:none;
   box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
 .creditBadge[hidden]{display:none}
+/* the main menu already shows the balance in its top-right account box */
+body[data-screen=menu] .creditBadge{display:none}
 .creditBadge b{color:#7fe3ff;font-size:15px;font-weight:700}
 .creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
 @keyframes creditPop{
@@ -1033,7 +1035,9 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
         <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--ember)">RESET SCORES</h3>
         <p class="lede" style="font-size:12.5px;margin-bottom:14px">Deletes all your times and ghosts.
           Credits stay. Can't be undone.</p>
-        <div class="row">
+        <label class="fld" for="setResetPass">Type your password to confirm</label>
+        <input type="password" id="setResetPass" autocomplete="current-password" style="width:100%">
+        <div class="row" style="margin-top:14px">
           <button class="danger-outline" id="bResetScores">Reset all my scores</button>
         </div>
         <div class="err" id="setResetMsg"></div>
@@ -1253,7 +1257,7 @@ function migrateLegacyTime(t, courseId) {
   // Only Season 1 maps ever had hundredths timing. Season 2 was timed to
   // the millisecond from day one, where a time ending in 0 is just a time
   // (converting those showed and ranked one run in ten 9 ms slow).
-  if (!/^cd+$/.test(courseId || '')) return t;
+  if (!/^c\d+$/.test(courseId || '')) return t;
   const ms = Math.round(t * 1000);
   return (ms % 10 === 0) ? (ms + 9) / 1000 : t;
 }
@@ -2004,6 +2008,13 @@ const Cloud = {
     if (!this.on) return;
     this.fb.authMod.onAuthStateChanged(this.auth, async (user) => {
       if (this.busy) return;
+      // A late event from an earlier sign-in or sign-out (they are
+      // delivered asynchronously) must not overwrite the session the SDK
+      // actually has now: that is how the menu could still show "Sign
+      // out" while Cloud.user had been wiped to null underneath it, and
+      // every signed-in action then said "Sign in to…".
+      const now = this.auth.currentUser || null;
+      if ((user ? user.uid : null) !== (now ? now.uid : null)) return;
       this.user = user || null;
       this.profile = null;
       if (user) {
@@ -2062,12 +2073,15 @@ const Cloud = {
    * earned, not a leaderboard entry, and letting a reset erase them would
    * let a player farm the clear bonus repeatedly on the same course.
    */
-  async resetScores() {
+  async resetScores(password) {
     if (!this.user || !this.on) throw new Error('Not signed in.');
-    const { fsMod } = this.fb;
+    // Firebase itself checks the password before anything is deleted
+    if (!password) throw new Error('Type your password to reset your scores.');
+    const { authMod, fsMod } = this.fb;
+    await authMod.reauthenticateWithCredential(this.user, authMod.EmailAuthProvider.credential(this.user.email, password));
     const uid = this.user.uid;
     const batch = fsMod.writeBatch(this.db);
-    for (const courseId of this.courseIds()) {
+    for (const courseId of this.courseIds().concat(RETIRED_IDS)) {
       const id = uid + '_' + courseId;
       batch.delete(fsMod.doc(this.db, 'bests', id));
       batch.delete(fsMod.doc(this.db, 'ghosts', id));
@@ -2372,8 +2386,31 @@ const Cloud = {
     });
     const remote = await first;
     this.credits = await this.sumCredits();
+    this.watchAdjust();
     return Object.assign({ credits: this.credits }, remote);
   },
+
+  /**
+   * An admin setting this player's balance shows up straight away. Only
+   * admin adjustments are listened to (a handful of tiny documents, not
+   * every credit event); when one arrives the balance is re-totalled.
+   */
+  watchAdjust() {
+    if (!this.on || !this.user) return;
+    this.stopAdjust();
+    const { fsMod } = this.fb;
+    let first = true;
+    this.adjustUnsub = fsMod.onSnapshot(fsMod.query(fsMod.collection(this.db, 'creditEvents'),
+      fsMod.where('uid', '==', this.user.uid), fsMod.where('kind', '==', 'adjust')), async () => {
+      if (first) { first = false; return; }      // the balance was just totalled at sign-in
+      try {
+        this.credits = await this.sumCredits();
+        UI.who(this.name(), Records.credits);
+        if (Game.state === 'garage') UI.garage();
+      } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); }
+    }, (e) => console.warn('aiPolytrack: credit listener', e && e.message));
+  },
+  stopAdjust() { if (this.adjustUnsub) { this.adjustUnsub(); this.adjustUnsub = null; } },
 
   /** the player's balance: the sum of their credit events, done by the server */
   async sumCredits() {
@@ -2634,7 +2671,7 @@ const _w1 = new THREE.Vector3(), _w2 = new THREE.Vector3(), _w3 = new THREE.Vect
 const _w4 = new THREE.Vector3(), _w5 = new THREE.Vector3();
 
 class Tri {
-  constructor(a, b, c, grip, depth, na, nb, nc, track) {
+  constructor(a, b, c, grip, depth, na, nb, nc, track, boost) {
     this.a = a; this.b = b; this.c = c;
     // Optional per-vertex normals. A ribbon is faceted, and using the flat
     // facet normal makes the suspension force direction jump at every quad
@@ -2654,6 +2691,8 @@ class Tri {
     // but are not the track, and that distinction cannot be inferred from grip
     // — the dusty decking on one course is deliberately low-grip.
     this.track = track !== false;
+    // a speed strip painted on the deck (see CAR.stripAccel)
+    this.boost = boost ? 1 : 0;
     // cached dot products for the barycentric test
     this.d00 = this.e1.dot(this.e1);
     this.d01 = this.e1.dot(this.e2);
@@ -2673,15 +2712,15 @@ class PhysicsWorld {
   }
   clear() { this.tris.length = 0; this.grid.clear(); }
 
-  addTri(a, b, c, grip, depth, na, nb, nc, track) {
-    const t = new Tri(a, b, c, grip, depth, na, nb, nc, track);
+  addTri(a, b, c, grip, depth, na, nb, nc, track, boost) {
+    const t = new Tri(a, b, c, grip, depth, na, nb, nc, track, boost);
     if (t.area2 > 1e-9) this.tris.push(t);
   }
   /** a quad as two triangles, wound a-b-c / a-c-d; N holds optional vertex normals */
-  addQuad(a, b, c, d, grip, depth, doubleSided, N, track) {
+  addQuad(a, b, c, d, grip, depth, doubleSided, N, track, boost) {
     if (N) {
-      this.addTri(a, b, c, grip, depth, N.a, N.b, N.c, track);
-      this.addTri(a, c, d, grip, depth, N.a, N.c, N.d, track);
+      this.addTri(a, b, c, grip, depth, N.a, N.b, N.c, track, boost);
+      this.addTri(a, c, d, grip, depth, N.a, N.c, N.d, track, boost);
     } else {
       this.addTri(a, b, c, grip, depth, null, null, null, track);
       this.addTri(a, c, d, grip, depth, null, null, null, track);
@@ -2777,6 +2816,7 @@ class PhysicsWorld {
         hit.t = tg;
         hit.grip = this.groundGrip;
         hit.track = false;
+        hit.boost = 0;
         hit.normal.set(0, 1, 0);
         hit.point.copy(origin).addScaledVector(dir, tg);
         return true;
@@ -2786,6 +2826,7 @@ class PhysicsWorld {
     hit.t = bestT;
     hit.grip = best.grip;
     hit.track = best.track;
+    hit.boost = best.boost;
     this.smoothNormal(best, bestU, bestV, hit.normal);
     if (twoSided && hit.normal.dot(dir) > 0) hit.normal.multiplyScalar(-1);
     hit.point.copy(origin).addScaledVector(dir, bestT);
@@ -2868,6 +2909,8 @@ function buildMaterials() {
   MAT.side = std(0x4a4f57, { roughness: 0.92 });
   MAT.pad = std(0x5a616a, { roughness: 0.92 });
   MAT.dash = std(0xffffff, { roughness: 0.7 });
+  MAT.strip = std(0x0f4a5c, { roughness: 0.5, emissive: 0x0a7fa0, emissiveIntensity: 0.55 });
+  MAT.stripArrow = std(0xbff4ff, { roughness: 0.4, emissive: 0x5fe0ff, emissiveIntensity: 0.9 });
   MAT.chev = std(0xffc628, { roughness: 0.7 });
   MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
   MAT.finish = std(0xffc628, { emissive: 0xc9930d, emissiveIntensity: 0.45 });
@@ -3085,6 +3128,9 @@ const CAR = {
   // a sliding rear tyre has kinetic, not peak, friction; the steering
   // range either side of the travel line in a slide; the steering lock
   driftRearMu: 0.6, driftSteer: 0.3, steerLock: 0.7,
+  // speed strips (a track element): push in m/s^2 with all four wheels
+  // on, fading out as the car nears stripTop m/s
+  stripAccel: 12, stripTop: 62,
   // Six-speed gearbox with a real torque curve rather than a flat force. Top
   // speed comes out of the balance between drive and drag, not a cap.
   gears: [3.6, 2.4, 1.75, 1.35, 1.10, 0.92],
@@ -3504,10 +3550,12 @@ class Vehicle {
         w.point.copy(this._hit.point);
         w.grip = this._hit.grip;
         w.onTrack = this._hit.track !== false;
+        w.strip = w.comp > 0 ? (this._hit.boost || 0) : 0;
         if (w.comp > 0) contacts++;
       } else {
         w.contact = false;
         w.onTrack = false;
+        w.strip = 0;
         w.comp = -CAR.susDroop;
         w.hitDist = rayLen;
         w.load = 0;
@@ -3557,6 +3605,7 @@ class Vehicle {
     this._updateDrift(dt, input, vFwd);
     this._tyreForces(dt, input, vFwd);
     this._assist(dt, input);
+    this._speedStrips(dt);
 
     /* --- accelerometer readings for the telemetry panel ----------------- */
     this._accel.subVectors(this.vel, this._prevVel).multiplyScalar(1 / dt);
@@ -3653,6 +3702,21 @@ class Vehicle {
     } else {
       this.drift = Math.max(0, (this.drift || 0) - dt * 2.5);
     }
+  }
+
+  /**
+   * Speed strips push the car along its own nose direction, a quarter of
+   * the full push per wheel on the strip, and fade out above
+   * CAR.stripTop so a strip is a kick, not an unlimited accelerator.
+   */
+  _speedStrips(dt) {
+    let on = 0;
+    for (const w of this.wheels) on += w.strip || 0;
+    this.onStrip = on > 0;
+    if (!on) return;
+    const vF = this.vel.dot(this.fwd);
+    const fade = clamp((CAR.stripTop - vF) / 12, 0, 1);
+    this.vel.addScaledVector(this.fwd, CAR.stripAccel * (on / 4) * fade * dt);
   }
 
   /** gearbox, torque curve, engine braking and the boost budget */
@@ -4054,7 +4118,8 @@ class TrackBuilder {
         dash: o.dash !== false && w >= 9.5,
         chev: (o.chev && i % 2 === 0) ? o.chev : 0,
         pier: this.n % this.pierEvery === 0,
-        pad: !!o.pad
+        pad: !!o.pad,
+        boost: !!o.boost
       });
     }
     this.path.push(this.p.toArray());
@@ -4065,6 +4130,8 @@ class TrackBuilder {
   straight(len, o) { return this.slab(len, 0, o); }
   slope(run, rise, o) { return this.slab(run, rise, o); }
   pad(len, w) { return this.slab(len, 0, { w: w, pad: true, dash: false }); }
+  /** a speed strip: glowing deck that pushes the car forward */
+  strip(len, o) { return this.slab(len, 0, Object.assign({ dash: false }, o, { boost: true })); }
   table(len, w) { return this.slab(len, 0, { w: w || this.w + 4, pad: true }); }
 
   /** launch kicker, easing into the angle so the crease is never abrupt */
@@ -4133,8 +4200,8 @@ class TrackBuilder {
       const ease = profile((i + 0.5) / segs);
       this.h += segArc / 2;
       this.slab(chord, rise, {
-        w: o.w, roll: bank * ease, grip: o.grip,
-        chev: (i % 3 === 0) ? chev : 0, dash: o.dash
+        w: o.w, roll: bank * ease, grip: o.grip, boost: o.boost,
+        chev: (i % 3 === 0) ? chev : 0, dash: o.boost ? false : o.dash
       });
       this.h += segArc / 2;
     }
@@ -4310,7 +4377,7 @@ function buildCourse(data, scene, world) {
     deck: new MeshBuilder(), alt: new MeshBuilder(), pad: new MeshBuilder(),
     curb: new MeshBuilder(), curbAlt: new MeshBuilder(),
     side: new MeshBuilder(), dash: new MeshBuilder(),
-    bank: new MeshBuilder()
+    bank: new MeshBuilder(), strip: new MeshBuilder(), arrow: new MeshBuilder()
   };
   const chevs = [];
   const q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
@@ -4350,12 +4417,12 @@ function buildCourse(data, scene, world) {
       // side skirts are buried inside the embankment, so they get no
       // collision of their own — that used to shove cars sideways.
       const NT = { a: u0.clone(), b: u0.clone(), c: u1.clone(), d: u1.clone() };
-      world.addQuad(l0, r0, r1, l1, s.grip === undefined ? 1 : s.grip, 1.10, false, NT);
+      world.addQuad(l0, r0, r1, l1, s.grip === undefined ? 1 : s.grip, 1.10, false, NT, true, s.boost);
       world.addQuad(l0d, l1d, r1d, r0d, 1, 0.10);
 
       // visible top: painted curbs either side of the running surface
       const low = s.grip !== undefined && s.grip < 0.95;
-      const deckMesh = s.pad ? M.pad : (low ? M.alt : M.deck);
+      const deckMesh = s.boost ? M.strip : s.pad ? M.pad : (low ? M.alt : M.deck);
       if (s.curb) {
         const li0 = edge(p0, x0, u0, hw0 - CURB_W), li1 = edge(p1, x1, u1, hw1 - CURB_W);
         const ri0 = edge(p0, x0, u0, -(hw0 - CURB_W)), ri1 = edge(p1, x1, u1, -(hw1 - CURB_W));
@@ -4393,6 +4460,13 @@ function buildCourse(data, scene, world) {
       world.addQuad(r0, fr0, fr1, r1, 0.5, 0.9, false, null, false);
       M.side.quad(l0d, l1d, r1d, r0d);
 
+      if (s.boost && i % 2 === 0) {
+        // a forward-pointing arrow painted on the strip every other quad
+        const lift = 0.025, aw = Math.min(hw0 * 0.55, 3), t0 = 0.1, t1 = 0.9;
+        const at = (t, off) => V().lerpVectors(edge(p0, x0, u0, off, lift), edge(p1, x1, u1, off, lift), t);
+        M.arrow.quad(at(t0, aw), at(t0, aw - 0.9), at(t1, 0.45), at(t1, 1.35));
+        M.arrow.quad(at(t0, -aw + 0.9), at(t0, -aw), at(t1, -1.35), at(t1, -0.45));
+      }
       if (s.dash && i % 2 === 0) {
         const lift = 0.02;
         M.dash.quad(
@@ -4439,6 +4513,8 @@ function buildCourse(data, scene, world) {
   addMesh(M.side, MAT.side, false);
   addMesh(M.bank, MAT.bank, true);
   addMesh(M.dash, MAT.dash, false);
+  addMesh(M.strip, MAT.strip, true);
+  addMesh(M.arrow, MAT.stripArrow, false);
 
   const inst = (list, mat) => {
     if (!list.length) return;
@@ -4576,45 +4652,56 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c2', section: 0, name: 'Coastline',
-    blurb: 'Long sweepers that tighten. Stay flat out if you dare.',
+    id: 's2c17', section: 0, name: 'Ribbon Road',
+    blurb: 'Linked esses that never quite straighten out, and one speed strip.',
     build() {
-      const b = new TrackBuilder({ width: 13 });
-      b.pad(22, 17);
-      b.straight(70);
-      b.curve(95, 40, { bank: 18 });
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 18);
+      b.slope(40, 1.2);
+      b.curve(60, 40, { bank: 16, chev: 1 });
+      b.curve(60, -40, { bank: 16, chev: 1 });
+      b.curve(60, 40, { bank: 16, chev: 1 });
+      b.straight(20);
+      b.strip(26);
+      b.curve(55, 95, { bank: 30, chev: 1 });
+      b.straight(25);
+      b.curve(50, 45, { bank: 18, chev: 1 });
+      b.curve(50, -45, { bank: 18, chev: 1 });
+      b.straight(20);
+      b.crest(26, 5);
+      b.curve(60, -40, { bank: 16, chev: 1 });
+      b.curve(60, 40, { bank: 16, chev: 1 });
+      b.straight(15);
+      b.curve(55, 85, { bank: 28, chev: 1 });
       b.straight(40);
-      b.curve(80, 45, { bank: 22, chev: 1 });
-      b.straight(80);
-      b.slope(50, 6);
-      b.curve(70, -105, { bank: 32, chev: 1 });
-      b.straight(60);
-      b.slope(60, -6);
-      b.straight(60);
-      b.curve(60, 70, { bank: 26, chev: 1 });
-      b.straight(70);
       b.gate('finish');
-      b.straight(34, { w: 17 });
+      b.straight(34, { w: 18 });
       return b.build();
     }
   },
   {
-    id: 's2c3', section: 0, name: 'Redline Bank',
-    blurb: 'Two steep walls on a wide deck. Commit and they hold you.',
+    id: 's2c18', section: 0, name: 'Pinwheel',
+    blurb: 'Banked right after banked right, with a kicker crest between them.',
     build() {
-      const b = new TrackBuilder({ width: 16 });
-      b.pad(24, 20);
-      b.straight(110);
-      b.curve(70, 120, { bank: 38, chev: 1 });
-      b.straight(80);
-      b.slope(40, 4);
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 18);
       b.straight(40);
-      b.curve(75, -115, { bank: 36, chev: 1 });
-      b.straight(100);
-      b.crest(32, 6);
-      b.straight(50);
+      b.curve(48, 80, { bank: 30, chev: 1 });
+      b.straight(18);
+      b.curve(48, 80, { bank: 30, chev: 1 });
+      b.straight(16);
+      b.slope(20, 2);
+      b.crest(36, 9, { w: 15 });
+      b.straight(14, { w: 15 });
+      b.curve(52, 70, { bank: 28, chev: 1 });
+      b.straight(24);
+      b.strip(22);
+      b.curve(55, -60, { bank: 24, chev: 1 });
+      b.straight(20);
+      b.curve(50, -45, { bank: 20, chev: 1 });
+      b.straight(30);
       b.gate('finish');
-      b.straight(36, { w: 20 });
+      b.straight(34, { w: 18 });
       return b.build();
     }
   },
@@ -4649,24 +4736,32 @@ const LEVELS = [
   },
   // ---------------------------------------------------------- Section B
   {
-    id: 's2c5', section: 1, name: 'Quarry Run',
-    blurb: 'Up the long ramp, then a banked drop back to the floor.',
+    id: 's2c19', section: 1, name: 'Slipstream',
+    blurb: 'Speed strips fling you into banked turns. Brake late or fly off.',
     build() {
-      const b = new TrackBuilder({ width: 12 });
-      b.pad(22, 16);
-      b.straight(60);
-      b.slope(80, 14);
-      b.straight(40);
-      b.curve(60, -110, { bank: 30, rise: -4, chev: 1 });
-      b.straight(50);
-      b.slope(70, -9);
-      b.straight(60);
-      b.crest(28, 8);
-      b.straight(60);
-      b.curve(70, -60, { bank: 22, chev: 1 });
-      b.straight(80);
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.straight(30);
+      b.strip(30);
+      b.curve(60, 70, { bank: 30, chev: 1 });
+      b.straight(20);
+      b.slope(30, 4);
+      b.strip(24);
+      b.curve(55, 80, { bank: 32, rise: 3, chev: 1 });
+      b.straight(20);
+      b.curve(45, 40, { bank: 18, chev: 1 });
+      b.curve(45, -40, { bank: 18, chev: 1 });
+      b.straight(25);
+      b.strip(20);
+      b.ramp(16, 8);
+      b.gap(24, -3);
+      b.landing(22, -8, { w: 16 });
+      b.curve(60, -75, { bank: 30, chev: 1 });
+      b.straight(30);
+      b.slope(30, -3);
+      b.straight(20);
       b.gate('finish');
-      b.straight(34, { w: 16 });
+      b.straight(34, { w: 17 });
       return b.build();
     }
   },
@@ -4692,22 +4787,27 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c7', section: 1, name: 'Glass Mile',
-    blurb: 'Slick decking on a long straight. Smooth hands win it.',
+    id: 's2c20', section: 1, name: 'Frostbite',
+    blurb: 'Icy decking through a chain of tight turns. Feather the throttle.',
     build() {
-      const b = new TrackBuilder({ width: 12 });
-      b.pad(22, 16);
-      b.straight(60);
-      b.curve(80, 45, { bank: 20, chev: 1 });
-      b.straight(180, { grip: 0.82 });
-      b.curve(70, 70, { bank: 26, grip: 0.82, chev: 1 });
-      b.straight(60);
-      b.bumps(3, 12, 1.0);
-      b.straight(50);
-      b.curve(75, -80, { bank: 26, chev: 1 });
-      b.straight(90, { grip: 0.82 });
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.slope(35, 1.2);
+      b.curve(50, 60, { bank: 24, chev: 1 });
+      b.straight(28, { grip: 0.8 });
+      b.curve(45, 45, { bank: 20, grip: 0.8, chev: 1 });
+      b.curve(45, -45, { bank: 20, grip: 0.8, chev: 1 });
+      b.straight(20);
+      b.curve(50, -70, { bank: 26, chev: 1 });
+      b.straight(15, { grip: 0.8 });
+      b.bumps(3, 9, 0.8);
+      b.curve(55, -60, { bank: 24, grip: 0.8, chev: 1 });
+      b.straight(20);
+      b.curve(50, 40, { bank: 18, chev: 1 });
+      b.curve(50, -40, { bank: 18, chev: 1 });
+      b.straight(30, { grip: 0.8 });
       b.gate('finish');
-      b.straight(34, { w: 16 });
+      b.straight(34, { w: 17 });
       return b.build();
     }
   },
@@ -4736,24 +4836,26 @@ const LEVELS = [
   },
   // ---------------------------------------------------------- Section C
   {
-    id: 's2c9', section: 2, name: 'High Wire',
-    blurb: 'Eight metres wide and high on the bank. Every line counts.',
+    id: 's2c21', section: 2, name: 'Switchback',
+    blurb: 'Climb the hill in hairpins, then plunge straight back down it.',
     build() {
-      const b = new TrackBuilder({ width: 8 });
-      b.pad(22, 14);
-      b.straight(60, { w: 10 });
-      b.slope(60, 9);
-      b.straight(60);
-      b.curve(55, 80, { bank: 26, chev: 1 });
-      b.straight(90, { w: 7.5 });
-      b.curve(60, 60, { bank: 24, chev: 1 });
-      b.straight(40);
-      b.slope(50, -8);
-      b.straight(80, { w: 9 });
-      b.curve(55, -75, { bank: 26, w: 9, chev: 1 });
-      b.straight(60, { w: 8 });
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(22, 16);
+      b.straight(30);
+      b.curve(40, 120, { bank: 32, rise: 4, chev: 1 });
+      b.slope(46, 6);
+      b.curve(40, -120, { bank: 32, rise: 4, chev: 1 });
+      b.slope(46, 6);
+      b.curve(40, 120, { bank: 32, rise: 4, chev: 1 });
+      b.straight(20);
+      b.crest(24, 5);
+      b.slope(60, -14);
+      b.curve(55, 60, { bank: 26, chev: 1 });
+      b.straight(20);
+      b.slope(30, -6);
+      b.straight(20);
       b.gate('finish');
-      b.straight(32, { w: 14 });
+      b.straight(32, { w: 16 });
       return b.build();
     }
   },
@@ -4806,20 +4908,24 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c12', section: 2, name: 'Corkscrew Ridge',
-    blurb: 'A climbing banked spiral, then the long run down its spine.',
+    id: 's2c22', section: 2, name: 'Whirlpool',
+    blurb: 'A tightening spiral down the hill, speed strips between the walls.',
     build() {
       const b = new TrackBuilder({ width: 13 });
       b.pad(22, 17);
-      b.straight(80);
-      b.curve(55, 150, { bank: 34, rise: 9, chev: 1 });
-      b.straight(60);
-      b.curve(60, -100, { bank: 30, rise: 5, chev: 1 });
-      b.straight(40);
-      b.crest(30, 6);
-      b.straight(70);
-      b.slope(60, -12);
-      b.straight(80);
+      b.straight(20);
+      b.curve(80, -45, { bank: 14, rise: 10, chev: 1 });
+      b.slope(50, 12);
+      b.curve(70, 100, { bank: 30, rise: -5, chev: 1 });
+      b.strip(18);
+      b.curve(52, 105, { bank: 34, rise: -5, chev: 1 });
+      b.strip(16);
+      b.slope(30, -4);
+      b.ramp(16, 7);
+      b.gap(22, -2);
+      b.landing(22, -7, { w: 16 });
+      b.curve(55, -60, { bank: 24, chev: 1 });
+      b.straight(30);
       b.gate('finish');
       b.straight(34, { w: 17 });
       return b.build();
@@ -4827,23 +4933,33 @@ const LEVELS = [
   },
   // ---------------------------------------------------------- Section D
   {
-    id: 's2c13', section: 3, name: 'Velocity',
-    blurb: 'The fastest course here. Long straights, huge banked arcs.',
+    id: 's2c23', section: 3, name: 'Gauntlet',
+    blurb: 'Everything at once: esses, a jump into a wall, strips and whoops.',
     build() {
-      const b = new TrackBuilder({ width: 15 });
-      b.pad(24, 19);
-      b.straight(160);
-      b.curve(110, 70, { bank: 34, chev: 1 });
-      b.straight(160);
-      b.curve(115, 75, { bank: 34, chev: 1 });
-      b.straight(100);
-      b.slope(40, 6);
-      b.ramp(24, 8);
-      b.gap(40, -3);
-      b.landing(30, -7, { w: 18 });
-      b.straight(120);
+      const b = new TrackBuilder({ width: 12 });
+      b.pad(22, 16);
+      b.slope(30, 1.2);
+      b.curve(55, 45, { bank: 20, chev: 1 });
+      b.curve(55, -45, { bank: 20, chev: 1 });
+      b.slope(30, 5);
+      b.strip(22);
+      b.ramp(16, 9);
+      b.gap(24, -2);
+      b.landing(20, -7, { w: 15 });
+      b.curve(50, 110, { bank: 36, chev: 1 });
+      b.straight(18);
+      b.bumps(3, 9, 0.9);
+      b.straight(15);
+      b.curve(45, 50, { bank: 22, chev: 1 });
+      b.curve(45, -50, { bank: 22, chev: 1 });
+      b.straight(20);
+      b.curve(50, -100, { bank: 34, chev: 1 });
+      b.strip(24);
+      b.crest(26, 6);
+      b.curve(55, 70, { bank: 28, chev: 1 });
+      b.straight(30, { grip: 0.85 });
       b.gate('finish');
-      b.straight(40, { w: 19 });
+      b.straight(34, { w: 16 });
       return b.build();
     }
   },
@@ -4872,29 +4988,35 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c15', section: 3, name: 'Sky Harbor',
-    blurb: 'A high plateau loop with two jumps off the edge of it.',
+    id: 's2c24', section: 3, name: 'Overdrive',
+    blurb: 'Strip after strip, two jumps, and turns that come at you fast.',
     build() {
-      const b = new TrackBuilder({ width: 12 });
-      b.pad(22, 16);
-      b.straight(60);
-      b.slope(90, 16);
-      b.straight(40);
-      b.curve(60, 80, { bank: 30, chev: 1 });
-      b.straight(50);
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.straight(25);
+      b.slope(30, 5);
+      b.strip(30);
+      b.curve(65, 80, { bank: 34, chev: 1 });
+      b.straight(14);
+      b.strip(20);
       b.ramp(18, 9);
       b.gap(28, -3);
-      b.table(40, 16);
-      b.curve(60, -80, { bank: 30, chev: 1 });
-      b.straight(40);
-      b.ramp(18, 7);
-      b.gap(32, -8);
-      b.landing(30, -12, { w: 16 });
-      b.straight(60);
-      b.slope(40, -4);
-      b.straight(60);
+      b.landing(24, -8, { w: 16 });
+      b.curve(60, 90, { bank: 34, chev: 1 });
+      b.straight(15);
+      b.curve(50, 40, { bank: 18, chev: 1 });
+      b.curve(50, -40, { bank: 18, chev: 1 });
+      b.strip(24);
+      b.slope(30, 5);
+      b.ramp(16, 8);
+      b.gap(26, -3);
+      b.landing(22, -8, { w: 16 });
+      b.curve(55, -85, { bank: 32, chev: 1 });
+      b.straight(20);
+      b.strip(20);
+      b.straight(25);
       b.gate('finish');
-      b.straight(34, { w: 16 });
+      b.straight(34, { w: 17 });
       return b.build();
     }
   },
@@ -4926,6 +5048,9 @@ const LEVELS = [
   }
 ];
 const COURSE_IDS = LEVELS.map((l) => l.id);
+// Season 2 maps that were replaced by new ones (new ids, so their old times
+// never appear on the new maps); a score reset still clears these too
+const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15'];
 function courseIndexOf(id) { return LEVELS.findIndex((l) => l.id === id); }
 function sectionIds(sec) { return LEVELS.filter((l) => l.section === sec).map((l) => l.id); }
 /** "A1".."D4": section letter plus the map's place within its section */
@@ -6557,6 +6682,7 @@ const UI = {
      'raceReveal', 'raceBetween', 'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
+    document.body.dataset.screen = id;   // lets CSS hide things per screen
   },
   who(name, credits) {
     $('who').hidden = !name;
@@ -7155,11 +7281,12 @@ const UI = {
     $('gActiveSlotName').textContent = slot.toUpperCase();
     $('gHueSlotName').textContent = slot;
     $('gSatLightSlotName').textContent = slot;
-    $('gCredits').textContent = Cloud.on ? (Cloud.credits || 0) : 'offline';
+    const signedIn = !!(Cloud.on && Cloud.user);
+    $('gCredits').textContent = signedIn ? Records.credits : 'offline';
     const hueMaxed = CarColor.lockedHueCells().length === 0;
-    $('gBuyHue').disabled = !Cloud.on || hueMaxed;
+    $('gBuyHue').disabled = !signedIn || hueMaxed;
     $('gBuyHue').textContent = hueMaxed ? 'Every hue already unlocked' : 'Buy a hue pack — 10 credits';
-    $('gBuyMsg').textContent = Cloud.on ? '' : 'Sign in to buy colors.';
+    $('gBuyMsg').textContent = signedIn ? '' : 'Sign in to buy colors.';
 
     // HUE grid: 256 cells, one per hue, at the pack's own fixed reference
     // s/l — a hue you own reads as unlocked here regardless of which
@@ -7469,13 +7596,19 @@ const Game = {
     this.authPending = false;
     const knownGoodUid = this.confirmedUid;
     if (!user) {
-      if (knownGoodUid) return; // an explicit signOut() clears confirmedUid itself
+      // watch() only passes a null user once the SDK's own session has
+      // really ended, so the menu can't stay "signed in" past it — every
+      // write would be refused. (An explicit signOut() has already
+      // cleared confirmedUid; anything else is the session expiring.)
+      this.confirmedUid = null;
       Cloud.credits = 0;
       if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
-      Cloud.stopBoards();
+      Cloud.stopBoards(); Cloud.stopAdjust();
       this.seasonAwards = null; this.s1Mine = null;
       this.lobby = null; this.lobbyEntries = [];
-      UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate'; return;
+      UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate';
+      if (knownGoodUid) UI.gateError('You were signed out. Sign in again.');
+      return;
     }
     if (!profile) {
       if (knownGoodUid && knownGoodUid === user.uid) {
@@ -7832,11 +7965,14 @@ const Game = {
     });
     $('bResetScores').addEventListener('click', async () => {
       const msg = $('setResetMsg');
+      const pass = $('setResetPass').value;
+      if (!pass) { msg.textContent = 'Type your password to reset your scores.'; return; }
       if (!confirm('Delete all your times and ghosts? This can\'t be undone.')) return;
       $('bResetScores').disabled = true;
       msg.textContent = 'Working…';
       try {
-        await Cloud.resetScores();
+        await Cloud.resetScores(pass);
+        $('setResetPass').value = '';
         msg.textContent = 'Scores reset.';
       } catch (e) { msg.textContent = this.authMessage(e); }
       $('bResetScores').disabled = false;
@@ -8595,7 +8731,8 @@ const Game = {
     $('bSelTabBoards').classList.toggle('on', onBoards);
     $('selectCoursesPane').hidden = onBoards;
     $('selectBoardsPane').hidden = !onBoards;
-    $('bBoardWipe').hidden = !onBoards;
+    // signed in, the server holds the times (they're reset from Settings)
+    $('bBoardWipe').hidden = !onBoards || !!(Cloud.on && Cloud.user);
     $('selectNote').textContent = onBoards
       ? (Cloud.on ? 'Live. Tick runs to watch or race them.' : 'Times on this device.')
       : 'Pick a map to see its leaderboard.';
@@ -8641,7 +8778,7 @@ const Game = {
     Sound.stopEngine();
     $('setUser').textContent = Cloud.on ? Cloud.name() : Records.driver();
     $('setOldPass').value = ''; $('setNewPass').value = '';
-    $('setPassMsg').textContent = ''; $('setResetMsg').textContent = '';
+    $('setPassMsg').textContent = ''; $('setResetMsg').textContent = ''; $('setResetPass').value = '';
     // password change and cloud score reset only make sense signed in —
     // offline/local-only mode has no account to change or server data to
     // wipe, only the same "Clear all times" already on the boards screen
@@ -9535,6 +9672,8 @@ const Game = {
         }
         if (this.car.boosting && !this.wasBoosting) Sound.boostFire();
         this.wasBoosting = this.car.boosting;
+        if (this.car.onStrip && !this.wasOnStrip) Sound.boostFire();   // hitting a speed strip
+        this.wasOnStrip = this.car.onStrip;
       }
     } else if (this.state === 'result') {
       const input = { throttle: 0, brake: 1, steer: 0, handbrake: 0 };
