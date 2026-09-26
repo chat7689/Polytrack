@@ -3256,7 +3256,7 @@ const CAR = {
   susRest: 0.26, susDroop: 0.15, susMaxComp: 0.26,
   // stiffer and better damped: the body stays flat through direction changes
   // instead of rolling onto its outside springs
-  kSpring: 54000, cComp: 3800, cReb: 4900, loadMax: 85000,
+  kSpring: 54000, cComp: 4400, cReb: 6200, loadMax: 85000,
   // Progressive bump stop instead of a hard force clamp. This is what a real
   // rubber stop does, and it absorbs a hard landing rather than ending it.
   // A bump stop that is purely elastic returns all the landing energy and
@@ -3269,7 +3269,7 @@ const CAR = {
   mu: 2.42,
   // Only a little grip lost as load rises, so weight transfer mid-corner
   // doesn't snap the rear loose.
-  muLoadSens: 0.04, loadRef: 3020,
+  muLoadSens: 0.08, loadRef: 3020,
   rearGrip: 1.12,         // rear axle slightly grippier: stable, never oversteers
   rollCentre: 0.75,       // fraction of the tyre-to-CoM lever removed from lateral force
   // Stability assist (the car goes where it points): bleeds off sideways
@@ -3309,7 +3309,7 @@ const CAR = {
   // it multiplies speed you have earned rather than adding the same kick
   // anywhere — spending it all off the line is the weakest use of it.
   boostAccel: 4.2, boostMul: 0.14, boostTotal: 3.0,
-  brakeFront: 5400, brakeRear: 3300, handbrake: 9500,
+  brakeFront: 4300, brakeRear: 2500, handbrake: 9500,
 
   drag: 0.62,
   maxSteer: 0.58, minSteer: 0.26, steerRef: 40, steerRate: 7.5,
@@ -4396,6 +4396,16 @@ class TrackBuilder {
     easeBanking(this.strips);
     liftBankedTurns(this.strips);
     smoothProfile(this.strips, 7);
+    // gates stand on the finished road surface (the lift and the profile
+    // smoothing above can move it a metre from where the cursor was)
+    for (const g of this.gates) {
+      let best = null, bd = Infinity;
+      for (const st of this.strips) for (const f of st.frames) {
+        const d = (f.p[0] - g.pos[0]) ** 2 + (f.p[2] - g.pos[2]) ** 2;
+        if (d < bd) { bd = d; best = f; }
+      }
+      if (best) g.pos[1] = best.p[1];
+    }
     return { strips: this.strips, gates: this.gates, start: this.start, path: this.path };
   }
 }
