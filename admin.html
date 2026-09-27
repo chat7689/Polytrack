@@ -416,6 +416,8 @@ const ago = (ms) => {
   return Math.round(s / 86400) + 'd ago';
 };
 const KIND = { campaign: 'Campaign', creditsrun: 'Credit run', race: 'Race' };
+/** credits as the game writes them: a thin space every three digits (1 000 000) */
+const fmtCredits = (n) => { const v = Math.floor(Number(n) || 0); return (v < 0 ? '−' : '') + String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); };
 const OUTCOME = { finished: ['Finished', 'fin'], restarted: ['Restarted', 'rst'], terminated: ['Ended early', 'trm'] };
 const REASON = { restart: 'pressed R', offtrack: 'off the track', stuck: 'stuck', fell: 'fell', error: 'physics reset',
   menu: 'quit to menu', closed: 'closed the page', finished: 'crossed the line' };
@@ -629,7 +631,7 @@ function renderPlayers() {
       '<td><span class="pill' + (p.banned ? ' on' : '') + '"' + (p.legacy && !p.banned ? ' title="Moved over from Firebase; ' +
         'becomes theirs when they sign up again with this username"' : '') + '>' +
         (p.banned ? 'banned' : p.legacy ? 'not back yet' : 'active') + '</span></td>' +
-      '<td class="mono r">' + p.credits + '</td><td class="mono r">' + p.s2 + ' / ' + S2.length + '</td>' +
+      '<td class="mono r">' + fmtCredits(p.credits) + '</td><td class="mono r">' + p.s2 + ' / ' + S2.length + '</td>' +
       '<td class="mono r">' + p.runs + '</td><td class="mono" title="' + fmtWhen(p.lastMs) + '">' + ago(p.lastMs) + '</td>' +
       '<td>' + (trophyText(p.uid) || '<span class="mono">—</span>') + '</td><td class="r" style="white-space:nowrap"></td>';
     const cell = tr.lastElementChild;
@@ -664,7 +666,7 @@ function showPlayer(p) {
   el.innerHTML = '<div class="spread"><h2 style="margin:0">' + esc(p.displayName) + '</h2><button class="small" id="pdClose">Close</button></div>' +
     '<div class="kv" style="margin:12px 0">' +
     '<div><span>real name</span><b>' + esc(p.realName || '—') + '</b></div>' +
-    '<div><span>uid</span><b>' + esc(p.uid) + '</b></div><div><span>credits</span><b>' + p.credits + '</b></div>' +
+    '<div><span>uid</span><b>' + esc(p.uid) + '</b></div><div><span>credits</span><b>' + fmtCredits(p.credits) + '</b></div>' +
     '<div><span>maps cleared</span><b>' + p.s2 + ' / ' + S2.length + '</b></div>' +
     '<div><span>attempts loaded</span><b>' + myRuns.length + '</b></div><div><span>finished</span><b>' + fin + '</b></div>' +
     '<div><span>last seen</span><b>' + fmtWhen(p.lastMs) + '</b></div><div><span>status</span><b>' + (p.banned ? 'banned' : 'active') + '</b></div>' +
@@ -707,7 +709,7 @@ async function setBanned(p, banned) {
 
 /** Credits are a sum of append-only events: setting a balance writes one adjustment. */
 async function setCredits(p) {
-  const input = prompt((p.displayName || 'Player') + ' has ' + p.credits.toLocaleString('en-US') +
+  const input = prompt((p.displayName || 'Player') + ' has ' + fmtCredits(p.credits) +
     ' credits. Set their balance to:', String(p.credits));
   if (input === null) return;
   // "10,000", "10 000" and "10_000" all mean ten thousand (parseInt stops
@@ -724,7 +726,7 @@ async function setCredits(p) {
     await refreshTotals();
     redrawAll();
     const now = p.credits;
-    say('pMsg', (p.displayName || 'Player') + ' now has ' + Number(now).toLocaleString('en-US') + ' credits.', now === target ? 'ok' : 'err');
+    say('pMsg', (p.displayName || 'Player') + ' now has ' + fmtCredits(now) + ' credits.', now === target ? 'ok' : 'err');
   } catch (e) { say('pMsg', 'Could not set credits: ' + e.message, 'err'); }
 }
 
@@ -872,7 +874,7 @@ function renderOverview() {
     tile(active24, 'active last 24h') + tile(runs.filter((r) => now - r.ms < 3600000).length, 'attempts last hour') +
     tile(s2runs.length, 'this season\'s attempts') + tile(s2runs.length ? Math.round(fin.length / s2runs.length * 100) + '%' : '—', 'finish rate') +
     tile(bests.filter((b) => S2_IDS.has(b.courseId)).length, 'times on the boards') +
-    tile(Math.floor(earned), 'credits earned') + tile(Math.floor(spent), 'credits spent');
+    tile(fmtCredits(earned), 'credits earned') + tile(fmtCredits(spent), 'credits spent');
 
   const charts = $('ovCharts');
   charts.innerHTML = '';

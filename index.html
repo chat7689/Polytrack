@@ -127,10 +127,46 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   border-radius:999px;font-family:var(--mono);pointer-events:none;
   box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
 .creditBadge[hidden]{display:none}
-/* the main menu already shows the balance in its top-right account box */
-body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge,body[data-screen=secview] .creditBadge{display:none}
+/* the menu, garage and trophy room show the balance themselves; settings
+   and the guide put their heading where the badge sits (it is drawn above
+   every screen, so it would cover them) */
+body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge,body[data-screen=secview] .creditBadge,
+body[data-screen=garage] .creditBadge,body[data-screen=trophies] .creditBadge,body[data-screen=settings] .creditBadge,
+body[data-screen=info] .creditBadge{display:none}
 .creditBadge b{color:#7fe3ff;font-size:15px;font-weight:700}
 .creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
+/* the Settings rows, and the guide */
+.setRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--rule-2)}
+.setRow b{display:block;font-size:14px;font-weight:600}
+.setRow small{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+.setRow button{min-width:64px}
+select{font-family:inherit;font-size:13.5px;color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
+  border-radius:2px;padding:9px 11px;max-width:260px}
+select:focus{outline:none;border-color:var(--aqua)}
+select option{background:#0f1a30;color:var(--ink)}
+.infoPanel{width:min(900px,94vw)}
+.infoNav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 18px;position:sticky;top:-40px;padding:10px 0;
+  background:rgba(10,17,36,.94);z-index:2}
+.infoNav a{font-family:var(--mono);font-size:11.5px;padding:6px 11px;border:1px solid var(--rule-2);border-radius:999px;
+  color:var(--dim);text-decoration:none}
+.infoNav a:hover{color:var(--ink);border-color:rgba(234,240,248,.3)}
+.infoBody section{padding:14px 0 16px;border-bottom:1px solid var(--rule-2);scroll-margin-top:60px}
+.infoBody section:last-child{border-bottom:0}
+.infoBody h3{font-size:16px;margin-bottom:8px;letter-spacing:-.01em}
+.infoBody p{color:var(--dim);font-size:14px;line-height:1.62;max-width:70ch;margin-bottom:8px}
+.infoBody p b,.infoBody li b{color:var(--ink);font-weight:600}
+.infoBody ul{margin:0 0 8px 18px;color:var(--dim);font-size:14px;line-height:1.62;max-width:68ch}
+.infoKeys{display:grid;grid-template-columns:max-content 1fr;gap:7px 16px;margin:4px 0 10px;font-size:13.5px}
+.infoKeys dt{font-family:var(--mono);color:var(--ink);white-space:nowrap}
+.infoKeys dd{color:var(--dim)}
+/* the garage's message line keeps its height, so "Rolling…" appearing and
+   going doesn't push everything below it up and down */
+.gBuyMsg{min-height:1.5em}
+/* the 3D credits flying into the balance */
+#fxCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
+#fxCanvas[hidden]{display:none}
+@keyframes creditGulp{0%{transform:scale(1)}40%{transform:scale(1.42);box-shadow:0 6px 26px rgba(88,210,255,.75)}100%{transform:scale(1)}}
+.creditBadge.gulp{animation:creditGulp .26s ease-out;transform-origin:30% 50%}
 @keyframes creditPop{
   0%{transform:scale(1)}
   35%{transform:scale(1.22);box-shadow:0 6px 22px rgba(88,210,255,.6)}
@@ -250,7 +286,7 @@ body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge,body
 @media (max-width:900px){
   #spectate.comparing .specTop{right:12px}
   #spectate.comparing #cmpPanel{top:64px;left:8px;right:8px;width:auto;bottom:auto;
-    max-height:max(120px,calc(100vh - 64px - 190px));border:1px solid var(--rule);border-radius:8px}
+    max-height:max(140px,calc(55vh - 64px));border:1px solid var(--rule);border-radius:8px}
   #spectate.comparing #cmpMap{display:none}
   #spectate.comparing .specDock{left:50%;width:min(calc(100vw - 32px),560px)}
 }
@@ -461,43 +497,6 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   background:linear-gradient(135deg,#d7f7ff 0%,#7fe3ff 38%,#2fb4ec 70%,#1587c4 100%);
   box-shadow:0 0 8px rgba(88,210,255,.55)}
 
-/* Credit payoff: the diamond pops in with one spin-and-settle, sparks ring
-   outward and the amount floats up. .mini is the small, quick version
-   played for the +1 on every finished course. */
-.creditBurst{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
-  width:0;height:0;pointer-events:none;z-index:5}
-.creditBurst[hidden]{display:none}
-.creditBurst .coin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);
-  width:64px;height:64px;display:flex;align-items:center;justify-content:center;
-  animation:creditCoinPop .8s cubic-bezier(.25,1.15,.4,1) forwards}
-.creditBurst .coin .gem2d{width:42px;height:42px;margin:0;border-radius:5px;border-width:2px;
-  box-shadow:0 0 22px rgba(88,210,255,.75),0 0 0 4px rgba(88,210,255,.18)}
-@keyframes creditCoinPop{
-  0%{transform:translate(-50%,-50%) scale(0) rotateY(0deg);opacity:0}
-  12%{opacity:1}
-  70%{transform:translate(-50%,-50%) scale(1.08) rotateY(380deg)}
-  100%{transform:translate(-50%,-50%) scale(1) rotateY(360deg)}
-}
-.creditBurst .plusOne{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  font-family:var(--mono);font-size:22px;font-weight:700;color:#7fe3ff;opacity:0;white-space:nowrap;
-  text-shadow:0 2px 10px rgba(88,210,255,.6);animation:creditPlusFloat 1s ease-out .2s forwards}
-@keyframes creditPlusFloat{
-  0%{opacity:0;transform:translate(-50%,-45%) scale(.7)}
-  30%{opacity:1;transform:translate(-50%,-80%) scale(1)}
-  100%{opacity:0;transform:translate(-50%,-150%) scale(1)}
-}
-.creditBurst .spark{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:1px;
-  transform:rotate(45deg);background:#7fe3ff;box-shadow:0 0 6px 1px rgba(88,210,255,.75);opacity:0;
-  animation:creditSpark .6s ease-out forwards}
-@keyframes creditSpark{
-  0%{opacity:.9;transform:translate(-50%,-50%) translate(0,0) scale(1)}
-  100%{opacity:0;transform:translate(-50%,-50%) var(--sparkTo) scale(.4)}
-}
-.creditBurst.mini{top:27%}
-.creditBurst.mini .coin{width:36px;height:36px;animation-duration:.42s}
-.creditBurst.mini .coin .gem2d{width:22px;height:22px;border-radius:3px;border-width:1px}
-.creditBurst.mini .plusOne{font-size:15px;animation-duration:.6s;animation-delay:.08s}
-.creditBurst.mini .spark{width:4px;height:4px;animation-duration:.38s}
 #fatal p{color:var(--dim);font-size:14px;line-height:1.65}
 .gate{width:min(430px,94vw);padding:34px 34px 30px}
 .gate h2{font-size:27px;letter-spacing:-.03em;margin-bottom:6px}
@@ -612,7 +611,9 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .seasonTag{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:#1d0a02;background:var(--signal);
   padding:5px 10px;border-radius:999px;font-weight:700;align-self:center;white-space:nowrap}
 .menuTop .who{margin:6px 0 0;gap:12px;align-items:center}
-.menuTop .who .cr b{color:#7fe3ff}
+.menuTop .who .cr{font-size:22px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.menuTop .who .cr b{color:#7fe3ff;font-weight:700;text-shadow:0 0 14px rgba(88,210,255,.45)}
+.menuTop .who .cr .gem2d{width:.62em;height:.62em;margin-right:.18em}
 .menuGrid{display:grid;grid-template-columns:1.25fr .9fr;gap:26px}
 @media(max-width:820px){.menuGrid{grid-template-columns:1fr}}
 .playBtn{display:flex;align-items:center;gap:22px;width:100%;text-align:left;padding:28px 30px;
@@ -762,6 +763,9 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 .svLabel .r .tm{margin-left:auto;padding-left:10px;color:var(--aqua)}
 .svLabel .r .tm.wait{color:var(--dimmer)} .svLabel .r .tm.done{color:var(--signal)}
 .svFrame{position:absolute;pointer-events:none;border:1px solid rgba(234,240,248,.12)}
+/* a quarter too short for the drivers' rows: just the map's name */
+.svLabel.compact .r{display:none}
+.svLabel.compact .h{margin-bottom:0}
 .svPanel{position:absolute;right:14px;top:64px;width:286px;max-height:calc(100% - 250px);overflow-y:auto;pointer-events:auto;
   background:rgba(7,11,24,.8);border:1px solid var(--rule);border-radius:8px;padding:12px 12px 10px;font-size:12px}
 .svPanel h4{font-size:11px;letter-spacing:.12em;color:var(--ember);margin:0 0 8px;text-transform:uppercase}
@@ -842,9 +846,6 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
   <div class="toast" id="toast"></div>
   <div id="flash"></div>
 
-  <div class="creditBadge" id="creditBadge" hidden>
-    <span class="gem2d"></span><b id="creditBadgeAmt">0</b><small>credits</small>
-  </div>
 
   <svg id="ghostTagLines"><g id="ghostTagLinesG"></g></svg>
   <div class="chartTip" id="chartTip" hidden></div>
@@ -1019,7 +1020,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             <button class="tile" id="bCreditsRun"><b>Credit run</b><small>random map, +3 credits</small></button>
             <button class="tile" id="bGarage"><b>Garage</b><small>paint your car</small></button>
             <button class="tile" id="bSettings"><b>Settings</b><small>account</small></button>
-            <button class="tile" id="bSound"><b>Sound</b><small id="bSoundState">on</small></button>
+            <button class="tile" id="bInfo"><b>How it works</b><small>the guide</small></button>
           </div>
           <div id="driverRow">
             <label class="fld" for="driver">Driver name</label>
@@ -1028,7 +1029,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <div class="keysStrip">
             <span><b>W</b> gas</span><span><b>S</b> brake</span><span><b>A D</b> steer</span>
             <span><b>Space</b> boost</span><span><b>S</b> + <b>A D</b> drift</span><span><b>Shift</b> handbrake</span><span><b>R</b> restart</span>
-            <span><b>Esc</b> menu</span>
+            <span><b>Esc</b> back</span>
           </div>
         </div>
 
@@ -1242,6 +1243,17 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
       <h2 class="big">Settings</h2>
       <p class="lede" style="margin-bottom:26px">Signed in as <b id="setUser">—</b>.</p>
 
+      <h3 style="font-size:13px;font-weight:600;margin-bottom:12px">GAME</h3>
+      <div class="setRow">
+        <div><b>Sound</b><small>Engine, tyres, boost and menus</small></div>
+        <button class="small" id="bSound">On</button>
+      </div>
+      <div class="setRow">
+        <div><b>Play button</b><small>What the big Play button on the menu starts</small></div>
+        <select id="setPlayCourse"></select>
+      </div>
+      <div class="rule"></div>
+
       <div id="setOnlineOnly">
         <h3 style="font-size:13px;font-weight:600;margin-bottom:12px">CHANGE PASSWORD</h3>
         <label class="fld" for="setOldPass">Current password</label>
@@ -1271,6 +1283,106 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
       <div class="rule" id="setOfflineRule" hidden></div>
       <div class="row">
         <button class="ghost" id="bSetBack">← Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="info" hidden>
+    <div class="scrim"></div>
+    <div class="panel infoPanel">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <h2 class="big">How it works</h2>
+        <button class="ghost" id="bInfoBack">← Menu</button>
+      </div>
+      <nav class="infoNav" id="infoNav">
+        <a href="#i-basics">Basics</a><a href="#i-keys">Controls</a><a href="#i-maps">Maps</a><a href="#i-boards">Leaderboards</a>
+        <a href="#i-replays">Replays</a><a href="#i-credits">Credits</a><a href="#i-races">Races</a><a href="#i-trophies">Trophies</a>
+        <a href="#i-garage">Garage</a><a href="#i-account">Account</a>
+      </nav>
+      <div class="infoBody" id="infoBody">
+        <section id="i-basics">
+          <h3>Basics</h3>
+          <p>Drive each map from the start to the finish gate as fast as you can. The clock starts when you first press a
+            key and stops when your nose crosses the finish line. Your best time on each map goes on its leaderboard,
+            to the thousandth of a second.</p>
+          <p><b>Play</b> on the menu starts the next map you haven't finished, or the one you rank worst on. You can pick a
+            fixed map for it in Settings.</p>
+        </section>
+        <section id="i-keys">
+          <h3>Controls</h3>
+          <dl class="infoKeys">
+            <dt>W / S</dt><dd>Accelerate / brake, and reverse once stopped</dd>
+            <dt>A / D</dt><dd>Steer</dd>
+            <dt>Space</dt><dd>Boost. 3 seconds per run; it pushes harder the faster you're already going</dd>
+            <dt>S + A / D</dt><dd>At speed, braking while steering starts a drift. Hold the steering and throttle to keep it going</dd>
+            <dt>Shift</dt><dd>Handbrake</dd>
+            <dt>In the air</dt><dd>W / S tip the nose down / up, A / D turn the car</dd>
+            <dt>R</dt><dd>Restart the run</dd>
+            <dt>T</dt><dd>Telemetry (speed, g-forces, inputs)</dd>
+            <dt>Esc</dt><dd>Back one screen, all the way to the menu</dd>
+          </dl>
+          <p>Off the deck you're on grass: slow, but you can drive back on. If the car is stuck or upside down, the run
+            restarts by itself.</p>
+        </section>
+        <section id="i-maps">
+          <h3>Maps and sections</h3>
+          <p>There are 16 maps in four sections of four, A to D, getting harder as you go. Tight flat hairpins are
+            faster drifted than braked for. Rollers and crests can lift the car off the road at speed.</p>
+        </section>
+        <section id="i-boards">
+          <h3>Leaderboards</h3>
+          <p><b>Courses</b> lists every map with its top three and your best. Click a map for its full leaderboard,
+            the podium and the map from above.</p>
+          <p>The bar above each section opens that section's leaderboard: each driver's four best times added up.
+            The <b>Overall</b> bar ranks everyone by maps finished first, then by the total of their best times.</p>
+        </section>
+        <section id="i-replays">
+          <h3>Watch, race and compare</h3>
+          <p>Every best time is saved with a ghost, a recording of the run. On a map's leaderboard, tick runs and
+            choose:</p>
+          <ul>
+            <li><b>Watch</b> replays them together. The arrow keys switch between following one car, framing all of them and
+              a free camera you fly with W A S D.</li>
+            <li><b>Race</b> puts their ghosts on the track with you.</li>
+            <li><b>Compare</b> (exactly two runs) shows the gap between them and graphs of distance, speed, acceleration and
+              inputs.</li>
+          </ul>
+          <p>On a section's leaderboard, tick drivers who have times on all four maps. Watch or Compare then shows all four
+            maps at once: a car finishing one map appears on the next, so the clock is their section total.</p>
+          <p>Your own best on a map drives as a ghost beside you every time you retry it.</p>
+        </section>
+        <section id="i-credits">
+          <h3>Credits</h3>
+          <p>Finishing any map earns 1 credit. A <b>Credit run</b> sends you to a random map and pays 3. Spend them on
+            colours in the Garage or stake them in a race.</p>
+        </section>
+        <section id="i-races">
+          <h3>Races</h3>
+          <p>There is always one race open on the menu. Stake some credits to join. Once two drivers are in, there is
+            a minute for others to join, then the map is revealed and everyone gets 10 minutes and three attempts.
+            Your best attempt counts.</p>
+          <p>The whole pot is paid out by finishing place and by how much each finisher staked. Anyone who doesn't finish
+            loses their stake. If nobody finishes, everyone gets their stake back.</p>
+        </section>
+        <section id="i-trophies">
+          <h3>Trophies</h3>
+          <p>Top three on a map, in a section or overall holds a trophy, engraved with its map. They're live: beat
+            someone's time and their trophy is yours, until someone beats you. The trophy room also shows your
+            credits, dropped in as gems.</p>
+        </section>
+        <section id="i-garage">
+          <h3>Garage</h3>
+          <p>A colour pack costs 10 credits and unlocks one new hue at random for the body or the trim. Saturation and
+            brightness are free to change. Other players see your car in your colours in replays and races.</p>
+        </section>
+        <section id="i-account">
+          <h3>Account</h3>
+          <p>You need an invite code to create an account. Your username is how you sign in and what shows on the
+            leaderboards. There's no email, so if you forget your password, ask whoever runs the game to set a new
+            one.</p>
+          <p>In Settings you can turn sound on or off, pick what Play starts, change your password or reset your times.
+            Credits stay when you reset.</p>
+        </section>
       </div>
     </div>
   </div>
@@ -1314,7 +1426,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <h3 class="gh">
             EDITING <span id="gActiveSlotName">PRIMARY</span> — <span class="gem2d"></span> <span id="gCredits">0</span>
           </h3>
-          <div class="err" id="gBuyMsg"></div>
+          <div class="err gBuyMsg" id="gBuyMsg"></div>
           <h3 class="gh" style="margin-top:14px">HUE</h3>
           <p class="lede" style="font-size:12px;margin-bottom:8px">Click a bright square to use it on
             <span id="gHueSlotName">primary</span>. Crossed-out squares are locked.</p>
@@ -1373,10 +1485,6 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <button class="primary" id="bCreditsRunAgain">Run again</button>
         <button class="ghost" id="bCreditsRunBack">Menu</button>
       </div>
-      <div class="creditBurst" id="creditBurst" hidden>
-        <div class="coin"><span class="gem2d"></span></div>
-        <div class="plusOne" id="creditBurstAmt">+1</div>
-      </div>
     </div>
   </div>
 
@@ -1388,6 +1496,13 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     </div>
   </div>
 </div>
+
+<!-- above every screen's layer (inside #stage they sat under the result
+     screen's dimming): the balance, and the 3D credits flying into it -->
+  <div class="creditBadge" id="creditBadge" hidden>
+    <span class="gem2d"></span><b id="creditBadgeAmt">0</b><small>credits</small>
+  </div>
+  <canvas id="fxCanvas" hidden></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -1439,6 +1554,25 @@ function hslToHex(h, s, l) {
   else { r = c; g = 0; b = x; }
   const R = Math.round((r + m) * 255), G = Math.round((g + m) * 255), B = Math.round((b + m) * 255);
   return (R << 16) | (G << 8) | B;
+}
+/** this device's own choices (sound on or off, what Play starts), kept between visits */
+const Prefs = {
+  KEY: 'aipolytrack.prefs', data: null,
+  load() {
+    if (this.data) return;
+    try { this.data = JSON.parse(localStorage.getItem(this.KEY) || '{}') || {}; } catch (e) { this.data = {}; }
+  },
+  get(k, d) { this.load(); return k in this.data ? this.data[k] : d; },
+  set(k, v) {
+    this.load();
+    this.data[k] = v;
+    try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) { /* storage blocked: this visit only */ }
+  }
+};
+/** a whole number of credits, a thin space between every three digits: 1 000 000 */
+function fmtCredits(n) {
+  const v = Math.floor(Number(n) || 0);
+  return (v < 0 ? '−' : '') + String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
 }
 function hslCss(h, s, l) { return 'hsl(' + Math.round(h) + ',' + Math.round(s) + '%,' + Math.round(l) + '%)'; }
 
@@ -1651,6 +1785,7 @@ const Records = {
     const g = this.data.ghosts && this.data.ghosts[id];
     if (!g || !Array.isArray(g.s) || g.s.length < GHOST_STRIDE * 2 || g.s.length % GHOST_STRIDE !== 0) return null;
     for (let i = 0; i < g.s.length; i++) if (!isFinite(g.s[i])) return null;
+    padGhost(g.s, g.t);
     return g;
   },
   setGhost(id, time, samples) {
@@ -2654,7 +2789,7 @@ const Cloud = {
       UI.who(this.name(), Records.credits);
       // mid-roll, only the balance changes: redrawing the garage would pull
       // the hue grid out from under the roll animation
-      if (Game.state === 'garage') { if (Game._garageRolling) $('gCredits').textContent = Records.credits; else UI.garage(); }
+      if (Game.state === 'garage') { if (Game._garageRolling) $('gCredits').textContent = fmtCredits(Records.credits); else UI.garage(); }
       if (Game.state === 'menu' && Game.lobby) Game.renderLobbyCard();
     } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); }
   },
@@ -2821,7 +2956,8 @@ const Cloud = {
       const s = String(d.samples || '').split(',').map(Number);
       if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
         || s.some((v) => !isFinite(v))) { this.ghostError = 'damaged'; return null; }
-      return { t: migrateLegacyTime(d.time_ms / 1000, courseId), s, v: d.v || 1 };
+      const t = migrateLegacyTime(d.time_ms / 1000, courseId);
+      return { t, s: padGhost(s, t), v: d.v || 1 };
     } catch (e) {
       console.warn('aiPolytrack: could not load a ghost', e && e.code, e && e.message);
       this.ghostError = 'load';
@@ -6267,6 +6403,122 @@ function makePlayerCarPreview(canvasId) {
 const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
 
 /**
+ * Earning credits: real 3D credits (cut gems, lit and spinning) fly in
+ * toward you, then one after another into your balance in the corner,
+ * which counts up and swells for a moment as each lands. About a second
+ * and a half for three.
+ */
+const CreditFX = {
+  renderer: null, busy: false, failed: false, gen: 0,
+  ensure() {
+    if (this.renderer || this.failed) return !!this.renderer;
+    try {
+      const canvas = $('fxCanvas');
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+      this.renderer.outputEncoding = THREE.sRGBEncoding;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 120);
+      this.camera.position.set(0, 0, 10);
+      const key = new THREE.DirectionalLight(0xffffff, 1.8);
+      key.position.set(3, 5, 6);
+      this.scene.add(key);
+      const rim = new THREE.DirectionalLight(0x6fd0ff, 0.9);
+      rim.position.set(-4, -2, 3);
+      this.scene.add(rim, new THREE.AmbientLight(0x9ccfee, 0.55));
+      this.geo = new THREE.OctahedronGeometry(0.6, 0);
+      this.geo.scale(1, 1.3, 1);
+      this.mat = new THREE.MeshStandardMaterial({ color: 0x3fc6ff, metalness: 0.35, roughness: 0.12,
+        emissive: 0x0b4a78, emissiveIntensity: 0.55, flatShading: true });
+      return true;
+    } catch (e) { this.failed = true; return false; }
+  },
+  /** where the balance is on screen, as a point in the effect's 3D space */
+  target(out) {
+    // the corner badge, or the menu's own balance where the badge is hidden
+    let r = $('creditBadge').getBoundingClientRect();
+    if (!r.width) r = $('whoCredits').getBoundingClientRect();
+    if (!r.width) r = { left: 24, top: 76, width: 80, height: 30 };
+    const nx = ((r.left + 22) / innerWidth) * 2 - 1, ny = -(((r.top + r.height / 2) / innerHeight) * 2 - 1);
+    this.camera.updateMatrixWorld();        // not yet rendered the first time
+    out.set(nx, ny, 0.5).unproject(this.camera).sub(this.camera.position).normalize();
+    return out.multiplyScalar(6 / -out.z).add(this.camera.position);   // on the plane 6 in front of the camera
+  },
+  /** n credits from balance `from` to balance `to` */
+  play(n, from, to) {
+    const done = () => { this.busy = false; UI.who(Cloud.name(), to); };
+    if (!this.ensure()) { done(); return; }
+    const gen = ++this.gen;
+    this.busy = true;
+    const canvas = $('fxCanvas');
+    canvas.hidden = false;
+    this.renderer.setSize(innerWidth, innerHeight, false);
+    this.camera.aspect = innerWidth / innerHeight;
+    this.camera.updateProjectionMatrix();
+    for (const g of this.gems || []) this.scene.remove(g.m);
+    const amt = $('creditBadgeAmt');
+    $('creditBadge').hidden = false;
+    amt.textContent = fmtCredits(from);
+    const aim = this.target(new THREE.Vector3());
+    this.gems = [];
+    // smaller and closer together on a narrow (phone, portrait) screen
+    const k = Math.min(1, (Math.tan(Math.PI / 9) * 10 * this.camera.aspect) / 3.2);
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(this.geo, this.mat);
+      const x = (i - (n - 1) / 2) * 1.7 * k;
+      m.position.set(x * 3, 1.5, -45);
+      m.scale.setScalar(0.3 * k);
+      this.scene.add(m);
+      this.gems.push({ m, from: new THREE.Vector3(x * 3, 1.5, -45), mid: new THREE.Vector3(x, 0.35, 0), leave: 0.55 + i * 0.16, landed: false, spin: 5 + i });
+    }
+    const IN = 0.45, FLY = 0.32, end = 0.55 + (n - 1) * 0.16 + FLY + 0.05;
+    const easeOut = (u) => 1 - Math.pow(1 - u, 3), easeIn = (u) => u * u * u;
+    let landed = 0;
+    const t0 = performance.now();
+    const loop = (now) => {
+      if (gen !== this.gen) return;
+      const t = (now - t0) / 1000;
+      for (const g of this.gems) {
+        const m = g.m;
+        if (g.landed) continue;
+        m.rotation.y = t * g.spin;
+        m.rotation.x = Math.sin(t * 3 + g.spin) * 0.35;
+        if (t < IN) {
+          const u = easeOut(t / IN);
+          m.position.lerpVectors(g.from, g.mid, u);
+          m.scale.setScalar((0.3 + 0.7 * u) * k);
+        } else if (t < g.leave) {
+          m.position.copy(g.mid);
+          m.position.y += Math.sin((t - IN) * 9) * 0.05;
+          m.scale.setScalar(k);
+        } else {
+          const u = Math.min(1, (t - g.leave) / FLY);
+          m.position.lerpVectors(g.mid, aim, easeIn(u));
+          m.scale.setScalar((1 - 0.72 * easeIn(u)) * k);
+          if (u >= 1) {
+            g.landed = true;
+            this.scene.remove(m);
+            landed++;
+            // the balance takes it: one up, and a quick swell
+            amt.textContent = fmtCredits(landed === n ? to : from + landed);
+            const b = $('creditBadge');
+            b.classList.remove('gulp', 'bump');
+            void b.offsetWidth;
+            b.classList.add('gulp');
+            Sound.creditTick();
+          }
+        }
+      }
+      this.renderer.render(this.scene, this.camera);
+      if (t < end) requestAnimationFrame(loop);
+      else { canvas.hidden = true; done(); }
+    };
+    requestAnimationFrame(loop);
+  }
+};
+
+/**
  * A map's top three on a podium: three blocks (2nd, 1st, 3rd, the winner's
  * tallest), each driver's own car standing on theirs, and their name in
  * big type on the front of the block. It is a still picture, so it is
@@ -6487,6 +6739,39 @@ const MiniMap = {
  * someone's time takes their trophy, and losing a podium spot loses it.
  */
 const PLACE = ['1st', '2nd', '3rd'];
+/** a map drawn into a canvas the way a trophy plaque is engraved: a cut
+ *  (dark) line with a light edge below it, fitted into the box x,y,w,h */
+function engraveMap(ctx, i, x, y, w, h) {
+  let data;
+  try { data = Game.data[i] || validateCourse(LEVELS[i].build()); } catch (e) { return; }
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const st of data.strips) for (const f of st.frames) {
+    x0 = Math.min(x0, f.p[0]); x1 = Math.max(x1, f.p[0]); z0 = Math.min(z0, f.p[2]); z1 = Math.max(z1, f.p[2]);
+  }
+  const pad = Math.min(w, h) * 0.1;
+  const sc = Math.min((w - pad * 2) / Math.max(x1 - x0, 1), (h - pad * 2) / Math.max(z1 - z0, 1));
+  const ox = x + (w - (x1 - x0) * sc) / 2, oz = y + (h - (z1 - z0) * sc) / 2;
+  const lw = Math.max(1.5, Math.min(w, h) / 34);
+  const pass = (dy, colour, width) => {
+    ctx.strokeStyle = colour; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    for (const st of data.strips) {
+      if (st.frames.length < 2) continue;
+      ctx.beginPath();
+      st.frames.forEach((f, k) => {
+        const px = ox + (f.p[0] - x0) * sc, pz = oz + (f.p[2] - z0) * sc + dy;
+        if (k) ctx.lineTo(px, pz); else ctx.moveTo(px, pz);
+      });
+      ctx.stroke();
+    }
+  };
+  pass(lw * 0.7, 'rgba(255,255,255,.45)', lw);
+  pass(0, '#1b1407', lw);
+  // the start, a small ring
+  const sp = data.start.pos;
+  ctx.beginPath();
+  ctx.arc(ox + (sp[0] - x0) * sc, oz + (sp[2] - z0) * sc, lw * 1.6, 0, Math.PI * 2);
+  ctx.lineWidth = lw * 0.8; ctx.stroke();
+}
 const Trophies = {
   compute() {
     const uid = Cloud.user && Cloud.user.uid;
@@ -6496,14 +6781,15 @@ const Trophies = {
     const ov = Records.overall(COURSE_IDS);
     const r = ov.findIndex(mine);
     if (r >= 0 && r < 3) {
-      out.push({ kind: 'season', tier: r, size: 3, title: 'Season ' + SEASON + ' · ' + PLACE[r] + ' place', sub: 'Current overall standings',
+      out.push({ kind: 'season', tier: r, size: 3, maps: LEVELS.map((l, i) => i), title: 'Season ' + SEASON + ' · ' + PLACE[r] + ' place', sub: 'Current overall standings',
         plaque: 'SEASON ' + SEASON, time: ov[r].total, note: ov[r].count + '/' + COURSE_IDS.length + ' maps' });
     }
     SECTIONS.forEach((name, sec) => {
       const st = Records.overall(sectionIds(sec));
       const k = st.findIndex(mine);
       if (k >= 0 && k < 3) {
-        out.push({ kind: 'section', tier: k, size: 2, title: name + ' · ' + PLACE[k], sub: 'Section standings',
+        out.push({ kind: 'section', tier: k, size: 2, maps: LEVELS.map((l, i) => i).filter((i) => LEVELS[i].section === sec),
+          title: name + ' · ' + PLACE[k], sub: 'Section standings',
           plaque: name.toUpperCase(), time: st[k].total, note: st[k].count + '/' + sectionIds(sec).length + ' maps' });
       }
     });
@@ -6511,7 +6797,7 @@ const Trophies = {
       const b = Records.board(lv.id);
       const k = b.findIndex(mine);
       if (k >= 0 && k < 3) {
-        out.push({ kind: 'map', tier: k, size: 1, title: lv.name, sub: courseTag(i) + ' · ' + PLACE[k] + ' place',
+        out.push({ kind: 'map', tier: k, size: 1, maps: [i], title: lv.name, sub: courseTag(i) + ' · ' + PLACE[k] + ' place',
           plaque: lv.name.toUpperCase(), time: b[k].t, note: courseTag(i) });
       }
     });
@@ -6689,17 +6975,28 @@ const TrophyRoom = {
     x.fillStyle = grd; x.fillRect(0, 0, 512, 256);
     x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 8; x.strokeRect(10, 10, 492, 236);
     x.textAlign = 'center'; x.textBaseline = 'middle';
+    // left: the track from above, cut into the metal (one map, a section's
+    // four, or the whole season's sixteen); right: the words
+    const maps = t.maps || [];
+    const tx = maps.length ? 346 : 256, maxW = maps.length ? 300 : 470;
     // engraved: dark letters with a light lower edge
-    const engrave = (txt, y, px) => {
+    const engraveAt = (txt, y, px) => {
       x.font = '700 ' + px + 'px Helvetica, Arial, sans-serif';
       let size = px;
-      while (x.measureText(txt).width > 470 && size > 20) { size -= 2; x.font = '700 ' + size + 'px Helvetica, Arial, sans-serif'; }
-      x.fillStyle = 'rgba(255,255,255,.45)'; x.fillText(txt, 256, y + 2);
-      x.fillStyle = '#1b1407'; x.fillText(txt, 256, y);
+      while (x.measureText(txt).width > maxW && size > 18) { size -= 2; x.font = '700 ' + size + 'px Helvetica, Arial, sans-serif'; }
+      x.fillStyle = 'rgba(255,255,255,.45)'; x.fillText(txt, tx, y + 2);
+      x.fillStyle = '#1b1407'; x.fillText(txt, tx, y);
     };
-    engrave(t.plaque || t.title, 62, 46);
-    engrave((PLACE[t.tier] || '') + ' PLACE' + (t.note ? '  ·  ' + t.note : ''), 128, 34);
-    engrave(t.time ? formatTime(t.time) : '—', 196, 52);
+    if (maps.length) {
+      x.strokeStyle = 'rgba(27,20,7,.55)'; x.lineWidth = 3; x.strokeRect(26, 26, 180, 204);
+      const cols = maps.length > 4 ? 4 : maps.length > 1 ? 2 : 1;
+      const rows = Math.ceil(maps.length / cols);
+      const cw = 168 / cols, ch = 192 / rows;
+      maps.forEach((mi, k) => engraveMap(x, mi, 32 + (k % cols) * cw, 32 + Math.floor(k / cols) * ch, cw, ch));
+    }
+    engraveAt(t.plaque || t.title, 62, 44);
+    engraveAt((PLACE[t.tier] || '') + ' PLACE' + (t.note ? '  ·  ' + t.note : ''), 128, 30);
+    engraveAt(t.time ? formatTime(t.time) : '—', 196, 50);
     const tex = new THREE.CanvasTexture(cv);
     tex.encoding = THREE.sRGBEncoding;
     tex.anisotropy = 4;
@@ -6834,7 +7131,7 @@ const TrophyRoom = {
       for (let i = GEM_DENOMS.length - 1; i >= 0; i--) {
         if (!counts[i]) continue;
         parts.push('<span class="gk"><span class="gem2d" style="background:' + GEM_DENOMS[i].css + '"></span>' +
-          counts[i].toLocaleString('en-US') + ' × ' + GEM_DENOMS[i].v.toLocaleString('en-US') + '</span>');
+          fmtCredits(counts[i]) + ' × ' + fmtCredits(GEM_DENOMS[i].v) + '</span>');
       }
       key.innerHTML = this.counter && parts.length && !(parts.length === 1 && counts[0]) ? parts.join('<span class="gkPlus">+</span>') : '';
     }
@@ -6854,7 +7151,7 @@ const TrophyRoom = {
     const k = GEM_DENOMS[d].scale;
     const a = this.rnd() * Math.PI * 2, r = Math.sqrt(this.rnd()) * 1.6;
     this.dropped += GEM_DENOMS[d].v;
-    if (this.counter) $('trophyCreditNum').textContent = this.dropped.toLocaleString('en-US');
+    if (this.counter) $('trophyCreditNum').textContent = fmtCredits(this.dropped);
     // a random starting orientation (a uniformly random rotation)
     const u1 = this.rnd(), u2 = this.rnd() * Math.PI * 2, u3 = this.rnd() * Math.PI * 2;
     const s1 = Math.sqrt(1 - u1), s2 = Math.sqrt(u1);
@@ -7045,7 +7342,7 @@ const TrophyRoom = {
       if (this.spawnLeft <= 0) this.spawnAcc = 0;
       if (this.counter && this.spawnLeft <= 0 && this.dropped !== this.total) {
         this.dropped = this.total;
-        $('trophyCreditNum').textContent = this.total.toLocaleString('en-US');
+        $('trophyCreditNum').textContent = fmtCredits(this.total);
       }
       const H = 1 / 120;
       const steps = Math.min(4, Math.max(1, Math.round(dt / H)));
@@ -7168,11 +7465,12 @@ const Compare = {
     }
     this.line.visible = true;
     this.renderStatic();
-    this.offsetView(true);
     $('cmpPanel').hidden = false;
     $('cmpMap').hidden = false;
     $('cmpDistTag').hidden = false;
+    this.offsetView(true);       // after the panel shows: it measures it
   },
+
 
   /** everything worked out once for two runs on one course: each run's
    *  own arrays, and the pairwise series (also used, one map at a time,
@@ -7214,9 +7512,20 @@ const Compare = {
   /** keep the cars centred in the part of the screen the panel leaves free */
   offsetView(on) {
     const cam = App.camera;
-    if (on && innerWidth > 700) {
+    // the same 900 px the CSS switches layouts at
+    if (on && innerWidth > 900) {
+      // the panel on the right: the cars centred in what is left of the width
       cam.setViewOffset(innerWidth, innerHeight, 230, 0, innerWidth, innerHeight);
       Game.chase.aspectScale = (innerWidth - 460) / innerWidth;
+    } else if (on) {
+      // the panel across the top: the cars centred between it and the
+      // controls at the bottom
+      const top = $('cmpPanel').getBoundingClientRect().bottom;
+      const dock = document.querySelector('#spectate .specDock');
+      const bottom = dock && dock.offsetHeight ? dock.getBoundingClientRect().top : innerHeight;
+      const shift = bottom > top + 40 ? (top + bottom) / 2 - innerHeight / 2 : 0;
+      cam.setViewOffset(innerWidth, innerHeight, 0, -shift, innerWidth, innerHeight);
+      Game.chase.aspectScale = 1;
     } else {
       if (cam.view) cam.clearViewOffset();
       Game.chase.aspectScale = 1;
@@ -7349,12 +7658,24 @@ const Compare = {
       '</tbody></table>';
     // --- graphs
     h += '<h4 class="cmpSec">Graphs <small>hover a point for exact values</small></h4>';
-    h += this.chart('gSpd', 'Speed', 'time s', 'km/h', [ser(A, A.v, kmh, names[0], CMP_COL[0]), ser(B, B.v, kmh, names[1], CMP_COL[1])]);
+    // acceleration along the way the car is going, smoothed over a quarter
+    // second (a difference of 20 Hz samples is noisy on its own)
+    const accel = (r) => {
+      const out = new Float32Array(r.n);
+      for (let i = 0; i < r.n; i++) {
+        let sum = 0, c = 0;
+        for (let j = Math.max(0, i - 2); j <= Math.min(r.n - 1, i + 2); j++) { sum += r.lon[j]; c++; }
+        out[i] = (sum / c) * G_REF;
+      }
+      return out;
+    };
+    h += this.chart('gOdo', 'Distance along the track', 'time s', 'metres', [ser(A, A.sm, id, names[0], CMP_COL[0]), ser(B, B.sm, id, names[1], CMP_COL[1])], { zero: true });
+    h += this.chart('gSpd', 'Velocity', 'time s', 'km/h', [ser(A, A.v, kmh, names[0], CMP_COL[0]), ser(B, B.v, kmh, names[1], CMP_COL[1])]);
+    h += this.chart('gAcc', 'Acceleration (+ speeding up, − slowing down)', 'time s', 'm/s²', [ser(A, accel(A), id, names[0], CMP_COL[0]), ser(B, accel(B), id, names[1], CMP_COL[1])], { sym: true });
     h += this.chart('gDv', 'Speed difference (A − B)', 'time s', 'km/h', [tSer(P.dv, id, 'A − B', '#ffcf5c')], { sym: true });
     h += this.chart('gGap', 'Time gap by track position (+ = A ahead)', 'track m', 'sec', [{ pts: P.gap, color: '#ffcf5c', name: 'gap' }], { sym: true, head2: true });
     h += this.chart('gLead', 'Lead on track (+ = A ahead)', 'time s', 'metres', [tSer(P.lead, id, 'lead', '#c79bff')], { sym: true });
     h += this.chart('gDist', 'Distance between cars', 'time s', 'metres', [tSer(P.dist, id, 'distance', '#eaf0f8')], { zero: true });
-    h += this.chart('gLon', 'Longitudinal g (accel +, braking −)', 'time s', 'g', [ser(A, A.lon, id, names[0], CMP_COL[0]), ser(B, B.lon, id, names[1], CMP_COL[1])], { sym: true });
     h += this.chart('gLat', 'Lateral g', 'time s', 'g', [ser(A, A.lat, id, names[0], CMP_COL[0]), ser(B, B.lat, id, names[1], CMP_COL[1])], { sym: true });
     h += this.inputsStrip();
     root.innerHTML = h;
@@ -7505,11 +7826,20 @@ const Compare = {
     const mid = this._mid || (this._mid = new THREE.Vector3());
     mid.set((pa.x + pb.x) / 2, (pa.y + pb.y) / 2 + 1.6, (pa.z + pb.z) / 2).project(App.camera);
     const tag = $('cmpDistTag');
-    if (mid.z > 1 || mid.z < -1) { tag.style.display = 'none'; return; }
+    const tx = (mid.x * 0.5 + 0.5) * innerWidth, ty = (-mid.y * 0.5 + 0.5) * innerHeight;
+    if (mid.z > 1 || mid.z < -1 || Game.tagBlocked(tx - 36, ty - 24, tx + 36, ty)) { tag.style.display = 'none'; return; }
     tag.style.display = '';
-    tag.style.left = ((mid.x * 0.5 + 0.5) * innerWidth).toFixed(0) + 'px';
-    tag.style.top = ((-mid.y * 0.5 + 0.5) * innerHeight).toFixed(0) + 'px';
+    tag.style.left = tx.toFixed(0) + 'px';
+    tag.style.top = ty.toFixed(0) + 'px';
     tag.textContent = dist.toFixed(1) + ' m';
+    // cars side by side: their name tags take the spot, and the distance
+    // is in the panel anyway
+    const r = tag.getBoundingClientRect();
+    for (const g of document.querySelectorAll('#ghostTags .ghostTag')) {
+      if (g.hidden) continue;
+      const q = g.getBoundingClientRect();
+      if (r.right > q.left && r.left < q.right && r.bottom > q.top && r.top < q.bottom) { tag.style.display = 'none'; break; }
+    }
   }
 };
 
@@ -7517,7 +7847,7 @@ const Compare = {
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'secview', 'result', 'gate', 'banned', 'spectate', 'settings',
+    ['menu', 'select', 'secview', 'info', 'result', 'gate', 'banned', 'spectate', 'settings',
      'raceReveal', 'raceBetween', 'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
@@ -7529,7 +7859,7 @@ const UI = {
     this.creditBadge(name ? credits : null);
     if (!name) return;
     $('whoName').textContent = name;
-    $('whoCredits').textContent = credits;
+    $('whoCredits').textContent = fmtCredits(credits);
   },
 
   /** The always-on corner credit readout — kept in sync from the same
@@ -7547,7 +7877,7 @@ const UI = {
       return;
     }
     el.hidden = false;
-    $('creditBadgeAmt').textContent = amt;
+    if (!CreditFX.busy) $('creditBadgeAmt').textContent = fmtCredits(amt);
     if (this._lastCreditAmt !== undefined && amt !== this._lastCreditAmt) {
       el.classList.remove('bump');
       void el.offsetWidth; // restart the animation even if it's still mid-play
@@ -7642,7 +7972,6 @@ const UI = {
    *  exactly the "not all bunched together" ask, using only the two
    *  numbers already at hand (screen position, and how tall a tag is). */
   layoutGhostTags(cars, camIdx) {
-    const TAG_H = 26; // approx rendered height of one .ghostTag, incl. its own margin
     const anchors = [];
     cars.forEach((c, k) => {
       const key = 'watch' + k;
@@ -7654,7 +7983,12 @@ const UI = {
       // to the car's real point (carX/carY) even after that extra push.
       const anchor = Game.updateGhostTag(key, true, c.mesh, c.name,
         { kmh, place: c.place, active: k === camIdx });
-      if (anchor) anchors.push({ key, x: anchor.x, y: anchor.y, carX: anchor.carX, carY: anchor.carY, k });
+      if (anchor) {
+        // each tag's real size (a name and a speed; a longer name is wider)
+        const el = Game.getTagEl(key);
+        anchors.push({ key, x: anchor.x, y: anchor.y, carX: anchor.carX, carY: anchor.carY, k,
+          w: el.offsetWidth || 90, h: el.offsetHeight || 26 });
+      }
     });
     anchors.sort((a, b) => a.x - b.x);
     const placed = [];
@@ -7673,16 +8007,27 @@ const UI = {
       // knife-edge, so this is now guaranteed to terminate — capped at
       // placed.length iterations to begin with, so at most a few dozen
       // even in the most crowded realistic case, not a real perf risk.
+      // (Tags stack upward, away from the cars; each is drawn upward from
+      // its y, so one sitting p.h + 3 higher clears it completely.)
       let moved = true;
       let guard = 0;
       while (moved && guard++ < placed.length + 4) {
         moved = false;
         for (const p of placed) {
-          if (Math.abs(p.x - a.x) < 70 && Math.abs(p.finalY - y) < TAG_H) { y = p.finalY + TAG_H + 0.5; moved = true; }
+          if (Math.abs(p.x - a.x) < (p.w + a.w) / 2 + 4 && Math.abs(p.finalY - y) < Math.max(p.h, a.h) + 2) {
+            y = p.finalY - Math.max(p.h, a.h) - 3.5; moved = true;
+          }
         }
       }
-      placed.push({ x: a.x, finalY: y });
       const tag = Game.getTagEl(a.key);
+      // pushed up into the top bar or a panel: hidden rather than drawn over it
+      if (y !== a.y && Game.tagBlocked(a.x - a.w / 2, y - a.h, a.x + a.w / 2, y)) {
+        tag.hidden = true;
+        Game.getTagLineEl(a.key).style.display = 'none';
+        Game.getTagDotEl(a.key).style.display = 'none';
+        continue;
+      }
+      placed.push({ x: a.x, finalY: y, w: a.w, h: a.h });
       tag.style.top = y.toFixed(1) + 'px';
       // Redraw the leader line from the car's actual point (not the tag's
       // pre-stack lift position) up to wherever the tag ended up after
@@ -7821,37 +8166,6 @@ const UI = {
     t.textContent = text;
     t.classList.add('on');
     this.toastT = 1.8;
-  },
-  /** The credits-run payoff animation — a coin, a floating "+1", and a
-   *  burst of sparks flung outward in random directions. Sparks are
-   *  spawned fresh each call (their spread has to vary), everything else
-   *  is CSS-driven. Restarting mid-play (running the credits mode twice
-   *  quickly) just replaces the previous burst outright. */
-  playCreditBurst(amount, mini) {
-    const box = $('creditBurst');
-    box.classList.toggle('mini', !!mini);
-    box.querySelectorAll('.spark').forEach((s) => s.remove());
-    // Evenly spaced around the ring (not randomized angles) reads as one
-    // clean burst rather than a scattered flurry; a small random distance
-    // and a short, tight delay window is enough variation to still feel
-    // organic without looking messy.
-    const n = mini ? 6 : 10;
-    for (let i = 0; i < n; i++) {
-      const s = document.createElement('div');
-      s.className = 'spark';
-      const ang = (i / n) * Math.PI * 2;
-      const dist = (mini ? 26 : 46) + Math.random() * (mini ? 8 : 18);
-      s.style.setProperty('--sparkTo', (Math.cos(ang) * dist).toFixed(1) + 'px, ' + (Math.sin(ang) * dist).toFixed(1) + 'px');
-      s.style.animationDelay = (0.15 + Math.random() * 0.06).toFixed(2) + 's';
-      box.appendChild(s);
-    }
-    $('creditBurstAmt').textContent = '+' + amount;
-    // Force a reflow before un-hiding so the CSS animations (which run
-    // once, on element creation/visibility) restart cleanly even if this
-    // fires again before the previous run's ~1s has fully finished.
-    box.hidden = true;
-    void box.offsetWidth;
-    box.hidden = false;
   },
   /** live gap to the ghost, shown under the clock */
   delta(d) {
@@ -8163,7 +8477,7 @@ const UI = {
     $('gHueSlotName').textContent = slot;
     $('gSatLightSlotName').textContent = slot;
     const signedIn = !!(Cloud.on && Cloud.user);
-    $('gCredits').textContent = signedIn ? Records.credits : 'offline';
+    $('gCredits').textContent = signedIn ? fmtCredits(Records.credits) : 'offline';
     const hueMaxed = CarColor.lockedHueCells().length === 0;
     $('gBuyHue').disabled = !signedIn || hueMaxed;
     $('gBuyHue').textContent = hueMaxed ? 'Every hue already unlocked' : 'Buy a hue pack — 10 credits';
@@ -8447,6 +8761,14 @@ const SectionView = {
       Object.assign(q.frame.style, { left: x + 'px', top: y + 'px', width: qw + 'px', height: qh + 'px' });
       q.label.style.left = (x + 8) + 'px'; q.label.style.top = (y + 8) + 'px';
       q.keys.style.left = (x + 8) + 'px'; q.keys.style.top = (y + qh - 40) + 'px';
+      // the label and the keys must both fit inside the quarter, apart:
+      // the drivers' rows go first, then the keys shrink (to 60%), then
+      // the keys go
+      q.label.classList.toggle('compact', 8 + 29 + 15 * this.cars.length > qh - 48);
+      const ks = Math.min(1, (qw - 16) / 250);
+      q.keys.style.transform = ks < 1 ? 'scale(' + ks.toFixed(3) + ')' : '';
+      q.keys.style.transformOrigin = 'left bottom';
+      q.keysFit = ks >= 0.6 && qh >= 8 + 29 + 48;
     });
     $('svPanel').style.width = wide ? (right - 26) + 'px' : '';
   },
@@ -8690,16 +9012,46 @@ const SectionView = {
     $('svClock').textContent = formatTime(t);
     if (!this.scrubbing) $('svScrub').value = String(Math.round(t * 1000));
     $('svT0').textContent = formatTime(t);
-    // name tags and the distance between compared cars, every frame
+    // name tags and the distance between compared cars, every frame.
+    // Nothing is drawn over anything else: tags that would touch stack
+    // upward, and a tag that would still land on the screen's own panels
+    // and controls, a map's label or keys, or run out of its own quarter
+    // is left out for that frame.
+    const boxes = [...document.querySelectorAll('#secview .specTop > *, #secview .svDock > *, #svPanel')]
+      .map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+    const hits = (l, t, r, b, list) => list.some((q) => r > q.left && l < q.right && b > q.top && t < q.bottom);
     this.quads.forEach((q, k) => {
+      q.keys.hidden = !q.focus || q.keysFit === false;     // (their contents update below)
+      const own = boxes.concat([q.label, q.keys].filter((e) => e && !e.hidden).map((e) => e.getBoundingClientRect()));
+      const inQuad = (l, t, r, b) => l >= q.rect.x && r <= q.rect.x + q.rect.w && t >= q.rect.y && b <= q.rect.y + q.rect.h;
+      const want = [];
       this.cars.forEach((c, n) => {
         const el = q.tags[n];
         const at = c.active[k] ? this.toScreen(q, c.rigs[k].pos, 1.9) : null;
         if (!at) { el.style.display = 'none'; return; }
         el.style.display = '';
-        el.style.left = at[0].toFixed(0) + 'px'; el.style.top = at[1].toFixed(0) + 'px';
         el.classList.toggle('on', n === this.camIdx);
+        // a tag's size only changes with its name: measured once
+        if (!el._w) { el._w = el.offsetWidth; el._h = el.offsetHeight; }
+        want.push({ el, x: at[0], y: at[1], w: el._w, h: el._h });
       });
+      want.sort((u, v) => v.y - u.y);          // lowest on screen first; the rest stack above
+      const placed = [];
+      for (const g of want) {
+        let y = g.y, moved = true, guard = 0;
+        while (moved && guard++ < placed.length + 2) {
+          moved = false;
+          for (const p of placed) {
+            if (Math.abs(p.x - g.x) < (p.w + g.w) / 2 + 4 && Math.abs(p.y - y) < Math.max(p.h, g.h) + 2) {
+              y = p.y - Math.max(p.h, g.h) - 3; moved = true;
+            }
+          }
+        }
+        const l = g.x - g.w / 2, r = g.x + g.w / 2;
+        if (!inQuad(l, y - g.h, r, y) || hits(l, y - g.h, r, y, own)) { g.el.style.display = 'none'; continue; }
+        g.el.style.left = g.x.toFixed(0) + 'px'; g.el.style.top = y.toFixed(0) + 'px';
+        placed.push({ x: g.x, y, w: g.w, h: g.h });
+      }
       if (this.compare) {
         const [a, b] = this.cars;
         const at = q.line.visible ? this.toScreen(q, this._mid(a.rigs[k].pos, b.rigs[k].pos), 1.6) : null;
@@ -8707,6 +9059,9 @@ const SectionView = {
         if (at) {
           q.dist.style.left = at[0].toFixed(0) + 'px'; q.dist.style.top = at[1].toFixed(0) + 'px';
           q.dist.textContent = a.rigs[k].pos.distanceTo(b.rigs[k].pos).toFixed(1) + ' m';
+          const d = q.dist.getBoundingClientRect();
+          const tagBoxes = placed.map((p) => ({ left: p.x - p.w / 2, right: p.x + p.w / 2, top: p.y - p.h, bottom: p.y }));
+          if (!inQuad(d.left, d.top, d.right, d.bottom) || hits(d.left, d.top, d.right, d.bottom, own.concat(tagBoxes))) q.dist.hidden = true;
         }
       }
     });
@@ -8734,7 +9089,7 @@ const SectionView = {
           return '<div class="r"><i style="background:' + c.dot + '"></i><b>' + escapeHtml(c.name) + '</b><span class="tm ' + cls + '">' + val + '</span></div>';
         }).join('');
       // the keys and speed of the car this quarter is about
-      q.keys.hidden = !q.focus;
+      q.keys.hidden = !q.focus || q.keysFit === false;
       if (q.focus) {
         const bits = q.focusBits;
         const on = { throttle: bits & 1, brake: bits & 2, left: bits & 4, right: bits & 8, boost: bits & 16, handbrake: bits & 32 };
@@ -8870,6 +9225,33 @@ const GHOST_STRIDE = 8;                      // pos.xyz, quat.xyzw, input bits
 // are moved onto today's road when replayed (Game.ghostY).
 const GHOST_VERSION = 3;
 const GHOST_MAX = GHOST_STRIDE * GHOST_HZ * 300;   // 300 s ceiling per recording
+/**
+ * Samples sit on a 20 Hz grid, so a run's last one is up to 1/20 s before
+ * its finish time, and a replay that stopped there left the car up to two
+ * metres short of the line — a different amount for every run. This adds
+ * the sample just past the finish (carrying on at the last sample's
+ * speed), so playing to the finish time lands exactly on the line. Safe to
+ * run on any ghost, any number of times.
+ */
+function padGhost(s, t, endPos) {
+  const n = s.length / GHOST_STRIDE;
+  if (n < 2 || !(t > 0)) return s;
+  const need = Math.ceil(t * GHOST_HZ - 1e-6);
+  const a = (n - 2) * GHOST_STRIDE, b = (n - 1) * GHOST_STRIDE;
+  // recording: where the car really was at the finish is known, so the
+  // extra sample is placed to put the replay exactly there at time t
+  const tl = (n - 1) / GHOST_HZ;
+  const exact = endPos && need === n && t - tl > 1e-4;
+  for (let k = n; k <= need && k < n + 3; k++) {
+    const m = k - (n - 1);
+    for (let j = 0; j < 3; j++) {
+      const v = exact ? s[b + j] + (endPos[j] - s[b + j]) * ((k / GHOST_HZ - tl) / (t - tl)) : s[b + j] + (s[b + j] - s[a + j]) * m;
+      s.push(Math.round(v * 100) / 100);
+    }
+    for (let j = 3; j < GHOST_STRIDE; j++) s.push(s[b + j]);
+  }
+  return s;
+}
 // Extra watched/raced cars beyond the primary one — set to cover every
 // row a course's leaderboard can ever hold (Records.MAX) minus the
 // primary itself, so checking every row on a course never gets silently
@@ -9299,26 +9681,26 @@ const Game = {
     badge.textContent = race.state.toUpperCase();
 
     if (race.state === 'lobby') {
-      $('lobbyState').textContent = entries.length + ' in · ' + pot + ' credits. Starts when 2 join.';
+      $('lobbyState').textContent = entries.length + ' in · ' + fmtCredits(pot) + ' credits. Starts when 2 join.';
     } else if (race.state === 'starting') {
       const remain = Math.max(0, Math.round((tsMs(race.joinDeadline) - Date.now()) / 1000));
-      $('lobbyState').textContent = pot + ' credits · starts in ' +
+      $('lobbyState').textContent = fmtCredits(pot) + ' credits · starts in ' +
         Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
     } else if (race.state === 'running') {
       const remain = Math.max(0, Math.round((tsMs(race.endsAt) - Date.now()) / 1000));
       const left = Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
       $('lobbyState').textContent = mine
-        ? pot + ' credits · ' + (remain > 0 ? left + ' left' : 'finishing')
+        ? fmtCredits(pot) + ' credits · ' + (remain > 0 ? left + ' left' : 'finishing')
         : 'Racing now · ' + left + ' left';
     } else {
-      $('lobbyState').textContent = pot + ' credits paid out. Next race soon.';
+      $('lobbyState').textContent = fmtCredits(pot) + ' credits paid out. Next race soon.';
     }
 
     $('lobbyMineBox').hidden = !mine;
-    if (mine) $('lobbyMineBuyIn').textContent = mine.buyIn;
+    if (mine) $('lobbyMineBuyIn').textContent = fmtCredits(mine.buyIn);
 
     $('lobbyJoinBox').hidden = !((race.state === 'lobby' || race.state === 'starting') && !mine);
-    if (!$('lobbyJoinBox').hidden) $('lobbyJoinCredits').textContent = Cloud.credits || 0;
+    if (!$('lobbyJoinBox').hidden) $('lobbyJoinCredits').textContent = fmtCredits(Cloud.credits || 0);
 
     // Driving itself happens on a dedicated full-screen sequence, not
     // inline on this card — the card only ever shows the button to enter
@@ -9355,12 +9737,12 @@ const Game = {
         const isMe = Cloud.user && e.uid === Cloud.user.uid;
         const best = typeof e.bestTimeMs === 'number' ? formatTime(e.bestTimeMs / 1000) : '—';
         const last = settled
-          ? (typeof e.payout === 'number' ? String(Math.floor(e.payout)) : '—')
+          ? (typeof e.payout === 'number' ? fmtCredits(e.payout) : '—')
           : (e.attempts || []).length + ' / 3';
         const place = settled && e.placement ? e.placement + '.' : '';
         return '<tr class="' + (isMe ? 'me' : '') + '"><td class="r">' + place + '</td><td>' +
           escapeHtml(e.displayName || '—') + (isMe ? ' <span class="dim">(you)</span>' : '') +
-          '</td><td class="t">' + e.buyIn + '</td>' +
+          '</td><td class="t">' + fmtCredits(e.buyIn) + '</td>' +
           '<td class="t">' + best + '</td><td class="t">' + last + '</td></tr>';
       }).join('');
     }
@@ -9590,11 +9972,22 @@ const Game = {
       const n = this.nextPlayable(this.levelIndex);
       if (n < 0) this.toSelect(); else this.startLevel(n);
     });
+    Sound.setEnabled(Prefs.get('sound', true));
     $('bSound').addEventListener('click', () => {
       Sound.init();
       Sound.setEnabled(!Sound.on);
-      $('bSoundState').textContent = Sound.on ? 'on' : 'off';
+      Prefs.set('sound', Sound.on);
+      $('bSound').textContent = Sound.on ? 'On' : 'Off';
     });
+    $('setPlayCourse').addEventListener('change', () => Prefs.set('playCourse', $('setPlayCourse').value));
+    $('bInfo').addEventListener('click', () => this.toInfo());
+    $('bInfoBack').addEventListener('click', () => this.toMenu());
+    // the guide's contents jump within its own scrolling panel
+    $('infoNav').querySelectorAll('a').forEach((a) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const el = document.querySelector(a.getAttribute('href'));
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
     const wake = () => { Sound.init(); Sound.resume(); };
     document.addEventListener('pointerdown', wake, { once: true });
     addEventListener('keydown', wake, { once: true });
@@ -9625,6 +10018,12 @@ const Game = {
   id(i) { return LEVELS[i === undefined ? this.levelIndex : i].id; },
   /** the first map without a time of yours, else the one you rank worst on */
   nextCourseIndex() {
+    // a map picked in Settings, if it can be driven
+    const pick = Prefs.get('playCourse', 'auto');
+    if (pick !== 'auto') {
+      const i = courseIndexOf(pick);
+      if (i >= 0 && this.playable[i]) return i;
+    }
     const ok = (k) => this.playable[k];
     let i = LEVELS.findIndex((l, k) => ok(k) && !Records.cleared(l.id));
     if (i >= 0) return i;
@@ -9872,6 +10271,7 @@ const Game = {
     }))).filter((r) => r.g);
     if (!loaded.length) { UI.toast(Cloud.ghostProblem()); return; }
     if (loaded.length < capped.length) UI.toast((capped.length - loaded.length) + ' of those runs had no ghost and were left out.');
+    else if (UI.toastT > 0) { UI.toastT = 0; $('toast').classList.remove('on'); }   // "Loading…" is done
     const primary = loaded[0], rest = loaded.slice(1);
     this.ghostOverride = primary.g;
     this.ghostOverrideName = primary.name;
@@ -10140,6 +10540,7 @@ const Game = {
     }))).filter((r) => r.g);
     if (!loaded.length) { UI.toast(Cloud.ghostProblem()); return; }
     if (loaded.length < capped.length) UI.toast((capped.length - loaded.length) + ' of those runs had no ghost and were left out.');
+    else if (UI.toastT > 0) { UI.toastT = 0; $('toast').classList.remove('on'); }   // "Loading…" is done
     if (!this.loadLevel(idx)) return;
     this._specRig = null;
     const meshesFor = [this.specMesh, ...this.extraSpecMeshes.map((s) => s.mesh)];
@@ -10340,9 +10741,22 @@ const Game = {
     if (this.state === 'select' && this.selView === 'map' && this.courseDetailIndex === i) Podium.show(i);
   },
 
+  toInfo() {
+    this.state = 'info'; this.running = false;
+    Sound.stopEngine();
+    UI.show('info');
+    document.querySelector('#info .panel').scrollTop = 0;
+  },
   toSettings() {
     this.state = 'settings'; this.running = false;
     Sound.stopEngine();
+    $('bSound').textContent = Sound.on ? 'On' : 'Off';
+    const pick = $('setPlayCourse');
+    pick.innerHTML = '<option value="auto">Next map for me (automatic)</option>' +
+      LEVELS.map((lv, i) => '<option value="' + lv.id + '"' + (this.playable[i] ? '' : ' disabled') + '>' +
+        courseTag(i) + ' · ' + escapeHtml(lv.name) + '</option>').join('');
+    const chosen = Prefs.get('playCourse', 'auto');
+    pick.value = courseIndexOf(chosen) >= 0 ? chosen : 'auto';
     $('setUser').textContent = Cloud.on ? Cloud.name() : Records.driver();
     $('setOldPass').value = ''; $('setNewPass').value = '';
     $('setPassMsg').textContent = ''; $('setResetMsg').textContent = ''; $('setResetPass').value = '';
@@ -10454,7 +10868,7 @@ const Game = {
       return;
     }
     if (buyIn > (Cloud.credits || 0)) {
-      msg.textContent = 'You only have ' + (Cloud.credits || 0) + ' credits.';
+      msg.textContent = 'You only have ' + fmtCredits(Cloud.credits || 0) + ' credits.';
       return;
     }
     $('bLobbyJoin').disabled = true;
@@ -10620,16 +11034,15 @@ const Game = {
     this.resultBoardId = null;          // no live course board on this result
     $('rCampaignRow').hidden = true;
     $('rCreditsRunRow').hidden = false;
-    $('creditBurst').hidden = true;
     UI.best(0);
     UI.show('result');
     UI.clock(this.time, true);
     try {
+      const before = Records.credits;
       await Cloud.grindCredit(3);
-      UI.who(Cloud.name(), Records.credits);
-      $('rSub').textContent = '+3 credits · you have ' + Records.credits + '.';
-      UI.playCreditBurst(3);
+      $('rSub').textContent = '+3 credits · you have ' + fmtCredits(Records.credits) + '.';
       Sound.creditWin();
+      CreditFX.play(3, before, Records.credits);
     } catch (e) {
       console.warn('aiPolytrack: could not award the credits-run credit', e && e.message);
       $('rSub').textContent = 'Credit not saved. Check your connection.';
@@ -10724,7 +11137,6 @@ const Game = {
     $('bNext').hidden = this.nextPlayable(this.levelIndex) < 0;
     $('rCampaignRow').hidden = false;
     $('rCreditsRunRow').hidden = true;
-    $('creditBurst').hidden = true;
     UI.show('result');
     UI.clock(this.time, true);
     this.awardCompletion();
@@ -10766,9 +11178,10 @@ const Game = {
   async awardCompletion() {
     if (!Cloud.on || !Cloud.user || Cloud.banned()) return;
     try {
+      const before = Records.credits;
       if (!(await Cloud.grindCredit(1))) return;
-      UI.who(Cloud.name(), Records.credits);
-      if (this.state === 'result') { UI.playCreditBurst(1, true); Sound.creditTick(); }
+      if (this.state === 'result') CreditFX.play(1, before, Records.credits);
+      else UI.who(Cloud.name(), Records.credits);
     } catch (e) { console.warn('aiPolytrack: could not award the finish credit', e && e.message); }
   },
 
@@ -11027,6 +11440,21 @@ const Game = {
     for (const k in this.ghostTagDotPool) if (!keep.has(k)) this.ghostTagDotPool[k].style.display = 'none';
   },
 
+  /** In a replay, does this screen box touch any of the screen's own
+   *  panels or controls? The floating car and distance tags hide there
+   *  rather than draw over them. The boxes are measured at most every
+   *  40 ms, not once per tag. */
+  tagBlocked(l, t, r, b) {
+    if (this.state !== 'spectate') return false;
+    const now = performance.now();
+    if (!this._blk || now - this._blkAt > 40) {
+      this._blkAt = now;
+      this._blk = [...document.querySelectorAll('#spectate .specTop > *, #specDock > *, #specRoster, #cmpPanel, #cmpMap')]
+        .map((e) => e.getBoundingClientRect()).filter((q) => q.width > 0 && q.height > 0);
+    }
+    return this._blk.some((q) => r > q.left && l < q.right && b > q.top && t < q.bottom);
+  },
+
   /** How far above a car's own screen point its name tag floats, in
    *  pixels — clear of the car model itself (rather than sitting right on
    *  the roofline) so the tag never covers up the car it's labeling. A
@@ -11067,9 +11495,15 @@ const Game = {
       tag.hidden = true; line.style.display = 'none'; dot.style.display = 'none';
       return null;
     }
-    tag.hidden = false;
     const carX = (p.x * 0.5 + 0.5) * innerWidth, carY = (1 - (p.y * 0.5 + 0.5)) * innerHeight;
     const tagY = carY - this.TAG_LIFT;
+    // under the watch screen's own panels and controls (the tag is drawn
+    // upward from tagY)
+    if (this.tagBlocked(carX - 45, tagY - 34, carX + 45, carY)) {
+      tag.hidden = true; line.style.display = 'none'; dot.style.display = 'none';
+      return null;
+    }
+    tag.hidden = false;
     tag.style.left = carX.toFixed(1) + 'px';
     tag.style.top = tagY.toFixed(1) + 'px';
     tag.querySelector('.tagName').textContent = (extra && extra.place ? extra.place + '. ' : '') + name;
@@ -11177,7 +11611,7 @@ const Game = {
     let steps = 0;
     const t0 = this.time;
     const gate = this.started ? this.finishGateDue() : null;
-    let finishAt = null;
+    let finishAt = null, finishU = 1;
     while (this.accum >= H && steps < 18) {
       this.car.savePrev();
       const d0 = gate ? this.noseToGate(gate) : 0;
@@ -11193,7 +11627,8 @@ const Game = {
         if (gate) {
           const d1 = this.noseToGate(gate);
           if (d0 < 0 && d1 >= 0 && this.noseInGate(gate)) {
-            finishAt = this.time - H + H * (-d0 / Math.max(d1 - d0, 1e-9));
+            finishU = -d0 / Math.max(d1 - d0, 1e-9);
+            finishAt = this.time - H + H * finishU;
             break;
           }
         }
@@ -11203,7 +11638,17 @@ const Game = {
     this.car.setRenderAlpha(finishAt !== null ? 1 : this.accum / H);
     if (finishAt !== null) {
       this.time = finishAt;
+      // Back to the exact instant the nose crossed the line (the step ran
+      // a fraction past it), and hold the car there: it doesn't roll on
+      // past a clock that has stopped.
+      const car = this.car;
+      car.pos.lerpVectors(car.prevPos, car.pos, finishU);
+      car.quat.copy(car.prevQuat).slerp(car.quat, finishU);
+      car.savePrev();
+      car.setRenderAlpha(1);
+      car.syncMesh(0);
       this.recordGhost(Math.max(this.time - t0, 1e-6));
+      padGhost(this.rec, this.time, [car.pos.x, car.pos.y, car.pos.z]);
       gate.passed = true;
       if (this.state === 'race') this.finishRaceAttempt(this.time);
       else if (this.state === 'creditsrun') this.finishCreditsRun();
@@ -11266,10 +11711,28 @@ const Game = {
     }
   },
 
+  /** Esc on any screen but the menu: one screen back, ending at the menu
+   *  (driving and the replays handle their own Esc) */
+  goBack() {
+    switch (this.state) {
+      case 'select':
+        if (this.selView !== 'list') this.backToList(); else this.toMenu();
+        break;
+      case 'garage':
+        if (!this._garageRolling) this.toMenu();
+        break;
+      case 'settings': case 'trophies': case 'info': case 'result':
+        this.toMenu();
+        break;
+      default: break;          // the menu itself, sign-in, and a locked race
+    }
+  },
+
   frame(dt) {
     if (dt > 0.0005) this.fps = lerp(this.fps, 1 / dt, 0.08);
     this.autoQuality(dt);
     const driving = this.state === 'play' || this.state === 'race' || this.state === 'creditsrun';
+    if (!driving && this.state !== 'spectate' && this.state !== 'section' && Input.tapped('Escape')) this.goBack();
     if (driving) {
       this.stepPlay(dt);
       if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') {
@@ -11295,15 +11758,9 @@ const Game = {
         this.wasOnStrip = this.car.onStrip;
       }
     } else if (this.state === 'result') {
-      const input = { throttle: 0, brake: 1, steer: 0, handbrake: 0 };
-      this.accum += dt;
-      const H = 1 / 240;
-      let steps = 0;
-      while (this.accum >= H && steps < 8) { this.car.savePrev(); this.car.step(H, this.world, input); this.accum -= H; steps++; }
-      this.car.setRenderAlpha(this.accum / H);
-      this.car.syncMesh(dt);
+      // the car stays frozen on the line, exactly where the clock stopped;
+      // only the camera settles
       this.chase.update(dt, this.car);
-      UI.speed(this.car.speedFwd);
     } else if (this.state === 'spectate') {
       this.stepSpectate(dt);
     } else if (this.state === 'section') {
