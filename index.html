@@ -3553,11 +3553,11 @@ const CAR = {
   // slip angle the stability assist lets a drift reach (it catches the
   // car past that rather than letting it spin), and how much of the
   // assist's yaw damping is released so the car can rotate into it
-  driftFrontBrake: 0.5, driftRearBrake: 0.9, driftRearHold: 0.45,
-  driftAngle: 0.4, driftYawFree: 0.55, driftCatch: 3,     // (softened from 0.35 / 0.5 / 0.7 / 0.6)
+  driftFrontBrake: 0.5, driftRearBrake: 0.9, driftRearHold: 0.52,
+  driftAngle: 0.34, driftYawFree: 0.45, driftCatch: 3,     // (softened twice from 0.35 / 0.5 / 0.7 / 0.6)
   // a sliding rear tyre has kinetic, not peak, friction; the steering
   // range either side of the travel line in a slide; the steering lock
-  driftRearMu: 0.68, driftSteer: 0.3, steerLock: 0.7,
+  driftRearMu: 0.74, driftSteer: 0.3, steerLock: 0.7,
   // speed strips (a track element): push in m/s^2 with all four wheels
   // on, fading out as the car nears stripTop m/s
   stripAccel: 12, stripTop: 62,
