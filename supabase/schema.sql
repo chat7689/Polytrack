@@ -339,18 +339,19 @@ language sql stable security definer set search_path = public, pg_temp as $$
   select public._balance(auth.uid())
 $$;
 
--- +1 for finishing a course, +3 for a credit run
+-- +1 for finishing a course
 create or replace function public.grant_credit(p_kind text) returns integer
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player();
 begin
-  if p_kind not in ('grind', 'crun') then raise exception 'unknown credit' using errcode = '22023'; end if;
+  -- (the 'crun' credit run, worth 3, is gone: only a finished course pays)
+  if p_kind is distinct from 'grind' then raise exception 'unknown credit' using errcode = '22023'; end if;
   -- no course is driven in under 10 seconds: a flood of calls earns nothing
   perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
   if exists (select 1 from public.credit_events where uid = p.id and kind = p_kind and created_at > now() - interval '10 seconds') then
     return public._balance(p.id);
   end if;
-  insert into public.credit_events (uid, delta, kind) values (p.id, case when p_kind = 'crun' then 3 else 1 end, p_kind);
+  insert into public.credit_events (uid, delta, kind) values (p.id, 1, p_kind);
   return public._balance(p.id);
 end $$;
 
