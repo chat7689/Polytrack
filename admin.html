@@ -342,12 +342,12 @@ const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Steppi
   'Gallows Reach','Slate Vault','Pilot Light','Wraith Line','Ironclad','Deadfall','Hollow Bend','Last Ember',
   'Endless Horizon'].map((name, i) => ({ id: 'c' + (i + 1), name }));
 // This season's maps in play order (must match LEVELS in index.html).
-// Eight were replaced with new maps under new ids, so old times on the
+// Replaced maps get new ids, so old times on the
 // retired maps never show up on the new ones.
-const S2 = [['s2c1', 'Launch Pad'], ['s2c25', 'Hairpin Hollow'], ['s2c18', 'Pinwheel'], ['s2c4', 'Hopscotch'],
+const S2 = [['s2c1', 'Launch Pad'], ['s2c29', 'Proving Ground'], ['s2c18', 'Pinwheel'], ['s2c4', 'Hopscotch'],
   ['s2c19', 'Slipstream'], ['s2c6', 'Stormwall'], ['s2c20', 'Frostbite'], ['s2c26', 'Sidewinder'],
-  ['s2c21', 'Switchback'], ['s2c10', 'Thunder Bowl'], ['s2c27', 'Coil Pass'], ['s2c22', 'Whirlpool'],
-  ['s2c23', 'Gauntlet'], ['s2c14', 'Knife Edge'], ['s2c28', 'Drift King'], ['s2c16', 'Apex Predator']]
+  ['s2c21', 'Switchback'], ['s2c30', 'Vortex'], ['s2c27', 'Coil Pass'], ['s2c22', 'Whirlpool'],
+  ['s2c23', 'Gauntlet'], ['s2c14', 'Knife Edge'], ['s2c31', 'Freefall'], ['s2c16', 'Apex Predator']]
   .map(([id, name], i) => ({ id, name, sec: Math.floor(i / 4), tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
 const S2_IDS = new Set(S2.map((c) => c.id));
@@ -357,7 +357,8 @@ S2.forEach((c) => { COURSE_NAME[c.id] = c.tag + ' ' + c.name; });
 // this season's replaced maps, so old runs in the history still read sensibly
 [['s2c2', 'Coastline'], ['s2c3', 'Redline Bank'], ['s2c5', 'Quarry Run'], ['s2c7', 'Glass Mile'],
   ['s2c9', 'High Wire'], ['s2c12', 'Corkscrew Ridge'], ['s2c13', 'Velocity'], ['s2c15', 'Sky Harbor'],
-  ['s2c17', 'Ribbon Road'], ['s2c8', 'Switchyard'], ['s2c11', 'Drop Zone'], ['s2c24', 'Overdrive']]
+  ['s2c17', 'Ribbon Road'], ['s2c8', 'Switchyard'], ['s2c11', 'Drop Zone'], ['s2c24', 'Overdrive'],
+  ['s2c25', 'Hairpin Hollow'], ['s2c10', 'Thunder Bowl'], ['s2c28', 'Drift King']]
   .forEach(([id, name]) => { COURSE_NAME[id] = name + ' (retired)'; });
 
 const { createClient } = await import(SUPABASE.sdk);

@@ -191,6 +191,8 @@ select option{background:#0f1a30;color:var(--ink)}
   white-space:nowrap;pointer-events:none;z-index:20;text-shadow:0 1px 2px rgba(0,0,0,.6);
   display:flex;align-items:baseline;gap:6px;transition:left .06s linear,top .06s linear}
 .ghostTag[hidden]{display:none}
+/* at 2x and 4x the eased move would trail visibly behind the car */
+.fastReplay .ghostTag{transition:none}
 .ghostTag.active{border-color:var(--ember);color:var(--ink);background:rgba(242,115,63,.22)}
 .ghostTag .kmh{color:var(--dimmer);font-size:9.5px}
 .ghostTag .kmh b{color:inherit;font-weight:600}
@@ -605,7 +607,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .gh{font-size:13px;font-weight:600;margin-bottom:8px}
 .garageCols .garageGrid{max-width:min(460px,100%)}
 .menuTop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
-.menuTop .brand{margin-bottom:0;align-items:center}
+.menuTop .brand{margin-bottom:0;align-items:center;flex-wrap:wrap;row-gap:8px;min-width:0}
 .menuTop .brand h1{font-size:clamp(40px,6.4vw,72px)}
 .menuTop .brand svg{margin-bottom:0}
 .seasonTag{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:#1d0a02;background:var(--signal);
@@ -638,22 +640,29 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .keysStrip b{font-family:var(--mono);color:var(--ink);font-weight:500;background:rgba(255,255,255,.06);
   border:1px solid var(--rule);border-radius:3px;padding:1px 6px;margin-right:3px}
 .menuSide{display:flex;flex-direction:column;gap:14px}
-.leaderCard{padding:14px 16px;border-radius:6px;border:1px solid rgba(255,207,92,.45);
-  background:linear-gradient(160deg,rgba(255,207,92,.12),rgba(242,115,63,.05))}
+.leaderCard{padding:16px 18px 18px;border-radius:8px;border:1.5px solid rgba(255,207,92,.7);
+  background:radial-gradient(120% 90% at 50% 30%,rgba(255,207,92,.2),rgba(242,115,63,.06) 60%,rgba(7,11,24,.2));
+  box-shadow:0 0 0 1px rgba(255,207,92,.12),0 10px 36px rgba(255,190,70,.16)}
 .leaderCard[hidden]{display:none}
 .lcHead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
-.lcKick{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--signal)}
+.lcKick{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.16em;color:var(--signal)}
 .lcHead .leaderTime{font-family:var(--mono);font-size:11.5px;color:var(--aqua)}
-.lcBody{display:flex;align-items:center;gap:14px}
-.lcCar{width:200px;height:130px;flex:none;margin-bottom:0}
-.lcName{font-size:24px;font-weight:700;letter-spacing:-.02em;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.lcName .crown{color:var(--signal);font-size:16px}
-.sectionLeaders{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.secLead{padding:9px 12px;border-radius:5px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025)}
-.secLead .sl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--dimmer)}
-.secLead .sn{font-size:13.5px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lcBody{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.lcCar{width:100%;height:190px;flex:none;margin-bottom:0}
+.lcName{font-size:32px;font-weight:800;letter-spacing:-.02em;text-align:center;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 18px rgba(255,207,92,.35)}
+.lcName .crown{color:var(--signal);font-size:24px}
+.sectionLeaders{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+/* small: a little car beside the section and its leader */
+.secLead{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:6px;align-items:center;
+  padding:5px 8px;border-radius:5px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025);min-width:0}
+.secLead .sl{grid-column:2;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--dimmer)}
+.secLead .sn{grid-column:2;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .secLead .sn .crown{color:var(--signal)}
 .secLead .sn.empty{color:var(--dimmer);font-weight:400}
+.secLead:not(:has(canvas)) > *{grid-column:1 / span 2}
+@media (max-width:520px){.sectionLeaders{grid-template-columns:1fr}}
+.secLead .slCar{grid-column:1;grid-row:1 / span 2;display:block;width:54px;height:32px}
 .menuSide .race-lobby-card{margin-bottom:0;border-radius:6px}
 
 /* ---------- HUD additions ---------- */
@@ -1163,7 +1172,14 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           </div>
           <button class="ghost" id="bOvBack">← All courses</button>
         </div>
-        <p class="lede" style="margin-bottom:14px">Most maps cleared first, then the lowest total of best times.</p>
+        <p class="lede" style="margin-bottom:14px" id="ovNote">Most maps cleared first, then the lowest total of best times.</p>
+        <div class="multiBar" id="ovMultiBar" hidden>
+          <span class="multiBarCount" id="ovMultiCount">0 selected</span>
+          <span class="multiBarSpacer"></span>
+          <button class="ghost small" id="bOvClearSel">Clear</button>
+          <button class="ghost small" id="bOvWatchSel">Watch all 16</button>
+          <button class="small cmpBtn" id="bOvCmpSel" hidden>Compare</button>
+        </div>
         <div id="ovBoard"></div>
       </div>
     </div>
@@ -1348,7 +1364,8 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
               inputs.</li>
           </ul>
           <p>On a section's leaderboard, tick drivers who have times on all four maps. Watch or Compare then shows all four
-            maps at once: a car finishing one map appears on the next, so the clock is their section total.</p>
+            maps at once: a car finishing one map appears on the next, so the clock is their section total.
+            On the Overall board the same works for the whole season: all 16 maps at once.</p>
           <p>Your own best on a map drives as a ghost beside you every time you retry it.</p>
         </section>
         <section id="i-credits">
@@ -4510,16 +4527,18 @@ const TURN_GAP = 45;    // metres of track required between two opposite big tur
 class TrackBuilder {
   constructor(o) {
     o = o || {};
-    this.p = new THREE.Vector3(0, 0, 0);
+    // y: the start's height above the grass (a downhill course starts high)
+    const y0 = o.y || 0;
+    this.p = new THREE.Vector3(0, y0, 0);
     this.h = deg(o.heading || 0);
     this.w = o.width || 10;
     this.strips = [];
     this.cur = null;
     this.gates = [];
-    this.path = [[0, 0, 0]];
+    this.path = [[0, y0, 0]];
     this.n = 0;
     this.pierEvery = o.pierEvery || 5;
-    this.start = { pos: [0, 0, 7], heading: this.h };
+    this.start = { pos: [0, y0, 7], heading: this.h };
     this.lastTurn = null;       // { dir, arc } of the previous big curve
     this.sinceTurn = Infinity;  // metres driven since that curve ended
   }
@@ -4630,6 +4649,26 @@ class TrackBuilder {
     }
     this._roller = undefined;
     return this;
+  }
+  /**
+   * A ski jump: cross a gap and come down on a landing hill shaped like the
+   * flight of a car leaving a level lip at v m/s, drop metres lower. The
+   * hill steepens along that curve until it is maxDeg steep, then runs
+   * straight on for len metres. A car at about v rides the curve down; a
+   * slower one lands earlier, where the hill is still shallow, so nobody
+   * lands hard. Put a level (or kicked) lip before it and a landing()
+   * after it to bring the slope back.
+   */
+  skiJump(gapLen, drop, v, maxDeg, len, o) {
+    const G = CAR.gravity, fall = (x) => G * (x / v) ** 2 / 2;
+    this.gap(gapLen, -drop - fall(gapLen));
+    const tMax = Math.tan(deg(maxDeg));
+    let x = gapLen;
+    for (let k = 0; k < 60 && G * x / (v * v) < tMax; k++) {
+      this.slab(8, -(fall(x + 8) - fall(x)), o);
+      x += 8;
+    }
+    return this.slab(len, -len * tMax, o);
   }
   bumps(n, seg, h, o) {
     for (let i = 0; i < n; i++) { this.slope(seg, h, o); this.slope(seg, -h, o); }
@@ -5352,24 +5391,25 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c25', section: 0, name: 'Hairpin Hollow',
-    blurb: 'Four flat hairpins. Brake and turn to throw it sideways.',
+    id: 's2c29', section: 0, name: 'Proving Ground',
+    blurb: 'Where it all started: wide decking and open sweepers, back from season 0.',
     build() {
-      const b = new TrackBuilder({ width: 15 });
-      b.pad(22, 19);
-      b.straight(60);
-      b.curve(28, 160, { bank: 8, chev: 1, w: 16 });
-      b.straight(60);
-      b.curve(26, -160, { bank: 8, chev: 1, w: 16 });
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.straight(70);
+      b.curve(60, 42, { bank: 6, chev: 1 });
+      b.straight(40);
+      b.slope(30, 4.5);
+      b.straight(26);
+      b.curve(55, -70, { bank: 8, chev: 1 });
+      b.straight(46);
+      b.crest(24, 9);
+      b.straight(34);
+      b.curve(48, 62, { bank: 8, chev: 1 });
+      b.slope(30, -4.5);
       b.straight(50);
-      b.crest(26, 5);
-      b.straight(20);
-      b.curve(28, 150, { bank: 10, chev: 1, w: 16 });
-      b.straight(60);
-      b.curve(26, -150, { bank: 8, chev: 1, w: 16 });
-      b.straight(60);
       b.gate('finish');
-      b.straight(34, { w: 18 });
+      b.straight(34, { w: 17 });
       return b.build();
     }
   },
@@ -5562,22 +5602,26 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c10', section: 2, name: 'Thunder Bowl',
-    blurb: 'A banked bowl you circle once, then out through a jump.',
+    id: 's2c30', section: 2, name: 'Vortex',
+    blurb: 'Walls banked so steep you drive them half sideways. Keep your foot in.',
     build() {
       const b = new TrackBuilder({ width: 16 });
       b.pad(24, 20);
-      b.straight(90);
-      b.curve(65, 100, { bank: 40, chev: 1 });
-      b.curve(65, 100, { bank: 40, chev: 1 });
-      b.straight(60, { w: 13 });
-      b.slope(30, 4, { w: 13 });
-      b.ramp(20, 10, { w: 13 });
-      b.gap(28, -4);
-      b.landing(26, -8, { w: 16 });
-      b.straight(20, { w: 13 });
-      b.rollers(2, 24, 0.9, { w: 13 });
-      b.straight(22, { w: 13 });
+      b.straight(26);
+      b.strip(20);
+      b.curve(50, 120, { bank: 55, chev: 1 });
+      b.straight(46);
+      b.curve(46, -130, { bank: 58, chev: 1 });
+      b.straight(24);
+      b.slope(26, 6);
+      b.curve(52, 150, { bank: 62, rise: 2, chev: 1 });
+      b.straight(36);
+      b.ramp(18, 9);
+      b.gap(22, -4);
+      b.slope(40, -11.5, { w: 18 });
+      b.landing(24, -16, { w: 18 });
+      b.curve(42, -100, { bank: 52, chev: 1 });
+      b.straight(40);
       b.gate('finish');
       b.straight(34, { w: 18 });
       return b.build();
@@ -5689,37 +5733,32 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c28', section: 3, name: 'Drift King',
-    blurb: 'Speed strips fire you into four hairpins. Only drifting is fast.',
+    id: 's2c31', section: 3, name: 'Freefall',
+    blurb: 'Starts high on a ridge and only goes down, steeper and faster, over three huge ski jumps.',
     build() {
-      const b = new TrackBuilder({ width: 15 });
+      const b = new TrackBuilder({ width: 14, y: 140 });
       b.pad(22, 18);
-      b.straight(30);
-      b.strip(26);
-      b.straight(20);
-      b.curve(24, 150, { bank: 6, chev: 1, w: 16 });
-      b.straight(20);
-      b.strip(20);
-      b.straight(20);
-      b.curve(22, -165, { bank: 6, chev: 1, w: 16 });
-      b.straight(50);
-      b.crest(26, 6);
-      b.straight(15);
-      b.curve(24, 160, { bank: 6, chev: 1, w: 16 });
-      b.straight(20);
-      b.strip(22);
-      b.straight(20);
-      b.curve(22, -165, { bank: 6, chev: 1, w: 16 });
-      b.straight(26);
-      b.strip(24);
-      b.ramp(16, 8);
-      b.gap(18, -2);
-      b.landing(22, -6, { w: 16 });
+      b.straight(16);
+      b.slope(40, -4);
+      b.curve(70, 40, { bank: 14, rise: -4, chev: 1 });
+      b.slope(36, -6);
+      b.ramp(16, 7);
+      b.skiJump(14, 2, 60, 15, 30, { w: 18 });
+      b.landing(24, -15, { w: 18 });
+      b.slope(36, -7);
+      b.curve(80, -50, { bank: 22, rise: -8, chev: 1 });
+      b.slope(36, -8);
+      b.slope(24, -5, { boost: true, dash: false });
+      b.ramp(16, 4);
+      b.skiJump(14, 3, 64, 17, 30, { w: 18 });
+      b.landing(24, -17, { w: 18 });
+      b.slope(30, -7);
+      b.ramp(16, 4);
+      b.skiJump(16, 4, 68, 19, 30, { w: 20 });
+      b.landing(30, -19, { w: 20 });
       b.straight(40);
-      b.curve(30, 110, { bank: 10, chev: 1, w: 16 });
-      b.straight(60);
       b.gate('finish');
-      b.straight(34, { w: 18 });
+      b.straight(40, { w: 18 });
       return b.build();
     }
   },
@@ -5755,7 +5794,8 @@ const LEVELS = [
 const COURSE_IDS = LEVELS.map((l) => l.id);
 // Season 2 maps that were replaced by new ones (new ids, so their old times
 // never appear on the new maps); a score reset still clears these too
-const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24'];
+const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24',
+  's2c25', 's2c10', 's2c28'];
 function courseIndexOf(id) { return LEVELS.findIndex((l) => l.id === id); }
 function sectionIds(sec) { return LEVELS.filter((l) => l.section === sec).map((l) => l.id); }
 /** "A1".."D4": section letter plus the map's place within its section */
@@ -6357,8 +6397,8 @@ function makePlayerCarPreview(canvasId) {
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.scene = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(32, 1, 0.5, 50);
-      this.camera.position.set(0, 1.9, 7.2);
-      this.camera.lookAt(0, 0.35, 0);
+      this.camera.position.set(0, 1.7, 5.9);
+      this.camera.lookAt(0, 0.2, 0);
 
       const key = new THREE.DirectionalLight(0xfff6e8, 1.4);
       key.position.set(4, 6, 4);
@@ -6388,12 +6428,17 @@ function makePlayerCarPreview(canvasId) {
       const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
       this.renderer.setSize(w, h, false);
       this.camera.aspect = w / h;
+      // a narrow frame (a phone) needs the camera further back to fit the car
+      const back = Math.max(1, 1.75 / this.camera.aspect);
+      this.camera.position.set(0, 1.7 * back, 5.9 * back);
+      this.camera.lookAt(0, 0.2, 0);
       this.camera.updateProjectionMatrix();
     },
 
     start() {
       this.ensureBuilt();
       this.resize();
+      if (this.running) return;            // one loop only (the menu redraws often)
       this.running = true;
       const loop = () => {
         if (!this.running) return;
@@ -6410,6 +6455,71 @@ function makePlayerCarPreview(canvasId) {
 }
 // the main menu's overall-#1 car
 const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
+
+/**
+ * The menu's four section leaders' cars, turning slowly on their cards.
+ * One offscreen renderer draws each car in turn and copies it into that
+ * card's own small canvas, so four cars cost one WebGL context, not four.
+ */
+const SectionCars = {
+  renderer: null, failed: false, running: false, angle: 0, slots: [null, null, null, null], W: 240, H: 120,
+  ensure() {
+    if (this.renderer || this.failed) return !!this.renderer;
+    try {
+      const canvas = document.createElement('canvas');
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      this.renderer.setSize(this.W, this.H, false);
+      this.renderer.outputEncoding = THREE.sRGBEncoding;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(30, this.W / this.H, 0.5, 50);
+      this.camera.position.set(0, 1.5, 6.2);
+      this.camera.lookAt(0, 0.0, 0);
+      const key = new THREE.DirectionalLight(0xfff6e8, 1.4);
+      key.position.set(4, 6, 4);
+      const rim = new THREE.DirectionalLight(0x6fa8ff, 0.5);
+      rim.position.set(-5, 3, -4);
+      this.scene.add(key, rim, new THREE.AmbientLight(0xaac4e0, 0.65));
+      this.bodyMat = MAT.body.clone();
+      this.darkMat = MAT.bodyDark.clone();
+      this.car = buildCarMesh(this.bodyMat, this.darkMat).group;
+      this.scene.add(this.car);
+      return true;
+    } catch (e) { this.failed = true; return false; }
+  },
+  /** section sec's card canvas and its leader's colours (null: no leader) */
+  set(sec, canvas, colors) { this.slots[sec] = canvas && colors ? { canvas, colors } : null; },
+  start() {
+    if (this.running || !this.ensure()) return;
+    this.running = true;
+    const loop = () => {
+      if (!this.running) return;
+      this.angle += 0.008;
+      this.slots.forEach((sl, sec) => {
+        if (!sl || !sl.canvas.isConnected) return;
+        const c = sl.canvas, w = c.clientWidth, h = c.clientHeight;
+        if (!w || !h) return;
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+        this.bodyMat.color.setHex(hslToHex(sl.colors.primary.h, sl.colors.primary.s, sl.colors.primary.l));
+        this.darkMat.color.setHex(hslToHex(sl.colors.secondary.h, sl.colors.secondary.s, sl.colors.secondary.l));
+        this.car.rotation.y = deg(200) + this.angle + sec * 1.3;
+        this.camera.aspect = w / h;
+        this.camera.updateProjectionMatrix();
+        this.renderer.render(this.scene, this.camera);
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+        // the offscreen picture is W x H; the whole car fits in the card
+        const scale = Math.min(c.width / this.W, c.height / this.H);
+        const dw = this.W * scale, dh = this.H * scale;
+        ctx.drawImage(this.renderer.domElement, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
+      });
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  },
+  stop() { this.running = false; }
+};
 
 /**
  * Earning credits: real 3D credits (cut gems, lit and spinning) fly in
@@ -7860,6 +7970,7 @@ const UI = {
      'raceReveal', 'raceBetween', 'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
+    if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
     $('boot').hidden = true;             // the loading notice ends when any screen shows
     document.body.dataset.screen = id;   // lets CSS hide things per screen
   },
@@ -8405,7 +8516,14 @@ const UI = {
   /** every map added up, and each map's leader */
   overallView() {
     $('ovSeason').textContent = String(SEASON);
-    let h = this.standingsTable(COURSE_IDS, 'all');
+    const actions = Cloud.on;
+    const sel = Game.boardSel.all || (Game.boardSel.all = new Set());
+    const whole = new Set(Records.overall(COURSE_IDS).filter((r) => r.uid && r.count === COURSE_IDS.length).map((r) => r.uid));
+    for (const uid of [...sel]) if (!whole.has(uid)) sel.delete(uid);
+    $('ovNote').textContent = 'Most maps cleared first, then the lowest total of best times.' + (actions
+      ? ' Tick drivers with all ' + COURSE_IDS.length + ' maps to watch the whole season back to back, every map on screen at once, or tick two to compare them.'
+      : '');
+    let h = this.standingsTable(COURSE_IDS, 'all', actions ? { sel, whole } : null);
     h += '<div class="boardsHd">Map leaders</div><div class="leadersGrid">' + LEVELS.map((lv, i) => {
       const top = Records.board(lv.id)[0];
       return '<div class="lg"><div class="c">' + courseTag(i) + ' · ' + escapeHtml(lv.name) + '</div>' +
@@ -8417,6 +8535,19 @@ const UI = {
       Game.boardShow[btn.dataset.more] = (Game.boardShow[btn.dataset.more] || 10) + 10;
       this.overallView();
     }));
+    el.querySelectorAll('.selBox').forEach((cb) => cb.addEventListener('change', () => {
+      if (cb.checked) sel.add(cb.dataset.uid); else sel.delete(cb.dataset.uid);
+      cb.closest('tr').classList.toggle('sel', cb.checked);
+      this.updateOverallMultiBar();
+    }));
+    this.updateOverallMultiBar();
+  },
+  updateOverallMultiBar() {
+    const sel = Game.boardSel.all;
+    const n = sel ? sel.size : 0;
+    $('ovMultiBar').hidden = n < 1;
+    $('bOvCmpSel').hidden = n !== 2;
+    if (n) $('ovMultiCount').textContent = n + (n === 1 ? ' driver selected' : ' drivers selected') + (n > 4 ? ' (the first 4 are shown)' : '');
   },
   /** the menu's season leader card (3D car) plus one small card per section */
   async overallLeaderCard() {
@@ -8433,24 +8564,49 @@ const UI = {
     overallLeaderPreview.paint(colors);
   },
   sectionLeaders() {
-    $('sectionLeaders').innerHTML = SECTIONS.map((name, sec) => {
-      const top = Records.overall(sectionIds(sec))[0];
-      return '<div class="secLead"><div class="sl">' + escapeHtml(name.toUpperCase()) + '</div>' +
-        (top ? '<div class="sn"><span class="crown">♛</span> ' + escapeHtml(top.n) + '</div>'
-          : '<div class="sn empty">no leader yet</div>') + '</div>';
-    }).join('');
+    const tops = SECTIONS.map((name, sec) => Records.overall(sectionIds(sec))[0] || null);
+    const el = $('sectionLeaders');
+    const key = tops.map((t) => t ? t.uid + ':' + t.n : '-').join('|');
+    // rebuilt only when a leader changes, so the turning cars don't restart
+    if (el.dataset.key !== key) {
+      el.dataset.key = key;
+      el.innerHTML = SECTIONS.map((name, sec) => {
+        const top = tops[sec];
+        return '<div class="secLead"><div class="sl">' + escapeHtml(name.toUpperCase()) + '</div>' +
+          (top ? '<canvas class="slCar" data-sec="' + sec + '"></canvas>' +
+            '<div class="sn"><span class="crown">♛</span> ' + escapeHtml(top.n) + '</div>'
+            : '<div class="sn empty">no leader yet</div>') + '</div>';
+      }).join('');
+      tops.forEach((top, sec) => {
+        SectionCars.set(sec, null, null);
+        if (!top || !top.uid) return;
+        const canvas = el.querySelector('.slCar[data-sec="' + sec + '"]');
+        Cloud.fetchCarColorsOf(top.uid).then((colors) => {
+          if (colors && el.dataset.key === key) SectionCars.set(sec, canvas, colors);
+        });
+      });
+    }
+    if (Game.state === 'menu') SectionCars.start();
   },
   /** standings table for a set of maps: cleared count, then total of bests */
-  standingsTable(ids, tabKey) {
+  /** pick (optional): { sel, whole } adds a tick box for every driver with
+   *  a time on all the maps (whole), ticked if they are in sel */
+  standingsTable(ids, tabKey, pick) {
     const rows = Records.overall(ids);
     if (!rows.length) return '<p class="empty">No times yet.</p>';
     const show = Game.boardShow[tabKey] || 10;
     const uid = Cloud.user && Cloud.user.uid, me = Records.driver();
-    let h = '<table><thead><tr><th></th><th>Driver</th><th style="text-align:right">Maps</th>' +
+    let h = '<table><thead><tr>' + (pick ? '<th></th>' : '') + '<th></th><th>Driver</th><th style="text-align:right">Maps</th>' +
       '<th style="text-align:right">Total</th></tr></thead><tbody>';
     rows.slice(0, show).forEach((r, k) => {
       const mine = (uid && r.uid) ? r.uid === uid : r.n === me;
-      h += '<tr class="' + (mine ? 'me' : '') + '"><td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' +
+      const ok = pick && pick.whole.has(r.uid), checked = ok && pick.sel.has(r.uid);
+      h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
+      if (pick) {
+        h += ok ? '<td><input type="checkbox" class="selBox" data-uid="' + escapeHtml(r.uid) + '"' + (checked ? ' checked' : '') +
+          ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all ' + ids.length + ' maps">—</td>';
+      }
+      h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' +
         escapeHtml(r.n) + '</td><td class="d">' + r.count + ' / ' + ids.length + '</td><td class="t">' +
         formatTime(r.total) + '</td></tr>';
     });
@@ -8600,7 +8756,9 @@ const SectionView = {
   ensureRenderer() {
     if (this.renderer) return;
     const canvas = $('secCanvas');
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    // the picture is kept between frames: a map nobody is on is drawn once
+    // and left, so sixteen maps cost about as much as the few being driven
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     this.renderer.outputEncoding = THREE.sRGBEncoding;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -8653,12 +8811,14 @@ const SectionView = {
     };
   },
 
+  /** sec: a section's index, or 'all' for every map of the season (4 x 4) */
   async open(sec, uids, compare) {
-    const ids = sectionIds(sec);
+    const all = sec === 'all';
+    const ids = all ? COURSE_IDS : sectionIds(sec);
     if (!uids || !uids.length) { UI.toast('Tick at least one driver first.'); return; }
     const idxs = ids.map(courseIndexOf);
-    if (idxs.some((i) => !Game.playable[i])) { UI.toast('One of this section\'s maps could not be loaded.'); return; }
-    const capped = uids.slice(0, 6);
+    if (idxs.some((i) => !Game.playable[i])) { UI.toast('One of ' + (all ? 'the season\'s' : 'this section\'s') + ' maps could not be loaded.'); return; }
+    const capped = uids.slice(0, all ? 4 : 6);          // 16 maps: fewer cars, the same smoothness
     UI.toast('Loading ' + capped.length * ids.length + ' runs…');
     const rows = Records.overall(ids);
     const loaded = await Promise.all(capped.map(async (uid) => {
@@ -8667,9 +8827,11 @@ const SectionView = {
     }));
     const cars = loaded.filter((c) => c.ghosts.every(Boolean));
     if (!cars.length) { UI.toast(Cloud.ghostProblem()); return; }
-    if (cars.length < loaded.length) UI.toast((loaded.length - cars.length) + ' left out: one of their four runs has no ghost.');
+    if (cars.length < loaded.length) UI.toast((loaded.length - cars.length) + ' left out: one of their ' + ids.length + ' runs has no ghost.');
     this.teardown();
     this.ensureRenderer();
+    this.renderer.setPixelRatio(all ? 1 : Math.min(devicePixelRatio || 1, 1.5));
+    this.title = all ? 'Season ' + SEASON : SECTIONS[sec];
     this.sec = sec;
     this.compare = !!compare && cars.length === 2;
     this.quads = idxs.map((i) => this.buildQuad(i));
@@ -8697,7 +8859,7 @@ const SectionView = {
       const starts = [];
       let acc = 0;
       c.ghosts.forEach((g) => { starts.push(acc); acc += g.t; });
-      return { ...c, n, bodyMat, darkMat, meshes, rigs, bits: [0, 0, 0, 0], active: [false, false, false, false], starts, total: acc,
+      return { ...c, n, bodyMat, darkMat, meshes, rigs, bits: this.quads.map(() => 0), active: this.quads.map(() => false), starts, total: acc,
         dot: hslCss(c.colors.primary.h, c.colors.primary.s, Math.max(45, c.colors.primary.l)) };
     });
     this.longest = Math.max(...this.cars.map((c) => c.total));
@@ -8708,7 +8870,7 @@ const SectionView = {
     this.cmpAuto = true; this.cmpMap = 0;
     Game.state = 'section';
     Sound.stopEngine();
-    $('svTitle').textContent = SECTIONS[sec] + (this.compare ? ' · compare' : '');
+    $('svTitle').textContent = this.title + (this.compare ? ' · compare' : '');
     $('svSub').textContent = this.cars.length === 1 ? this.cars[0].name + ' — ' + formatTime(this.cars[0].total)
       : this.cars.map((c) => c.name).join(' vs ');
     $('svT1').textContent = formatTime(this.longest);
@@ -8744,7 +8906,7 @@ const SectionView = {
       this.showCompareMap(0);
     }
     UI.show('secview');
-    this.W = this.H = 0;
+    this.W = this.H = -1;             // (a hidden tab can measure 0 x 0: still lay out)
     this.layout();
     this.setCam(this.camIdx);
     this.pose(0, 1 / 60, true);
@@ -8761,9 +8923,11 @@ const SectionView = {
     const wide = W > 900;
     const top = 62, bottom = wide ? 170 : 170 + Math.min(H * 0.3, 240), right = wide ? (this.compare ? 424 : 312) : 0;
     const gw = W - right - 8, gh = H - top - bottom;
-    const qw = Math.floor((gw - 6) / 2), qh = Math.floor((gh - 6) / 2);
+    // a section: 2 x 2; the whole season: 4 x 4
+    const cols = this.quads.length > 4 ? 4 : 2, rows = Math.ceil(this.quads.length / cols);
+    const qw = Math.floor((gw - 6 * (cols - 1)) / cols), qh = Math.floor((gh - 6 * (rows - 1)) / rows);
     this.quads.forEach((q, k) => {
-      const x = 4 + (k % 2) * (qw + 6), y = top + Math.floor(k / 2) * (qh + 6);
+      const x = 4 + (k % cols) * (qw + 6), y = top + Math.floor(k / cols) * (qh + 6);
       q.rect = { x, y, w: qw, h: qh };
       q.camera.aspect = qw / Math.max(qh, 1);
       q.camera.updateProjectionMatrix();
@@ -8780,6 +8944,8 @@ const SectionView = {
       q.keysFit = ks >= 0.6 && qh >= 8 + 29 + 48;
     });
     $('svPanel').style.width = wide ? (right - 26) + 'px' : '';
+    for (const q of this.quads) q.dirty = true;
+    this.clearAll = true;
   },
 
   /** where a ghost is at local time lt: position into pos, rotation into
@@ -8841,6 +9007,8 @@ const SectionView = {
 
   /** poses every car in every quarter at time t and moves each camera */
   pose(t, dt, snap) {
+    // the chasing cameras run on replay time (see Game.stepSpectate)
+    const cdt = this.playing && !this.scrubbing ? Math.min(dt * this.rate, 0.12) : dt;
     const d = Input.down;
     const move = this.camIdx === -2 ? {
       x: (d.has('KeyD') ? 1 : 0) - (d.has('KeyA') ? 1 : 0),
@@ -8883,9 +9051,9 @@ const SectionView = {
       const rigs = here.map((c) => c.rigs[k]);
       const fresh = snap || mode !== q.mode;
       if (mode === 'follow') {
-        if (fresh) q.chase.snap(followed.rigs[k]); else q.chase.update(dt, followed.rigs[k]);
+        if (fresh) q.chase.snap(followed.rigs[k]); else q.chase.update(cdt, followed.rigs[k]);
       } else if (mode === 'all') {
-        if (fresh) q.chase.snapAll(rigs); else q.chase.frameAll(dt, rigs);
+        if (fresh) q.chase.snapAll(rigs); else q.chase.frameAll(cdt, rigs);
       } else if (mode === 'director') {
         const pts = rigs.length ? rigs.map((r) => r.pos) : [this.cars.some((c) => t < c.starts[k]) ? q.start : q.finish];
         if (fresh) q.chase.snapDirector(pts); else q.chase.updateDirector(dt, move, pts);
@@ -8894,6 +9062,9 @@ const SectionView = {
         // or where the last of them finished
         const waiting = this.cars.some((c) => t < c.starts[k]);
         const p = waiting ? q.start : q.finish, h = q.startHeading;
+        const key = waiting ? 'start' : 'finish';
+        if (q.mode !== 'still' || q.stillKey !== key) q.dirty = true;     // a new still picture
+        q.stillKey = key;
         q.camera.position.set(p.x - Math.sin(h) * 20, p.y + 10, p.z - Math.cos(h) * 20);
         q.camera.lookAt(p.x, p.y + 0.8, p.z);
         if (Math.abs(q.camera.fov - CAM.fovBase) > 0.05) { q.camera.fov = CAM.fovBase; q.camera.updateProjectionMatrix(); }
@@ -8916,14 +9087,21 @@ const SectionView = {
 
   render() {
     const r = this.renderer;
-    r.setScissorTest(false);
-    r.clear();
+    if (this.clearAll) {                       // after a layout change: the gaps between maps too
+      r.setScissorTest(false);
+      r.clear();
+      this.clearAll = false;
+    }
     r.setScissorTest(true);
     const H = this.H;
     for (const q of this.quads) {
+      // nobody on this map: its still picture is already there
+      if (q.mode === 'still' && !q.dirty) continue;
+      q.dirty = false;
       const { x, y, w, h } = q.rect;
       r.setViewport(x, H - y - h, w, h);
       r.setScissor(x, H - y - h, w, h);
+      r.clear();
       q.sky.position.copy(q.camera.position);
       r.render(q.scene, q.camera);
     }
@@ -8932,6 +9110,7 @@ const SectionView = {
 
   /** a point in a quarter's world as screen pixels, or null if off its picture */
   toScreen(q, p, lift) {
+    if (!q.rect) return null;
     const v = this._sv || (this._sv = new THREE.Vector3());
     q.camera.updateMatrixWorld();
     v.set(p.x, p.y + lift, p.z).project(q.camera);
@@ -9086,7 +9265,7 @@ const SectionView = {
     this.hudAcc = 0;
     if (gc) {
       let k = 0;
-      while (k < 3 && t >= gc.starts[k] + gc.ghosts[k].t) k++;
+      while (k < this.quads.length - 1 && t >= gc.starts[k] + gc.ghosts[k].t) k++;
       $('svSpeedNow').textContent = Math.round((t >= gc.total ? 0 : gc.rigs[k].speed) * KMH) + ' km/h';
     }
     this.quads.forEach((q, k) => {
@@ -9110,7 +9289,7 @@ const SectionView = {
     const top = $('svPanelTop');
     if (this.compare) {
       const [a, b] = this.cars;
-      let h = '<h4>Section splits</h4><table><thead><tr><th>Map</th><th style="text-align:right">' + escapeHtml(a.name) +
+      let h = '<h4>' + (this.sec === 'all' ? 'Season' : 'Section') + ' splits</h4><table><thead><tr><th>Map</th><th style="text-align:right">' + escapeHtml(a.name) +
         '</th><th style="text-align:right">' + escapeHtml(b.name) + '</th><th style="text-align:right">Gap</th></tr></thead><tbody>';
       let ca = 0, cb = 0;
       this.quads.forEach((q, k) => {
@@ -9127,7 +9306,7 @@ const SectionView = {
       let gapTxt;
       if (t >= a.total && t >= b.total) {
         const w = a.total <= b.total ? a : b;
-        gapTxt = '<b>' + escapeHtml(w.name) + '</b> wins the section by ' + Math.abs(a.total - b.total).toFixed(3) + ' s';
+        gapTxt = '<b>' + escapeHtml(w.name) + '</b> wins the ' + (this.sec === 'all' ? 'season' : 'section') + ' by ' + Math.abs(a.total - b.total).toFixed(3) + ' s';
       } else if (Math.abs(da - db) < 0.5) gapTxt = 'Side by side';
       else {
         const when = this.timeAtDist(behind, this.distAt(ahead, t));
@@ -9139,7 +9318,7 @@ const SectionView = {
       // a map is picked by hand
       if (this.cmpAuto) {
         let k = 0;
-        while (k < 3 && t >= a.starts[k] + a.ghosts[k].t) k++;
+        while (k < this.quads.length - 1 && t >= a.starts[k] + a.ghosts[k].t) k++;
         if (k !== this.cmpMap) this.showCompareMap(k);
       }
     } else {
@@ -9149,7 +9328,7 @@ const SectionView = {
         const done = t >= c.total;
         return { c, k, done, sofar: Math.min(t, c.total) };
       }).sort((x, y) => (y.done - x.done) || (x.done ? x.c.total - y.c.total : (y.k - x.k) || (x.c.starts[x.k] - y.c.starts[y.k])));
-      top.innerHTML = '<h4>' + escapeHtml(SECTIONS[this.sec]) + ' · watching ' + this.cars.length + '</h4>' + rows.map((r, p) =>
+      top.innerHTML = '<h4>' + escapeHtml(this.title) + ' · watching ' + this.cars.length + '</h4>' + rows.map((r, p) =>
         '<div class="row2' + (r.c.n === this.camIdx ? ' on' : '') + '" data-n="' + r.c.n + '"><i style="background:' + r.c.dot + '"></i><span class="n">' +
         (r.done ? (p + 1) + '. ' : '') + escapeHtml(r.c.name) + '</span><span class="s">' +
         (r.done ? 'finished' : courseTag(this.quads[r.k].i) + ' · ' + Math.round(r.c.rigs[r.k].speed * KMH) + ' km/h') +
@@ -9197,6 +9376,7 @@ const SectionView = {
   setRate(r) {
     this.rate = r;
     document.querySelectorAll('#svRates button').forEach((b) => b.classList.toggle('on', +b.dataset.rate === r));
+    document.body.classList.toggle('fastReplay', r > 1);
   },
 
   teardown() {
@@ -9217,7 +9397,7 @@ const SectionView = {
   },
   exit() {
     this.teardown();
-    Game.toSelect('section');
+    Game.toSelect(this.sec === 'all' ? 'overall' : 'section');
   }
 };
 
@@ -9884,6 +10064,17 @@ const Game = {
       const sel = secSel();
       if (sel.length === 2) SectionView.open(this.selSection, sel, true);
     });
+    // the Overall board's ticked drivers: all 16 maps at once
+    const ovSel = () => [...(this.boardSel.all || [])];
+    $('bOvClearSel').addEventListener('click', () => {
+      if (this.boardSel.all) this.boardSel.all.clear();
+      UI.overallView();
+    });
+    $('bOvWatchSel').addEventListener('click', () => SectionView.open('all', ovSel(), false));
+    $('bOvCmpSel').addEventListener('click', () => {
+      const sel = ovSel();
+      if (sel.length === 2) SectionView.open('all', sel, true);
+    });
     $('bSvBack').addEventListener('click', () => SectionView.exit());
     $('bSvPlay').addEventListener('click', () => SectionView.togglePlay());
     $('bSvStop').addEventListener('click', () => {
@@ -10453,8 +10644,12 @@ const Game = {
     }
     const followRig = this.syncSpectate(this.spec.t);
     const pts = this.spec.cars.map((c) => c.rig.pos);
+    // The chasing cameras run on replay time: at 4x the cars cover four
+    // times the ground each frame, and a camera easing on real time fell
+    // far behind (the view seemed to zoom out) and lurched to catch up.
+    const cdt = this.spec.playing && !this.spec.scrubbing ? Math.min(dt * (this.spec.rate || 1), 0.12) : dt;
     if (this.spec.camMode === 'follow' && followRig) {
-      this.chase.update(dt, followRig);
+      this.chase.update(cdt, followRig);
     } else if (inDirector) {
       const d = Input.down;
       const move = {
@@ -10464,7 +10659,7 @@ const Game = {
       };
       this.chase.updateDirector(dt, move, pts);
     } else {
-      this.chase.frameAll(dt, this.spec.cars.map((c) => c.rig));
+      this.chase.frameAll(cdt, this.spec.cars.map((c) => c.rig));
     }
     UI.specClock(this.spec.t);
     if (this.spec.compare) Compare.update(this.spec, this.spec.t);
@@ -10606,6 +10801,7 @@ const Game = {
     if (!this.spec) return;
     this.spec.rate = r;
     document.querySelectorAll('#specRates button').forEach((b) => b.classList.toggle('on', +b.dataset.rate === r));
+    document.body.classList.toggle('fastReplay', r > 1);   // name tags keep up with the cars
   },
 
   exitSpectate() {
