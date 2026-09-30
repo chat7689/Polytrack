@@ -5610,26 +5610,30 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c32', section: 2, name: 'Vortex',
-    blurb: 'Walls banked so steep you drive them half sideways. Keep your foot in.',
+    id: 's2c33', section: 2, name: 'Riptide',
+    blurb: 'A slalom of speed strips, a tabletop over the bay, then one long sweeping bend home.',
     build() {
-      const b = new TrackBuilder({ width: 16 });
-      b.pad(24, 20);
-      b.straight(12);
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 18);
+      b.straight(30);
       b.strip(20);
-      b.curve(70, 120, { bank: 55, ramp: 0.5, chev: 1 });
-      b.straight(46);
-      b.curve(64, -130, { bank: 58, ramp: 0.5, chev: 1 });
-      b.straight(22);
-      b.slope(26, 6);
-      b.curve(66, 150, { bank: 60, rise: 2, ramp: 0.5, chev: 1 });
+      b.curve(70, 35, { bank: 12, chev: 1 });
+      b.curve(70, -35, { bank: 12, chev: 1 });
+      b.strip(18);
+      b.curve(70, -35, { bank: 12, chev: 1 });
+      b.curve(70, 35, { bank: 12, chev: 1 });
       b.straight(30);
-      b.ramp(18, 9);
-      b.gap(22, -4);
-      b.slope(40, -11.5, { w: 18 });
-      b.landing(24, -16, { w: 18 });
-      b.curve(58, -100, { bank: 52, ramp: 0.5, chev: 1 });
-      b.straight(30);
+      b.slope(30, 5);
+      b.ramp(16, 8);
+      b.gap(24, -2);
+      b.table(30, 16);
+      b.slope(30, -5);
+      b.curve(55, 150, { bank: 24, chev: 1 });
+      b.straight(40);
+      b.rollers(2, 24, 0.8);
+      b.straight(20);
+      b.crest(26, 6);
+      b.straight(40);
       b.gate('finish');
       b.straight(34, { w: 18 });
       return b.build();
@@ -5803,7 +5807,7 @@ const COURSE_IDS = LEVELS.map((l) => l.id);
 // Season 2 maps that were replaced by new ones (new ids, so their old times
 // never appear on the new maps); a score reset still clears these too
 const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24',
-  's2c25', 's2c10', 's2c28', 's2c30'];
+  's2c25', 's2c10', 's2c28', 's2c30', 's2c32'];
 function courseIndexOf(id) { return LEVELS.findIndex((l) => l.id === id); }
 function sectionIds(sec) { return LEVELS.filter((l) => l.section === sec).map((l) => l.id); }
 /** "A1".."D4": section letter plus the map's place within its section */
