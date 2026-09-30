@@ -113,7 +113,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 
 /* Always-on credit readout, fixed to the corner so a balance is visible
    from literally every screen (menu, garage, boards, settings, course
-   select, the race lobby, even mid-HUD) rather than only wherever a
+   select, even mid-HUD) rather than only wherever a
    screen happens to have room to print it. Hidden only while signed out
    or offline, where a credit balance has no meaning. */
 /* Docked below the top-left course-name HUD block (.hud-tl), not the top
@@ -514,32 +514,8 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .who[hidden]{display:none}
 .who b{color:var(--ink);font-weight:500}
 .who .cr{color:#7fe3ff}
-.race-lobby-card{padding:16px 18px;margin-bottom:22px;background:rgba(242,115,63,.08);
-  border:1px solid rgba(242,115,63,.35);border-radius:2px}
-.race-lobby-card[hidden]{display:none}
-.race-lobby-card table{width:100%;border-collapse:collapse;font-size:12.5px}
-.race-lobby-card th{text-align:left;font-size:10.5px;color:var(--dim);font-weight:500;
-  padding:0 8px 6px 0;border-bottom:1px solid var(--rule)}
-.race-lobby-card td{padding:6px 8px 6px 0;border-bottom:1px solid rgba(234,240,248,.06)}
-.race-lobby-card td.r{color:var(--dim);width:1.6em}
-.race-lobby-card tr.me td{color:var(--aqua)}
 .dim{color:var(--dim)}
 .dim{color:var(--dim)}
-.race-stage{font-family:var(--mono);font-size:11px;letter-spacing:.12em;padding:5px 11px;
-  border-radius:999px;font-weight:600}
-.race-stage.lobby{background:rgba(255,207,92,.15);color:var(--signal);
-  border:1px solid rgba(255,207,92,.4)}
-.race-stage.starting{background:rgba(255,207,92,.15);color:var(--signal);
-  border:1px solid rgba(255,207,92,.4)}
-.race-stage.running{background:rgba(61,219,184,.15);color:var(--aqua);
-  border:1px solid rgba(61,219,184,.4)}
-.race-stage.settled{background:rgba(234,240,248,.08);color:var(--dim);
-  border:1px solid var(--rule)}
-.race-mine{background:rgba(61,219,184,.1);border:1px solid rgba(61,219,184,.35);
-  border-radius:2px;padding:11px 16px;margin-bottom:16px;font-size:13px}
-.race-mine[hidden]{display:none}
-.race-mine b{color:var(--aqua)}
-.race-waiting{color:var(--dim);font-size:12.5px}
 .boot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;
   color:#2b4364;text-shadow:none}
 
@@ -653,6 +629,35 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 18px rgba(255,207,92,.35)}
 .lcName .crown{color:var(--signal);font-size:24px}
 .sectionLeaders{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+/* the admin's messages (menu and sign-in screen) */
+.noticeBox{margin:14px 0 4px;padding:12px 16px;border-radius:6px;border:1px solid rgba(61,219,184,.4);
+  background:linear-gradient(135deg,rgba(61,219,184,.12),rgba(88,160,255,.06));color:var(--ink);
+  font-size:14px;line-height:1.55;white-space:pre-line;overflow-wrap:anywhere}
+.noticeBox[hidden]{display:none}
+.gate .noticeBox{margin:0 0 18px;font-size:13.5px}
+/* the top ten: a staircase of columns, fastest (tallest) on the left */
+.topTen{margin-top:26px;padding:16px 18px 14px;border-radius:8px;border:1px solid rgba(255,207,92,.35);
+  background:radial-gradient(90% 120% at 30% 100%,rgba(255,207,92,.12),rgba(88,160,255,.05) 55%,rgba(7,11,24,.25))}
+.topTen[hidden]{display:none}
+.ttHead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ttKick{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.16em;color:var(--signal)}
+.ttSub{font-size:12px;color:var(--dim)}
+.ttStage{position:relative;height:clamp(200px,24vw,300px);margin-top:6px}
+.ttStage canvas{display:block;width:100%;height:100%}
+.ttLabels{position:relative;height:50px}
+.ttLabel{position:absolute;top:0;transform:translateX(-50%);text-align:center;overflow:hidden;font-size:12px;line-height:1.3}
+.ttLabel b,.ttLabel span,.ttLabel small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttLabel b{font-weight:700;color:var(--ink)}
+.ttLabel span{font-family:var(--mono);font-size:10.5px;color:var(--aqua)}
+.ttLabel small{font-size:10px;color:var(--dimmer)}
+.ttLabel.g1 b{color:#ffd66e} .ttLabel.g2 b{color:#dfe7f2} .ttLabel.g3 b{color:#e3a36f}
+.ttList{display:none;margin:4px 0 0;padding:0;list-style:none;counter-reset:tt}
+.ttList li{display:flex;gap:8px;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--rule-2);font-size:13px;counter-increment:tt}
+.ttList li::before{content:counter(tt) '.';font-family:var(--mono);color:var(--dimmer);min-width:1.8em}
+.ttList li b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ttList li span{font-family:var(--mono);font-size:12px;color:var(--aqua)}
+/* too narrow for a name under every column: the list instead */
+@media (max-width:640px){.ttLabels{display:none}.ttList{display:block}.ttStage{height:190px}}
 /* small: a little car beside the section and its leader */
 .secLead{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:6px;align-items:center;
   padding:5px 8px;border-radius:5px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025);min-width:0}
@@ -663,7 +668,6 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .secLead:not(:has(canvas)) > *{grid-column:1 / span 2}
 @media (max-width:520px){.sectionLeaders{grid-template-columns:1fr}}
 .secLead .slCar{grid-column:1;grid-row:1 / span 2;display:block;width:54px;height:32px}
-.menuSide .race-lobby-card{margin-bottom:0;border-radius:6px}
 
 /* ---------- HUD additions ---------- */
 .hudTimes{display:flex;gap:12px;justify-content:center;font-family:var(--mono);font-size:12.5px;margin-top:3px}
@@ -971,6 +975,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     <div class="panel gate">
       <h2 id="gateTitle">Sign in</h2>
       <p class="note" id="gateNote">aiPolytrack is invite-only. Sign in to load your times.</p>
+      <div class="noticeBox" id="gateNotice" hidden></div>
       <label class="fld" for="gUser">Username</label>
       <input type="text" id="gUser" maxlength="14" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
       <label class="fld" for="gPass">Password</label>
@@ -1016,6 +1021,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <button class="ghost small" id="whoOut">Sign out</button>
         </div>
       </div>
+      <div class="noticeBox" id="menuNotice" hidden></div>
 
       <div class="menuGrid">
         <div class="menuMain">
@@ -1051,38 +1057,14 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             </div>
           </div>
           <div class="sectionLeaders" id="sectionLeaders"></div>
-
-          <div class="race-lobby-card" id="raceLobbyCard" hidden>
-            <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <b style="font-size:14px">Race</b>
-              <span class="race-stage" id="lobbyStageBadge">LOBBY</span>
-            </div>
-            <p class="lede" id="lobbyState" style="margin-bottom:10px;font-size:13px">—</p>
-            <div id="lobbyMineBox" class="race-mine" hidden>You're in for <b id="lobbyMineBuyIn">0</b> credits.</div>
-            <div id="lobbyJoinBox" hidden>
-              <p class="lede" style="font-size:12.5px;margin-bottom:8px">Stake credits (you have
-                <span class="gem2d"></span><b id="lobbyJoinCredits">0</b>). Map is hidden until it starts.</p>
-              <div class="row">
-                <input type="text" id="lobbyBuyIn" inputmode="numeric" style="width:110px" placeholder="Credits">
-                <button class="primary" id="bLobbyJoin">Join</button>
-              </div>
-              <div class="err" id="lobbyJoinMsg"></div>
-            </div>
-            <p class="lede race-waiting" id="lobbyWaitingNote" style="margin-top:8px" hidden></p>
-            <div id="lobbyDriveRow" style="margin-top:10px" hidden>
-              <p class="lede" style="font-size:12.5px;margin-bottom:8px" id="lobbyDriveNote"></p>
-              <button class="primary" id="bLobbyDrive">Race — attempt <span id="lobbyAttemptNum">1</span> of 3</button>
-            </div>
-            <div id="lobbyStandingsWrap" hidden>
-              <table id="lobbyTable" style="margin-top:8px">
-                <thead><tr><th></th><th>Driver</th><th style="text-align:right">Stake</th>
-                  <th style="text-align:right">Best</th><th style="text-align:right" id="lobbyLastCol"></th></tr></thead>
-                <tbody id="lobbyRows"></tbody>
-              </table>
-            </div>
-          </div>
         </aside>
       </div>
+      <section class="topTen" id="topTen" hidden>
+        <div class="ttHead"><span class="ttKick">TOP 10 · SEASON 1</span><span class="ttSub">every map's best added up</span></div>
+        <div class="ttStage"><canvas id="topTenCanvas"></canvas></div>
+        <div class="ttLabels" id="topTenLabels"></div>
+        <ol class="ttList" id="topTenList"></ol>
+      </section>
     </div>
   </div>
 
@@ -1312,7 +1294,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
       </div>
       <nav class="infoNav" id="infoNav">
         <a href="#i-basics">Basics</a><a href="#i-keys">Controls</a><a href="#i-maps">Maps</a><a href="#i-boards">Leaderboards</a>
-        <a href="#i-replays">Replays</a><a href="#i-credits">Credits</a><a href="#i-races">Races</a><a href="#i-trophies">Trophies</a>
+        <a href="#i-replays">Replays</a><a href="#i-credits">Credits</a><a href="#i-trophies">Trophies</a>
         <a href="#i-garage">Garage</a><a href="#i-account">Account</a>
       </nav>
       <div class="infoBody" id="infoBody">
@@ -1371,15 +1353,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <section id="i-credits">
           <h3>Credits</h3>
           <p>Finishing any map earns 1 credit. A <b>Credit run</b> sends you to a random map and pays 3. Spend them on
-            colours in the Garage or stake them in a race.</p>
-        </section>
-        <section id="i-races">
-          <h3>Races</h3>
-          <p>There is always one race open on the menu. Stake some credits to join. Once two drivers are in, there is
-            a minute for others to join, then the map is revealed and everyone gets 10 minutes and three attempts.
-            Your best attempt counts.</p>
-          <p>The whole pot is paid out by finishing place and by how much each finisher staked. Anyone who doesn't finish
-            loses their stake. If nobody finishes, everyone gets their stake back.</p>
+            colours in the Garage.</p>
         </section>
         <section id="i-trophies">
           <h3>Trophies</h3>
@@ -1390,7 +1364,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <section id="i-garage">
           <h3>Garage</h3>
           <p>A colour pack costs 10 credits and unlocks one new hue at random for the body or the trim. Saturation and
-            brightness are free to change. Other players see your car in your colours in replays and races.</p>
+            brightness are free to change. Other players see your car in your colours in replays.</p>
         </section>
         <section id="i-account">
           <h3>Account</h3>
@@ -1452,31 +1426,6 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           </div>
           <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="layer" id="raceReveal" hidden>
-    <div class="scrim"></div>
-    <div class="panel">
-      <div class="kick">Race — attempt <span id="revealAttemptNum">1</span> of 3</div>
-      <h2 id="revealCourseName">—</h2>
-      <p class="lede" style="margin:14px 0 22px">Three attempts, back to back. Your best counts.</p>
-      <div class="row">
-        <button class="primary" id="bRevealGo">Go</button>
-        <button class="ghost" id="bRevealSignOut" style="margin-left:auto">Sign out</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="layer" id="raceBetween" hidden>
-    <div class="scrim"></div>
-    <div class="panel">
-      <div class="kick" id="betweenKick">Attempt complete</div>
-      <h2 id="betweenTime">0:00.00</h2>
-      <p class="lede" style="margin:14px 0 22px" id="betweenNote">—</p>
-      <div class="row">
-        <button class="primary" id="bBetweenNext">Next attempt</button>
       </div>
     </div>
   </div>
@@ -2441,8 +2390,6 @@ const Cloud = {
   // this while one of those flows runs tells watch() to sit out; the flow
   // reports the outcome itself.
   busy: false,
-  // server clock minus this device's clock, so race countdowns agree
-  skew: 0,
   _chn: 0,                                     // realtime channel names are never reused
 
   courseIds() { return COURSE_IDS.slice(); },
@@ -2588,121 +2535,6 @@ const Cloud = {
     return true;
   },
 
-  /** the server clock against this device's, once per session (a race
-   *  deadline is the server's time; a device clock a minute out would
-   *  otherwise count down to the wrong moment) */
-  async syncClock() {
-    if (this._clockAt && Date.now() - this._clockAt < 600000) return;
-    try {
-      const t0 = Date.now();
-      const server = Number(await this.rpc('server_ms'));
-      const t1 = Date.now();
-      if (Number.isFinite(server) && t1 - t0 < 3000) { this.skew = server - (t0 + t1) / 2; this._clockAt = t1; }
-    } catch (e) { /* keep the last estimate */ }
-  },
-  /** a server timestamp as this device's milliseconds */
-  localMs(ts) {
-    if (!ts) return 0;
-    const ms = Date.parse(ts);
-    return Number.isFinite(ms) ? ms - this.skew : 0;
-  },
-  mapRace(r) {
-    return {
-      id: r.id, state: r.state, courseId: r.course_id || undefined, pot: 0,
-      createdAt: this.localMs(r.created_at), joinDeadline: this.localMs(r.join_deadline),
-      startedAt: this.localMs(r.started_at), endsAt: this.localMs(r.ends_at), settledBy: r.settled_by || null
-    };
-  },
-  mapEntry(e) {
-    return {
-      uid: e.uid, displayName: e.display_name, buyIn: e.buy_in, attempts: e.attempts || [],
-      bestTimeMs: e.best_time_ms == null ? null : e.best_time_ms,
-      placement: e.placement == null ? null : e.placement, payout: e.payout == null ? null : e.payout
-    };
-  },
-
-  /** follows the current race (the newest one) and its entries; returns an
-   *  unsubscribe fn. Any change pushed by the server reloads both — two
-   *  small reads — and a slow poll covers a dropped connection. */
-  watchCurrentRace(onChange) {
-    if (!this.on) return () => {};
-    let stopped = false, busy = false, again = false, kickTimer = null;
-    const load = async () => {
-      if (stopped) return;
-      if (busy) { again = true; return; }
-      busy = true;
-      try {
-        await this.syncClock();
-        const rows = await this.q(this.sb.from('races').select('*').order('created_at', { ascending: false }).limit(1));
-        const r = rows[0] || null;
-        const es = r ? await this.q(this.sb.from('race_entries').select('*').eq('race_id', r.id)) : [];
-        if (!stopped) onChange(r ? this.mapRace(r) : null, es.map((e) => this.mapEntry(e)));
-      } catch (e) {
-        console.warn('aiPolytrack: race feed', e && e.code, e && e.message);
-      } finally {
-        busy = false;
-        if (again && !stopped) { again = false; load(); }
-      }
-    };
-    const kick = () => { clearTimeout(kickTimer); kickTimer = setTimeout(load, 120); };
-    this._raceKick = kick;
-    const ch = this.sb.channel('race-feed-' + (++this._chn))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'races' }, kick)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'race_entries' }, kick)
-      .subscribe((status) => { if (status === 'SUBSCRIBED') kick(); });
-    const poll = setInterval(load, 20000);
-    load();
-    return () => {
-      stopped = true; clearTimeout(kickTimer); clearInterval(poll);
-      if (this._raceKick === kick) this._raceKick = null;
-      this.sb.removeChannel(ch);
-    };
-  },
-  raceChanged() { if (this._raceKick) this._raceKick(); },
-
-  /** opens the next lobby, or finds the one already open */
-  async openLobby() {
-    if (!this.user || !this.on) return;
-    if (Date.now() - (this._lobbyOpenedAt || 0) < 15000) return;
-    this._lobbyOpenedAt = Date.now();
-    try { await this.rpc('open_lobby'); } catch (e) { console.warn('aiPolytrack: open lobby', e && e.message); }
-    this.raceChanged();
-  },
-
-  /** moves a race on if one of its deadlines has passed; the database
-   *  decides (its own clock, its own random course from today's list), so
-   *  every game asking at once is harmless */
-  async advanceRace(raceId) {
-    await this.rpc('advance_race', { p_race: raceId, p_pool: COURSE_IDS });
-    this.raceChanged();
-  },
-  startCountdown(raceId) { return this.advanceRace(raceId); },
-  startRace(raceId) { return this.advanceRace(raceId); },
-  async settleRace(raceId) {
-    await this.advanceRace(raceId);
-    this.refreshCredits();
-  },
-
-  /** join a race: the stake is checked and taken by the server */
-  async joinRace(raceId, buyIn) {
-    if (!this.user || !this.on) throw new Error('Not signed in.');
-    if (this.banned()) throw new Error('This account is suspended.');
-    if (!(buyIn > 0)) throw new Error('Enter a buy-in of at least 1 credit.');
-    if (buyIn > this.credits) throw new Error('That is more credits than you have.');
-    const r = await this.rpc('join_race', { p_race: raceId, p_buy_in: buyIn });
-    if (r && typeof r.balance === 'number') this.credits = r.balance;
-    else this.credits -= buyIn;
-    this.raceChanged();
-  },
-
-  /** one attempt (null = did not finish); returns the attempts used */
-  async recordRaceAttempt(raceId, timeMsOrNull) {
-    const t = typeof timeMsOrNull === 'number' && isFinite(timeMsOrNull) ? Math.round(timeMsOrNull) : null;
-    const n = await this.rpc('record_race_attempt', { p_race: raceId, p_time_ms: t });
-    this.raceChanged();
-    return n;
-  },
-
   /**
    * Invite-gated sign-up. The login is made first, then the server checks
    * the invite code (which no player can read) and creates the player; a
@@ -2807,12 +2639,11 @@ const Cloud = {
       // mid-roll, only the balance changes: redrawing the garage would pull
       // the hue grid out from under the roll animation
       if (Game.state === 'garage') { if (Game._garageRolling) $('gCredits').textContent = fmtCredits(Records.credits); else UI.garage(); }
-      if (Game.state === 'menu' && Game.lobby) Game.renderLobbyCard();
     } catch (e) { console.warn('aiPolytrack: could not refresh credits', e && e.message); }
   },
 
-  /** credits other people give this player (an admin setting the balance,
-   *  a race payout settled by someone else's game) show up straight away */
+  /** credits someone else gives this player (an admin setting the
+   *  balance) show up straight away */
   watchAdjust() {
     if (!this.on || !this.user) return;
     this.stopAdjust();
@@ -4701,7 +4532,8 @@ class TrackBuilder {
     // a 45 degree wall needs a far longer twist than a 10 degree sweeper, and
     // holding the plateau through the exit keeps grip where the car still
     // needs it (a plain sine fades the bank to zero exactly at the exit).
-    const rf = clamp(0.22 + Math.abs(o.bank || 0) * 0.0055, 0.22, RAMP_MAX);
+    // (o.ramp: a steep wall can take up to half the turn to twist in and out)
+    const rf = o.ramp ? clamp(o.ramp, 0.22, 0.5) : clamp(0.22 + Math.abs(o.bank || 0) * 0.0055, 0.22, RAMP_MAX);
     const profile = (t) => {
       const s = (x) => x * x * (3 - 2 * x);
       if (t < rf) return s(t / rf);
@@ -5602,26 +5434,26 @@ const LEVELS = [
     }
   },
   {
-    id: 's2c30', section: 2, name: 'Vortex',
+    id: 's2c32', section: 2, name: 'Vortex',
     blurb: 'Walls banked so steep you drive them half sideways. Keep your foot in.',
     build() {
       const b = new TrackBuilder({ width: 16 });
       b.pad(24, 20);
-      b.straight(26);
+      b.straight(12);
       b.strip(20);
-      b.curve(50, 120, { bank: 55, chev: 1 });
+      b.curve(70, 120, { bank: 55, ramp: 0.5, chev: 1 });
       b.straight(46);
-      b.curve(46, -130, { bank: 58, chev: 1 });
-      b.straight(24);
+      b.curve(64, -130, { bank: 58, ramp: 0.5, chev: 1 });
+      b.straight(22);
       b.slope(26, 6);
-      b.curve(52, 150, { bank: 62, rise: 2, chev: 1 });
-      b.straight(36);
+      b.curve(66, 150, { bank: 60, rise: 2, ramp: 0.5, chev: 1 });
+      b.straight(30);
       b.ramp(18, 9);
       b.gap(22, -4);
       b.slope(40, -11.5, { w: 18 });
       b.landing(24, -16, { w: 18 });
-      b.curve(42, -100, { bank: 52, chev: 1 });
-      b.straight(40);
+      b.curve(58, -100, { bank: 52, ramp: 0.5, chev: 1 });
+      b.straight(30);
       b.gate('finish');
       b.straight(34, { w: 18 });
       return b.build();
@@ -5795,7 +5627,7 @@ const COURSE_IDS = LEVELS.map((l) => l.id);
 // Season 2 maps that were replaced by new ones (new ids, so their old times
 // never appear on the new maps); a score reset still clears these too
 const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24',
-  's2c25', 's2c10', 's2c28'];
+  's2c25', 's2c10', 's2c28', 's2c30'];
 function courseIndexOf(id) { return LEVELS.findIndex((l) => l.id === id); }
 function sectionIds(sec) { return LEVELS.filter((l) => l.section === sec).map((l) => l.id); }
 /** "A1".."D4": section letter plus the map's place within its section */
@@ -6744,6 +6576,218 @@ const Podium = {
         (e ? '<b>' + escapeHtml(e.n) + '</b><span class="p3Time">' + formatTime(e.t) + '</span>' : '<b class="none">—</b>') + '</div>';
     }).join('');
   }
+};
+
+/**
+ * The admin's two messages (set on the admin page): one in a box on the
+ * main menu, one on the sign-in screen. Read at most once a minute; an
+ * empty message hides its box.
+ */
+const Notice = {
+  at: 0, data: null, busy: false,
+  apply() {
+    const d = this.data || {};
+    for (const [id, text] of [['menuNotice', d.menu], ['gateNotice', d.login]]) {
+      const el = $(id);
+      el.textContent = text || '';
+      el.hidden = !text;
+    }
+  },
+  async show() {
+    this.apply();
+    if (this.busy || !Cloud.on || !Cloud.sb || Date.now() - this.at < 60000) return;
+    this.busy = true;
+    try {
+      this.data = (await Cloud.rpc('get_notice')) || {};
+      this.at = Date.now();
+      this.apply();
+    } catch (e) {
+      this.at = Date.now();          // (a database without it yet: try again in a minute)
+    } finally { this.busy = false; }
+  }
+};
+
+/**
+ * The menu's top ten: ten columns stepping down from the fastest overall
+ * (tallest, on the left) to the tenth (shortest, on the right), each
+ * driver's car standing on theirs and slowly turning. Gold, silver and
+ * bronze for the first three, steel for the rest, each with a lit top edge
+ * and its place on the front. The columns rise into place whenever the ten
+ * change. One renderer, and it only runs while the menu is showing.
+ */
+const TopTen = {
+  N: 10, renderer: null, failed: false, running: false, cols: [], key: '', rows: [], t0: 0, gen: 0,
+  colX(k) { return (k - 4.5) * 2.75; },
+  colH(k) { return 6.2 - k * 0.5; },
+  ensure() {
+    if (this.renderer || this.failed) return !!this.renderer;
+    try {
+      const canvas = $('topTenCanvas');
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+      this.renderer.outputEncoding = THREE.sRGBEncoding;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(28, 3, 0.5, 200);
+      const key = new THREE.DirectionalLight(0xfff3e0, 1.25);
+      key.position.set(-8, 14, 12);
+      const fill = new THREE.DirectionalLight(0x6fa4ff, 0.45);
+      fill.position.set(12, 4, 6);
+      const rim = new THREE.DirectionalLight(0xffd27a, 0.7);
+      rim.position.set(0, 6, -12);
+      this.scene.add(key, fill, rim, new THREE.HemisphereLight(0x8fb4ff, 0x0b1220, 0.35));
+      // every column lighter at the top, darker at its foot
+      const shade = document.createElement('canvas');
+      shade.width = 4; shade.height = 128;
+      const sg = shade.getContext('2d'), sgr = sg.createLinearGradient(0, 0, 0, 128);
+      sgr.addColorStop(0, '#ffffff'); sgr.addColorStop(1, '#4a4f5c');
+      sg.fillStyle = sgr; sg.fillRect(0, 0, 4, 128);
+      const shadeTex = new THREE.CanvasTexture(shade);
+      shadeTex.encoding = THREE.sRGBEncoding;
+      // a soft pool of light on the floor under the stairs
+      const glow = document.createElement('canvas');
+      glow.width = glow.height = 256;
+      const g = glow.getContext('2d'), grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+      grd.addColorStop(0, 'rgba(255,214,120,0.55)'); grd.addColorStop(0.45, 'rgba(120,170,255,0.18)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 12),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(glow), transparent: true, depthWrite: false }));
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(-2, 0.01, 0);
+      this.scene.add(floor);
+      const tiers = [
+        { body: 0xf2b43a, metal: 0.8, rough: 0.3, edge: 0xffe29a },     // gold
+        { body: 0xaebbd0, metal: 0.8, rough: 0.3, edge: 0xffffff },     // silver
+        { body: 0xb86b36, metal: 0.75, rough: 0.34, edge: 0xffb27a },   // bronze
+        { body: 0x1f3a6e, metal: 0.55, rough: 0.4, edge: 0x3ddbb8 }     // the rest
+      ];
+      for (let k = 0; k < this.N; k++) {
+        const tier = tiers[Math.min(k, 3)], h = this.colH(k), x = this.colX(k);
+        const col = new THREE.Group();
+        col.position.set(x, 0, 0);
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1, 3),
+          new THREE.MeshStandardMaterial({ color: tier.body, map: shadeTex, metalness: tier.metal, roughness: tier.rough }));
+        body.position.y = 0.5;
+        const pillar = new THREE.Group();            // scaled in y as it rises
+        pillar.add(body);
+        // the lit edge round the top
+        const edge = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.09, 3.06),
+          new THREE.MeshStandardMaterial({ color: tier.edge, emissive: tier.edge, emissiveIntensity: k < 3 ? 0.55 : 0.85 }));
+        col.add(pillar, edge);                        // the edge rides the top, unstretched
+        // its place, on the front near the top
+        const num = document.createElement('canvas');
+        num.width = num.height = 128;
+        const c = num.getContext('2d');
+        c.font = '800 92px Helvetica, Arial, sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillStyle = k < 3 ? 'rgba(40,24,6,0.85)' : 'rgba(234,240,248,0.92)';
+        c.fillText(String(k + 1), 64, 70);
+        const tex = new THREE.CanvasTexture(num);
+        tex.encoding = THREE.sRGBEncoding;
+        const plate = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.1),
+          new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+        plate.position.set(0, h - 0.75, 1.51);
+        col.add(plate);
+        const bodyMat = MAT.body.clone(), darkMat = MAT.bodyDark.clone();
+        const car = buildCarMesh(bodyMat, darkMat).group;
+        car.scale.setScalar(0.72);
+        car.position.set(0, h + 0.09 + (CAR.comHeight - 0.06) * 0.72, 0.05);
+        col.add(car);
+        this.scene.add(col);
+        this.cols.push({ col, pillar, edge, plate, car, bodyMat, darkMat, h });
+      }
+      addEventListener('resize', () => { if (this.running) this.fit(); });
+      return true;
+    } catch (e) { this.failed = true; return false; }
+  },
+  /** the menu's ten (overall standings), their cars in their own colours */
+  async show(rows) {
+    const sec = $('topTen');
+    rows = (rows || []).slice(0, this.N);
+    sec.hidden = !rows.length;
+    if (!rows.length || !this.ensure()) { this.stop(); return; }
+    const key = rows.map((r) => r.uid + ':' + r.total.toFixed(3) + ':' + r.count).join('|');
+    const gen = ++this.gen;
+    const colors = await Promise.all(rows.map((r) => r.uid ? Cloud.fetchCarColorsOf(r.uid) : Promise.resolve(null)));
+    if (gen !== this.gen) return;
+    this.cols.forEach((c, k) => {
+      const col = colors[k];
+      c.col.visible = k < rows.length;
+      if (col) {
+        c.bodyMat.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l));
+        c.darkMat.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l));
+      } else { c.bodyMat.color.setHex(0x9aa6b8); c.darkMat.color.setHex(0x55606f); }
+    });
+    if (key !== this.key) { this.key = key; this.t0 = performance.now(); }   // the ten changed: rise again
+    this.rows = rows;
+    $('topTenList').innerHTML = rows.map((r) => '<li><b>' + escapeHtml(r.n) + '</b><span>' + formatTime(r.total) +
+      (r.count < LEVELS.length ? ' · ' + r.count + '/' + LEVELS.length : '') + '</span></li>').join('');
+    this.fit();
+    if (Game.state === 'menu') this.start();
+  },
+  /** camera back until the whole staircase fits, then the names under it */
+  fit() {
+    const canvas = $('topTenCanvas');
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    this._w = w; this._h = h;
+    if (!w || !h) return;                  // not laid out yet: the loop fits it once it is
+    this.renderer.setSize(w, h, false);
+    const cam = this.camera;
+    cam.aspect = w / h;
+    cam.updateProjectionMatrix();
+    const pv = this._pv || (this._pv = new THREE.Vector3());
+    const n = Math.max(1, this.rows.length), xl = this.colX(0) - 1.4, xr = this.colX(n - 1) + 1.4, mid = (xl + xr) / 2;
+    let dist = 30;
+    for (let it = 0; it < 60; it++) {
+      cam.position.set(mid - dist * 0.12, 3.2 + dist * 0.2, dist);
+      cam.lookAt(mid, 2.6, 0);
+      cam.updateMatrixWorld();
+      let worst = 0;
+      for (const x of [xl, xr]) for (const y of [0, this.colH(0) + 1.4]) for (const z of [-1.5, 1.5]) {
+        pv.set(x, y, z).project(cam);
+        worst = Math.max(worst, Math.abs(pv.x), Math.abs(pv.y));
+      }
+      if (worst > 0.96) dist *= 1.04; else if (worst < 0.9) dist *= 0.97; else break;
+    }
+    // each name under its column, lined up with the column's foot
+    $('topTenLabels').innerHTML = this.rows.map((r, k) => {
+      pv.set(this.colX(k), 0, 1.5).project(cam);
+      const x = (pv.x * 0.5 + 0.5) * w;
+      const colW = Math.max(40, Math.abs(((this.colX(1) - this.colX(0)) / (xr - xl)) * w * 0.94));
+      return '<div class="ttLabel' + (k < 3 ? ' g' + (k + 1) : '') + '" style="left:' + x.toFixed(0) + 'px;width:' + colW.toFixed(0) + 'px">' +
+        '<b>' + escapeHtml(r.n) + '</b><span>' + formatTime(r.total) + '</span>' +
+        (r.count < LEVELS.length ? '<small>' + r.count + '/' + LEVELS.length + ' maps</small>' : '') + '</div>';
+    }).join('');
+    if (!this.running) this.render(performance.now());
+  },
+  render(now) {
+    const t = (now - this.t0) / 1000;
+    const ease = (u) => 1 - Math.pow(1 - clamp(u, 0, 1), 3);
+    this.cols.forEach((c, k) => {
+      // rise: each column a little after the one before, its car riding on top
+      const u = ease((t - k * 0.07) / 0.8);
+      c.pillar.scale.y = Math.max(0.001, c.h * u);
+      c.edge.position.y = c.h * u;
+      c.plate.visible = u > 0.95;
+      c.car.position.y = c.h * u + 0.09 + (CAR.comHeight - 0.06) * 0.72;
+      c.car.rotation.y = deg(-18) + Math.sin(now / 1000 * 0.6 + k * 0.7) * deg(28);
+    });
+    this.renderer.render(this.scene, this.camera);
+  },
+  start() {
+    if (this.running || !this.ensure()) return;
+    this.running = true;
+    this.fit();
+    const canvas = $('topTenCanvas');
+    const loop = (now) => {
+      if (!this.running) return;
+      if (canvas.clientWidth !== this._w || canvas.clientHeight !== this._h) this.fit();
+      if (this._w && this._h) this.render(now);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  },
+  stop() { this.running = false; }
 };
 
 /**
@@ -7967,10 +8011,11 @@ const UI = {
   toastT: 0,
   show(id) {
     ['menu', 'select', 'secview', 'info', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'raceReveal', 'raceBetween', 'garage', 'trophies']
+     'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
-    if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
+    if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); TopTen.stop(); }   // turning cars only while seen
+    if (id === 'menu' || id === 'gate') Notice.show();
     $('boot').hidden = true;             // the loading notice ends when any screen shows
     document.body.dataset.screen = id;   // lets CSS hide things per screen
   },
@@ -8554,6 +8599,7 @@ const UI = {
     const card = $('overallLeaderCard');
     const rows = Records.overall(COURSE_IDS);
     this.sectionLeaders();
+    TopTen.show(rows);
     if (!rows.length) { card.hidden = true; overallLeaderPreview.stop(); return; }
     card.hidden = false;
     const top = rows[0];
@@ -9494,9 +9540,6 @@ const Game = {
   finishedAtTime: null, _racePlaces: null,
   spec: null,
   confirmedUid: null, authPending: false,
-  lobby: null, lobbyEntries: [], lobbyUnwatch: null,
-  _lockedRaceId: null, _nextLobbyTimer: null, _raceSteps: null,
-  _joinedRaceId: null, _joinedEntry: null,
   garageSlot: 'primary', _garageRolling: false,
   // Which rows are ticked on each leaderboard (a map's id, or 'sec0'..'sec3'
   // for a section), kept per board so a pick on one never leaks into
@@ -9632,20 +9675,11 @@ const Game = {
    * problem to retry, not a reason to boot the player back to the gate.
    */
   async onAuth(user, profile, force) {
-    // 'race' and 'creditsrun' are active-driving states exactly like 'play'
-    // (added after this check was first written, and missed then) — an
-    // auth blip mid-attempt in either one must not be able to yank the
-    // gate up over the player any more than it can during a campaign run.
-    // `force` bypasses all of that: it means this call came from the
-    // player explicitly clicking Sign out, not from the passive
-    // onAuthStateChanged listener noticing an incidental change, so it
-    // must take effect immediately — otherwise a sign-out clicked from a
-    // locked race screen would just queue behind this deferral forever,
-    // since a locked race attempt has no other screen to "get back to"
-    // that would ever flush it.
+    // 'creditsrun' is an active-driving state exactly like 'play': an auth
+    // blip mid-attempt must not yank the gate up over the player. `force`
+    // means the player clicked Sign out, so it takes effect at once.
     const interruptible = force || (this.state !== 'play' && this.state !== 'spectate'
-      && this.state !== 'result' && this.state !== 'race' && this.state !== 'creditsrun'
-      && this.state !== 'raceReveal' && this.state !== 'raceBetween');
+      && this.state !== 'result' && this.state !== 'creditsrun');
     if (!interruptible) {
       // Don't yank the gate up over an active run or a replay someone is
       // watching — re-check once they get back to a safe screen instead.
@@ -9666,9 +9700,7 @@ const Game = {
       this._colorsLoaded = false;
       CarColor.loadedUid = null;
       Records.resetSession();
-      if (this.lobbyUnwatch) { this.lobbyUnwatch(); this.lobbyUnwatch = null; }
       Cloud.stopBoards(); Cloud.stopAdjust();
-      this.lobby = null; this.lobbyEntries = [];
       UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate';
       if (knownGoodUid) UI.gateError('You were signed out. Sign in again.');
       return;
@@ -9698,13 +9730,6 @@ const Game = {
     UI.gateError('');
     UI.who(Cloud.name(), Records.credits);
     $('driverRow').hidden = true;
-    if (!this.lobbyUnwatch) {
-      this.lobbyUnwatch = Cloud.watchCurrentRace((race, entries) => this.onLobbyUpdate(race, entries));
-    }
-    // State transitions (lobby countdown elapsing, the race clock running
-    // out) are deadlines, not Firestore events: re-check once a second.
-    // Created once — it used to be added again on every sign-in.
-    if (!this._lobbyTick) this._lobbyTick = setInterval(() => this.tickLobby(), 1000);
     // Straight to the menu; leaderboards, credits and colours arrive in the
     // background and every screen redraws when they do (the sign-in page
     // used to sit there, looking stuck, until all of it had loaded).
@@ -9739,227 +9764,13 @@ const Game = {
     if (!ok) this.scheduleCloudRetry(uid);
   },
 
-  /**
-   * Drives the always-on race lobby card on the menu, and the locked-in
-   * drive sequence once joined and running. There is no admin any more —
-   * every transition (opening the next lobby, starting the countdown,
-   * locking in the course, settling payouts) is performed by whichever
-   * signed-in client's copy of this function notices it should happen.
-   * Firestore rules constrain each transition's shape; two clients racing
-   * to make the same one is harmless; whichever write lands first wins and
-   * every other client's next snapshot just reflects that.
-   */
-  /** the sign-in load failed (no connection, or the daily read limit):
-   *  keep trying quietly once a minute, so credits and live boards come
-   *  back without the player having to sign in again */
+  /** a failed load of the boards, credits or colours tries again in a minute */
   scheduleCloudRetry(uid) {
     clearTimeout(this._cloudRetry);
     this._cloudRetry = setTimeout(() => {
       if (!Cloud.user || Cloud.user.uid !== uid) return;
       this.loadCloudData(uid, false);          // reschedules itself on failure
     }, 60000);
-  },
-  onLobbyUpdate(race, entries) {
-    this.lobby = race;
-    this.lobbyEntries = entries;
-    if (!race) {
-      // Nobody has opened a lobby (or the very first load before any race
-      // has ever existed) — open one. Harmless if another client's create
-      // beats this one; the next snapshot corrects it either way.
-      Cloud.openLobby();
-      return;
-    }
-    this.maybeAdvanceLobby();
-    this.renderLobbyCard();
-    this.maybeEnterLockedRace();
-  },
-
-  /** Re-render tick for the parts of the lobby card that move on their own
-   *  between Firestore snapshots (the joining countdown, the race clock) —
-   *  and the trigger point for time-based state transitions, since nothing
-   *  pushes a new snapshot the instant a deadline elapses. */
-  tickLobby() {
-    if (!this.lobby) return;
-    this.maybeAdvanceLobby();
-    if (this.state === 'menu') this.renderLobbyCard();
-  },
-
-  /** Checks the current lobby against wall-clock time and performs the
-   *  next transition if one is due. Firestore rules re-check the same
-   *  conditions server-side, so a client racing ahead of another (or a
-   *  clock skewed a little fast) can never corrupt the transition — the
-   *  write is simply rejected if the condition doesn't actually hold yet. */
-  maybeAdvanceLobby() {
-    const race = this.lobby;
-    if (!race || !Cloud.user) return;
-    const now = Date.now();
-    // Each transition below is idempotent from the rules' point of view
-    // (a doc that has already moved on simply rejects a stale attempt),
-    // but the in-flight guards still matter: several snapshot callbacks
-    // (the race doc, the entries subcollection, the once-a-second tick)
-    // can all call this within the same fraction of a second while one
-    // write is still in flight, and without a guard each would fire its
-    // own redundant write instead of waiting for the snapshot that
-    // actually reflects the change.
-    // One attempt at a time per race step, and a step that fails backs off
-    // (5 s, doubling to 10 min) instead of retrying every second in every
-    // open tab: each attempt is a write whose rules read the race document,
-    // and a stuck race retried once a second by several players' games
-    // can burn the whole free daily read quota on its own.
-    const attempt = (step, fn) => {
-      const all = this._raceSteps || (this._raceSteps = {});
-      const key = race.id + ':' + step;
-      const st = all[key] || (all[key] = { busy: false, next: 0, delay: 5000 });
-      if (st.busy || now < st.next) return;
-      st.busy = true;
-      Promise.resolve().then(fn)
-        .then(() => { st.delay = 5000; st.next = now + 3000; })
-        .catch((e) => {
-          console.warn('aiPolytrack: race ' + step + ' failed', e && e.code, e && e.message);
-          Cloud.noteError(e);
-          st.next = Date.now() + st.delay;
-          st.delay = Math.min(st.delay * 2, 600000);
-        })
-        .finally(() => { st.busy = false; });
-    };
-    if (race.state === 'lobby' && this.lobbyEntries.length >= 2) {
-      attempt('countdown', () => Cloud.startCountdown(race.id));
-    } else if (race.state === 'starting' && tsMs(race.joinDeadline) && now >= tsMs(race.joinDeadline)) {
-      attempt('start', () => Cloud.startRace(race.id, this.id(Math.floor(Math.random() * LEVELS.length))));
-    } else if (race.state === 'running' && tsMs(race.endsAt) && now >= tsMs(race.endsAt)) {
-      attempt('settle', () => Cloud.settleRace(race.id));
-    } else if (race.state === 'settled') {
-      // Give everyone a moment to see the standings, then open the next
-      // lobby — one client's timer does it, same harmless-race-to-create
-      // as the very first lobby.
-      if (!this._nextLobbyTimer) {
-        this._nextLobbyTimer = setTimeout(() => {
-          this._nextLobbyTimer = null;
-          if (this.lobby && this.lobby.id === race.id) Cloud.openLobby();
-        }, 6000);
-      }
-    }
-  },
-
-  /** Renders the menu's always-on race lobby card. Safe to call whenever —
-   *  it no-ops unless the menu is actually the visible layer. */
-  renderLobbyCard() {
-    $('raceLobbyCard').hidden = !this.lobby;
-    if (!this.lobby) return;
-    const race = this.lobby;
-    // A join that already landed locally (see joinCurrentRace) is
-    // authoritative over a live entries snapshot that simply hasn't
-    // caught up yet — the race document and the entries subcollection are
-    // two independent Firestore listeners with no ordering guarantee
-    // between them, so a race-doc update can legitimately arrive a beat
-    // before the entries update that would otherwise confirm "you're in".
-    // Without this, the join form could flash back on screen right after
-    // joining, and a click on it then would be rejected server-side (the
-    // rules correctly refuse a second buy-in) but look to the player like
-    // joining silently failed. Folding it into the entries list here too
-    // keeps the joined-count/pot text from briefly undercounting for the
-    // same reason.
-    const haveMine = Cloud.user && this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
-    const pending = !haveMine && this._joinedRaceId === race.id ? this._joinedEntry : null;
-    const entries = pending ? this.lobbyEntries.concat([pending]) : this.lobbyEntries;
-    const mine = haveMine || pending;
-    const pot = entries.reduce((s, e) => s + (e.buyIn || 0), 0);
-
-    const badge = $('lobbyStageBadge');
-    badge.className = 'race-stage ' + race.state;
-    badge.textContent = race.state.toUpperCase();
-
-    if (race.state === 'lobby') {
-      $('lobbyState').textContent = entries.length + ' in · ' + fmtCredits(pot) + ' credits. Starts when 2 join.';
-    } else if (race.state === 'starting') {
-      const remain = Math.max(0, Math.round((tsMs(race.joinDeadline) - Date.now()) / 1000));
-      $('lobbyState').textContent = fmtCredits(pot) + ' credits · starts in ' +
-        Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
-    } else if (race.state === 'running') {
-      const remain = Math.max(0, Math.round((tsMs(race.endsAt) - Date.now()) / 1000));
-      const left = Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
-      $('lobbyState').textContent = mine
-        ? fmtCredits(pot) + ' credits · ' + (remain > 0 ? left + ' left' : 'finishing')
-        : 'Racing now · ' + left + ' left';
-    } else {
-      $('lobbyState').textContent = fmtCredits(pot) + ' credits paid out. Next race soon.';
-    }
-
-    $('lobbyMineBox').hidden = !mine;
-    if (mine) $('lobbyMineBuyIn').textContent = fmtCredits(mine.buyIn);
-
-    $('lobbyJoinBox').hidden = !((race.state === 'lobby' || race.state === 'starting') && !mine);
-    if (!$('lobbyJoinBox').hidden) $('lobbyJoinCredits').textContent = fmtCredits(Cloud.credits || 0);
-
-    // Driving itself happens on a dedicated full-screen sequence, not
-    // inline on this card — the card only ever shows the button to enter
-    // it, once, when there is a fresh attempt available and the player
-    // isn't already mid-sequence.
-    const canDrive = race.state === 'running' && mine && (mine.attempts || []).length < 3
-      && this.state !== 'race' && this.state !== 'raceReveal' && this.state !== 'raceBetween';
-    $('lobbyDriveRow').hidden = !canDrive;
-    if (canDrive) {
-      const n = (mine.attempts || []).length + 1;
-      $('lobbyAttemptNum').textContent = String(n);
-      $('lobbyDriveNote').textContent = n === 1
-        ? 'Best of 3, back to back.'
-        : (mine.attempts.length) + ' down, ' + (3 - mine.attempts.length) + ' to go.';
-    }
-
-    let waiting = '';
-    if (race.state === 'running' && mine && (mine.attempts || []).length >= 3 && this.state === 'menu') {
-      waiting = 'All 3 done. Waiting for the race to end.';
-    }
-    $('lobbyWaitingNote').hidden = !waiting;
-    $('lobbyWaitingNote').textContent = waiting;
-
-    const showStandings = entries.length > 0 && (race.state === 'running' || race.state === 'settled');
-    $('lobbyStandingsWrap').hidden = !showStandings;
-    if (showStandings) {
-      const settled = race.state === 'settled';
-      $('lobbyLastCol').textContent = settled ? 'Payout' : 'Attempts';
-      const rows = entries.slice().sort((a, b) => {
-        if (settled) return (a.placement || 999) - (b.placement || 999);
-        return (a.bestTimeMs ?? Infinity) - (b.bestTimeMs ?? Infinity);
-      });
-      $('lobbyRows').innerHTML = rows.map((e) => {
-        const isMe = Cloud.user && e.uid === Cloud.user.uid;
-        const best = typeof e.bestTimeMs === 'number' ? formatTime(e.bestTimeMs / 1000) : '—';
-        const last = settled
-          ? (typeof e.payout === 'number' ? fmtCredits(e.payout) : '—')
-          : (e.attempts || []).length + ' / 3';
-        const place = settled && e.placement ? e.placement + '.' : '';
-        return '<tr class="' + (isMe ? 'me' : '') + '"><td class="r">' + place + '</td><td>' +
-          escapeHtml(e.displayName || '—') + (isMe ? ' <span class="dim">(you)</span>' : '') +
-          '</td><td class="t">' + fmtCredits(e.buyIn) + '</td>' +
-          '<td class="t">' + best + '</td><td class="t">' + last + '</td></tr>';
-      }).join('');
-    }
-  },
-
-  /**
-   * Once bought in and the race is running, the player is meant to be
-   * fully locked into driving all 3 attempts back to back — this is what
-   * actually enforces that: as soon as a fresh race snapshot shows the
-   * player joined, running, and not already mid-sequence, it forces them
-   * straight into the pre-race reveal, from any screen they happen to be
-   * on (short of an active drive, which flushPendingAuth-style deferral
-   * would fight with — but stepPlay's own Escape handling already refuses
-   * to leave a race attempt, so this never needs to interrupt one).
-   */
-  maybeEnterLockedRace() {
-    const race = this.lobby;
-    if (!race || race.state !== 'running' || !Cloud.user) return;
-    const mine = this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
-    if (!mine || (mine.attempts || []).length >= 3) return;
-    // Any screen that isn't itself mid-drive, mid-reveal, or a modal auth
-    // state is fair game to interrupt — the same "safe to interrupt on"
-    // set flushPendingAuth uses, minus the states that already mean
-    // "already in this race's sequence" (raceBetween is handled by its
-    // own explicit "Next attempt" button instead, not by this force).
-    const lockable = ['menu', 'select', 'settings'].includes(this.state);
-    if (!lockable) return;
-    this.enterRaceReveal();
   },
 
   wire() {
@@ -10008,15 +9819,6 @@ const Game = {
     });
     $('bnOut').addEventListener('click', () => Cloud.signOut());
     $('whoOut').addEventListener('click', () => Cloud.signOut());
-    // The one point in the locked race sequence where signing out is
-    // offered — between attempts, never mid-drive. Doing this forfeits
-    // the buy-in exactly like any other DNF (no special-cased refund),
-    // since leaving with attempts still unused is functionally identical
-    // to just not finishing them.
-    $('bRevealSignOut').addEventListener('click', () => {
-      if (!confirm('Sign out? You lose your race stake.')) return;
-      Cloud.signOut();
-    });
 
     $('bDrive').addEventListener('click', () => this.startLevel(this.nextCourseIndex()));
     $('bCourses').addEventListener('click', () => this.toSelect('list'));
@@ -10090,9 +9892,6 @@ const Game = {
     svScrub.addEventListener('pointerup', endSv);
     svScrub.addEventListener('change', endSv);
     $('bCdDrive').addEventListener('click', () => this.startLevel(this.courseDetailIndex));
-    $('bLobbyJoin').addEventListener('click', () => this.joinCurrentRace());
-    $('bLobbyDrive').addEventListener('click', () => this.enterRaceReveal());
-    $('bRevealGo').addEventListener('click', () => this.driveRaceAttempt());
     $('bCreditsRun').addEventListener('click', () => this.toCreditsRun());
     $('bCreditsRunAgain').addEventListener('click', () => this.toCreditsRun());
     $('bCreditsRunBack').addEventListener('click', () => this.toMenu());
@@ -10193,7 +9992,7 @@ const Game = {
     addEventListener('keydown', wake, { once: true });
     document.addEventListener('visibilitychange', () => { if (document.hidden) Input.clear(); });
     addEventListener('pagehide', () => {
-      if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') this.logAttempt('terminated', 'closed');
+      if (this.state === 'play' || this.state === 'creditsrun') this.logAttempt('terminated', 'closed');
     });
   },
 
@@ -10343,7 +10142,6 @@ const Game = {
       attempt: this.attemptNo || 1,
       fps: Math.round(this.fps)
     };
-    if (kind === 'race' && this._lockedRaceId) entry.raceId = this._lockedRaceId;
     if (this.ghostOverrideName) entry.vs = String(this.ghostOverrideName).slice(0, 40);
     Cloud.logRun(entry);
   },
@@ -11051,140 +10849,6 @@ const Game = {
     $('gSwatchSecondary').setAttribute('style', swatchStyle(CarColor.secondary));
   },
 
-  /** Joins whichever race is currently open, from the menu's lobby card —
-   *  there is no separate race screen to navigate to any more. */
-  async joinCurrentRace() {
-    const msg = $('lobbyJoinMsg');
-    const raw = $('lobbyBuyIn').value.trim();
-    const buyIn = parseInt(raw, 10);
-    if (!this.lobby) return;
-    // Already joined — this can still be reached by a stray click on a
-    // stale render (see renderLobbyCard's note on the two independent
-    // listeners), so bail out the same way the hidden join box normally
-    // would, instead of sending a doomed second buy-in that the rules
-    // will just reject anyway.
-    if (this._joinedRaceId === this.lobby.id
-      || (Cloud.user && this.lobbyEntries.some((e) => e.uid === Cloud.user.uid))) {
-      this.renderLobbyCard();
-      return;
-    }
-    if (!raw || !isFinite(buyIn) || buyIn <= 0 || String(buyIn) !== raw) {
-      msg.textContent = 'Enter a whole number of credits, at least 1.';
-      return;
-    }
-    if (buyIn > (Cloud.credits || 0)) {
-      msg.textContent = 'You only have ' + fmtCredits(Cloud.credits || 0) + ' credits.';
-      return;
-    }
-    $('bLobbyJoin').disabled = true;
-    msg.textContent = 'Joining…';
-    try {
-      await Cloud.joinRace(this.lobby.id, buyIn);
-      Records.credits = Cloud.credits;
-      UI.who(Cloud.name(), Records.credits);
-      msg.textContent = '';
-      $('lobbyBuyIn').value = '';
-      // Don't wait on the next Firestore snapshot to flip into the
-      // "you're in" state — update this client's own view immediately,
-      // and remember this join independently of the live entries array
-      // (see renderLobbyCard) so a race-doc snapshot that outruns the
-      // matching entries snapshot can never flip the join form back on.
-      const myEntry = { uid: Cloud.user.uid, displayName: Cloud.name(), buyIn, attempts: [], bestTimeMs: null };
-      this._joinedRaceId = this.lobby.id;
-      this._joinedEntry = myEntry;
-      this.lobbyEntries = this.lobbyEntries.filter((e) => e.uid !== Cloud.user.uid).concat([myEntry]);
-      this.renderLobbyCard();
-    } catch (e) { msg.textContent = e.message || 'Could not join.'; }
-    $('bLobbyJoin').disabled = false;
-  },
-
-  /** The pre-race reveal — the moment the course is shown for the first
-   *  time, right before the locked-in 3-attempt sequence begins. There is
-   *  deliberately no button back to the menu from here on: Escape during
-   *  stepPlay refuses to leave a race attempt (see stepPlay), and this
-   *  screen and raceBetween only ever lead forward, into driveRaceAttempt,
-   *  until all 3 attempts are spent or the race clock runs out. */
-  enterRaceReveal() {
-    const race = this.lobby;
-    const idx = LEVELS.findIndex((l, i) => this.id(i) === race.courseId);
-    if (idx < 0) return;
-    const mine = this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
-    this._lockedRaceId = race.id;
-    this.state = 'raceReveal';
-    Sound.stopEngine();
-    $('revealAttemptNum').textContent = String(((mine && mine.attempts) || []).length + 1);
-    $('revealCourseName').textContent = LEVELS[idx].name;
-    UI.show('raceReveal');
-  },
-
-  /** launches one race attempt as an ordinary drive on the race's chosen
-   *  course, reusing loadLevel/startLevel's own physics setup exactly —
-   *  only the finish handling (finishRaceAttempt, wired via checkFinish)
-   *  and the 3-attempt cap differ from a campaign run. */
-  driveRaceAttempt() {
-    const race = this.lobby;
-    if (!race || race.state !== 'running') { this.toMenu(); return; }
-    const mine = Cloud.user && this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
-    if (!mine || (mine.attempts || []).length >= 3) { this.toMenu(); return; }
-    const idx = LEVELS.findIndex((l, i) => this.id(i) === race.courseId);
-    if (idx < 0 || !this.loadLevel(idx)) { this.toMenu(); return; }
-    this.attemptCourse = idx; this.attemptNo = (mine.attempts || []).length + 1;
-    this.runKind = 'race';
-    this.resetRunStats();
-    this.ghostData = null; this.ghostDist = null;
-    Input.clear();
-    this.time = 0; this.started = false; this.running = true;
-    this.accum = 0;
-    this.state = 'race';
-    UI.show('hud');
-    UI.course(idx, LEVELS[idx].name);
-    UI.best(Records.best(this.id(idx)));
-    UI.record(this.id(idx));
-    UI.clock(0, false);
-    UI.delta(null);
-    UI.progress(0);
-    UI.prompt('Hold W to launch');
-    Sound.init(); Sound.resume(); Sound.startEngine();
-  },
-
-  async finishRaceAttempt(timeSec) {
-    this.running = false;
-    const raceId = this._lockedRaceId;
-    Sound.stopEngine();
-    Sound.finish(false);
-    // Attempts used comes from what was actually written. Counting the live
-    // entry list and adding one double-counted whenever the listener had
-    // already delivered this attempt (it usually has, the moment the write
-    // is made), which ended the race for the player after two attempts.
-    let attemptsUsed = null;
-    try {
-      attemptsUsed = await Cloud.recordRaceAttempt(raceId, Math.round(timeSec * 1000));
-    } catch (e) {
-      console.warn('aiPolytrack: could not record race attempt', e && e.message);
-      UI.toast('Could not save that attempt. ' + Cloud.errText(e));
-    }
-    this.logAttempt('finished');
-    if (typeof attemptsUsed !== 'number') {
-      const mine = this.lobbyEntries.find((e) => e.uid === Cloud.user.uid);
-      attemptsUsed = mine ? Math.max(1, (mine.attempts || []).length) : 1;
-    }
-    this.state = 'raceBetween';
-    $('betweenTime').textContent = formatTime(timeSec);
-    if (attemptsUsed >= 3) {
-      $('betweenKick').textContent = 'Final attempt complete';
-      $('betweenNote').textContent = 'All 3 done. Your best stands.';
-      $('bBetweenNext').textContent = 'Back to title';
-      $('bBetweenNext').onclick = () => this.toMenu();
-    } else {
-      $('betweenKick').textContent = 'Attempt ' + attemptsUsed + ' of 3 complete';
-      $('betweenNote').textContent = (3 - attemptsUsed) + ' attempt' + (3 - attemptsUsed === 1 ? '' : 's') +
-        ' to go.';
-      $('bBetweenNext').textContent = 'Next attempt';
-      $('bBetweenNext').onclick = () => this.enterRaceReveal();
-    }
-    UI.show('raceBetween');
-  },
-
   /** solo credits-grind mode: a random course from all 32, no leaderboard
    *  or ghost side effects, +3 credits for any finish regardless of time. */
   toCreditsRun() {
@@ -11786,14 +11450,6 @@ const Game = {
   stepPlay(dt) {
     Input.sample();
     if (Input.tapped('Escape')) {
-      // A race attempt is fully locked in once bought in — there is
-      // deliberately no way back to the menu to "practice" the course in
-      // between attempts, so Escape here does nothing but remind the
-      // player why. Restart (KeyR) still works below: it resets the
-      // current attempt to the start line without recording a time or
-      // consuming an extra one of the 3 attempts, so it isn't a way to
-      // sneak in practice either.
-      if (this.state === 'race') { UI.prompt('Race locked in: finish or press R'); return; }
       this.logAttempt('terminated', 'menu');
       this.toMenu(); return;
     }
@@ -11855,8 +11511,7 @@ const Game = {
       this.recordGhost(Math.max(this.time - t0, 1e-6));
       padGhost(this.rec, this.time, [car.pos.x, car.pos.y, car.pos.z]);
       gate.passed = true;
-      if (this.state === 'race') this.finishRaceAttempt(this.time);
-      else if (this.state === 'creditsrun') this.finishCreditsRun();
+      if (this.state === 'creditsrun') this.finishCreditsRun();
       else this.finishLevel();
       return;
     }
@@ -11897,7 +11552,7 @@ const Game = {
         rs.far = Math.max(rs.far, this.course.cum[this.pathIdx] / Math.max(this.course.length, 1));
       }
     }
-    if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') this.updateProgress();
+    if (this.state === 'play' || this.state === 'creditsrun') this.updateProgress();
   },
 
   /** step the quality tier down when frames are slow, back up when they are not */
@@ -11929,18 +11584,18 @@ const Game = {
       case 'settings': case 'trophies': case 'info': case 'result':
         this.toMenu();
         break;
-      default: break;          // the menu itself, sign-in, and a locked race
+      default: break;          // the menu itself and sign-in
     }
   },
 
   frame(dt) {
     if (dt > 0.0005) this.fps = lerp(this.fps, 1 / dt, 0.08);
     this.autoQuality(dt);
-    const driving = this.state === 'play' || this.state === 'race' || this.state === 'creditsrun';
+    const driving = this.state === 'play' || this.state === 'creditsrun';
     if (!driving && this.state !== 'spectate' && this.state !== 'section' && Input.tapped('Escape')) this.goBack();
     if (driving) {
       this.stepPlay(dt);
-      if (this.state === 'play' || this.state === 'race' || this.state === 'creditsrun') {
+      if (this.state === 'play' || this.state === 'creditsrun') {
         this.car.syncMesh(dt);
         this.chase.update(dt, this.car);
         UI.clock(this.time, false);

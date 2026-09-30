@@ -64,21 +64,17 @@ git push origin main
 Wait a minute, then open the game and click **Create an account**. Use
 your usual username, any password, and the invite code.
 
-## 7. Make yourself the admin
+## 7. The admin login
 
-In the SQL Editor, run this with your username:
-
-```sql
-insert into public.admins (user_id)
-select id from auth.users where email = public.login_email('YOUR_USERNAME');
-```
-
-It should say "1 row affected". If it says 0, the username doesn't match
-the account from step 6.
+Nothing to set up. `admin.html` has its own fixed login (username
+`tobe`), checked inside the database by `admin_login` in schema.sql
+against a bcrypt hash of the password. It is the only way in: game
+accounts are never admins, and ten wrong tries lock the login for 15
+minutes. A sign-in lasts 12 hours on that device, or until **Sign out**.
 
 ## 8. Bring the Firebase data in
 
-Open `admin.html` and sign in with your **game** username and password.
+Open `admin.html` and sign in with the admin login.
 Go to **Settings → Bring in the Firebase data**, pick the file from step 1,
 and click **Import**. It takes a few seconds per few thousand records.
 
@@ -116,6 +112,6 @@ automatically. Until a player comes back, the admin page lists them as
 
 | | |
 |---|---|
-| `supabase/schema.sql` | The database: tables, security rules and server functions. All the checks live here: invite codes, best times only getting faster, credit balances, and race starts and payouts. |
-| `index.html` → `Cloud` | Sign-in, live leaderboards, credits, races, ghosts and colours, through supabase-js. |
-| `admin.html` | The admin panel. It has its own saved login, separate from the game's. |
+| `supabase/schema.sql` | The database: tables, security rules and server functions. All the checks live here: invite codes, best times only getting faster, credit balances and the admin login. |
+| `index.html` → `Cloud` | Sign-in, live leaderboards, credits, ghosts and colours, through supabase-js. |
+| `admin.html` | The admin panel. It signs in with the admin login, never as a player. Settings → Messages sets the boxes on the game's menu and sign-in screen. |

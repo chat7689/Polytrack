@@ -41,6 +41,8 @@ p.note{color:var(--dim);font-size:13px;margin-bottom:14px}
 .card{background:var(--panel);border:1px solid var(--rule);padding:18px 20px;margin-bottom:16px;
   border-radius:8px;box-shadow:0 12px 32px rgba(3,7,18,.35)}
 label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px}
+textarea{display:block;width:100%;resize:vertical;font:14px/1.5 var(--sans,system-ui);color:var(--ink);background:rgba(0,0,0,.3);
+  border:1px solid var(--rule);border-radius:4px;padding:8px 10px}
 input,select{font:14px var(--mono);color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
   border-radius:5px;padding:9px 11px;width:240px;max-width:100%;transition:border-color .14s}
 input:focus,select:focus{outline:none;border-color:var(--aqua)}
@@ -136,13 +138,12 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
   <div class="card" id="cardAuth" style="max-width:640px">
     <h2>Sign in</h2>
     <div class="row">
-      <div><label for="email">Game username</label><input type="text" id="email" name="game-username" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-      <div><label for="pass">Password</label><input type="password" id="pass"></div>
+      <div><label for="email">Username</label><input type="text" id="email" name="admin-username" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+      <div><label for="pass">Password</label><input type="password" id="pass" autocomplete="current-password"></div>
       <button class="primary" id="btnIn">Sign in</button>
     </div>
     <div class="msg" id="authMsg"></div>
-    <small class="hint">Your game username and password. The account must be listed as an admin in Supabase
-      (see supabase/SETUP.md).</small>
+    <small class="hint">The admin login. A game account can't sign in here.</small>
   </div>
 
   <div id="panel" class="hide">
@@ -263,6 +264,17 @@ small.hint{display:block;color:var(--dimmer);font-size:11.5px;margin-top:8px;lin
 
     <!-- SETTINGS -->
     <section class="page hide" id="page-settings">
+      <h2>Messages</h2>
+      <div class="card">
+        <p class="note">Shown in a box on the game's main menu and on its sign-in screen. Leave one empty to
+          hide it there. Up to 600 characters each; line breaks are kept.</p>
+        <label for="noticeMenu">Main menu</label>
+        <textarea id="noticeMenu" rows="3" maxlength="600"></textarea>
+        <label for="noticeLogin" style="margin-top:10px">Sign-in screen</label>
+        <textarea id="noticeLogin" rows="3" maxlength="600"></textarea>
+        <div class="row" style="margin-top:12px"><button class="primary" id="btnNotice">Save messages</button></div>
+        <div class="msg" id="noticeMsg"></div>
+      </div>
       <h2>Bring in the Firebase data</h2>
       <div class="card">
         <p class="note">Pick the file the old admin page's <b>Export all data</b> saved
@@ -333,7 +345,6 @@ const SUPABASE = {
   // the project's public key (what it may do is decided by supabase/schema.sql)
   key: 'sb_publishable_ZdsFehUaa1KE1jzlRxbLIA_QgiOju7q'
 };
-const USERNAME_DOMAIN = '@chat7689.github.io';     // the same as the game's
 
 // The old archived maps and this season's maps — ids match the game.
 const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Stepping Stones','The Wall',
@@ -346,7 +357,7 @@ const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Steppi
 // retired maps never show up on the new ones.
 const S2 = [['s2c1', 'Launch Pad'], ['s2c29', 'Proving Ground'], ['s2c18', 'Pinwheel'], ['s2c4', 'Hopscotch'],
   ['s2c19', 'Slipstream'], ['s2c6', 'Stormwall'], ['s2c20', 'Frostbite'], ['s2c26', 'Sidewinder'],
-  ['s2c21', 'Switchback'], ['s2c30', 'Vortex'], ['s2c27', 'Coil Pass'], ['s2c22', 'Whirlpool'],
+  ['s2c21', 'Switchback'], ['s2c32', 'Vortex'], ['s2c27', 'Coil Pass'], ['s2c22', 'Whirlpool'],
   ['s2c23', 'Gauntlet'], ['s2c14', 'Knife Edge'], ['s2c31', 'Freefall'], ['s2c16', 'Apex Predator']]
   .map(([id, name], i) => ({ id, name, sec: Math.floor(i / 4), tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
@@ -358,18 +369,22 @@ S2.forEach((c) => { COURSE_NAME[c.id] = c.tag + ' ' + c.name; });
 [['s2c2', 'Coastline'], ['s2c3', 'Redline Bank'], ['s2c5', 'Quarry Run'], ['s2c7', 'Glass Mile'],
   ['s2c9', 'High Wire'], ['s2c12', 'Corkscrew Ridge'], ['s2c13', 'Velocity'], ['s2c15', 'Sky Harbor'],
   ['s2c17', 'Ribbon Road'], ['s2c8', 'Switchyard'], ['s2c11', 'Drop Zone'], ['s2c24', 'Overdrive'],
-  ['s2c25', 'Hairpin Hollow'], ['s2c10', 'Thunder Bowl'], ['s2c28', 'Drift King']]
+  ['s2c25', 'Hairpin Hollow'], ['s2c10', 'Thunder Bowl'], ['s2c28', 'Drift King'], ['s2c30', 'Vortex, first version']]
   .forEach(([id, name]) => { COURSE_NAME[id] = name + ' (retired)'; });
 
 const { createClient } = await import(SUPABASE.sdk);
 
 const $ = (id) => document.getElementById(id);
-// Its own saved login (storageKey). The game and this panel live on the
-// same site, and sharing one session meant signing in here switched the
-// game tab to the admin account or signed it out, and the other way round.
-const sb = createClient(SUPABASE.url, SUPABASE.key, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'aipolytrack-admin' }
+// The panel never signs in to Supabase as a player (so it can't disturb the
+// game's own login in another tab). It signs in with the admin login, gets a
+// session token, and sends that token with every request; the database only
+// lets that token act as admin.
+const TOKEN_KEY = 'aipolytrack-admin-token';
+const makeClient = (token) => createClient(SUPABASE.url, SUPABASE.key, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'aipolytrack-admin-anon' },
+  global: { headers: token ? { 'x-admin-token': token } : {} }
 });
+let sb = makeClient(null);
 /** a query's rows, or a thrown Error with the server's words */
 async function q(builder) {
   const { data, error } = await builder;
@@ -427,58 +442,21 @@ const outcomeOf = (r) => r.outcome || 'finished';
 const kmhOf = (r) => r.topKmh != null ? r.topKmh : (r.topMph != null ? Math.round(r.topMph * 1.609344) : null);
 
 /* ---------------------------------------------------------------- auth */
-function authErrorMessage(e) {
-  const c = String((e && (e.code || e.error_code)) || '');
-  if (c === 'invalid_credentials' || /invalid login/i.test((e && e.message) || '')) return 'That username and password do not match.';
-  if (/rate_limit/.test(c) || (e && e.status === 429)) return 'Too many attempts — wait a few minutes.';
-  if ((e && e.name === 'AuthRetryableFetchError') || /fetch/i.test((e && e.message) || '')) return 'No connection to Supabase.';
-  return (e && e.message) || 'Something went wrong.';
+const storedToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
+const storeToken = (t) => { try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch (e) { /* this visit only */ } };
+function showSignIn(msg) {
+  $('panel').classList.add('hide'); $('cardAuth').classList.remove('hide');
+  $('btnOut').classList.add('hide'); $('whoami').textContent = '';
+  if (msg) say('authMsg', msg, 'err');
 }
-$('btnIn').addEventListener('click', async () => {
-  say('authMsg', 'Working…');
-  const who = $('email').value.trim();
-  // Every account is a game account now. An email address here is almost
-  // always the browser filling in the old Firebase admin login it saved
-  // for this page (and its old password with it).
-  if (who.includes('@') && !who.toLowerCase().endsWith(USERNAME_DOMAIN)) {
-    say('authMsg', 'Type your game username (not an email address), and your game password — ' +
-      'not a password your browser fills in from the old Firebase admin login.', 'err');
-    return;
-  }
-  const email = who.includes('@') ? who.toLowerCase() : who.toLowerCase() + USERNAME_DOMAIN;
-  const { error } = await sb.auth.signInWithPassword({ email, password: $('pass').value });
-  if (error) {
-    say('authMsg', authErrorMessage(error) === 'That username and password do not match.'
-      ? 'That username and password do not match. Use the password you made in the game — your browser may be ' +
-        'filling in the old Firebase admin password for this page.'
-      : authErrorMessage(error), 'err');
-  }
-});
-$('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnIn').click(); });
-$('btnOut').addEventListener('click', () => sb.auth.signOut({ scope: 'local' }));
-
-let shownFor = null;
-sb.auth.onAuthStateChange((event, session) => {
-  // Supabase holds a lock while calling this: the work runs on the next turn
-  setTimeout(() => onSession(session && session.user), 0);
-});
-async function onSession(user) {
-  if (!user) {
-    shownFor = null;
-    $('panel').classList.add('hide'); $('cardAuth').classList.remove('hide');
-    $('btnOut').classList.add('hide'); $('whoami').textContent = '';
-    return;
-  }
-  if (shownFor === user.id) return;              // a token refresh, not a new sign-in
+/** a token from this device (or a fresh sign-in): if the server still takes it, open the panel */
+async function useToken(token) {
+  sb = makeClient(token);
   let admin = false;
-  try { admin = await rpc('is_admin'); } catch (e) { say('authMsg', 'Could not check that account: ' + e.message, 'err'); return; }
-  if (!admin) {
-    say('authMsg', 'That account is not an admin. Add it in Supabase (supabase/SETUP.md, step 7).', 'err');
-    await sb.auth.signOut({ scope: 'local' });
-    return;
-  }
-  shownFor = user.id;
-  $('whoami').textContent = (user.email || '').replace(USERNAME_DOMAIN, '');
+  try { admin = await rpc('is_admin'); } catch (e) { say('authMsg', 'No connection to Supabase: ' + e.message, 'err'); return false; }
+  if (!admin) { storeToken(''); sb = makeClient(null); return false; }
+  storeToken(token);
+  $('whoami').textContent = 'tobe';
   $('btnOut').classList.remove('hide');
   $('cardAuth').classList.add('hide');
   $('panel').classList.remove('hide');
@@ -487,7 +465,32 @@ async function onSession(user) {
   route();
   await loadAll();
   await loadRuns();
+  return true;
 }
+$('btnIn').addEventListener('click', async () => {
+  say('authMsg', 'Working…');
+  $('btnIn').disabled = true;
+  try {
+    const r = await q(makeClient(null).rpc('admin_login', { p_user: $('email').value, p_password: $('pass').value }));
+    if (!r || !r.token) { say('authMsg', (r && r.error) || 'That username and password do not match.', 'err'); return; }
+    $('pass').value = '';
+    if (!(await useToken(r.token))) say('authMsg', 'Signed in, but the server did not accept the session. Try again.', 'err');
+  } catch (e) {
+    say('authMsg', /admin_login|PGRST202|function/i.test(e.message)
+      ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.'
+      : 'No connection to Supabase: ' + e.message, 'err');
+  } finally { $('btnIn').disabled = false; }
+});
+$('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnIn').click(); });
+$('btnOut').addEventListener('click', async () => {
+  try { await rpc('admin_logout'); } catch (e) { /* the token dies in 12 hours anyway */ }
+  storeToken('');
+  sb = makeClient(null);
+  showSignIn('');
+});
+// a sign-in from earlier on this device (good for 12 hours)
+if (storedToken()) useToken(storedToken()).then((ok) => { if (!ok) showSignIn('That session has ended. Sign in again.'); });
+else showSignIn('');
 
 /* --------------------------------------------------------------- pages */
 const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'settings'];
@@ -1096,8 +1099,23 @@ async function readPasscode() {
   const row = await q(sb.from('settings').select('value').eq('key', 'admin_passcode').maybeSingle());
   return row ? row.value : null;
 }
+async function loadNotice() {
+  try {
+    const n = (await rpc('get_notice')) || {};
+    $('noticeMenu').value = n.menu || '';
+    $('noticeLogin').value = n.login || '';
+  } catch (e) { say('noticeMsg', 'Could not read the messages: ' + e.message, 'err'); }
+}
+$('btnNotice').addEventListener('click', async () => {
+  say('noticeMsg', 'Saving…');
+  try {
+    await rpc('admin_set_notice', { p_menu: $('noticeMenu').value, p_login: $('noticeLogin').value });
+    say('noticeMsg', 'Saved. The game shows it the next time its menu or sign-in screen opens.', 'ok');
+  } catch (e) { say('noticeMsg', e.message, 'err'); }
+});
 let pcCfg = null;
 async function loadSettings() {
+  loadNotice();
   try { pcCfg = await readPasscode(); } catch (e) { pcCfg = null; }
   const has = !!(pcCfg && pcCfg.passHash);
   $('pcOldWrap').classList.toggle('hide', !has);

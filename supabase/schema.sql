@@ -10,12 +10,24 @@
 
 -- ------------------------------------------------------------------ tables
 
--- who may use the admin page (add yourself: see the end of this file)
+-- no longer used for admin access (see admin_login below); kept so old
+-- data and policies stay valid
 create table if not exists public.admins (
   user_id uuid primary key
 );
 
--- small key/value settings: 'invite' {code}, 'admin_passcode' {salt, passHash}
+-- the admin page's sign-ins: a hash of each session token, for 12 hours
+create table if not exists public.admin_sessions (
+  token_hash text primary key,
+  expires_at timestamptz not null
+);
+-- wrong admin passwords in the last 15 minutes (too many locks the login)
+create table if not exists public.admin_login_fails (
+  at timestamptz not null default now()
+);
+
+-- small key/value settings: 'invite' {code}, 'admin_passcode' {salt, passHash},
+-- 'notice' {menu, login} (the messages on the game's menu and sign-in screen)
 create table if not exists public.settings (
   key text primary key,
   value jsonb not null
@@ -140,9 +152,48 @@ language sql immutable as $$ select lower(p_name) || '@chat7689.github.io' $$;
 create or replace function public.server_ms() returns bigint
 language sql volatile as $$ select (extract(epoch from clock_timestamp()) * 1000)::bigint $$;
 
+-- The admin page signs in with its one fixed username and password (see
+-- admin_login) and then sends its session token with every request, in the
+-- x-admin-token header. That is the only way in: a player's own login,
+-- whoever they are, is never an admin.
+create or replace function public._token_hash(p text) returns text
+language sql immutable as $$ select encode(sha256(convert_to(coalesce(p, ''), 'UTF8')), 'hex') $$;
+
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public, pg_temp as $$
-  select exists (select 1 from public.admins where user_id = auth.uid())
+  select exists (
+    select 1 from public.admin_sessions
+    where token_hash = public._token_hash(nullif(current_setting('request.headers', true), '')::json ->> 'x-admin-token')
+      and expires_at > now())
+$$;
+
+-- username tobe; the password is checked against its bcrypt hash only (it is
+-- written nowhere). Returns {token} or {error}: never raises, so a wrong try
+-- is recorded (a raise would roll that back) and ten in 15 minutes lock it.
+create or replace function public.admin_login(p_user text, p_password text) returns jsonb
+language plpgsql volatile security definer set search_path = public, pg_temp as $$
+declare tok text;
+begin
+  delete from public.admin_login_fails where at < now() - interval '15 minutes';
+  if (select count(*) from public.admin_login_fails) >= 10 then
+    return jsonb_build_object('error', 'Too many wrong tries. Wait 15 minutes and try again.');
+  end if;
+  if lower(btrim(coalesce(p_user, ''))) <> 'tobe'
+     or extensions.crypt(coalesce(p_password, ''), '$2a$12$7mFGBgeGU0V3YYlkxN08BO5PyRC21aq.7YVUJZrKVp5x0jgAzGKuS') <> '$2a$12$7mFGBgeGU0V3YYlkxN08BO5PyRC21aq.7YVUJZrKVp5x0jgAzGKuS' then
+    insert into public.admin_login_fails default values;
+    return jsonb_build_object('error', 'That username and password do not match.');
+  end if;
+  delete from public.admin_sessions where expires_at < now();
+  tok := encode(extensions.gen_random_bytes(32), 'hex');
+  insert into public.admin_sessions (token_hash, expires_at) values (public._token_hash(tok), now() + interval '12 hours');
+  return jsonb_build_object('token', tok);
+end $$;
+
+-- signing out ends this token's session
+create or replace function public.admin_logout() returns void
+language sql volatile security definer set search_path = public, pg_temp as $$
+  delete from public.admin_sessions
+  where token_hash = public._token_hash(nullif(current_setting('request.headers', true), '')::json ->> 'x-admin-token')
 $$;
 
 -- the calling player's profile; refuses anyone not signed in, without a
@@ -665,6 +716,24 @@ begin
   return counts;
 end $$;
 
+-- the messages the admin writes for the game's menu and sign-in screen;
+-- anyone may read them (the sign-in screen shows before any login)
+create or replace function public.get_notice() returns jsonb
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select value from public.settings where key = 'notice'), '{}'::jsonb)
+$$;
+create or replace function public.admin_set_notice(p_menu text, p_login text) returns jsonb
+language plpgsql volatile security definer set search_path = public, pg_temp as $$
+declare v jsonb;
+begin
+  perform public._require_admin();
+  v := jsonb_build_object('menu', left(btrim(coalesce(p_menu, '')), 600), 'login', left(btrim(coalesce(p_login, '')), 600),
+                          'updatedMs', public.server_ms());
+  insert into public.settings (key, value) values ('notice', v)
+    on conflict (key) do update set value = excluded.value;
+  return v;
+end $$;
+
 -- ---------------------------------------------------- row level security
 
 alter table public.admins enable row level security;
@@ -680,6 +749,9 @@ alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
 alter table public.legacy_ids enable row level security;
+-- no policies: only the functions above ever touch these
+alter table public.admin_sessions enable row level security;
+alter table public.admin_login_fails enable row level security;
 
 do $$
 declare t text;
@@ -688,7 +760,7 @@ begin
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
-    execute format('create policy admin_all on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', t);
+    execute format('create policy admin_all on public.%I for all to anon, authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
   -- signed-in players may read the shared game data
   foreach t in array array['profiles', 'bests', 'ghosts', 'car_customization', 'season_awards', 'races', 'race_entries'] loop
@@ -721,16 +793,33 @@ create policy own_run_insert on public.run_log for insert to authenticated
               and time_ms > 0 and time_ms < 600000
               and (outcome is null or outcome in ('finished', 'restarted', 'terminated')));
 
--- table access for the API roles (the policies above decide the rows)
-grant usage on schema public to authenticated;
+-- table access for the API roles (the policies above decide the rows).
+-- The admin page is not signed in as a player, so it reaches the tables as
+-- anon; every table has row level security, and for anon only the admin
+-- policy (a valid admin token) lets any row through.
+do $$
+declare t text;
+begin
+  for t in select tablename from pg_tables where schemaname = 'public' loop
+    execute format('alter table public.%I enable row level security', t);
+  end loop;
+end $$;
+grant usage on schema public to anon, authenticated;
 revoke all on all tables in schema public from anon;
-grant select, insert, update, delete on all tables in schema public to authenticated;
-grant usage, select on all sequences in schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+revoke all on public.admin_sessions, public.admin_login_fails from anon, authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
 
--- functions: signed-in players only (each one checks its own rules)
+-- functions: signed-in players (each one checks its own rules); the admin
+-- page's functions check the admin token themselves
 revoke execute on all functions in schema public from public, anon;
 grant execute on all functions in schema public to authenticated;
 grant execute on function public.returning_player(text) to anon;
+grant execute on function public.admin_login(text, text), public.admin_logout(), public.is_admin(),
+  public.get_notice(), public.admin_set_notice(text, text), public._require_admin(), public._token_hash(text),
+  public.server_ms(), public.admin_players(), public.admin_credit_totals(), public.admin_set_credits(uuid, integer),
+  public.admin_set_banned(uuid, boolean), public.admin_set_password(uuid, text), public.admin_delete_player(uuid),
+  public.admin_import(jsonb) to anon;
 
 -- ------------------------------------------------------------- live updates
 -- The game follows these tables as they change (leaderboards, balances,
@@ -751,8 +840,6 @@ begin
   end loop;
 end $$;
 
--- ---------------------------------------------------------- make yourself admin
--- After you have signed up in the game, run this ONE line on its own
--- (with your username instead of YOUR_USERNAME):
---
---   insert into public.admins (user_id) select id from auth.users where email = public.login_email('YOUR_USERNAME');
+-- ---------------------------------------------------------- admin access
+-- Nothing to set up: the admin page signs in with its own fixed username
+-- and password (admin_login above). Game accounts are never admins.
