@@ -636,6 +636,122 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .noticeBox[hidden]{display:none}
 .gate .noticeBox{margin:0 0 18px;font-size:13.5px}
 /* the top ten: a staircase of columns, fastest (tallest) on the left */
+/* ---------- the Coach screen: chat and figures ---------- */
+.coachPanel{width:min(1320px,97vw);height:min(880px,94vh);display:flex;flex-direction:column;padding:16px 18px 14px}
+.cpHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--rule-2)}
+.cpTitle{display:flex;align-items:center;gap:2px;font-size:20px}
+.cpTitle b{font-weight:800;letter-spacing:-.01em}
+.cpMode{margin-left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--dimmer);padding:3px 8px;border:1px solid var(--rule-2);border-radius:999px}
+.cpHeadR{display:flex;gap:8px;align-items:center}
+.cpHeadR button[hidden]{display:none}
+.cpBody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:16px;padding-top:14px}
+.cpChat{display:flex;flex-direction:column;min-height:0}
+.coachLog{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:4px 6px 8px 2px}
+.cpFigs{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:2px 4px 8px 2px}
+.cpFigsEmpty{margin:auto;max-width:260px;text-align:center;color:var(--dimmer);font-size:13px;line-height:1.6;
+  padding:26px;border:1px dashed var(--rule);border-radius:10px}
+@media (max-width:900px){
+  .coachPanel{height:auto;min-height:94vh}
+  .cpBody{grid-template-columns:minmax(0,1fr)}
+  .coachLog{height:56vh;flex:none}
+  .cpFigs{overflow:visible}
+}
+@media (max-width:520px){
+  .coachPanel{padding:12px 10px}
+  .cpHead{flex-wrap:wrap;row-gap:8px}
+  .cpHeadR{flex-wrap:wrap;justify-content:flex-end}
+  .cpMode{display:none}
+}
+/* messages */
+.cTurn{display:flex;gap:10px;align-items:flex-start}
+.cTurn .av{flex:none;margin-top:5px}
+.cTurn .cBody{flex:1;min-width:0}
+.cMe{align-self:flex-end;max-width:82%;padding:9px 13px;border-radius:14px;border-bottom-right-radius:4px;background:rgba(88,160,255,.14);
+  border:1px solid rgba(88,160,255,.3);font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.cAns{font-size:14.5px;line-height:1.62;color:var(--ink);overflow-wrap:anywhere}
+.cAns p{margin:0 0 8px}
+.cAns p:last-child{margin-bottom:0}
+.cAns ul{margin:4px 0 8px;padding-left:18px}
+.cAns li{margin:2px 0}
+.cAns b{color:#fff}
+.cAns .mapRef{color:var(--signal);font-weight:600;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.figRef{color:var(--fc);font-weight:700;cursor:pointer;border-bottom:2px solid color-mix(in srgb,var(--fc) 45%,transparent);padding:0 1px}
+.figRef::before{content:'';display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--fc);margin-right:5px;vertical-align:1px}
+.cAns.typing::after{content:'▍';color:var(--aqua);animation:cBlink 1s steps(2) infinite}
+@keyframes cBlink{50%{opacity:0}}
+.cSteps{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.cStep{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+.cStep .ic{width:14px;height:14px;flex:none;display:inline-flex;align-items:center;justify-content:center}
+.cStep.run .ic{border:2px solid rgba(61,219,184,.25);border-top-color:var(--aqua);border-radius:50%;animation:spin .8s linear infinite;width:12px;height:12px}
+.cStep.run .tx{background:linear-gradient(90deg,var(--dim) 0%,#fff 50%,var(--dim) 100%);background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 1.6s linear infinite}
+.cStep.ok .ic::before{content:'✓';color:var(--aqua);font-size:12px;font-weight:700}
+.cStep.bad .ic::before{content:'!';color:var(--ember);font-size:12px;font-weight:700}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.cpComposer{display:flex;align-items:flex-end;gap:8px;margin-top:10px;padding:8px 8px 8px 14px;border-radius:14px;
+  border:1px solid var(--rule);background:rgba(255,255,255,.035);transition:border-color .15s}
+.cpComposer:focus-within{border-color:rgba(61,219,184,.6)}
+.cpComposer textarea{flex:1;min-width:0;resize:none;border:0;background:transparent;color:var(--ink);font:14.5px/1.5 var(--sans);
+  max-height:140px;padding:6px 0;outline:none}
+.cpSend{flex:none;width:38px;height:38px;border-radius:10px;border:0;background:var(--ember);color:#1d0a02;font-size:16px;cursor:pointer}
+.cpSend:disabled{opacity:.35;cursor:default}
+/* figures */
+.fig{border-radius:12px;border:1px solid color-mix(in srgb,var(--fc) 55%,transparent);background:
+  linear-gradient(180deg,color-mix(in srgb,var(--fc) 10%,transparent),rgba(255,255,255,.015) 60px);overflow:hidden;flex:none}
+.fig.fresh{animation:figIn .45s cubic-bezier(.2,1.2,.3,1)}
+.fig.flash{animation:figFlash 1.2s ease}
+@keyframes figIn{from{transform:translateY(-10px) scale(.98);opacity:0}}
+@keyframes figFlash{30%{box-shadow:0 0 0 3px var(--fc)}}
+.fig header{display:flex;align-items:center;gap:10px;padding:10px 12px 8px 14px}
+.fig .figNo{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;color:#0b1220;background:var(--fc);padding:2px 8px;border-radius:5px}
+.fig header b{flex:1;min-width:0;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fig .figX{background:none;border:0;color:var(--dim);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px}
+.fig .figX:hover{color:var(--ink)}
+.fig .figBody{padding:4px 14px 12px}
+.fig footer{padding:0 14px 12px;font-size:12px;color:var(--dim);line-height:1.5}
+.fig footer b{color:var(--ink)}
+.figList{display:flex;flex-direction:column}
+.figRow{display:grid;grid-template-columns:2.4em minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--rule-2);font-size:13px}
+.figRow:last-child{border-bottom:0}
+.figRow .tg{font-family:var(--mono);font-size:11.5px;font-weight:700}
+.figRow .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.figRow .nm small{display:block;color:var(--dim);font-size:11.5px;white-space:normal}
+.figRow .v{font-family:var(--mono);font-size:12.5px;white-space:nowrap;text-align:right}
+.figRow .fbar{grid-column:2 / 4;height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+.figRow .fbar i{display:block;height:100%;width:0;transition:width .8s cubic-bezier(.2,1,.3,1)}
+.figRow[data-map]{cursor:pointer}
+.figRow[data-map]:hover .nm{color:var(--ink)}
+.figRow.me .nm{color:var(--aqua);font-weight:700}
+.figHd{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--dimmer);margin:10px 0 2px}
+.figTiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.figTiles div{padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid var(--rule-2)}
+.figTiles b{display:block;font-family:var(--mono);font-size:19px;color:var(--ink)}
+.figTiles span{font-size:11.5px;color:var(--dim)}
+.figMedia{position:relative;border-radius:8px;overflow:hidden;background:#0b1220;aspect-ratio:16/9}
+.figMedia canvas,.figMedia img{display:block;width:100%;height:100%;object-fit:cover}
+.figMedia .ctl{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
+.figMedia .ctl button{padding:5px 10px;font-size:12px;border-radius:6px;background:rgba(7,11,24,.8);border:1px solid var(--rule);color:var(--ink)}
+.figMedia .rec{position:absolute;right:10px;top:10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:#fff;
+  background:rgba(7,11,24,.7);padding:3px 8px;border-radius:5px}
+.figChart svg{display:block;width:100%;height:auto}
+.figChart .axis{stroke:rgba(234,240,248,.15)} .figChart .gl{stroke:rgba(234,240,248,.06)}
+.figChart text{font:10.5px var(--mono);fill:var(--dimmer)}
+.figBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+/* podium alerts */
+.alertStack{position:fixed;right:18px;bottom:18px;z-index:70;display:flex;flex-direction:column;gap:10px;width:min(360px,92vw);pointer-events:none}
+.alertCard{pointer-events:auto;padding:12px 14px;border-radius:12px;background:rgba(10,16,30,.96);border:1px solid rgba(242,115,63,.55);
+  box-shadow:0 12px 34px rgba(0,0,0,.45);animation:alertIn .5s cubic-bezier(.2,1.2,.3,1)}
+.alertCard.out{animation:alertOut .3s ease forwards}
+@keyframes alertIn{from{transform:translateX(30px);opacity:0}}
+@keyframes alertOut{to{transform:translateX(30px);opacity:0}}
+.alertCard .ah{display:flex;align-items:center;font-size:12px;color:var(--dim);margin-bottom:4px}
+.alertCard .ah b{color:var(--ink);margin-right:auto}
+.alertCard .ah button{background:none;border:0;color:var(--dim);font-size:16px;cursor:pointer}
+.alertCard p{margin:0;font-size:13.5px;line-height:1.5}
+.alertCard p b{color:var(--signal)}
+.alertCard .ab{display:flex;gap:8px;margin-top:10px}
+.alertCard .ab button{padding:5px 11px;font-size:12px}
 /* ---------- aiPolytrack: the menu's report and the statistics screen ---------- */
 .aiOrb{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:1px;
   background:radial-gradient(circle at 35% 35%,#bff7ea,#3ddbb8 45%,#1b6f8f);box-shadow:0 0 10px rgba(61,219,184,.8);
@@ -1149,7 +1265,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <div class="menuTiles">
             <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
             <button class="tile" id="bTrophies"><b>Trophy room</b><small id="tileTrophies">your awards</small></button>
-            <button class="tile" id="bStats"><b>Statistics</b><small>your season, coached</small></button>
+            <button class="tile" id="bStats"><b>Coach</b><small>your times, analysed</small></button>
             <button class="tile" id="bGarage"><b>Garage</b><small>paint your car</small></button>
             <button class="tile" id="bSettings"><b>Settings</b><small>account</small></button>
             <button class="tile" id="bInfo"><b>How it works</b><small>the guide</small></button>
@@ -1169,7 +1285,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             <ul class="aiLines" id="aiLines"></ul>
             <div class="aiFoot">
               <button class="small primary" id="bAiTarget" hidden></button>
-              <button class="ghost small" id="bAiCoach">Ask the coach →</button>
+              <button class="ghost small" id="bAiCoach">Ask Coach →</button>
             </div>
           </section>
         </div>
@@ -1370,6 +1486,10 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <div><b>Play button</b><small>What the big Play button on the menu starts</small></div>
         <select id="setPlayCourse"></select>
       </div>
+      <div class="setRow">
+        <div><b>Coach alerts</b><small>When someone knocks you off a podium on any map. Shown after a run or on the menu.</small></div>
+        <button class="small" id="bCoachAlerts">On</button>
+      </div>
       <div class="rule"></div>
 
       <div id="setOnlineOnly">
@@ -1414,7 +1534,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
       </div>
       <nav class="infoNav" id="infoNav">
         <a href="#i-basics">Basics</a><a href="#i-keys">Controls</a><a href="#i-maps">Maps</a><a href="#i-boards">Leaderboards</a>
-        <a href="#i-replays">Replays</a><a href="#i-stats">Statistics</a><a href="#i-credits">Credits</a><a href="#i-trophies">Trophies</a>
+        <a href="#i-replays">Replays</a><a href="#i-stats">Coach</a><a href="#i-credits">Credits</a><a href="#i-trophies">Trophies</a>
         <a href="#i-garage">Garage</a><a href="#i-account">Account</a>
       </nav>
       <div class="infoBody" id="infoBody">
@@ -1476,12 +1596,13 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             colours in the Garage.</p>
         </section>
         <section id="i-stats">
-          <h3>Statistics and the coach</h3>
-          <p><b>Statistics</b> on the menu shows where you stand: your place overall, what it takes to lead the season, and the
-            expertise chart. Each of its 16 spokes is a map; the further out your point, the closer your best is to that map's #1
-            (the dashed ring means you hold #1, the centre means twice their time).</p>
-          <p>The <b>aiPolytrack</b> coach answers questions about your times, a map, a section or a rival, and lights up what it
-            is talking about. Ask it things like "where am I losing time?", "compare me with Alpha" or "show me section C".</p>
+          <h3>Coach</h3>
+          <p><b>Coach</b> on the menu is a chat about your racing. It knows every driver's best on every map, and answers with
+            charts, photos and short clips beside the chat (each one numbered, in the colour it is mentioned in). Ask it which
+            maps you can improve on fastest, where you lose time on a map, how you compare with a rival, or just say hello.</p>
+          <p>The skill chart: each of its 16 spokes is a map, and the further out your point, the closer your best is to that
+            map's #1 (the ring means you hold #1; the centre means twice their time). Coach alerts (in Settings) tell you when
+            someone knocks you off a podium.</p>
         </section>
         <section id="i-trophies">
           <h3>Trophies</h3>
@@ -1506,55 +1627,38 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     </div>
   </div>
 
-  <!-- statistics: the season in numbers, the expertise chart, the coach, the top ten -->
+  <!-- the Coach: a chat, with the figures it makes beside it -->
   <div class="layer" id="stats" hidden>
     <div class="scrim"></div>
-    <div class="panel statsPanel">
-      <div class="row" style="justify-content:space-between;align-items:baseline">
-        <div>
-          <div class="kick">SEASON 1</div>
-          <h2 class="big">Statistics</h2>
+    <div class="panel coachPanel">
+      <header class="cpHead">
+        <div class="cpTitle"><span class="aiOrb"></span><b>Coach</b><span class="cpMode" id="coachState"></span></div>
+        <div class="cpHeadR">
+          <button class="ghost small" id="bCoachWake" hidden title="Smarter, more natural answers. A one-time download; it runs on this computer.">Smart answers</button>
+          <button class="ghost small" id="bCoachNew" title="Start a new conversation">New chat</button>
+          <button class="ghost small" id="bStatsBack">← Menu</button>
         </div>
-        <button class="ghost" id="bStatsBack">← Menu</button>
-      </div>
-      <div class="stTiles" id="stTiles"></div>
-      <div class="stHero" id="stHero" hidden></div>
-      <div class="stGrid">
-        <section class="stCard stRadarCard">
-          <div class="stHd"><b>Expertise</b><span>every map: your best against its #1</span></div>
-          <div class="stRadar" id="stRadar"></div>
-          <div class="stRadarFoot" id="stRadarFoot"></div>
-        </section>
-        <section class="stCard stCoach" id="stCoach">
-          <div class="stHd"><b><span class="aiOrb"></span>aiPolytrack coach</b><span id="coachState"></span></div>
+      </header>
+      <div class="cpBody">
+        <section class="cpChat">
           <div class="coachLog" id="coachLog" aria-live="polite"></div>
-          <div class="coachChips" id="coachChips"></div>
-          <div class="coachIn">
-            <input type="text" id="coachIn" maxlength="300" autocomplete="off" placeholder="Ask about your times, a map, a rival…">
-            <button class="primary" id="bCoachSend">Ask</button>
+          <div class="cpComposer">
+            <textarea id="coachIn" rows="1" maxlength="400" autocomplete="off" placeholder="Message Coach"></textarea>
+            <button class="cpSend" id="bCoachSend" aria-label="Send" title="Send (Enter)">&#10148;</button>
           </div>
         </section>
+        <aside class="cpFigs" id="coachFigs">
+          <div class="cpFigsEmpty">Charts, photos and clips Coach makes appear here.</div>
+        </aside>
       </div>
-      <div class="stGrid2">
-        <section class="stCard">
-          <div class="stHd"><b>Road to #1 overall</b><span id="stRouteSub"></span></div>
-          <div id="stRoute"></div>
-        </section>
-        <section class="stCard">
-          <div class="stHd"><b>Easiest places to climb</b><span>the smallest gaps to the driver above you</span></div>
-          <div id="stClimb"></div>
-        </section>
-      </div>
-      <section class="stCard">
-        <div class="stHd"><b>Every map</b><span>your best, where it ranks, and what it takes to move up</span></div>
-        <div class="stTableWrap"><table class="stTable" id="stMaps"></table></div>
-      </section>
+      <div id="topTenHome" hidden>
       <section class="topTen" id="topTen" hidden>
         <div class="ttHead"><span class="ttKick">TOP 10 · SEASON 1</span><span class="ttSub">every map's best added up</span></div>
         <div class="ttStage"><canvas id="topTenCanvas"></canvas></div>
         <div class="ttLabels" id="topTenLabels"></div>
         <ol class="ttList" id="topTenList"></ol>
       </section>
+      </div>
     </div>
   </div>
 
@@ -1645,6 +1749,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     <span class="gem2d"></span><b id="creditBadgeAmt">0</b><small>credits</small>
   </div>
   <canvas id="fxCanvas" hidden></canvas>
+  <div class="alertStack" id="alertStack"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -6994,114 +7099,343 @@ const Radar = {
   }
 };
 
-/** The statistics screen: tiles, the next target, the chart, the road to #1,
- *  the easiest places to climb, every map, and the top ten. */
-const Stats = {
-  I: null, hlTimer: 0,
-  render() {
-    const I = this.I = Insight.compute();
-    const tile = (n, l, cls, bar) => '<div class="stTile' + (cls ? ' ' + cls : '') + '"><div class="n">' + n + '</div><div class="l">' + l + '</div>' +
-      (bar !== undefined ? '<div class="stBar"><i style="width:' + Math.round(clamp(bar, 0, 1) * 100) + '%"></i></div>' : '') + '</div>';
-    $('stTiles').innerHTML = !I.me ? tile('—', 'no times yet') :
-      tile(Insight.ord(I.rank) + ' <small>of ' + I.of + '</small>', 'overall', I.rank === 1 ? 'gold' : '') +
-      tile(formatTime(I.me.total), 'season total, ' + I.me.count + '/16 maps', '', I.me.count / 16) +
-      tile(I.rank === 1 ? (I.route.margin !== null ? '+' + I.route.margin.toFixed(3) + ' s' : 'leading') :
-        I.route.kind === 'finish' ? I.route.need + ' maps' : I.route.need.toFixed(3) + ' s', I.rank === 1 ? 'ahead of 2nd' : 'to lead the season', I.rank === 1 ? 'gold' : '') +
-      tile(Insight.pct(I.expertise), 'expertise across all 16', '', I.expertise) +
-      tile(I.wins + ' <small>/ 16</small>', 'maps you hold #1 on', I.wins ? 'gold' : '');
-    const T = I.target;
-    $('stHero').hidden = !T;
-    if (T) {
-      $('stHero').innerHTML = '<div><div class="k">NEXT TARGET · ' + T.why.toUpperCase() + '</div><div class="t">' + T.text + '</div></div>' +
-        '<button class="primary" data-drive="' + T.m.i + '">Drive ' + T.m.tag + '</button>';
-    }
-    this.renderRadar();
-    // the road to #1
-    const r = I.route;
-    let road = '';
-    if (r.kind === 'start') road = '<p class="stNote">Finish any map to join the standings.</p>';
-    else if (r.kind === 'lead') road = '<p class="stNote">You lead the season' + (r.margin !== null ? ' by <b>' + r.margin.toFixed(3) + ' s</b> over ' + escapeHtml(r.second.n) : '') +
-      '. Protect it where the gaps are thinnest:</p>' + I.maps.filter((m) => m.rank === 1 && m.board[1]).sort((a, b) => (a.board[1].t - a.t) - (b.board[1].t - b.t)).slice(0, 4)
-      .map((m) => this.row(m, escapeHtml(m.board[1].n) + ' is ' + (m.board[1].t - m.t).toFixed(3) + ' s behind', '+' + (m.board[1].t - m.t).toFixed(3))).join('');
-    else if (r.kind === 'finish') road = '<p class="stNote">' + escapeHtml(I.leader.n) + ' has finished <b>' + I.leader.count + '</b> maps to your <b>' + I.me.count +
-      '</b>. Maps finished count first, so these come before any time:</p>' + r.maps.map((m) => this.row(m, 'not finished yet', m.lead ? '#1 ' + formatTime(m.lead.t) : 'no times yet')).join('');
-    else road = '<p class="stNote">You are <b>' + r.need.toFixed(3) + ' s</b> behind ' + escapeHtml(I.leader.n) + ' over the season. Matching #1 on these ' + r.maps.length +
-      ' would cover it:</p>' + r.maps.map((m) => this.row(m, escapeHtml(m.lead.n) + ' ' + formatTime(m.lead.t), '−' + m.gap.toFixed(3))).join('');
-    $('stRoute').innerHTML = road;
-    $('stRouteSub').textContent = r.kind === 'time' ? r.maps.length + ' maps' : '';
-    $('stClimb').innerHTML = I.climbs.length ? I.climbs.slice(0, 6).map((m) => this.row(m, 'beat ' + escapeHtml(m.up.n) + ' for ' + Insight.ord(m.up.to),
-      m.up.need.toFixed(3) + ' s')).join('') : '<p class="stNote">' + (I.done ? 'You hold #1 on every map you have finished.' : 'No times yet.') + '</p>';
-    // every map
-    let t = '<thead><tr><th>Map</th><th>Your best</th><th>Place</th><th>#1</th><th>Behind #1</th><th>To pass next</th><th>Expertise</th><th></th></tr></thead><tbody>';
-    for (const m of I.maps) {
-      t += '<tr data-map="' + m.id + '"' + (m.t === null ? ' class="none"' : '') + '><td><span style="color:' + Insight.SEC_COL[m.sec] + ';font-family:var(--mono)">' + m.tag +
-        '</span> ' + escapeHtml(m.name) + '</td><td class="num">' + (m.t === null ? '—' : formatTime(m.t)) + '</td><td class="' + (m.rank === 1 ? 'gold' : '') + '">' +
-        (m.rank ? Insight.ord(m.rank) + ' / ' + m.of : '—') + '</td><td>' + (m.lead ? escapeHtml(m.lead.n) + ' <span class="num">' + formatTime(m.lead.t) + '</span>' : '—') +
-        '</td><td class="num">' + (m.gap === null ? '—' : m.rank === 1 ? '#1' : '+' + m.gap.toFixed(3)) + '</td><td class="up">' + (m.up ? m.up.need.toFixed(3) + ' s' : '') +
-        '</td><td class="num">' + (m.t === null ? '—' : Insight.pct(m.score)) + '<span class="mini"><i style="width:' + Math.round(m.score * 100) + '%"></i></span></td>' +
-        '<td><button class="small ghost" data-drive="' + m.i + '">Drive</button></td></tr>';
-    }
-    $('stMaps').innerHTML = t + '</tbody>';
-    $('stats').querySelectorAll('[data-drive]').forEach((b) => b.addEventListener('click', () => Game.startLevel(+b.dataset.drive)));
-    TopTen.show(I.rows);
+/**
+ * The figures Coach puts up beside the chat. Each is numbered and has its
+ * own colour; wherever the chat says "Figure N" it wears that colour, and
+ * clicking it brings the figure forward.
+ */
+const Figs = {
+  n: 0, list: [],
+  COLORS: ['#58a0ff', '#f2733f', '#3ddbb8', '#ffcf5c', '#c38bff', '#ff6f91'],
+  add(title, body, caption, onClose) {
+    const n = ++this.n, col = this.COLORS[(n - 1) % this.COLORS.length];
+    const el = document.createElement('article');
+    el.className = 'fig fresh';
+    el.style.setProperty('--fc', col);
+    el.dataset.fig = String(n);
+    el.innerHTML = '<header><span class="figNo">Figure ' + n + '</span><b>' + escapeHtml(title) + '</b>' +
+      '<button class="figX" title="Close">×</button></header><div class="figBody"></div>' + (caption ? '<footer>' + caption + '</footer>' : '');
+    const box = el.querySelector('.figBody');
+    if (typeof body === 'string') box.innerHTML = body; else if (body) box.appendChild(body);
+    el.querySelector('.figX').addEventListener('click', () => this.remove(n));
+    const pane = $('coachFigs');
+    const empty = pane.querySelector('.cpFigsEmpty');
+    if (empty) empty.hidden = true;
+    pane.prepend(el);
+    pane.scrollTop = 0;
+    setTimeout(() => el.classList.remove('fresh'), 600);
+    const f = { n, col, el, title, onClose };
+    this.list.push(f);
+    return f;
   },
-  row(m, sub, v) {
-    return '<div class="stRow" data-map="' + m.id + '"><span class="tg">' + m.tag + '</span><span class="nm">' + escapeHtml(m.name) + '<small>' + sub + '</small></span>' +
-      '<span class="v">' + v + '</span><button class="small ghost" data-drive="' + m.i + '">Drive</button></div>';
+  get(n) { return this.list.find((f) => f.n === n) || null; },
+  remove(n) {
+    const f = this.get(n);
+    if (!f) return;
+    if (f.onClose) f.onClose();
+    f.el.remove();
+    this.list = this.list.filter((x) => x !== f);
+    if (!this.list.length) $('coachFigs').querySelector('.cpFigsEmpty').hidden = false;
   },
-  renderRadar() {
-    const I = this.I;
-    const { html, other } = Radar.svg(I);
-    const box = $('stRadar');
-    box.innerHTML = html + '<div class="rTip" id="rTip" hidden></div>';
-    $('stRadarFoot').innerHTML = '<span class="k1">you <b>' + Insight.pct(I.expertise) + '</b></span>' +
-      (other ? '<span class="' + (Radar.state.other ? 'k3' : 'k2') + '">' + escapeHtml(other.who.n) + ' <b>' +
-        Insight.pct(other.scores.reduce((a, b) => a + b, 0) / 16) + '</b></span>' : '') +
-      '<span>ring = #1 on that map · centre = twice #1\'s time</span>';
-    // the car in the middle
-    CarThumbs.forUid(I.uid || null).then((url) => { const img = $('rHubCar'); if (img && url) img.setAttribute('href', url); });
-    const tip = $('rTip');
-    box.querySelectorAll('.ax').forEach((g) => {
-      const m = I.maps[+g.dataset.i];
-      g.addEventListener('mouseenter', () => {
-        const r = box.getBoundingClientRect(), d = g.querySelector('.dot').getBoundingClientRect();
-        tip.innerHTML = '<b>' + m.tag + ' ' + escapeHtml(m.name) + '</b><br>' + (m.t === null ? 'not finished' : 'you <span class="g">' + formatTime(m.t) + '</span> · ' +
-          Insight.ord(m.rank) + ' of ' + m.of) + (m.lead && m.rank !== 1 ? '<br>#1 ' + escapeHtml(m.lead.n) + ' <span class="g">' + formatTime(m.lead.t) + '</span>' : '') +
-          (m.t !== null ? '<br>expertise ' + Insight.pct(m.score) : '');
-        tip.style.left = (d.left - r.left + d.width / 2) + 'px';
-        tip.style.top = (d.top - r.top) + 'px';
-        tip.hidden = false;
+  focus(n) {
+    const f = this.get(n);
+    if (!f) return;
+    f.el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    f.el.classList.remove('flash'); void f.el.offsetWidth; f.el.classList.add('flash');
+  },
+  clear() { for (const f of this.list.slice()) this.remove(f.n); this.n = 0; }
+};
+
+/**
+ * Coach's camera: a map's own 3D scene, two cars (the player's run and the
+ * one it is measured against) placed from their recorded runs, rendered to
+ * a still (a photo) or played as a short clip. Both cars are put at the
+ * same point on the track, so what shows is the difference in line and the
+ * time it costs. One offscreen renderer, one map built at a time.
+ */
+const CoachCam = {
+  renderer: null, W: 960, H: 540, q: null, qi: -1, a: null, b: null, clip: null,
+  ensure() {
+    if (this.renderer) return;
+    const c = document.createElement('canvas');
+    this.renderer = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: true });
+    this.renderer.setSize(this.W, this.H, false);
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.12;
+  },
+  scene(i) {
+    this.ensure();
+    if (this.qi === i && this.q) return this.q;
+    this.drop();
+    const q = SectionView.buildQuad(i);
+    q.camera.aspect = this.W / this.H;
+    q.camera.updateProjectionMatrix();
+    const car = (opacity) => {
+      const body = MAT.body.clone(), dark = MAT.bodyDark.clone();
+      if (opacity < 1) { body.transparent = dark.transparent = true; body.opacity = dark.opacity = opacity; body.depthWrite = dark.depthWrite = false; }
+      const built = buildCarMesh(body, dark);
+      built.group.userData.flame = built.flame; built.group.userData.flameLights = built.flameLights;
+      q.scene.add(built.group);
+      return { mesh: built.group, body, dark };
+    };
+    this.a = car(1); this.b = car(0.6);
+    this.q = q; this.qi = i;
+    return q;
+  },
+  drop() {
+    if (!this.q) return;
+    this.stopClip();
+    disposeCourse(this.q.course, this.q.scene);
+    for (const im of this.q.peaks) im.dispose();
+    this.q.line.geometry.dispose(); this.q.line.material.dispose();
+    for (const c of [this.a, this.b]) if (c) { c.body.dispose(); c.dark.dispose(); }
+    this.q = null; this.qi = -1; this.a = this.b = null;
+    this.renderer.renderLists.dispose();
+  },
+  paint(c, col) {
+    if (!col) return;
+    c.body.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l));
+    c.dark.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l));
+  },
+  /** both cars at the moment the player's car was at distance d; returns the picture's canvas */
+  shot(lab, lt, opts) {
+    const q = this.q, A = lab.A, B = lab.B;
+    const d = Compare.at(A.sm, A.n, lt);
+    const ltB = Compare.timeAt(B, d);
+    SectionView.ghostAt(q, lab.gm, Math.min(lt, lab.gm.t), this.a.mesh.position, this.a.mesh.quaternion);
+    SectionView.ghostAt(q, lab.gr, Math.min(ltB, lab.gr.t), this.b.mesh.position, this.b.mesh.quaternion);
+    const pa = this.a.mesh.position, pb = this.b.mesh.position;
+    const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(this.a.mesh.quaternion);
+    fwd.y = 0;
+    if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, 1);
+    fwd.normalize();
+    const high = opts && opts.high;
+    const cam = q.camera;
+    const mid = pa.clone().add(pb).multiplyScalar(0.5);
+    cam.position.copy(pa).addScaledVector(fwd, high ? -9 : -11);
+    cam.position.y += high ? 9.5 : 4.2;
+    cam.lookAt(mid.x + fwd.x * 5, mid.y + 0.8, mid.z + fwd.z * 5);
+    cam.updateMatrixWorld();
+    q.sky.position.copy(cam.position);
+    this.renderer.render(q.scene, cam);
+    return { canvas: this.renderer.domElement, d, ltB, behind: lt - ltB };
+  },
+  /** the picture onto a 2D canvas, with the two names and the time between them */
+  compose(ctx, lab, s, extra) {
+    const w = ctx.canvas.width, h = ctx.canvas.height;
+    ctx.drawImage(s.canvas, 0, 0, w, h);
+    // a name over each car; when the two sit close together on screen the
+    // labels split left and right so neither hides the other
+    const scr = (pos) => { const v = pos.clone(); v.y += 1.9; v.project(this.q.camera); return v.z > 1 ? null : [(v.x * 0.5 + 0.5) * w, (-v.y * 0.5 + 0.5) * h]; };
+    const pa = scr(this.a.mesh.position), pb = scr(this.b.mesh.position);
+    ctx.font = '700 ' + Math.round(h * 0.052) + 'px system-ui, sans-serif';
+    const th = h * 0.085;
+    const tag = (p, text, col, side) => {
+      if (!p) return;
+      const tw = ctx.measureText(text).width + 22;
+      const x = side < 0 ? p[0] - tw - 6 : side > 0 ? p[0] + 6 : p[0] - tw / 2, y = p[1] - th;
+      ctx.fillStyle = 'rgba(7,11,24,.85)'; ctx.fillRect(x, y, tw, th);
+      ctx.fillStyle = col; ctx.fillRect(x, y, 6, th);
+      ctx.fillStyle = '#eaf0f8'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + 13, y + th / 2 + 1);
+    };
+    const close = pa && pb && Math.abs(pa[0] - pb[0]) < w * 0.22 && Math.abs(pa[1] - pb[1]) < th * 1.6;
+    const aLeft = pa && pb ? pa[0] <= pb[0] : true;
+    tag(pa, 'You', '#3ddbb8', close ? (aLeft ? -1 : 1) : 0);
+    tag(pb, lab.rival.n, '#f2733f', close ? (aLeft ? 1 : -1) : 0);
+    // the time between them at this point on the track
+    const behind = s.behind;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    const txt = (behind >= 0 ? '+' : '−') + Math.abs(behind).toFixed(3) + ' s';
+    const sub = (behind >= 0 ? 'behind ' : 'ahead of ') + lab.rival.n + ' here · ' + Math.round(s.d) + ' m';
+    ctx.font = '700 ' + Math.round(h * 0.085) + 'px ui-monospace, monospace';
+    const w1 = ctx.measureText(txt).width;
+    ctx.font = '600 ' + Math.round(h * 0.045) + 'px system-ui, sans-serif';
+    const w2 = ctx.measureText(sub).width;
+    ctx.fillStyle = 'rgba(7,11,24,.8)'; ctx.fillRect(14, 14, Math.max(w1, w2) + 30, h * 0.19);
+    ctx.font = '700 ' + Math.round(h * 0.085) + 'px ui-monospace, monospace';
+    ctx.fillStyle = behind > 0.005 ? '#ff8a5c' : '#3ddbb8'; ctx.fillText(txt, 28, 22);
+    ctx.font = '600 ' + Math.round(h * 0.045) + 'px system-ui, sans-serif'; ctx.fillStyle = '#c7d2e0';
+    ctx.fillText(sub, 28, 22 + h * 0.1);
+    if (extra) extra(ctx, w, h);
+  },
+  photo(lab, lt) {
+    this.scene(lab.m.i);
+    const s = this.shot(lab, lt, { high: true });
+    const c = document.createElement('canvas');
+    c.width = this.W; c.height = this.H;
+    this.compose(c.getContext('2d'), lab, s);
+    return { url: c.toDataURL('image/jpeg', 0.9), behind: s.behind, d: s.d };
+  },
+  /** a looping clip of the player's car from time t0 to t1, the other car beside it by track position */
+  playClip(lab, t0, t1, canvas) {
+    this.stopClip();
+    this.scene(lab.m.i);
+    const ctx = canvas.getContext('2d');
+    const clip = { lab, t0, t1, t: t0, canvas, playing: true, last: 0 };
+    this.clip = clip;
+    const loop = (now) => {
+      if (this.clip !== clip) return;
+      if (!canvas.isConnected) { this.clip = null; return; }
+      const dt = clip.last ? Math.min(0.1, (now - clip.last) / 1000) : 0;
+      clip.last = now;
+      if (Game.state !== 'stats' || document.hidden) { requestAnimationFrame(loop); return; }
+      if (clip.playing) { clip.t += dt; if (clip.t > t1) clip.t = t0; }
+      const s = this.shot(lab, clip.t, null);
+      this.compose(ctx, lab, s, (c, w, h) => {
+        c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(0, h - 5, w, 5);
+        c.fillStyle = '#f2733f'; c.fillRect(0, h - 5, w * (clip.t - t0) / Math.max(t1 - t0, 0.01), 5);
       });
-      g.addEventListener('mouseleave', () => { tip.hidden = true; });
-      g.addEventListener('click', () => { this.highlight([m.id]); Coach.aboutMap(m); });
-    });
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    return clip;
   },
-  /** light up every mention of these maps on the screen for a few seconds */
-  highlight(ids, scroll) {
-    const root = $('stats');
-    root.querySelectorAll('.hl').forEach((e) => e.classList.remove('hl'));
-    clearTimeout(this.hlTimer);
-    if (!ids || !ids.length) return;
-    let first = null;
-    for (const id of ids) root.querySelectorAll('[data-map="' + id + '"]').forEach((e) => { void e.getBoundingClientRect(); e.classList.add('hl'); if (!first && e.closest('.stTable')) first = e; });
-    if (scroll && first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    this.hlTimer = setTimeout(() => root.querySelectorAll('.hl').forEach((e) => e.classList.remove('hl')), 9000);
+  stopClip() { this.clip = null; }
+};
+
+/**
+ * One map worked out in depth: the player's recorded run and the one it is
+ * measured against (#1, or #2 when the player holds #1), both analysed on
+ * the real track; the time gap all the way round, the stretch where most
+ * time goes, and the moment inside it where it goes fastest.
+ */
+const CoachLab = {
+  cache: {},
+  async of(m, I, rivalRow) {
+    const rival = rivalRow || (m.rank === 1 ? m.board[1] : m.board[0]);
+    if (!rival || !rival.uid || !I.uid) throw new Error('nobody to measure against');
+    const key = m.id + ':' + m.t + ':' + rival.uid + ':' + rival.t;
+    if (this.cache[key]) return this.cache[key];
+    const [gm, gr, cm, cr] = await Promise.all([Cloud.fetchGhost(m.id, I.uid), Cloud.fetchGhost(m.id, rival.uid),
+      Cloud.fetchCarColorsOf(I.uid), Cloud.fetchCarColorsOf(rival.uid)]);
+    if (!gm || !gr) throw new Error('a recording is missing');
+    const q = CoachCam.scene(m.i);
+    CoachCam.paint(CoachCam.a, cm); CoachCam.paint(CoachCam.b, cr);
+    const A = Compare.analyzeRun(gm, q.course), B = Compare.analyzeRun(gr, q.course);
+    const L = Math.min(A.sm[A.n - 1], B.sm[B.n - 1]);
+    const K = 240, gap = [];
+    for (let k = 0; k <= K; k++) { const d = (L * k) / K; gap.push({ d, g: Compare.timeAt(A, d) - Compare.timeAt(B, d) }); }
+    // the stretch (about an eighth of the lap) where the most time goes
+    const w = Math.max(6, Math.round(K * 0.12));
+    let best = { k: 0, loss: -Infinity };
+    for (let k = 0; k + w <= K; k++) { const loss = gap[k + w].g - gap[k].g; if (loss > best.loss) best = { k, loss }; }
+    let steep = best.k, sv = -Infinity;
+    for (let k = best.k; k < best.k + w; k++) { const v = gap[k + 1].g - gap[k].g; if (v > sv) { sv = v; steep = k; } }
+    const lab = { m, rival, gm, gr, A, B, L, gap, colors: [cm, cr],
+      seg: { d0: gap[best.k].d, d1: gap[best.k + w].d, loss: best.loss }, moment: gap[steep].d, total: gap[K].g };
+    this.cache[key] = lab;
+    return lab;
+  }
+};
+
+/** Coach's own reading of where time is easiest (and hardest) to find */
+const Ease = {
+  /**
+   * Each finished map against the player's usual level (the middle of how
+   * close they are to #1 across all their maps): a map they drive below
+   * that level has time they have already shown they can find. Then the
+   * drivers that time would pass, how close the next one is, and how old
+   * the best is. Unfinished maps come first: a finish counts before time.
+   */
+  rank(I) {
+    const fin = I.maps.filter((m) => m.t !== null && m.lead);
+    if (!fin.length) return { base: 0, list: [], open: I.missing };
+    const rs = fin.map((m) => m.ratio).sort((a, b) => a - b);
+    const base = rs[Math.floor(rs.length / 2)];
+    const list = fin.map((m) => {
+      const atLevel = m.lead.t / base;
+      const room = m.t - atLevel;
+      const reach = Math.max(atLevel, m.lead.t);
+      const places = room > 0 ? m.board.filter((e) => e.t < m.t && e.t >= reach).length : 0;
+      const stale = m.d ? (Date.now() - m.d) / 86400000 : 0;
+      const need = m.up ? m.up.need : null;
+      const score = (room / m.t) * 100 + places * 0.7 + Math.min(stale, 14) * 0.05 + (need !== null && need < 0.25 ? 0.8 : 0) - (m.rank === 1 ? 1.5 : 0);
+      const why = [];
+      if (room > 0.05) why.push(room.toFixed(2) + ' s off your usual level');
+      else why.push('you already drive it at your best');
+      if (places) why.push(places + ' driver' + (places > 1 ? 's' : '') + ' in reach');
+      if (need !== null) why.push(need.toFixed(3) + ' s to pass ' + m.up.n);
+      if (m.rank === 1) why.push('you hold #1');
+      if (stale > 3) why.push('best is ' + Math.round(stale) + ' days old');
+      return { m, room, places, need, stale, score, why };
+    }).sort((a, b) => b.score - a.score);
+    return { base, list, open: I.missing };
+  }
+};
+
+/** When someone knocks the player off a podium: kept until a run ends or the menu shows */
+const CoachAlerts = {
+  queue: [], key() { return 'aipolytrack.podium.' + ((Cloud.user && Cloud.user.uid) || 'local'); },
+  on() { return Prefs.get('coachAlerts', true); },
+  podium() {
+    const uid = Cloud.user && Cloud.user.uid;
+    if (!uid) return null;
+    const out = {};
+    LEVELS.forEach((lv) => {
+      const b = Records.board(lv.id);
+      const k = b.findIndex((e) => e.uid === uid);
+      if (k >= 0) out[lv.id] = { rank: k + 1, t: b[k].t, ahead: b.slice(0, k).map((e) => e.uid) };
+    });
+    return out;
+  },
+  /** after every change to the boards: compare with the last look */
+  check() {
+    const now = this.podium();
+    if (!now || !Object.keys(Records.data.boards || {}).length) return;
+    let prev = null;
+    try { prev = JSON.parse(localStorage.getItem(this.key()) || 'null'); } catch (e) { prev = null; }
+    try { localStorage.setItem(this.key(), JSON.stringify(now)); } catch (e) { /* this visit only */ }
+    if (!prev || !this.on()) return;
+    for (const id in prev) {
+      const was = prev[id], is = now[id];
+      if (!is || was.rank > 3 || is.rank <= was.rank) continue;
+      const b = Records.board(id), i = courseIndexOf(id);
+      const newcomers = b.slice(0, is.rank - 1).filter((e) => !was.ahead.includes(e.uid));
+      for (const e of newcomers) {
+        if (this.queue.some((a) => a.id === id && a.uid === e.uid)) continue;
+        this.queue.push({ id, i, uid: e.uid, n: e.n, t: e.t, mine: is.t, from: was.rank, to: is.rank });
+      }
+    }
+    if (this.queue.length && Game.state === 'menu') this.flush();
+  },
+  flush() {
+    if (!this.on()) { this.queue = []; return; }
+    const stack = $('alertStack');
+    for (const a of this.queue.splice(0, 3)) {
+      const el = document.createElement('div');
+      el.className = 'alertCard';
+      const tag = courseTag(a.i) + ' ' + escapeHtml(LEVELS[a.i].name);
+      el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
+        '<p><b>' + escapeHtml(a.n) + '</b> beat your ' + formatTime(a.mine) + ' on ' + tag + ' with ' + formatTime(a.t) + '. ' +
+        (a.to > 3 ? 'You are off the podium, down to ' + Insight.ord(a.to) + '.' : 'You drop to ' + Insight.ord(a.to) + '.') + '</p>' +
+        '<div class="ab"><button class="primary small">Take it back</button><button class="ghost small">Ask Coach</button></div>';
+      const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+      el.querySelector('.ah button').addEventListener('click', close);
+      const [drive, ask] = el.querySelectorAll('.ab button');
+      drive.addEventListener('click', () => { close(); Game.startLevel(a.i); });
+      ask.addEventListener('click', () => { close(); Game.toStats(); Coach.send('How do I get my place back on ' + courseTag(a.i) + '?'); });
+      stack.appendChild(el);
+      setTimeout(close, 16000);
+    }
   }
 };
 
 /**
- * The coach, "aiPolytrack". It uses the browser's own on-device language
- * model when the browser has one (nothing is sent anywhere), given the
- * exact facts above so it never has to work a number out; without one it
- * answers from the same analysis itself. It points at maps on the screen,
- * and it can change the chart (a section, a rival) when asked. It only
- * ever calls itself aiPolytrack.
+ * Coach: the chat. Every message is worked out here first: what is being
+ * asked (small talk, a map, a rival, a section, the standings, where to
+ * improve, a photo, a clip...), what needs gathering, and which figures to
+ * put up. It says what it is doing while it does it. The words come from
+ * the browser's own on-device language model when there is one (given the
+ * exact facts and the working, so it never has to invent a number), else
+ * from Coach itself. Its only name is Coach, part of aiPolytrack.
  */
 const Coach = {
-  st: 'checking', session: null, sessionKey: '', busy: false, history: [], opened: false,
+  st: 'checking', session: null, sessionKey: '', busy: false, history: [], opened: false, ctx: { map: null, rival: null },
   BANNED: /gemini|\bnano\b|google|deepmind|\bbard\b|chatgpt|openai|anthropic|claude|\bllm\b|language model|trained by|built[- ]in ai|on-device (ai|model)|chrome'?s? ai/i,
   WHO: /\b(who|what)\s+(are|r)\s+(you|u)\b|what('?s| is) your name|\bwhat (model|ai|llm|engine)\b|\bare you (an? )?(ai|bot|gemini|google|gpt|chatgpt|nano|real|human|robot)\b|\bwho (made|built|created|trained|makes|programmed) you\b|\bwhat (powers|runs|drives) you\b|\bgemini\b|\bnano\b|\bllm\b|\blanguage model\b|\bwhich ai\b/i,
-  IAM: 'I\'m aiPolytrack, the coach built into this game. I read the live leaderboards and your times, and tell you exactly where to find time.',
+  IAM: 'I\'m Coach, part of aiPolytrack. I know every driver\'s best on every map, and I can show you exactly where your time is: charts, photos and clips of your runs.',
   api() {
     if (typeof self !== 'undefined' && self.LanguageModel && self.LanguageModel.availability) return 'new';
     if (typeof self !== 'undefined' && self.ai && self.ai.languageModel) return 'old';
@@ -7110,9 +7444,7 @@ const Coach = {
   async availability() {
     try {
       const a = this.api();
-      if (a === 'new') {
-        return await self.LanguageModel.availability({ expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] });
-      }
+      if (a === 'new') return await self.LanguageModel.availability({ expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] });
       if (a === 'old') {
         const c = await self.ai.languageModel.capabilities();
         return c.available === 'readily' ? 'available' : c.available === 'after-download' ? 'downloadable' : 'unavailable';
@@ -7122,233 +7454,622 @@ const Coach = {
   },
   async refreshState() {
     this.st = await this.availability();
-    const el = $('coachState');
-    el.textContent = this.st === 'available' ? 'SMART MODE' : this.st === 'downloading' ? 'GETTING READY…' : 'QUICK MODE';
+    $('coachState').textContent = this.st === 'available' ? 'SMART' : this.st === 'downloading' ? 'GETTING READY' : 'QUICK';
+    $('bCoachWake').hidden = this.st !== 'downloadable';
     return this.st;
   },
   system(I) {
-    return 'You are aiPolytrack, the coach inside the racing game aiPolytrack. Your only name is aiPolytrack. If you are asked what you are, ' +
-      'what model you are, who made you or what powers you, answer only that you are aiPolytrack, the game\'s coach. Never name any company, ' +
-      'model or technology.\n' +
-      'You coach one player, ' + I.name + ', to the fastest times and the top of the season standings. Use ONLY the facts below. Never invent a ' +
-      'time, name, place or number, and copy numbers exactly as written. Name maps by tag and name (for example "B2 Stormwall"). Be direct, ' +
-      'specific and competitive, and push them at the next driver to beat. Answer in at most 5 short sentences or a short list, with no preamble.\n' +
-      'When your answer is about particular maps, end with a final line exactly like: SHOW: B2, C1\n\nFACTS\n' + Insight.factsText(I);
+    return 'You are Coach, the racing coach inside the game aiPolytrack. Your only name is Coach, part of aiPolytrack. If you are asked what ' +
+      'you are, what model you are, who made you or what powers you, say only that you are Coach, part of aiPolytrack. Never name any ' +
+      'company, model or technology.\n' +
+      'You talk with ' + I.name + ' like a sharp, friendly, competitive coach: answer greetings and small talk naturally and briefly, and ' +
+      'bring things back to racing when it fits. For anything about times, use ONLY the facts and the working you are given. Never invent a ' +
+      'time, name, place or number; copy numbers exactly. Name maps by tag and name (for example "B2 Stormwall"). When figures are listed ' +
+      'as on screen, point the player at them by number ("see Figure 2"). At most 5 short sentences, or a short list. No preamble.\n\n' +
+      'FACTS\n' + Insight.factsText(I) + '\nEVERYONE: ' + I.rows.slice(0, 12).map((r, k) => (k + 1) + '. ' + r.n + ' ' + r.count + '/16 ' + formatTime(r.total)).join('; ');
   },
   async ensureSession(I, onProgress) {
     const key = JSON.stringify(I.maps.map((m) => [m.t, m.lead && m.lead.t, m.rank])) + I.name;
-    const usage = this.session ? (this.session.inputUsage !== undefined ? this.session.inputUsage / (this.session.inputQuota || 1)
-      : this.session.tokensSoFar !== undefined ? this.session.tokensSoFar / (this.session.maxTokens || 1) : 0) : 0;
-    if (this.session && this.sessionKey === key && usage < 0.75) return this.session;
-    if (this.session) { try { this.session.destroy(); } catch (e) { /* gone already */ } }
+    const s = this.session;
+    const usage = s ? (s.inputUsage !== undefined ? s.inputUsage / (s.inputQuota || 1) : s.tokensSoFar !== undefined ? s.tokensSoFar / (s.maxTokens || 1) : 0) : 0;
+    if (s && this.sessionKey === key && usage < 0.7) return s;
+    if (s) { try { s.destroy(); } catch (e) { /* gone already */ } }
     this.session = null;
     const system = this.system(I);
     const monitor = (m) => m.addEventListener('downloadprogress', (e) => onProgress && onProgress(e.loaded));
-    // the last few turns come along into a fresh session
     const turns = this.history.slice(-4).map((h) => ({ role: h.role, content: h.text }));
-    if (this.api() === 'new') {
-      this.session = await self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: system }].concat(turns), monitor,
-        expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] });
-    } else {
-      this.session = await self.ai.languageModel.create({ systemPrompt: system, initialPrompts: turns, monitor });
-    }
+    this.session = this.api() === 'new'
+      ? await self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: system }].concat(turns), monitor,
+        expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] })
+      : await self.ai.languageModel.create({ systemPrompt: system, initialPrompts: turns, monitor });
     this.sessionKey = key;
     return this.session;
   },
-  /** keeps the name promise: any sentence naming something else goes */
   scrub(text) {
-    const parts = String(text || '').split(/(?<=[.!?])\s+/);
-    const kept = parts.filter((p) => !this.BANNED.test(p));
-    const out = kept.join(' ').trim();
-    return out || this.IAM;
+    const kept = String(text || '').split(/(?<=[.!?])\s+/).filter((p) => !this.BANNED.test(p));
+    return kept.join(' ').trim() || this.IAM;
   },
-  /** map tags (A1..D4) and map names in a text */
   mapsIn(text) {
-    const ids = new Set();
+    const ids = [];
     const t = String(text || '');
-    for (const m of t.matchAll(/\b([A-Da-d])([1-4])\b/g)) { const i = LEVELS.findIndex((lv, k) => courseTag(k) === m[1].toUpperCase() + m[2]); if (i >= 0) ids.add(LEVELS[i].id); }
+    for (const m of t.matchAll(/\b([A-Da-d])([1-4])\b/g)) {
+      const i = LEVELS.findIndex((lv, k) => courseTag(k) === m[1].toUpperCase() + m[2]);
+      if (i >= 0 && !ids.includes(LEVELS[i].id)) ids.push(LEVELS[i].id);
+    }
     const low = t.toLowerCase();
-    LEVELS.forEach((lv) => { if (low.includes(lv.name.toLowerCase())) ids.add(lv.id); });
-    return [...ids];
+    LEVELS.forEach((lv) => { if (low.includes(lv.name.toLowerCase()) && !ids.includes(lv.id)) ids.push(lv.id); });
+    return ids;
   },
+
   // ---------------------------------------------------------------- screen
   open() {
-    Stats.render();
     if (!this.opened) {
       this.opened = true;
-      const chips = ['Where am I losing the most time?', 'How do I become season leader?', 'What should I drive next?', 'Compare me with the leader', 'Show me section A'];
-      $('coachChips').innerHTML = chips.map((c) => '<button>' + escapeHtml(c) + '</button>').join('');
-      $('coachChips').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => this.send(b.textContent)));
-      $('bCoachSend').addEventListener('click', () => this.send($('coachIn').value));
-      $('coachIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') this.send($('coachIn').value); });
+      const box = $('coachIn');
+      const grow = () => { box.style.height = 'auto'; box.style.height = Math.min(140, box.scrollHeight) + 'px'; $('bCoachSend').disabled = !box.value.trim(); };
+      box.addEventListener('input', grow);
+      box.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(box.value); } });
+      $('bCoachSend').addEventListener('click', () => this.send(box.value));
+      $('bCoachNew').addEventListener('click', () => this.reset());
+      $('bCoachWake').addEventListener('click', () => this.wake());
+      grow();
     }
-    this.refreshState().then((st) => {
-      if (!$('coachLog').children.length) {
-        const I = Stats.I, T = I.target;
-        this.say((T ? T.text.replace(/<[^>]+>/g, '') + ' ' : '') + 'Ask me anything about your times, a map or a rival and I\'ll show you where the time is.', T ? [T.m.id] : []);
-      }
-      if (st === 'downloadable' && !$('bCoachWake')) {
-        const b = document.createElement('button');
-        b.id = 'bCoachWake'; b.className = 'small ghost coachBtn';
-        b.textContent = 'Switch on smart answers (a one-time download, runs on this computer)';
-        b.addEventListener('click', async () => {
-          b.disabled = true; b.textContent = 'Getting ready… 0%';
-          try {
-            await this.ensureSession(Stats.I, (p) => { b.textContent = 'Getting ready… ' + Math.round(p * 100) + '%'; });
-            b.remove();
-            await this.refreshState();
-            this.say('Smart answers are on. Ask me anything.');
-          } catch (e) { b.textContent = 'Smart answers are not available here. Quick answers still work.'; }
-        });
-        $('coachLog').after(b);
-      }
-    });
+    this.refreshState();
+    if (!$('coachLog').children.length) this.greet();
+    setTimeout(() => $('coachIn').focus(), 50);
   },
-  bubble(cls, html) {
-    const d = document.createElement('div');
-    d.className = 'cMsg ' + cls;
-    d.innerHTML = html;
-    const log = $('coachLog');
-    log.appendChild(d);
-    log.scrollTop = log.scrollHeight;
-    return d;
+  /** a new player (sign out / in): nothing of the last conversation stays */
+  forget() {
+    $('coachLog').innerHTML = '';
+    Figs.clear();
+    CoachCam.drop();
+    this.history = []; this.ctx = { map: null, rival: null };
+    if (this.session) { try { this.session.destroy(); } catch (e) { /* gone */ } this.session = null; }
+    for (const k in CoachLab.cache) delete CoachLab.cache[k];
   },
-  /** a coach message: map tags become links that light the map up */
-  format(text) {
-    let h = escapeHtml(text);
-    h = h.replace(/\b([A-D][1-4])\b/g, (t) => { const i = LEVELS.findIndex((lv, k) => courseTag(k) === t); return i < 0 ? t : '<span class="mapRef" data-id="' + LEVELS[i].id + '">' + t + '</span>'; });
-    return h;
+  reset() {
+    $('coachLog').innerHTML = '';
+    Figs.clear();
+    CoachCam.drop();
+    this.history = []; this.ctx = { map: null, rival: null };
+    if (this.session) { try { this.session.destroy(); } catch (e) { /* gone */ } this.session = null; }
+    this.greet();
   },
-  say(text, show) {
-    const d = this.bubble('ai', this.format(text));
-    d.querySelectorAll('.mapRef').forEach((r) => r.addEventListener('click', () => Stats.highlight([r.dataset.id], true)));
+  async wake() {
+    const b = $('bCoachWake');
+    b.disabled = true; b.textContent = 'Getting ready… 0%';
+    try {
+      await this.ensureSession(Insight.compute(), (p) => { b.textContent = 'Getting ready… ' + Math.round(p * 100) + '%'; });
+      await this.refreshState();
+      this.post('Smart answers are on. Ask me anything.');
+    } catch (e) { b.textContent = 'Smart answers are not available here'; }
+    b.disabled = false;
+  },
+  greet() {
+    const I = Insight.compute();
+    const hr = new Date().getHours(), hi = hr < 5 ? 'Late night laps' : hr < 12 ? 'Morning' : hr < 18 ? 'Hey' : 'Evening';
+    let t = hi + ', ' + I.name + '. ';
+    if (!I.me) t += 'No times from you yet, so let\'s change that: every map you finish moves you up the standings.';
+    else if (I.rank === 1) t += 'You lead the season. Want to see where someone could catch you, or where you can pull further away?';
+    else {
+      const E = Ease.rank(I);
+      const top = E.list[0];
+      t += 'You\'re ' + Insight.ord(I.rank) + ' of ' + I.of + (top ? '. If you want a quick win, ' + top.m.tag + ' ' + top.m.name + ' looks like your easiest place to find time right now' : '') + '.';
+    }
+    this.post(t + ' Ask me anything: where you\'re losing time, a map, a rival, the standings, or for a photo or clip of your run.');
+  },
+  /** a message from Coach (already worked out), with its figure and map links live */
+  post(text, turn) {
+    const t = turn || this.turn();
+    const ans = t.querySelector('.cAns');
+    ans.classList.remove('typing');
+    ans.innerHTML = this.format(text);
+    this.wire(ans);
     this.history.push({ role: 'assistant', text });
-    if (show && show.length) Stats.highlight(show);
+    this.scroll();
+    return t;
+  },
+  turn() {
+    const d = document.createElement('div');
+    d.className = 'cTurn';
+    d.innerHTML = '<span class="aiOrb av"></span><div class="cBody"><div class="cSteps"></div><div class="cAns typing"></div></div>';
+    $('coachLog').appendChild(d);
+    this.scroll();
     return d;
   },
-  aboutMap(m) { this.send('Tell me about ' + m.tag + ' ' + m.name); },
+  scroll() { const l = $('coachLog'); l.scrollTop = l.scrollHeight; },
+  /** a step Coach is working on: shimmering while it runs, then a tick and what it found */
+  step(turn, label) {
+    const el = document.createElement('div');
+    el.className = 'cStep run';
+    el.innerHTML = '<span class="ic"></span><span class="tx">' + escapeHtml(label) + '</span>';
+    turn.querySelector('.cSteps').appendChild(el);
+    this.scroll();
+    const t0 = performance.now();
+    return {
+      done: async (text, bad) => {
+        // long enough to read, never so long it drags
+        const wait = 380 - (performance.now() - t0);
+        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        el.className = 'cStep ' + (bad ? 'bad' : 'ok');
+        el.innerHTML = '<span class="ic"></span><span class="tx">' + escapeHtml(text || label) + '</span>';
+      }
+    };
+  },
+  /** plain text to HTML: paragraphs, "- " lists, **bold**, map tags and figure numbers */
+  format(text) {
+    const inline = (s) => escapeHtml(s)
+      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+      .replace(/\bFig(?:ure|\.)?\s?(\d+)\b/g, (all, n) => { const f = Figs.get(+n); return f ? '<a class="figRef" data-fig="' + n + '" style="--fc:' + f.col + '">Figure ' + n + '</a>' : all; })
+      .replace(/\b([A-D][1-4])\b/g, (t) => { const i = LEVELS.findIndex((lv, k) => courseTag(k) === t); return i < 0 ? t : '<span class="mapRef" data-i="' + i + '">' + t + '</span>'; });
+    const blocks = String(text).trim().split(/\n{2,}/);
+    return blocks.map((b) => {
+      const lines = b.split('\n');
+      if (lines.every((l) => /^\s*[-•*]\s+/.test(l))) return '<ul>' + lines.map((l) => '<li>' + inline(l.replace(/^\s*[-•*]\s+/, '')) + '</li>').join('') + '</ul>';
+      return '<p>' + lines.map(inline).join('<br>') + '</p>';
+    }).join('');
+  },
+  wire(el) {
+    el.querySelectorAll('.figRef').forEach((a) => a.addEventListener('click', () => Figs.focus(+a.dataset.fig)));
+    el.querySelectorAll('.mapRef').forEach((a) => a.addEventListener('click', () => this.send('Tell me about ' + courseTag(+a.dataset.i) + ' ' + LEVELS[+a.dataset.i].name)));
+  },
+
+  // ---------------------------------------------------------------- asking
   async send(raw) {
-    const q = String(raw || '').trim().slice(0, 300);
+    const q = String(raw || '').trim().slice(0, 400);
     if (!q || this.busy) return;
-    $('coachIn').value = '';
-    this.bubble('me', escapeHtml(q));
+    const box = $('coachIn');
+    box.value = ''; box.style.height = 'auto'; $('bCoachSend').disabled = true;
+    const me = document.createElement('div');
+    me.className = 'cMe';
+    me.textContent = q;
+    $('coachLog').appendChild(me);
     this.history.push({ role: 'user', text: q });
-    const I = Stats.I || Insight.compute();
-    // what they are is never up to the model
-    if (this.WHO.test(q)) { this.say(this.IAM); return; }
-    // requests that change the screen happen at once
-    const local = this.local(q, I);
-    if (local.redraw) Stats.renderRadar();
-    if (this.st !== 'available') { this.busy = true; setTimeout(() => { this.busy = false; this.say(local.text, local.show); }, 350); return; }
     this.busy = true;
-    const d = this.bubble('ai typing', '');
+    const turn = this.turn();
+    let out;
+    try {
+      out = await this.work(q, turn);
+    } catch (e) {
+      console.warn('aiPolytrack: coach', e);
+      out = { text: 'Something went wrong on my side working that out. Try asking another way?' };
+    }
+    try {
+      if (out.chat !== false && this.st === 'available') await this.speak(q, out, turn);
+      else this.post(out.text, turn);
+    } finally { this.busy = false; }
+  },
+  /** the model's words for a worked-out answer (falls back to Coach's own) */
+  async speak(q, out, turn) {
+    const ans = turn.querySelector('.cAns');
     let acc = '';
     try {
+      const I = Insight.compute();
       const session = await this.ensureSession(I);
+      const figs = (out.figs || []).map((f) => 'Figure ' + f.n + ': ' + f.title).join('; ');
+      const msg = q + (out.notes ? '\n\n[Your working, true and exact: ' + out.notes + ']' : '') + (figs ? '\n[On screen now: ' + figs + ']' : '');
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), 30000);
-      const hint = local.redraw ? '\n(The screen has just been changed as they asked: ' + local.did + '.)' : '';
-      const stream = session.promptStreaming(q + hint, { signal: ctl.signal });
-      let whole = null;                    // (some browsers send the whole text so far each time)
-      for await (const chunk of stream) {
+      let whole = null;
+      for await (const chunk of session.promptStreaming(msg, { signal: ctl.signal })) {
         if (!acc) acc = chunk;
-        else {
-          if (whole === null) whole = chunk.length > acc.length && chunk.startsWith(acc);
-          acc = whole ? chunk : acc + chunk;
-        }
-        d.textContent = acc.replace(/\n?SHOW:.*$/s, '');
-        $('coachLog').scrollTop = $('coachLog').scrollHeight;
+        else { if (whole === null) whole = chunk.length > acc.length && chunk.startsWith(acc); acc = whole ? chunk : acc + chunk; }
+        ans.textContent = acc;
+        this.scroll();
       }
       clearTimeout(timer);
-    } catch (e) {
-      acc = '';
-    }
-    d.remove();
-    this.busy = false;
-    if (!acc.trim()) { this.say(local.text, local.show); return; }
-    const showLine = (acc.match(/SHOW:\s*(.*)$/m) || [])[1] || '';
-    const body = this.scrub(acc.replace(/\n?SHOW:.*$/s, '').trim());
-    const ids = [...new Set(this.mapsIn(showLine).concat(this.mapsIn(body)))];
-    this.say(body, ids.length ? ids : local.show);
+    } catch (e) { acc = ''; }
+    const text = acc.trim() ? this.scrub(acc) : out.text;
+    this.post(text, turn);
   },
   /**
-   * The coach's own answers (and the screen changes asked for). Always
-   * right, because it only reads the numbers; used when the browser has no
-   * language model, and as the model's fallback.
+   * Works out an answer: which kind of question, the facts it needs, what
+   * to gather and which figures to show. Returns { text, notes, figs }.
    */
-  local(q, I) {
-    const low = q.toLowerCase();
-    const res = { text: '', show: [], redraw: false, did: '' };
-    const T = (m) => m.tag + ' ' + m.name;
-    // the chart: a section, a rival, or back to normal
-    const sec = low.match(/\bsection\s*([abcd])\b/);
-    const rival = I.rows.find((r) => r.n.length > 1 && new RegExp('\\b' + r.n.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(low) && !(I.me && r === I.me));
-    if (/\b(reset|clear|normal|everything|all maps)\b/.test(low)) { Radar.state.section = null; Radar.state.other = null; res.redraw = true; res.did = 'the chart shows everything again'; }
-    if (sec) { Radar.state.section = 'abcd'.indexOf(sec[1]); res.redraw = true; res.did = 'the chart now spotlights section ' + sec[1].toUpperCase(); }
-    if (rival) { Radar.state.other = rival.uid || rival.n; res.redraw = true; res.did = 'the chart now overlays ' + rival.n; }
-    else if (/\b(the leader|leader'?s|season leader)\b/.test(low) && /compare|vs|versus|against|overlay|show/.test(low) && I.leader) { Radar.state.other = null; res.redraw = true; res.did = 'the chart overlays the season leader'; }
-    if (!I.me) { res.text = 'You have no times yet. Drive A1 ' + I.maps[0].name + ' first: every finished map puts you further up the standings.'; res.show = [I.maps[0].id]; return res; }
-    const mapIds = this.mapsIn(q);
+  async work(q, turn) {
+    const low = q.toLowerCase().replace(/[’']/g, '\'');
+    const think = this.step(turn, 'Thinking');
+    const I = Insight.compute();
+    // who Coach is is never up to the model
+    if (this.WHO.test(q)) { await think.done('Thought for a moment'); return { text: this.IAM, chat: false }; }
+    const small = this.smallTalk(low, I);
+    if (small) { await think.done('Thought for a moment'); return small; }
+    // what it is about
+    let mapIds = this.mapsIn(q);
+    const rival = I.rows.find((r) => r.n.length > 1 && !(I.me && r === I.me) &&
+      new RegExp('\\b' + r.n.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(low)) || null;
+    const secM = low.match(/\bsection\s*([abcd])\b/);
+    const refersBack = /\b(it|that one|that map|there|this map|same map)\b/.test(low);
+    if (!mapIds.length && refersBack && this.ctx.map) mapIds = [this.ctx.map];
+    const wants = {
+      photo: /\b(photo|picture|pic|snap|snapshot|screenshot|still)\b/.test(low),
+      clip: /\b(clip|video|footage|replay|watch|film|show me how)\b/.test(low),
+      where: /\b(where|why|how)\b.*\b(los|lose|losing|slow|time|faster|quicker|improve|gain|better)\b|\blap\b|\bline\b|\bcorner/.test(low),
+      easy: /\b(easi|easy|quick win|best chance|most likely|improve|work on|focus|practi[cs]e|train|grind|should i|next|which (maps?|courses?|tracks?)|where (can|should) i)\b/.test(low),
+      hard: /\b(hard|hardest|toughest|difficult|worst)\b/.test(low),
+      skill: /\b(skill|chart|radar|expertise|strength|weakness|good at|bad at|overview|all my maps)\b/.test(low),
+      standings: /\b(standing|leaderboard|ranking|rank|position|who'?s winning|top ?10|top ten|overall|table)\b/.test(low),
+      news: /\b(news|recent|lately|happening|battle|fight|dominant|dominat|who'?s hot|new record|what'?s new)\b/.test(low),
+      season: /\b(season|win it all|become (the )?leader|number one|#1 overall|first overall|catch)\b/.test(low)
+    };
+    if (rival) this.ctx.rival = rival.uid || rival.n;
+    if (mapIds.length) this.ctx.map = mapIds[0];
+    // no times yet: nothing to measure
+    if (!I.me) {
+      await think.done('Checked your times');
+      return { text: 'You don\'t have a time on any map yet, ' + I.name + '. Drive A1 ' + I.maps[0].name + ' first: every map you finish moves you up the standings, and then I can show you exactly where to find time.' };
+    }
+    const figs = [];
+    // ------------------------------------------- a photo or a clip of a map
+    if ((wants.photo || wants.clip) || (wants.where && (mapIds.length || /\b(most|biggest|where)\b/.test(low)))) {
+      const m = I.maps.find((x) => x.id === (mapIds[0] || (wants.where ? (I.biggest[0] || I.maps[0]).id : this.worstMapId(I))));
+      await think.done('Picked ' + m.tag + ' ' + m.name);
+      if (m.t === null) return { text: 'You haven\'t finished ' + m.tag + ' ' + m.name + ' yet, so there is no run of yours to look at. Finish it once and I can film it against ' + (m.lead ? m.lead.n : 'the field') + '.' };
+      const s1 = this.step(turn, 'Gathering footage of your run and ' + (m.rank === 1 ? m.board[1] ? m.board[1].n + '\'s' : 'the next best' : m.lead.n + '\'s'));
+      let lab;
+      try { lab = await CoachLab.of(m, I); } catch (e) { await s1.done('Could not get the recordings (' + e.message + ')', true); return { text: 'I couldn\'t get the recordings for ' + m.tag + ' ' + m.name + ' just now. Check your connection and ask me again.' }; }
+      await s1.done('Gathered both runs on ' + m.tag);
+      const vs = lab.rival.n, lossTot = lab.total;
+      const gapAt = (d) => Compare.timeAt(lab.A, d) - Compare.timeAt(lab.B, d);
+      // the lap chart once per map and rival: a follow-up points back at it
+      const lapKey = m.id + ':' + (lab.rival.uid || vs);
+      let lap = Figs.list.find((f) => f.key === lapKey) || null, lapNew = false;
+      if (!lap) {
+        const s2 = this.step(turn, 'Lining up the two runs, metre by metre');
+        lap = this.figLapGap(lab); lap.key = lapKey; lapNew = true;
+        figs.push(lap);
+        await s2.done('Found the stretch where the most time goes: ' + Math.round(lab.seg.d0) + '–' + Math.round(lab.seg.d1) + ' m');
+      }
+      const lt0 = Compare.timeAt(lab.A, lab.seg.d0), lt1 = Compare.timeAt(lab.A, lab.seg.d1);
+      const at = this.timeIn(low);
+      let photo = null, clip = null;
+      if (wants.photo || !wants.clip) {
+        const s3 = this.step(turn, 'Taking a photo');
+        const lt = at !== null ? clamp(at, 0, lab.gm.t) : Compare.timeAt(lab.A, lab.moment);
+        photo = this.figPhoto(lab, lt); photo.lt = lt; photo.d = Compare.at(lab.A.sm, lab.A.n, lt);
+        figs.push(photo);
+        await s3.done('Took a photo at ' + lt.toFixed(1) + ' s');
+      }
+      if (wants.clip || !wants.photo) {
+        const s4 = this.step(turn, 'Cutting a clip');
+        clip = this.figClip(lab, Math.max(0, lt0 - 1.2), Math.min(lab.gm.t, lt1 + 1.2));
+        figs.push(clip);
+        await s4.done('Cut a ' + (lt1 - lt0 + 2.4).toFixed(1) + ' s clip');
+      }
+      const F = (f) => 'Figure ' + f.n;
+      let text = '';
+      if (lapNew) text += m.tag + ' ' + m.name + ': over the lap you finish ' + Math.abs(lossTot).toFixed(3) + ' s ' + (lossTot > 0 ? 'behind ' : 'ahead of ') + vs + '. ' +
+        F(lap) + ' shows where it goes: the most is between ' + Math.round(lab.seg.d0) + ' and ' + Math.round(lab.seg.d1) + ' m, where you ' +
+        (lab.seg.loss > 0 ? 'give away ' + lab.seg.loss.toFixed(3) + ' s' : 'hold your own') + '. ';
+      if (photo) {
+        const g = gapAt(photo.d);
+        text += F(photo) + ' is ' + (lapNew ? 'the moment it goes fastest' : 'the photo') + ', ' + photo.lt.toFixed(1) + ' s in (' + Math.round(photo.d) + ' m): you are ' +
+          Math.abs(g).toFixed(3) + ' s ' + (g >= 0 ? 'behind ' : 'ahead of ') + vs + ' at that point, with both cars at the same spot so the difference in line shows. ';
+      }
+      if (clip) {
+        const g0 = gapAt(lab.seg.d0), g1 = gapAt(lab.seg.d1);
+        text += F(clip) + ' plays that stretch with ' + vs + '’s car lined up beside yours: watch the gap go from ' + g0.toFixed(3) + ' to ' + g1.toFixed(3) + ' s. ';
+      }
+      if (!lapNew) text += '(' + F(lap) + ' still shows the whole lap.) ';
+      text += this.tipFor(m);
+      const notes = 'On ' + m.tag + ' ' + m.name + ' the player (' + formatTime(m.t) + ') is ' + lossTot.toFixed(3) + ' s behind ' + vs + ' (' + formatTime(lab.rival.t) + '). ' +
+        'The biggest loss is between ' + Math.round(lab.seg.d0) + ' m and ' + Math.round(lab.seg.d1) + ' m: ' + lab.seg.loss.toFixed(3) + ' s. ' + m.blurb;
+      return { text, notes, figs };
+    }
+    // ------------------------------------------- a rival
     if (rival) {
-      const f = Insight.finder(rival.uid, rival.n);
-      const diffs = I.maps.map((m) => { const e = m.board.find(f); return { m, e, d: e && m.t !== null ? m.t - e.t : null }; });
-      const theyLead = diffs.filter((x) => x.d !== null && x.d > 0).sort((a, b) => b.d - a.d);
-      const youLead = diffs.filter((x) => x.d !== null && x.d < 0);
-      res.text = rival.n + ': ' + Insight.ord(I.rows.indexOf(rival) + 1) + ' overall, ' + rival.count + '/16 maps, ' + formatTime(rival.total) + '. You beat them on ' + youLead.length +
-        ' map' + (youLead.length === 1 ? '' : 's') + ', they beat you on ' + theyLead.length + '.' +
-        (theyLead.length ? ' Biggest gaps: ' + theyLead.slice(0, 3).map((x) => T(x.m) + ' (' + x.d.toFixed(3) + ' s)').join(', ') + '. Their shape is on the chart in orange.' : '');
-      res.show = theyLead.slice(0, 3).map((x) => x.m.id);
-      return res;
+      const s1 = this.step(turn, 'Comparing your times with ' + rival.n + '\'s on all 16 maps');
+      await think.done('Found ' + rival.n + ' in the standings');
+      const f = this.figRival(I, rival);
+      await s1.done('Compared 16 maps');
+      figs.push(f.fig);
+      const sk = this.figSkill(I, rival);
+      figs.push(sk);
+      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n).replace('{S}', 'Figure ' + sk.n), notes: f.notes, figs };
     }
-    if (sec) {
-      const s = 'abcd'.indexOf(sec[1]);
-      const ms = I.maps.filter((m) => m.sec === s);
-      const fin = ms.filter((m) => m.t !== null);
-      const worst = fin.slice().sort((a, b) => b.gap - a.gap)[0];
-      res.text = 'Section ' + sec[1].toUpperCase() + ': ' + fin.length + '/4 finished, ' + fin.filter((m) => m.rank === 1).length + ' held at #1. ' +
-        ms.map((m) => T(m) + (m.t === null ? ' not finished' : m.rank === 1 ? ' #1' : ' ' + Insight.ord(m.rank) + ', +' + m.gap.toFixed(3) + ' s')).join('; ') + '.' +
-        (worst && worst.gap > 0 ? ' Start with ' + worst.tag + '.' : '');
-      res.show = ms.map((m) => m.id);
-      return res;
+    // ------------------------------------------- a section
+    if (secM) {
+      const s = 'abcd'.indexOf(secM[1]);
+      await think.done('Opened section ' + secM[1].toUpperCase());
+      const r = this.figSection(I, s);
+      figs.push(r.fig);
+      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
     }
+    // ------------------------------------------- one map
     if (mapIds.length) {
       const m = I.maps.find((x) => x.id === mapIds[0]);
-      if (m.t === null) res.text = T(m) + ': not finished yet' + (m.lead ? '; #1 is ' + m.lead.n + ' at ' + formatTime(m.lead.t) : '') + '. Finishing it moves you up the standings before any time does. ' + m.blurb;
-      else if (m.rank === 1) res.text = T(m) + ': you hold #1 at ' + formatTime(m.t) + (m.board[1] ? ', ' + (m.board[1].t - m.t).toFixed(3) + ' s ahead of ' + m.board[1].n : '') + '. ' + m.blurb;
-      else res.text = T(m) + ': ' + formatTime(m.t) + ', ' + Insight.ord(m.rank) + ' of ' + m.of + '. #1 is ' + m.lead.n + ' at ' + formatTime(m.lead.t) + ' (' + m.gap.toFixed(3) +
-        ' s faster). ' + (m.up ? 'Find ' + m.up.need.toFixed(3) + ' s to pass ' + m.up.n + ' for ' + Insight.ord(m.up.to) + '. ' : '') + m.blurb;
-      res.show = [m.id];
-      return res;
+      await think.done('Looked up ' + m.tag + ' ' + m.name);
+      const r = this.figMap(I, m);
+      figs.push(r.fig);
+      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n) + ' Want a photo or a clip of where you lose time there?', notes: r.notes, figs };
     }
-    if (/leader|first overall|win the season|number one|#1 overall|top of|season/.test(low)) {
-      const r = I.route;
-      if (r.kind === 'lead') res.text = 'You lead the season' + (r.margin !== null ? ' by ' + r.margin.toFixed(3) + ' s over ' + r.second.n : '') + '. Guard the maps where your lead is thinnest.';
-      else if (r.kind === 'finish') res.text = I.leader.n + ' has ' + I.leader.count + ' maps finished to your ' + I.me.count + '. Finishing counts before time: do ' + r.maps.map(T).join(', ') + ' first.';
-      else res.text = 'You are ' + r.need.toFixed(3) + ' s behind ' + I.leader.n + ' over the season. Matching #1 on ' + r.maps.map(T).join(', ') + ' covers it. ' +
-        'Biggest single chunk: ' + T(r.maps[0]) + ', ' + r.maps[0].gap.toFixed(3) + ' s.';
-      res.show = (r.maps || []).map((m) => m.id);
-      return res;
+    // ------------------------------------------- easiest / hardest
+    if (wants.easy || wants.hard || /\bimprove|faster|better|quicker\b/.test(low)) {
+      await think.done('Thought about it');
+      const s1 = this.step(turn, 'Analyzing everyone\'s times on all 16 maps');
+      const E = Ease.rank(I);
+      await s1.done('Analyzed ' + I.rows.length + ' drivers across 16 maps');
+      const s2 = this.step(turn, 'Working out where your time is easiest to find');
+      const f = this.figEase(I, E);
+      await s2.done('Ranked your ' + E.list.length + ' maps, easiest to hardest');
+      figs.push(f);
+      const easy = E.list.slice(0, 3), hard = E.list.slice(-3).reverse();
+      let text = '';
+      if (E.open.length && !wants.hard) text += 'First, the free points: you haven\'t finished ' + E.open.slice(0, 3).map((m) => m.tag + ' ' + m.name).join(', ') + '. A finish counts before any time does. ';
+      if (!wants.hard || wants.easy) text += 'Easiest to improve, in Figure ' + f.n + ': ' + easy.map((e) => '**' + e.m.tag + ' ' + e.m.name + '** (' + e.why[0] + (e.why[1] ? ', ' + e.why[1] : '') + ')').join('; ') + '. ';
+      if (wants.hard || !wants.easy) text += 'Hardest right now (the bottom of Figure ' + f.n + '): ' + hard.map((e) => e.m.tag + ' ' + e.m.name + ' (' + e.why[0] + ')').join('; ') + '. ';
+      text += 'I read "your usual level" from how close you are to #1 across all your maps, so the easy ones are where you\'re below it.';
+      const notes = 'Easiest: ' + easy.map((e) => e.m.tag + ' ' + e.m.name + ': ' + e.why.join(', ')).join(' | ') + '. Hardest: ' + hard.map((e) => e.m.tag + ' ' + e.m.name + ': ' + e.why.join(', ')).join(' | ') + '.';
+      return { text, notes, figs };
     }
-    if (/next|easiest|easy|quick|climb|rank up|place|drive/.test(low)) {
-      const c = I.climbs.slice(0, 3);
-      res.text = c.length ? 'Closest places to take: ' + c.map((m) => T(m) + ', beat ' + m.up.n + ' by ' + m.up.need.toFixed(3) + ' s for ' + Insight.ord(m.up.to)).join('; ') + '.'
-        : I.missing.length ? 'Finish ' + T(I.missing[0]) + ' next: it counts before any time does.' : 'You hold #1 everywhere you have driven. Defend the closest ones.';
-      res.show = c.length ? c.map((m) => m.id) : I.missing.slice(0, 1).map((m) => m.id);
-      return res;
+    // ------------------------------------------- the skill chart
+    if (wants.skill) {
+      await think.done('Pulled up all 16 maps');
+      const f = this.figSkill(I, null);
+      figs.push(f);
+      const strong = I.maps.filter((m) => m.t !== null).sort((a, b) => b.score - a.score).slice(0, 3);
+      const weak = I.weakest.slice(0, 3);
+      return { text: 'Figure ' + f.n + ' is your skill chart: each spoke is a map, and the further out, the closer you are to its #1. Overall you\'re at ' + Insight.pct(I.expertise) + '. ' +
+        'Strongest: ' + strong.map((m) => m.tag + ' (' + (m.rank === 1 ? '#1' : Insight.pct(m.score)) + ')').join(', ') + '. Weakest: ' + weak.map((m) => m.tag + ' (' + Insight.pct(m.score) + ')').join(', ') + '.',
+        notes: 'Expertise ' + Insight.pct(I.expertise) + '. Strongest ' + strong.map((m) => m.tag).join(', ') + '. Weakest ' + weak.map((m) => m.tag).join(', ') + '.', figs };
     }
-    if (/los|weak|worst|slow|bad|improve|behind|time/.test(low)) {
-      const w = I.biggest.slice(0, 3);
-      res.text = w.length ? 'Most time lost to #1: ' + w.map((m) => T(m) + ' +' + m.gap.toFixed(3) + ' s behind ' + m.lead.n).join('; ') +
-        '. In all you are ' + I.toGain.toFixed(3) + ' s off #1 across the maps you have finished.' : 'You have no times behind anyone yet.';
-      res.show = w.map((m) => m.id);
-      return res;
+    // ------------------------------------------- news
+    if (wants.news) {
+      await think.done('Thought about it');
+      const s1 = this.step(turn, 'Reading the latest from the leaderboards');
+      const f = this.figNews();
+      await s1.done('Read ' + LEVELS.length + ' leaderboards');
+      figs.push(f.fig);
+      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n), notes: f.notes, figs };
     }
-    if (res.redraw) { res.text = 'Done: ' + res.did + '.'; return res; }
-    const T0 = I.target;
-    res.text = 'You are ' + Insight.ord(I.rank) + ' of ' + I.of + ' with ' + I.me.count + '/16 maps and ' + formatTime(I.me.total) + '. ' + (T0 ? T0.text.replace(/<[^>]+>/g, '') : '') +
-      ' Ask me about a map (like "B2"), a section, a rival by name, or how to lead the season.';
-    res.show = T0 ? [T0.m.id] : [];
-    return res;
+    // ------------------------------------------- standings / the season
+    if (wants.standings || wants.season) {
+      await think.done('Thought about it');
+      const s1 = this.step(turn, 'Reading the standings');
+      const f = this.figStandings(I, /\btop ?10|top ten|column|podium\b/.test(low));
+      await s1.done('Read the standings: ' + I.rows.length + ' drivers');
+      figs.push(f.fig);
+      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n), notes: f.notes, figs };
+    }
+    // ------------------------------------------- anything else
+    await think.done('Thought about it');
+    const T = I.target;
+    return { text: 'You\'re ' + Insight.ord(I.rank) + ' of ' + I.of + ' with ' + I.me.count + '/16 maps and ' + formatTime(I.me.total) + '. ' +
+      (T ? T.text.replace(/<[^>]+>/g, '') + ' ' : '') + 'I can show you where you\'re losing time on any map (with photos and clips), which maps are easiest for you to improve on, a rival head-to-head, or the standings.',
+    notes: T ? T.text.replace(/<[^>]+>/g, '') : '' };
+  },
+  /** hello, thanks, how are you… (null: not small talk) */
+  smallTalk(low, I) {
+    const name = I.name;
+    const pick = (a) => a[Math.floor(Math.random() * a.length)];
+    const short = low.split(/\s+/).length <= 5 && !/\b(map|time|section|clip|photo|video|show|compare|where|standing|faster|improve)\b/.test(low);
+    if (short && /^(hi|hey|hello|yo|sup|hiya|howdy|hola|gm|good (morning|afternoon|evening)|what'?s up|wassup|heya)\b/.test(low)) {
+      return { text: pick(['Hey ' + name + '! Ready to find some time?', 'Hi ' + name + '. What are we working on today?', 'Hey! Good to see you. Want to know where your easiest time is?']), notes: 'The player said hello.' };
+    }
+    if (/\b(thank|thanks|thx|ty|cheers|appreciate)\b/.test(low)) return { text: pick(['Anytime. Go get that time.', 'Any time! Tell me how the next run goes.', 'Happy to help. Now go take a place back.']), notes: 'The player said thanks.' };
+    if (/\bhow are (you|u)\b|how'?s it going|how you doing/.test(low)) return { text: pick(['Doing great, and watching every leaderboard. How are your runs going?', 'Good! The boards have been busy. How are you feeling about your times?']), notes: 'The player asked how Coach is.' };
+    if (/^(ok|okay|cool|nice|great|awesome|sweet|got it|alright|k)\b[\s!.]*$/.test(low)) return { text: pick(['Nice. Want me to pick your next map?', 'Good. Anything else you want to look at?']), notes: '' };
+    if (/\b(bye|goodbye|see ya|later|cya|gtg)\b/.test(low)) return { text: 'See you on the track, ' + name + '.', notes: 'The player is leaving.' };
+    if (/\b(what can you do|help|how do (i|you) use|what do you do)\b/.test(low)) {
+      return { text: 'Here\'s what I can do:\n- Tell you which maps are easiest (and hardest) for you to improve on\n- Show where you lose time on a map, with a photo or a clip of your run next to the leader\'s\n- Compare you with any driver, map by map\n- Show your skill chart, the standings, the top 10 or what\'s been happening lately\n\nJust ask in your own words.', chat: false };
+    }
+    if (/\b(joke|funny|lol|haha)\b/.test(low)) return { text: 'Why did the racer bring a pencil to the track? To draw a better line. Speaking of lines, want to see yours?', notes: 'The player wants a joke.' };
+    return null;
+  },
+  worstMapId(I) {
+    const e = Ease.rank(I).list[0];
+    return e ? e.m.id : (I.biggest[0] || I.maps[0]).id;
+  },
+  timeIn(low) {
+    const m = low.match(/\b(\d{1,3}(?:\.\d+)?)\s*(s|sec|secs|second|seconds)\b/);
+    return m ? parseFloat(m[1]) : null;
+  },
+  tipFor(m) {
+    const n = m.name.toLowerCase(), b = m.blurb.toLowerCase();
+    if (/hairpin|drift/.test(b)) return 'On the hairpins, brake and steer together to start the drift early, and keep the throttle on through it.';
+    if (/jump|table|ski/.test(b)) return 'Hit the ramps straight and flat, and use W/S in the air to land level so you keep your speed.';
+    if (/ice|icy|slick|frost/.test(b + n)) return 'The deck is slippery there: smooth, early inputs lose less than late corrections.';
+    if (/strip/.test(b)) return 'Speed strips fire you in hot: brake a little earlier into the next turn so you can get back on the gas sooner.';
+    if (/bank|wall|bend/.test(b)) return 'Carry more speed into the banked turn: the bank holds you, so brake less.';
+    return 'Save your boost for the longest straight after that stretch: it pushes harder the faster you are going.';
+  },
+
+  // ---------------------------------------------------------------- figures
+  figSkill(I, rival) {
+    const prev = Radar.state.other;
+    Radar.state.other = rival ? (rival.uid || rival.n) : null;
+    const { html, other } = Radar.svg(I);
+    Radar.state.other = prev;
+    const wrap = document.createElement('div');
+    wrap.className = 'stRadar';
+    wrap.innerHTML = html;
+    CarThumbs.forUid(I.uid || null).then((url) => { const img = wrap.querySelector('image'); if (img && url) img.setAttribute('href', url); });
+    wrap.querySelectorAll('.ax').forEach((g) => g.addEventListener('click', () => {
+      const m = I.maps[+g.dataset.i];
+      this.send('Tell me about ' + m.tag + ' ' + m.name);
+    }));
+    return Figs.add('Skill chart' + (other ? ' · you and ' + other.who.n : ''), wrap,
+      '<b>You ' + Insight.pct(I.expertise) + '</b>' + (other ? ' · ' + escapeHtml(other.who.n) + ' ' + Insight.pct(other.scores.reduce((a, b) => a + b, 0) / 16) + ' (dashed)' : '') +
+      '. The ring is #1 on that map; the centre is twice #1\'s time. Click a map to ask about it.');
+  },
+  figEase(I, E) {
+    const maxS = Math.max(...E.list.map((e) => e.score), 0.01), minS = Math.min(...E.list.map((e) => e.score), 0);
+    let h = '<div class="figList">';
+    if (E.open.length) h += '<div class="figHd">NOT FINISHED · FINISH THESE FIRST</div>' + E.open.slice(0, 4).map((m) =>
+      '<div class="figRow"><span class="tg" style="color:' + Insight.SEC_COL[m.sec] + '">' + m.tag + '</span><span class="nm">' + escapeHtml(m.name) +
+      '<small>any finish counts before time does</small></span><span class="v">—</span></div>').join('');
+    h += '<div class="figHd">EASIEST TO IMPROVE ↓ HARDEST</div>';
+    E.list.forEach((e, k) => {
+      const u = (e.score - minS) / Math.max(maxS - minS, 0.01);
+      const col = 'hsl(' + Math.round(8 + u * 150) + ',70%,55%)';
+      h += '<div class="figRow" data-map="' + e.m.id + '"><span class="tg" style="color:' + Insight.SEC_COL[e.m.sec] + '">' + e.m.tag + '</span><span class="nm">' + escapeHtml(e.m.name) +
+        '<small>' + escapeHtml(e.why.slice(0, 3).join(' · ')) + '</small></span><span class="v" style="color:' + col + '">' + (k < 3 ? 'easy' : k >= E.list.length - 3 ? 'hard' : '') + '</span>' +
+        '<span class="fbar"><i style="background:' + col + '" data-w="' + Math.round(8 + u * 92) + '"></i></span></div>';
+    });
+    const f = Figs.add('Where your time is easiest to find', h + '</div>', 'Ranked by the time you\'ve already shown you can find (your usual level), the drivers that would pass, and how close the next one is.');
+    requestAnimationFrame(() => f.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+    f.el.querySelectorAll('.figRow[data-map]').forEach((r) => r.addEventListener('click', () => { const m = I.maps.find((x) => x.id === r.dataset.map); this.send('Where am I losing time on ' + m.tag + ' ' + m.name + '?'); }));
+    return f;
+  },
+  figMap(I, m) {
+    const b = m.board;
+    let h = '';
+    if (!b.length) h = '<p class="stNote">No times on this map yet.</p>';
+    else {
+      const t0 = b[0].t, t1 = b[b.length - 1].t, span = Math.max(t1 - t0, 0.001);
+      const W = 520, H = 120, X = (t) => 30 + ((t - t0) / span) * (W - 60);
+      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '"><line class="axis" x1="30" x2="' + (W - 30) + '" y1="70" y2="70"/>';
+      b.forEach((e, k) => {
+        const mine = I.uid && e.uid === I.uid;
+        const x = X(e.t), y = 70 - (k % 2 ? 14 : 0);
+        svg += '<circle cx="' + x.toFixed(1) + '" cy="70" r="' + (mine ? 7 : k === 0 ? 6 : 4) + '" fill="' + (mine ? '#3ddbb8' : k === 0 ? '#ffcf5c' : 'rgba(234,240,248,.55)') + '"/>';
+        if (mine || k === 0 || k < 3) svg += '<text x="' + x.toFixed(1) + '" y="' + (mine ? 100 : y - 16) + '" text-anchor="middle" style="fill:' + (mine ? '#3ddbb8' : '#c7d2e0') + '">' + escapeHtml(mine ? 'you' : e.n) + '</text>';
+      });
+      svg += '<text x="30" y="118">' + formatTime(t0) + '</text><text x="' + (W - 30) + '" y="118" text-anchor="end">' + formatTime(t1) + '</text></svg>';
+      h = '<div class="figChart">' + svg + '</div><div class="figTiles" style="margin-top:8px">' +
+        '<div><b>' + (m.t === null ? '—' : formatTime(m.t)) + '</b><span>your best</span></div>' +
+        '<div><b>' + (m.rank ? Insight.ord(m.rank) : '—') + '</b><span>of ' + m.of + '</span></div>' +
+        '<div><b>' + (m.gap === null ? '—' : m.rank === 1 ? '#1' : '+' + m.gap.toFixed(3)) + '</b><span>behind #1</span></div>' +
+        '<div><b>' + (m.up ? m.up.need.toFixed(3) : '—') + '</b><span>' + (m.up ? 'to pass ' + escapeHtml(m.up.n) : 'nobody above') + '</span></div></div>';
+    }
+    const fig = Figs.add(m.tag + ' ' + m.name + ' · the whole field', h, escapeHtml(m.blurb));
+    let text;
+    if (m.t === null) text = 'You haven\'t finished ' + m.tag + ' ' + m.name + ' yet' + (m.lead ? '; #1 is ' + m.lead.n + ' at ' + formatTime(m.lead.t) : '') + '. {F} shows the field. A finish there counts before any time does.';
+    else if (m.rank === 1) text = 'You hold #1 on ' + m.tag + ' ' + m.name + ' at ' + formatTime(m.t) + (b[1] ? ', ' + (b[1].t - m.t).toFixed(3) + ' s ahead of ' + b[1].n : '') + '. {F} shows everyone chasing you.';
+    else text = 'On ' + m.tag + ' ' + m.name + ' you\'re ' + Insight.ord(m.rank) + ' of ' + m.of + ' at ' + formatTime(m.t) + ', ' + m.gap.toFixed(3) + ' s behind ' + m.lead.n + '. ' +
+      (m.up ? 'Find ' + m.up.need.toFixed(3) + ' s to pass ' + m.up.n + ' for ' + Insight.ord(m.up.to) + '. ' : '') + '{F} shows the whole field.';
+    return { fig, text, notes: text.replace('{F}', 'The figure') + ' ' + m.blurb };
+  },
+  figLapGap(lab) {
+    const W = 520, H = 170, P = 34, gap = lab.gap, L = lab.L;
+    const gs = gap.map((p) => p.g), lo = Math.min(0, ...gs), hi = Math.max(0.05, ...gs);
+    const X = (d) => P + (d / L) * (W - P - 10), Y = (g) => 12 + (1 - (g - lo) / (hi - lo)) * (H - 40);
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
+    svg += '<rect x="' + X(lab.seg.d0).toFixed(1) + '" y="8" width="' + (X(lab.seg.d1) - X(lab.seg.d0)).toFixed(1) + '" height="' + (H - 32) + '" fill="var(--fc)" opacity=".16"/>';
+    svg += '<line class="axis" x1="' + P + '" x2="' + (W - 10) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '"/>';
+    const pts = gap.map((p) => X(p.d).toFixed(1) + ',' + Y(p.g).toFixed(1)).join(' ');
+    svg += '<polygon points="' + X(0).toFixed(1) + ',' + Y(0).toFixed(1) + ' ' + pts + ' ' + X(gap[gap.length - 1].d).toFixed(1) + ',' + Y(0).toFixed(1) + '" fill="rgba(242,115,63,.18)"/>';
+    svg += '<polyline points="' + pts + '" fill="none" stroke="#f2733f" stroke-width="2"/>';
+    svg += '<text x="' + P + '" y="' + (H - 6) + '">0 m</text><text x="' + (W - 10) + '" y="' + (H - 6) + '" text-anchor="end">' + Math.round(L) + ' m</text>';
+    svg += '<text x="4" y="' + (Y(hi) + 4).toFixed(1) + '">+' + hi.toFixed(2) + '</text><text x="4" y="' + (Y(0) + 4).toFixed(1) + '">0</text>';
+    svg += '<text x="' + ((X(lab.seg.d0) + X(lab.seg.d1)) / 2).toFixed(1) + '" y="20" text-anchor="middle" style="fill:var(--fc)">−' + lab.seg.loss.toFixed(3) + ' s</text></svg>';
+    return Figs.add(lab.m.tag + ' ' + lab.m.name + ' · time lost to ' + lab.rival.n + ' along the lap', '<div class="figChart">' + svg + '</div>',
+      'Up means you\'re further behind at that point on the track. The shaded stretch is where the most time goes.');
+  },
+  figPhoto(lab, lt) {
+    const p = CoachCam.photo(lab, lt);
+    return Figs.add(lab.m.tag + ' ' + lab.m.name + ' · photo at ' + lt.toFixed(1) + ' s', '<div class="figMedia"><img alt="" src="' + p.url + '"><span class="rec">PHOTO</span></div>',
+      'Both cars at the same point on the track (' + Math.round(p.d) + ' m). You are <b>' + (p.behind >= 0 ? p.behind.toFixed(3) + ' s behind' : (-p.behind).toFixed(3) + ' s ahead') + '</b> of ' + escapeHtml(lab.rival.n) + ' here.');
+  },
+  figClip(lab, t0, t1) {
+    const wrap = document.createElement('div');
+    wrap.className = 'figMedia';
+    const c = document.createElement('canvas');
+    c.width = CoachCam.W; c.height = CoachCam.H;
+    wrap.appendChild(c);
+    wrap.insertAdjacentHTML('beforeend', '<span class="rec">● CLIP</span><div class="ctl"><button>Pause</button><button>From the start</button></div>');
+    const f = Figs.add(lab.m.tag + ' ' + lab.m.name + ' · clip, ' + t0.toFixed(1) + '–' + t1.toFixed(1) + ' s', wrap,
+      'Your run, with ' + escapeHtml(lab.rival.n) + '\'s car at the same point on the track. The number is how far behind you are there.', () => { if (CoachCam.clip && CoachCam.clip.canvas === c) CoachCam.stopClip(); });
+    const clip = CoachCam.playClip(lab, t0, t1, c);
+    const [pause, again] = wrap.querySelectorAll('.ctl button');
+    pause.addEventListener('click', () => {
+      if (CoachCam.clip !== clip) { CoachCam.playClip(lab, t0, t1, c); pause.textContent = 'Pause'; return; }
+      clip.playing = !clip.playing; pause.textContent = clip.playing ? 'Pause' : 'Play';
+    });
+    again.addEventListener('click', () => { if (CoachCam.clip === clip) clip.t = t0; else CoachCam.playClip(lab, t0, t1, c); });
+    return f;
+  },
+  figRival(I, rival) {
+    const f = Insight.finder(rival.uid, rival.n);
+    const rows = I.maps.map((m) => { const e = m.board.find(f); return { m, e, d: e && m.t !== null ? m.t - e.t : null }; });
+    const both = rows.filter((x) => x.d !== null);
+    const max = Math.max(0.1, ...both.map((x) => Math.abs(x.d)));
+    let h = '<div class="figList">';
+    for (const x of rows) {
+      const w = x.d === null ? 0 : Math.round((Math.abs(x.d) / max) * 100);
+      const col = x.d === null ? 'transparent' : x.d > 0 ? '#f2733f' : '#3ddbb8';
+      h += '<div class="figRow" data-map="' + x.m.id + '"><span class="tg" style="color:' + Insight.SEC_COL[x.m.sec] + '">' + x.m.tag + '</span><span class="nm">' + escapeHtml(x.m.name) +
+        '</span><span class="v" style="color:' + col + '">' + (x.d === null ? (x.m.t === null ? 'you: —' : 'them: —') : (x.d > 0 ? '+' : '−') + Math.abs(x.d).toFixed(3)) + '</span>' +
+        '<span class="fbar"><i style="background:' + col + '" data-w="' + w + '"></i></span></div>';
+    }
+    const fig = Figs.add('You vs ' + rival.n + ', map by map', h + '</div>', 'Orange: ' + escapeHtml(rival.n) + ' is faster. Green: you are.');
+    requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+    const theyLead = both.filter((x) => x.d > 0).sort((a, b) => b.d - a.d), youLead = both.filter((x) => x.d < 0).sort((a, b) => a.d - b.d);
+    const rr = I.rows.indexOf(rival) + 1;
+    const text = rival.n + ' is ' + Insight.ord(rr) + ' overall (' + rival.count + '/16, ' + formatTime(rival.total) + '). Head to head you win ' + youLead.length + ' map' + (youLead.length === 1 ? '' : 's') +
+      ' and they win ' + theyLead.length + ', all in {F}. ' + (theyLead.length ? 'Where they hurt you most: ' + theyLead.slice(0, 3).map((x) => x.m.tag + ' ' + x.m.name + ' (' + x.d.toFixed(3) + ' s)').join(', ') + '. ' : '') +
+      (youLead.length ? 'Your best against them: ' + youLead.slice(0, 2).map((x) => x.m.tag + ' (' + (-x.d).toFixed(3) + ' s)').join(', ') + '. ' : '') + 'Your two shapes are on {S}.';
+    return { fig, text, notes: text.replace(/\{F\}|\{S\}/g, 'the figures') };
+  },
+  figSection(I, s) {
+    const ms = I.maps.filter((m) => m.sec === s);
+    const rows = Records.overall(sectionIds(s));
+    const ri = rows.findIndex(Insight.finder(I.uid, I.name));
+    let h = '<div class="figTiles"><div><b>' + (ri >= 0 ? Insight.ord(ri + 1) : '—') + '</b><span>in section ' + 'ABCD'[s] + '</span></div><div><b>' +
+      ms.filter((m) => m.t !== null).length + '/4</b><span>finished</span></div><div><b>' + ms.filter((m) => m.rank === 1).length + '</b><span>held at #1</span></div></div><div class="figList" style="margin-top:6px">';
+    for (const m of ms) {
+      h += '<div class="figRow" data-map="' + m.id + '"><span class="tg" style="color:' + Insight.SEC_COL[s] + '">' + m.tag + '</span><span class="nm">' + escapeHtml(m.name) +
+        '<small>' + (m.t === null ? 'not finished' : Insight.ord(m.rank) + ' of ' + m.of + (m.lead && m.rank !== 1 ? ', #1 ' + escapeHtml(m.lead.n) : '')) + '</small></span><span class="v">' +
+        (m.t === null ? '—' : m.rank === 1 ? '#1' : '+' + m.gap.toFixed(3)) + '</span><span class="fbar"><i style="background:' + Insight.SEC_COL[s] + '" data-w="' + Math.round(m.score * 100) + '"></i></span></div>';
+    }
+    const fig = Figs.add('Section ' + 'ABCD'[s], h + '</div>', 'Bars: how close each best is to that map\'s #1.');
+    requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+    const worst = ms.filter((m) => m.t !== null && m.rank !== 1).sort((a, b) => b.gap - a.gap)[0];
+    const text = 'Section ' + 'ABCD'[s] + ' (in {F}): you\'re ' + (ri >= 0 ? Insight.ord(ri + 1) + ' of ' + rows.length : 'not ranked yet') + ', with ' + ms.filter((m) => m.t !== null).length + '/4 finished and ' +
+      ms.filter((m) => m.rank === 1).length + ' held at #1. ' + (worst ? 'The most time is on ' + worst.tag + ' ' + worst.name + ' (' + worst.gap.toFixed(3) + ' s behind ' + worst.lead.n + ').' : '');
+    return { fig, text, notes: text.replace('{F}', 'the figure') };
+  },
+  figNews() {
+    const B = Insight.buzz(), E = escapeHtml;
+    const items = [];
+    const [a, b, c] = B.top;
+    if (a) items.push(['#ffcf5c', '<b>' + E(a.n) + '</b> leads the season' + (b && b.count === a.count ? ' by ' + (b.total - a.total).toFixed(3) + ' s over ' + E(b.n) : '') + (c ? ', ' + E(c.n) + ' third' : '')]);
+    if (B.dominant) items.push(['#58a0ff', '<b>' + E(B.dominant.n) + '</b> holds #1 on ' + B.dominant.maps.length + ' of 16 maps']);
+    if (B.battle) items.push(['#f2733f', '<b>' + E(B.battle.a.n) + '</b> vs <b>' + E(B.battle.b.n) + '</b>: ' + B.battle.gap.toFixed(3) + ' s apart on ' + courseTag(B.battle.i) + ' ' + E(LEVELS[B.battle.i].name) + (B.battle.when ? ', ' + Insight.ago(B.battle.when) : '')]);
+    if (B.fresh && B.fresh.d) items.push(['#3ddbb8', 'Newest record: <b>' + E(B.fresh.n) + '</b> on ' + courseTag(B.fresh.i) + ' ' + E(LEVELS[B.fresh.i].name) + ', ' + formatTime(B.fresh.t) + ' (' + Insight.ago(B.fresh.d) + ')']);
+    // the last few records set anywhere
+    const recent = [];
+    LEVELS.forEach((lv, i) => { for (const e of Records.board(lv.id).slice(0, 3)) if (e.d) recent.push({ i, e, k: Records.board(lv.id).indexOf(e) }); });
+    recent.sort((x, y) => y.e.d - x.e.d);
+    let h = '<div class="figList">' + items.map(([col, t]) => '<div class="figRow"><span class="tg" style="color:' + col + '">●</span><span class="nm" style="white-space:normal">' + t + '</span><span></span></div>').join('');
+    h += '<div class="figHd">LATEST PODIUM TIMES</div>' + recent.slice(0, 6).map((x) => '<div class="figRow" data-map="' + LEVELS[x.i].id + '"><span class="tg">' + courseTag(x.i) + '</span><span class="nm">' +
+      E(x.e.n) + ' <small>' + Insight.ord(x.k + 1) + ' on ' + E(LEVELS[x.i].name) + ', ' + Insight.ago(x.e.d) + '</small></span><span class="v">' + formatTime(x.e.t) + '</span></div>').join('');
+    const fig = Figs.add('What\'s been happening', h + '</div>', '');
+    const text = (a ? a.n + ' leads the season' + (b && b.count === a.count ? ' by ' + (b.total - a.total).toFixed(3) + ' s over ' + b.n : '') + '. ' : '') +
+      (B.dominant ? B.dominant.n + ' is the most dominant, holding #1 on ' + B.dominant.maps.length + ' maps. ' : '') +
+      (B.battle ? 'The hottest fight is ' + B.battle.a.n + ' vs ' + B.battle.b.n + ' on ' + courseTag(B.battle.i) + ' ' + LEVELS[B.battle.i].name + ', ' + B.battle.gap.toFixed(3) + ' s apart. ' : '') +
+      'The latest podium times are in {F}.';
+    return { fig, text, notes: text.replace('{F}', 'the figure') };
+  },
+  figStandings(I, tall) {
+    let fig;
+    if (tall) {
+      const home = $('topTenHome'), sec = $('topTen');
+      const wrap = document.createElement('div');
+      wrap.appendChild(sec);
+      fig = Figs.add('Top 10 overall', wrap, 'Tallest on the left: the fastest over the season.', () => { home.appendChild(sec); TopTen.stop(); });
+      TopTen.key = '';
+      TopTen.show(I.rows);
+    } else {
+      const show = I.rows.slice(0, 10);
+      if (I.me && I.rank > 10) show.push(I.me);
+      const best = I.rows[0];
+      let h = '<div class="figList">';
+      show.forEach((r) => {
+        const k = I.rows.indexOf(r), mine = I.me === r;
+        const w = best ? Math.round((r.count / 16) * 60 + (r.count === best.count ? 40 * (best.total / r.total) : 0)) : 0;
+        h += '<div class="figRow' + (mine ? ' me' : '') + '"><span class="tg" style="color:' + (k < 3 ? ['#ffcf5c', '#dfe7f2', '#e3a36f'][k] : 'var(--dimmer)') + '">' + (k + 1) + '</span><span class="nm">' + escapeHtml(r.n) +
+          '<small>' + r.count + '/16 maps</small></span><span class="v">' + formatTime(r.total) + '</span><span class="fbar"><i style="background:' + (mine ? '#3ddbb8' : '#58a0ff') + '" data-w="' + w + '"></i></span></div>';
+      });
+      fig = Figs.add('Season standings', h + '</div>', 'Most maps finished first, then the lowest total of best times.');
+      requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+    }
+    const r = I.route;
+    let text = I.leader.n + ' leads the season (' + I.leader.count + '/16, ' + formatTime(I.leader.total) + ') in {F}. ';
+    if (r.kind === 'lead') text = 'You lead the season' + (r.margin !== null ? ' by ' + r.margin.toFixed(3) + ' s over ' + r.second.n : '') + '. Everyone else is in {F}.';
+    else if (r.kind === 'finish') text += 'You\'re ' + Insight.ord(I.rank) + '. They have ' + I.leader.count + ' maps to your ' + I.me.count + ', and maps count before time: finish ' + r.maps.map((m) => m.tag).join(', ') + ' first.';
+    else if (r.kind === 'time') text += 'You\'re ' + Insight.ord(I.rank) + ', ' + r.need.toFixed(3) + ' s back over the season. Matching #1 on ' + r.maps.map((m) => m.tag + ' ' + m.name).slice(0, 4).join(', ') + (r.maps.length > 4 ? ' and ' + (r.maps.length - 4) + ' more' : '') + ' would put you on top.';
+    return { fig, text, notes: text.replace('{F}', 'the figure') };
   }
 };
 
@@ -10511,6 +11232,7 @@ const Game = {
       CarColor.loadedUid = null;
       Records.resetSession();
       Cloud.stopBoards(); Cloud.stopAdjust();
+      Coach.forget();
       UI.who(null); UI.gateMode(false); UI.show('gate'); this.state = 'gate';
       if (knownGoodUid) UI.gateError('You were signed out. Sign in again.');
       return;
@@ -10705,7 +11427,11 @@ const Game = {
     $('bStats').addEventListener('click', () => this.toStats());
     $('bStatsBack').addEventListener('click', () => this.toMenu());
     $('bAiCoach').addEventListener('click', () => this.toStats());
-    addEventListener('resize', () => { if (this.state === 'stats' && Stats.I) TopTen.fit(); });
+    addEventListener('resize', () => { if (this.state === 'stats' && !$('topTen').hidden) TopTen.fit(); });
+    $('bCoachAlerts').addEventListener('click', () => {
+      Prefs.set('coachAlerts', !CoachAlerts.on());
+      $('bCoachAlerts').textContent = CoachAlerts.on() ? 'On' : 'Off';
+    });
     $('bBoardWipe').addEventListener('click', () => {
       Records.wipe();
       this.renderSel();
@@ -11471,13 +12197,14 @@ const Game = {
     UI.overallLeaderCard();
     this.trophyTileText();
     this.flushPendingAuth();
+    CoachAlerts.flush();                   // podium news waits for the menu (or a finished run)
   },
   /** called whenever the live leaderboard changes: redraw whatever shows it */
   onBoardsChanged() {
     const s = this.state;
+    CoachAlerts.check();                   // someone knocked the player off a podium?
     if (s === 'select') this.renderSel();                    // whichever courses view is open
     else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
-    else if (s === 'stats') Stats.render();
     else if (s === 'result') this.renderResultBoard();
     else if (s === 'trophies') {
       const list = Trophies.compute();
@@ -11573,6 +12300,7 @@ const Game = {
     this.state = 'settings'; this.running = false;
     Sound.stopEngine();
     $('bSound').textContent = Sound.on ? 'On' : 'Off';
+    $('bCoachAlerts').textContent = CoachAlerts.on() ? 'On' : 'Off';
     const pick = $('setPlayCourse');
     pick.innerHTML = '<option value="auto">Next map for me (automatic)</option>' +
       LEVELS.map((lv, i) => '<option value="' + lv.id + '"' + (this.playable[i] ? '' : ' disabled') + '>' +
@@ -11757,6 +12485,7 @@ const Game = {
     UI.show('result');
     UI.clock(this.time, true);
     this.awardCompletion();
+    CoachAlerts.flush();                   // podium news, now that the run is over
   },
   /** Signed in, your best run's ghost lives on the server (the device
    *  only keeps this session's runs), so fetch it when a map loads and
