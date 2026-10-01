@@ -26,6 +26,22 @@ create table if not exists public.admin_login_fails (
   at timestamptz not null default now()
 );
 
+-- daily maps: how many paid attempts each player made on each day, and
+-- each day's winner once it has been settled
+create table if not exists public.daily_entries (
+  uid uuid not null,
+  day text not null,
+  attempts integer not null default 0,
+  primary key (uid, day)
+);
+create table if not exists public.daily_results (
+  day text primary key,
+  uid uuid,
+  display_name text,
+  time_ms integer,
+  settled_at timestamptz not null default now()
+);
+
 -- small key/value settings: 'invite' {code}, 'admin_passcode' {salt, passHash},
 -- 'notice' {menu, login} (the messages on the game's menu and sign-in screen)
 create table if not exists public.settings (
@@ -309,6 +325,14 @@ begin
   if coalesce(p_course, '') !~ '^[a-z0-9]{1,16}$' or p_time_ms is null or p_time_ms <= 0 or p_time_ms >= 600000 then
     raise exception 'bad time' using errcode = '22023';
   end if;
+  if p_course ~ '^d[0-9]{8}$' then
+    if not public._daily_accepts(substr(p_course, 2)) then
+      raise exception 'The daily map has closed.' using errcode = 'P0001';
+    end if;
+    if not exists (select 1 from public.daily_entries where uid = p.id and day = substr(p_course, 2) and attempts > 0) then
+      raise exception 'Daily runs need a paid attempt.' using errcode = 'P0001';
+    end if;
+  end if;
   select time_ms into cur from public.bests where uid = p.id and course_id = p_course for update;
   if cur is not null and cur <= p_time_ms then
     return jsonb_build_object('improved', false, 'serverMs', cur);
@@ -477,6 +501,63 @@ begin
     set attempts = attempts || p_time_ms, best_time_ms = least(coalesce(best_time_ms, p_time_ms), p_time_ms)
     where race_id = p_race and uid = auth.uid();
   return coalesce(array_length(en.attempts, 1), 0) + 1;
+end $$;
+
+-- ------------------------------------------------------------ daily maps
+-- A new map every day (the game makes it from the date), open from 00:00 to
+-- 12:00 Pacific time. Each attempt costs 1 credit. At noon the fastest wins
+-- 1 000 credits: whichever player's game first asks after 12:05 (the five
+-- minutes let runs still on the road finish) settles it, exactly once.
+create or replace function public._daily_now() returns timestamp
+language sql stable as $$ select (now() at time zone 'America/Los_Angeles') $$;
+create or replace function public._daily_today() returns text
+language sql stable as $$ select to_char(public._daily_now(), 'YYYYMMDD') $$;
+-- may an attempt start on day d now? (that day, before noon)
+create or replace function public._daily_open(d text) returns boolean
+language sql stable as $$ select d = public._daily_today() and extract(hour from public._daily_now()) < 12 $$;
+-- may a time for day d be saved now? (until 12:05)
+create or replace function public._daily_accepts(d text) returns boolean
+language sql stable as $$
+  select d ~ '^[0-9]{8}$' and public._daily_now() >= to_date(d, 'YYYYMMDD')::timestamp
+     and public._daily_now() < to_date(d, 'YYYYMMDD')::timestamp + interval '12 hours 5 minutes'
+$$;
+
+create or replace function public.start_daily_attempt(p_day text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); bal integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  bal := public._balance(p.id);
+  if not public._daily_open(coalesce(p_day, '')) then
+    return jsonb_build_object('ok', false, 'error', 'closed', 'balance', bal);
+  end if;
+  if bal < 1 then return jsonb_build_object('ok', false, 'error', 'credits', 'balance', bal); end if;
+  insert into public.credit_events (uid, delta, kind, note) values (p.id, -1, 'daily', 'attempt ' || p_day);
+  insert into public.daily_entries (uid, day, attempts) values (p.id, p_day, 1)
+    on conflict (uid, day) do update set attempts = public.daily_entries.attempts + 1;
+  return jsonb_build_object('ok', true, 'balance', bal - 1,
+    'attempts', (select attempts from public.daily_entries where uid = p.id and day = p_day));
+end $$;
+
+create or replace function public.settle_daily(p_day text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare w record; r public.daily_results;
+begin
+  if coalesce(p_day, '') !~ '^[0-9]{8}$' then raise exception 'bad day' using errcode = '22023'; end if;
+  if public._daily_now() < to_date(p_day, 'YYYYMMDD')::timestamp + interval '12 hours 5 minutes' then
+    return jsonb_build_object('settled', false);
+  end if;
+  perform pg_advisory_xact_lock(hashtext('daily:' || p_day));
+  select * into r from public.daily_results where day = p_day;
+  if found then return to_jsonb(r) || jsonb_build_object('settled', true); end if;
+  select b.uid, b.display_name, b.time_ms into w from public.bests b
+    where b.course_id = 'd' || p_day and not b.banned order by b.time_ms, b.updated_ms limit 1;
+  insert into public.daily_results (day, uid, display_name, time_ms) values (p_day, w.uid, w.display_name, w.time_ms)
+    returning * into r;
+  if r.uid is not null then
+    insert into public.credit_events (uid, delta, kind, note) values (r.uid, 1000, 'daily_win', 'won daily ' || p_day);
+  end if;
+  return to_jsonb(r) || jsonb_build_object('settled', true);
 end $$;
 
 -- ---------------------------------------------------------------- admin
@@ -759,12 +840,13 @@ declare t text;
 begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
-                          'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids'] loop
+                          'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids',
+                          'daily_entries', 'daily_results'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
     execute format('create policy admin_all on public.%I for all to anon, authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
   -- signed-in players may read the shared game data
-  foreach t in array array['profiles', 'bests', 'ghosts', 'car_customization', 'season_awards', 'races', 'race_entries'] loop
+  foreach t in array array['profiles', 'bests', 'ghosts', 'car_customization', 'season_awards', 'races', 'race_entries', 'daily_results'] loop
     execute format('drop policy if exists player_read on public.%I', t);
     execute format('create policy player_read on public.%I for select to authenticated using (true)', t);
   end loop;
@@ -790,7 +872,7 @@ create policy own_colors_update on public.car_customization for update to authen
 -- every attempt is logged by the player's own game
 drop policy if exists own_run_insert on public.run_log;
 create policy own_run_insert on public.run_log for insert to authenticated
-  with check (uid = auth.uid() and kind in ('campaign', 'creditsrun', 'race')
+  with check (uid = auth.uid() and kind in ('campaign', 'creditsrun', 'race', 'daily')
               and time_ms > 0 and time_ms < 600000
               and (outcome is null or outcome in ('finished', 'restarted', 'terminated')));
 

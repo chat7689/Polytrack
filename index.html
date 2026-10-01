@@ -25,13 +25,18 @@
 })();
 </script>
 <title>aiPolytrack — Season 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
 <style>
 :root{
   --void:#bcdff2; --void-2:#0e1630; --horizon:#38597f;
-  --deck:#aab7c8; --ember:#f2733f; --aqua:#3ddbb8; --signal:#ffcf5c;
-  --ink:#eaf0f8; --dim:#8798b5; --dimmer:#5b6a86;
-  --rule:rgba(234,240,248,.13); --rule-2:rgba(234,240,248,.07);
-  --sans:"Helvetica Neue",Helvetica,Inter,"Segoe UI",Arial,sans-serif;
+  --deck:#aab7c8; --ember:#d97757; --aqua:#5fd0b2; --signal:#ebbd62;
+  --ink:#ede9e0; --dim:#a8a398; --dimmer:#79756c;
+  --rule:rgba(236,233,225,.12); --rule-2:rgba(236,233,225,.065);
+  --bg:#262624; --bg-2:#30302d; --bg-3:#3a3935;
+  --sans:Inter,"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --serif:"Source Serif 4","Iowan Old Style",Georgia,"Times New Roman",serif;
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -40,20 +45,20 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 #stage{position:fixed;inset:0}
 #view{display:block;width:100%;height:100%}
 .vignette{position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(122% 92% at 50% 40%,transparent 58%,rgba(12,32,54,.3) 100%)}
+  background:radial-gradient(122% 92% at 50% 40%,transparent 58%,rgba(22,21,19,.3) 100%)}
 .layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .layer[hidden]{display:none}
 #hud{pointer-events:none}
 
 /* ---------- HUD ---------- */
 .hud{position:absolute;inset:0;padding:20px 24px;
-  text-shadow:0 1px 12px rgba(8,20,38,.9),0 0 3px rgba(8,20,38,.6)}
+  text-shadow:0 1px 12px rgba(22,21,19,.9),0 0 3px rgba(22,21,19,.6)}
 .hud-tl{position:absolute;top:20px;left:24px;line-height:1.2}
 .hud-tl .n{font-family:var(--mono);font-size:11px;color:var(--ember);letter-spacing:.16em}
 .hud-tl .t{font-size:18px;font-weight:600;letter-spacing:-.015em}
 .hud-tc{position:absolute;top:16px;left:50%;transform:translateX(-50%);text-align:center}
 .clock{font-family:var(--mono);font-size:32px;font-weight:500;letter-spacing:-.02em;
-  font-variant-numeric:tabular-nums;text-shadow:0 2px 16px rgba(7,11,24,.9)}
+  font-variant-numeric:tabular-nums;text-shadow:0 2px 16px rgba(26,25,23,.9)}
 .clock.stop{color:var(--signal)}
 .split{font-family:var(--mono);font-size:12px;color:var(--dim);height:1.2em}
 .split.up{color:var(--ember)} .split.down{color:var(--aqua)}
@@ -66,13 +71,13 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 .hud-br{position:absolute;bottom:20px;right:24px;font-family:var(--mono);font-size:12px;
   color:var(--dim);text-align:right}
 .hud-br .air{color:var(--signal)}
-.boost{width:132px;height:4px;background:rgba(8,20,38,.45);margin:7px 0 0 auto;
-  border:1px solid rgba(234,240,248,.18)}
+.boost{width:132px;height:4px;background:rgba(22,21,19,.45);margin:7px 0 0 auto;
+  border:1px solid rgba(236,233,225,.18)}
 .boost i{display:block;height:100%;width:100%;background:var(--aqua);transition:width .1s linear}
 .boost.spent i{background:var(--dimmer)}
 .tele{position:absolute;left:24px;bottom:50px;display:flex;gap:10px;align-items:stretch;
   font-family:var(--mono);text-shadow:none}
-.tele .tBlock{background:rgba(7,11,24,.62);border:1px solid rgba(234,240,248,.12);border-radius:8px;
+.tele .tBlock{background:rgba(26,25,23,.62);border:1px solid rgba(236,233,225,.12);border-radius:8px;
   padding:8px 11px;min-width:84px;display:flex;flex-direction:column;justify-content:space-between}
 .tele .tBlock span{font-size:9.5px;letter-spacing:.16em;color:var(--dim)}
 .tele .tBlock b{font-size:25px;font-weight:500;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -80,13 +85,13 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 .tele .tG{min-width:124px}
 .tele .tG small{white-space:nowrap;font-size:9.5px}
 .tele .tG svg{width:74px;height:74px;display:block;margin:3px auto}
-.tele .tG .ring{fill:none;stroke:rgba(234,240,248,.18);stroke-width:1}
+.tele .tG .ring{fill:none;stroke:rgba(236,233,225,.18);stroke-width:1}
 .tele #tGtrail{fill:none;stroke:rgba(61,219,184,.45);stroke-width:2}
 .tele #tGdot{fill:var(--aqua)}
 .tele .tIn{min-width:130px}
 .tele .tRow{display:flex;align-items:center;gap:6px;margin-top:5px}
 .tele .tRow em{font-style:normal;font-size:9.5px;color:var(--dim);width:24px}
-.tele .tBar{flex:1;height:6px;background:rgba(234,240,248,.12);border-radius:3px;position:relative;overflow:hidden}
+.tele .tBar{flex:1;height:6px;background:rgba(236,233,225,.12);border-radius:3px;position:relative;overflow:hidden}
 .tele .tBar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--aqua);border-radius:3px}
 .tele .tBar.brk i{background:var(--ember)}
 .tele .tBar.bst i{background:#58d2ff}
@@ -95,17 +100,17 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 .tele .tyres i{display:block;width:18px;height:26px;border-radius:4px;background:#3ddbb8;
   border:1px solid rgba(255,255,255,.25);transition:background .08s}
 .tele[hidden]{display:none}
-.tele .rpmbar{height:3px;width:100%;background:rgba(234,240,248,.16);margin-top:5px}
+.tele .rpmbar{height:3px;width:100%;background:rgba(236,233,225,.16);margin-top:5px}
 .tele .rpmbar i{display:block;height:100%;width:0;background:var(--aqua)}
 .tele .rpmbar i.red{background:var(--ember)}
 .prompt{position:absolute;top:44%;left:50%;transform:translateX(-50%);text-align:center;
   font-size:16px;opacity:0;transition:opacity .3s}
 .prompt.on{opacity:1}
 .toast{position:absolute;top:23%;left:50%;transform:translate(-50%,-6px);font-size:14px;
-  padding:8px 15px;border:1px solid var(--rule);background:rgba(7,11,24,.72);
+  padding:8px 15px;border:1px solid var(--rule);background:rgba(26,25,23,.72);
   opacity:0;transition:opacity .22s,transform .22s}
 .toast.on{opacity:1;transform:translate(-50%,0)}
-#flash{position:absolute;inset:0;background:#070b18;opacity:0;pointer-events:none;
+#flash{position:absolute;inset:0;background:#161513;opacity:0;pointer-events:none;
   transition:opacity .3s ease}
 .bar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:220px;height:3px;
   background:var(--rule-2)}
@@ -123,7 +128,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
    as on every menu/garage/boards screen, where .hud-tl is simply absent
    and this just reads as an ordinary top-left badge. */
 .creditBadge{position:absolute;top:76px;left:24px;z-index:40;display:flex;align-items:center;
-  gap:6px;padding:7px 13px;background:rgba(7,11,24,.78);border:1px solid rgba(88,210,255,.45);
+  gap:6px;padding:7px 13px;background:rgba(26,25,23,.78);border:1px solid rgba(88,210,255,.45);
   border-radius:999px;font-family:var(--mono);pointer-events:none;
   box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s}
 .creditBadge[hidden]{display:none}
@@ -132,7 +137,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
    every screen, so it would cover them) */
 body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge,body[data-screen=secview] .creditBadge,
 body[data-screen=garage] .creditBadge,body[data-screen=trophies] .creditBadge,body[data-screen=settings] .creditBadge,
-body[data-screen=info] .creditBadge,body[data-screen=stats] .creditBadge{display:none}
+body[data-screen=info] .creditBadge,body[data-screen=stats] .creditBadge,body[data-screen=daily] .creditBadge,body[data-screen=select] .creditBadge{display:none}
 .creditBadge b{color:#7fe3ff;font-size:15px;font-weight:700}
 .creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
 /* the Settings rows, and the guide */
@@ -141,15 +146,15 @@ body[data-screen=info] .creditBadge,body[data-screen=stats] .creditBadge{display
 .setRow small{display:block;font-size:12px;color:var(--dim);margin-top:2px}
 .setRow button{min-width:64px}
 select{font-family:inherit;font-size:13.5px;color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
-  border-radius:2px;padding:9px 11px;max-width:260px}
+  border-radius:9px;padding:9px 11px;max-width:260px}
 select:focus{outline:none;border-color:var(--aqua)}
-select option{background:#0f1a30;color:var(--ink)}
+select option{background:#2b2a27;color:var(--ink)}
 .infoPanel{width:min(900px,94vw)}
 .infoNav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 18px;position:sticky;top:-40px;padding:10px 0;
-  background:rgba(10,17,36,.94);z-index:2}
+  background:rgba(38,37,34,.94);z-index:2}
 .infoNav a{font-family:var(--mono);font-size:11.5px;padding:6px 11px;border:1px solid var(--rule-2);border-radius:999px;
   color:var(--dim);text-decoration:none}
-.infoNav a:hover{color:var(--ink);border-color:rgba(234,240,248,.3)}
+.infoNav a:hover{color:var(--ink);border-color:rgba(236,233,225,.3)}
 .infoBody section{padding:14px 0 16px;border-bottom:1px solid var(--rule-2);scroll-margin-top:60px}
 .infoBody section:last-child{border-bottom:0}
 .infoBody h3{font-size:16px;margin-bottom:8px;letter-spacing:-.01em}
@@ -186,14 +191,14 @@ select option{background:#0f1a30;color:var(--ink)}
    overlapping a neighbor — see Game.layoutGhostTags — and the line just
    stretches to match, still anchored to the car either way. */
 .ghostTag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);
-  padding:3px 9px;background:rgba(7,11,24,.8);border:1px solid rgba(61,219,184,.5);
+  padding:3px 9px;background:rgba(26,25,23,.8);border:1px solid rgba(61,219,184,.5);
   border-radius:999px;font-family:var(--mono);font-size:11px;color:var(--aqua);
   white-space:nowrap;pointer-events:none;z-index:20;text-shadow:0 1px 2px rgba(0,0,0,.6);
   display:flex;align-items:baseline;gap:6px;transition:left .06s linear,top .06s linear}
 .ghostTag[hidden]{display:none}
 /* at 2x and 4x the eased move would trail visibly behind the car */
 .fastReplay .ghostTag{transition:none}
-.ghostTag.active{border-color:var(--ember);color:var(--ink);background:rgba(242,115,63,.22)}
+.ghostTag.active{border-color:var(--ember);color:var(--ink);background:rgba(217,119,87,.22)}
 .ghostTag .kmh{color:var(--dimmer);font-size:9.5px}
 .ghostTag .kmh b{color:inherit;font-weight:600}
 /* the leader line from a name tag back down to the car's actual screen
@@ -202,9 +207,9 @@ select option{background:#0f1a30;color:var(--ink)}
    than sitting on it (see .ghostTag above). */
 #ghostTagLines{position:absolute;inset:0;pointer-events:none;z-index:19;width:100%;height:100%}
 #ghostTagLines line{stroke:rgba(61,219,184,.5);stroke-width:1.25;stroke-dasharray:2 3}
-#ghostTagLines line.active{stroke:rgba(242,115,63,.6)}
+#ghostTagLines line.active{stroke:rgba(217,119,87,.6)}
 #ghostTagLines circle{fill:rgba(61,219,184,.65)}
-#ghostTagLines circle.active{fill:rgba(242,115,63,.7)}
+#ghostTagLines circle.active{fill:rgba(217,119,87,.7)}
 
 /* ---------- spectate ---------- */
 /* name | clock | back: three columns, so a long name or a narrow window
@@ -223,7 +228,7 @@ select option{background:#0f1a30;color:var(--ink)}
    Only shown once there is more than one car to list (see UI.specRoster);
    a plain single-run spectate has nothing here, same as before. */
 #specRoster{position:absolute;top:74px;right:24px;width:200px;
-  background:rgba(7,11,24,.72);border:1px solid var(--rule-2);border-radius:10px;
+  background:rgba(26,25,23,.72);border:1px solid var(--rule-2);border-radius:10px;
   padding:10px 12px;font-family:var(--mono);font-size:11.5px}
 #specRoster[hidden]{display:none}
 #specRoster .rHint{color:var(--dimmer);font-size:9.5px;margin-bottom:8px;letter-spacing:.04em}
@@ -259,14 +264,14 @@ select option{background:#0f1a30;color:var(--ink)}
 .keys{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
 .keys .k{width:34px;height:34px;border:1px solid var(--rule);display:flex;align-items:center;
   justify-content:center;font-family:var(--mono);font-size:12px;color:var(--dimmer);
-  background:rgba(8,20,38,.5);transition:background .1s,color .1s,border-color .1s}
+  background:rgba(22,21,19,.5);transition:background .1s,color .1s,border-color .1s}
 .keys .k.on{color:#1d0a02;background:var(--signal);border-color:var(--signal)}
 .keys .k.boost.on{background:var(--ember);border-color:var(--ember);color:#1d0a02}
 .specBar{width:100%;display:flex;align-items:center;gap:10px}
 .specBar input[type=range]{flex:1;accent-color:var(--ember)}
 .specBar span{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
 .specCtl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;align-items:center;pointer-events:auto}
-.specCtl button{background:rgba(7,11,24,.75)}
+.specCtl button{background:rgba(26,25,23,.75)}
 .rateBtns{display:flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-left:6px}
 .rateBtns button{border:0;border-radius:0;padding:5px 9px;font-size:12px;font-family:var(--mono);color:var(--dim)}
 .rateBtns button.on{background:var(--ember);color:#1d0a02}
@@ -293,11 +298,11 @@ select option{background:#0f1a30;color:var(--ink)}
   #spectate.comparing .specDock{left:50%;width:min(calc(100vw - 32px),560px)}
 }
 #cmpPanel{position:absolute;top:0;right:0;bottom:0;width:460px;overflow-y:auto;padding:16px 16px 30px;z-index:25;
-  background:rgba(7,11,24,.86);border-left:1px solid var(--rule);pointer-events:auto;font-size:12.5px}
+  background:rgba(26,25,23,.86);border-left:1px solid var(--rule);pointer-events:auto;font-size:12.5px}
 #cmpPanel[hidden],#cmpMap[hidden]{display:none}
 .cmpHead{display:flex;align-items:baseline;gap:10px;font-size:17px;font-weight:700;margin-bottom:10px}
 .cmpHead .vs{color:var(--dimmer);font-size:12px;font-weight:400}
-.ca{color:#ff8a58} .cb{color:#58d2ff}
+.ca{color:#e48a6c} .cb{color:#58d2ff}
 .cmpBig{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .cmpBig div{background:rgba(255,255,255,.04);border:1px solid var(--rule-2);border-radius:6px;padding:7px 8px}
 .cmpBig span{display:block;font-size:8.5px;letter-spacing:.1em;color:var(--dim)}
@@ -321,42 +326,43 @@ select option{background:#0f1a30;color:var(--ink)}
 .cmpBox{background:rgba(255,255,255,.025);border:1px solid var(--rule-2);border-radius:6px;padding:8px 8px 4px;margin-bottom:8px}
 .cmpBox h4{font-size:11px;color:var(--dim);font-weight:600;margin-bottom:2px}
 .cmpChart{width:100%;height:auto;display:block;overflow:visible}
-.cmpChart .grid{stroke:rgba(234,240,248,.07)}
-.cmpChart .zero{stroke:rgba(234,240,248,.35);stroke-dasharray:3 3}
-.cmpChart .tk{fill:#8798b5;font-size:9px;font-family:var(--mono)}
+.cmpChart .grid{stroke:rgba(236,233,225,.07)}
+.cmpChart .zero{stroke:rgba(236,233,225,.35);stroke-dasharray:3 3}
+.cmpChart .tk{fill:#a8a398;font-size:9px;font-family:var(--mono)}
 .cmpChart .ax{fill:#aebbd0;font-size:9.5px}
-.cmpChart .head{stroke:#ff8a58;stroke-width:1.2}
+.cmpChart .head{stroke:#e48a6c;stroke-width:1.2}
 .cmpChart .head.b{stroke:#58d2ff}
 .cmpChart .hp{opacity:0;cursor:crosshair}
 .cmpChart .hp:hover{opacity:1}
-#cmpMap{position:absolute;left:24px;top:84px;width:200px;height:200px;background:rgba(7,11,24,.7);
+#cmpMap{position:absolute;left:24px;top:84px;width:200px;height:200px;background:rgba(26,25,23,.7);
   border:1px solid var(--rule);border-radius:8px}
 #cmpMap svg{width:100%;height:100%}
-#cmpMap .trk{fill:none;stroke:rgba(234,240,248,.5);stroke-width:3;stroke-linejoin:round}
+#cmpMap .trk{fill:none;stroke:rgba(236,233,225,.5);stroke-width:3;stroke-linejoin:round}
 #cmpMap .st{fill:#3ddbb8} #cmpMap .fin{fill:#ffcf5c}
 #cmpMap line{stroke:#fff;stroke-width:1;stroke-dasharray:2 2}
 .cmpDistTag{position:absolute;transform:translate(-50%,-100%);padding:3px 9px;border-radius:999px;pointer-events:none;
-  background:rgba(7,11,24,.85);border:1px solid rgba(255,255,255,.6);font-family:var(--mono);font-size:12px;color:#fff;z-index:21}
+  background:rgba(26,25,23,.85);border:1px solid rgba(255,255,255,.6);font-family:var(--mono);font-size:12px;color:#fff;z-index:21}
 .cmpDistTag[hidden]{display:none}
-.chartTip{position:fixed;z-index:100;pointer-events:none;background:rgba(7,11,24,.95);border:1px solid var(--rule);
+.chartTip{position:fixed;z-index:100;pointer-events:none;background:rgba(26,25,23,.95);border:1px solid var(--rule);
   border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:11.5px;color:var(--ink);white-space:nowrap}
 .chartTip[hidden]{display:none}
 .cmpBtn{border-color:rgba(88,210,255,.6)!important;color:#7fe3ff}
 .specGraph{width:100%;height:40px;display:flex;align-items:center;gap:10px}
-.specGraph svg{flex:1;height:40px;background:rgba(7,11,24,.45);border:1px solid var(--rule);
+.specGraph svg{flex:1;height:40px;background:rgba(26,25,23,.45);border:1px solid var(--rule);
   border-radius:2px}
 .specGraphLabel{font-family:var(--mono);font-size:12px;color:var(--aqua);white-space:nowrap;
   width:64px;text-align:right}
 
 /* ---------- panels ---------- */
 .scrim{position:absolute;inset:0;background:
-  radial-gradient(130% 100% at 50% 0%,rgba(7,11,24,.5),rgba(7,11,24,.94))}
+  radial-gradient(130% 100% at 50% 0%,rgba(26,25,23,.55),rgba(26,25,23,.95))}
 .panel{position:relative;width:min(1320px,94vw);max-height:94vh;overflow-y:auto;
-  padding:40px 48px 36px;background:rgba(10,17,36,.86);border:1px solid var(--rule);
-  backdrop-filter:blur(7px);border-radius:3px;
-  box-shadow:0 24px 64px rgba(3,7,18,.55),0 2px 0 rgba(255,255,255,.03) inset}
-.panel::-webkit-scrollbar{width:8px}
-.panel::-webkit-scrollbar-thumb{background:var(--rule)}
+  padding:40px 48px 36px;background:rgba(38,37,34,.94);border:1px solid rgba(236,233,225,.1);
+  backdrop-filter:blur(10px);border-radius:18px;
+  box-shadow:0 30px 80px rgba(8,8,7,.5),0 1px 0 rgba(255,255,255,.04) inset}
+.panel::-webkit-scrollbar{width:10px}
+.panel::-webkit-scrollbar-thumb{background:rgba(236,233,225,.14);border-radius:10px;border:3px solid transparent;background-clip:padding-box}
+h2.big,.result h2,.gate h2,#fatal h2,.infoPanel h2{font-family:var(--serif);font-weight:500!important;letter-spacing:-.015em!important}
 .brand{display:flex;align-items:flex-end;gap:18px;margin-bottom:8px}
 .brand h1{font-size:clamp(46px,8.4vw,98px);font-weight:700;letter-spacing:-.055em;line-height:.84}
 .brand h1 span{color:var(--ember)}
@@ -367,22 +373,23 @@ h2.big{font-size:32px;letter-spacing:-.03em;margin-bottom:6px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .row[hidden]{display:none}
 button{font-family:inherit;font-size:14px;color:var(--ink);background:transparent;
-  border:1px solid var(--rule);border-radius:2px;padding:12px 20px;cursor:pointer;
+  border:1px solid var(--rule);border-radius:9px;padding:11px 18px;cursor:pointer;
   transition:background .14s,border-color .14s,color .14s,transform .08s}
-button:hover{background:rgba(234,240,248,.07);border-color:rgba(234,240,248,.35)}
+button:hover{background:rgba(236,233,225,.07);border-color:rgba(236,233,225,.35)}
 button:active{transform:scale(.98)}
 button:focus-visible{outline:2px solid var(--aqua);outline-offset:2px}
-button.primary{background:var(--ember);border-color:var(--ember);color:#1d0a02;font-weight:600;
-  box-shadow:0 6px 18px rgba(242,115,63,.25)}
-button.primary:hover{background:#ff8a58;border-color:#ff8a58;box-shadow:0 8px 22px rgba(242,115,63,.35)}
+button.primary{background:var(--ember);border-color:var(--ember);color:#fff;font-weight:600;
+  box-shadow:0 4px 14px rgba(217,119,87,.22)}
+button.primary:hover{background:#e48a6c;border-color:#e48a6c;box-shadow:0 6px 18px rgba(217,119,87,.32)}
+button:disabled{opacity:.45;cursor:default}
 button.ghost{border-color:transparent;color:var(--dim);padding-left:0}
 button.ghost:hover{color:var(--ink);background:transparent}
 button.small{padding:5px 10px;font-size:12px;border-color:var(--rule)}
 button.small.ghost{padding:5px 10px}
-button.danger-outline{border-color:rgba(242,115,63,.5);color:var(--ember)}
-button.danger-outline:hover{background:rgba(242,115,63,.1)}
+button.danger-outline{border-color:rgba(217,119,87,.5);color:var(--ember)}
+button.danger-outline:hover{background:rgba(217,119,87,.1)}
 input[type=text],input[type=password],input[type=email]{font-family:inherit;font-size:14px;
-  color:var(--ink);background:rgba(0,0,0,.25);border:1px solid var(--rule);border-radius:2px;
+  color:var(--ink);background:rgba(0,0,0,.22);border:1px solid var(--rule);border-radius:9px;
   padding:11px 13px;width:190px;transition:border-color .14s,background .14s}
 input[type=text]:focus,input[type=password]:focus,input[type=email]:focus{
   outline:none;border-color:var(--aqua);background:rgba(0,0,0,.35)}
@@ -397,9 +404,9 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 /* ---------- course grid ---------- */
 .courses{display:grid;grid-template-columns:repeat(auto-fill,minmax(222px,1fr));gap:11px}
 .card{position:relative;text-align:left;padding:18px 20px 16px;width:100%;
-  border:1px solid var(--rule);background:rgba(255,255,255,.022);border-radius:2px;
+  border:1px solid var(--rule);background:rgba(255,255,255,.022);border-radius:12px;
   transition:background .14s,border-color .14s,transform .14s}
-.card:not([disabled]):hover{background:rgba(255,255,255,.045);border-color:rgba(234,240,248,.3);
+.card:not([disabled]):hover{background:rgba(255,255,255,.045);border-color:rgba(236,233,225,.3);
   transform:translateY(-1px)}
 .card .idx{font-family:var(--mono);font-size:10.5px;color:var(--ember);letter-spacing:.16em}
 .card .ttl{font-size:18px;font-weight:600;margin:3px 0 5px;letter-spacing:-.012em}
@@ -412,7 +419,7 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 .card .done{position:absolute;top:13px;right:15px;width:8px;height:8px;background:var(--aqua);
   border-radius:50%;box-shadow:0 0 8px rgba(61,219,184,.7)}
 .bars{display:inline-flex;gap:3px;vertical-align:middle}
-.bars i{width:4px;height:9px;background:rgba(234,240,248,.18)}
+.bars i{width:4px;height:9px;background:rgba(236,233,225,.18)}
 .bars i.on{background:var(--ember)}
 /* The special long course's card — visually set apart from the ordinary
    tier progression (a warm gradient border/background instead of the
@@ -420,9 +427,9 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
    the normal 1-32 chain, on both the course list and (via the same
    .special class) the menu's own dedicated button. */
 .card.special{border-color:rgba(255,207,92,.55);
-  background:linear-gradient(160deg,rgba(255,207,92,.09),rgba(242,115,63,.05))}
+  background:linear-gradient(160deg,rgba(255,207,92,.09),rgba(217,119,87,.05))}
 .card.special:not([disabled]):hover{border-color:rgba(255,207,92,.85);
-  background:linear-gradient(160deg,rgba(255,207,92,.15),rgba(242,115,63,.08))}
+  background:linear-gradient(160deg,rgba(255,207,92,.15),rgba(217,119,87,.08))}
 .specialBadge{color:var(--signal);letter-spacing:.1em;font-weight:600}
 /* the "#1: Name — time" line on a course card — see UI.courseLeaderLine.
    Bumped up in size/prominence on .special specifically (see
@@ -447,8 +454,8 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 .tab{font-family:var(--mono);font-size:11.5px;padding:7px 12px;border:1px solid var(--rule-2);
   border-radius:999px;color:var(--dim);cursor:pointer;background:transparent;
   transition:background .14s,border-color .14s,color .14s}
-.tab:hover{color:var(--ink);border-color:rgba(234,240,248,.3)}
-.tab.on{border-color:var(--ember);color:var(--ink);background:rgba(242,115,63,.12)}
+.tab:hover{color:var(--ink);border-color:rgba(236,233,225,.3)}
+.tab.on{border-color:var(--ember);color:var(--ink);background:rgba(217,119,87,.12)}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{text-align:left;font-size:11px;color:var(--dimmer);font-weight:500;padding:0 10px 9px 0;
   border-bottom:1px solid var(--rule)}
@@ -458,7 +465,7 @@ td.t{font-family:var(--mono);color:var(--aqua);text-align:right}
 td.d{font-family:var(--mono);color:var(--dimmer);text-align:right;font-size:12px}
 tr{transition:background .12s}
 tr:hover td{background:rgba(255,255,255,.02)}
-tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(--ember)}
+tr.me td{color:var(--ink);background:rgba(217,119,87,.06)} tr.me td.r{color:var(--ember)}
 .youTag{color:var(--dimmer);font-weight:400}
 /* a checked leaderboard row — a cooler tint than .me's ember (own best),
    distinct enough that "checked for multi race/watch" is never confused
@@ -562,7 +569,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 }
 .garageSelectGrid .cell.justUnlocked{animation:garageWin 1.1s ease-out;z-index:3}
 .garagePreviewWrap{width:100%;height:180px;margin-bottom:18px;border:1px solid var(--rule);
-  border-radius:3px;background:radial-gradient(120% 140% at 50% 20%,#1a2740,#0b1220);overflow:hidden}
+  border-radius:3px;background:radial-gradient(120% 140% at 50% 20%,#3a3833,#1f1e1c);overflow:hidden}
 .garagePreviewWrap canvas{width:100%;height:100%;display:block}
 /* the free saturation/brightness sliders — plain range inputs styled to
    match the rest of the garage rather than a custom drag surface, since
@@ -582,56 +589,134 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .garageBig{height:min(46vh,460px)}
 .gh{font-size:13px;font-weight:600;margin-bottom:8px}
 .garageCols .garageGrid{max-width:min(460px,100%)}
-.menuTop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
-.menuTop .brand{margin-bottom:0;align-items:center;flex-wrap:wrap;row-gap:8px;min-width:0}
-.menuTop .brand h1{font-size:clamp(40px,6.4vw,72px)}
-.menuTop .brand svg{margin-bottom:0}
-.seasonTag{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:#1d0a02;background:var(--signal);
-  padding:5px 10px;border-radius:999px;font-weight:700;align-self:center;white-space:nowrap}
-.menuTop .who{margin:6px 0 0;gap:12px;align-items:center}
-.menuTop .who .cr{font-size:22px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
-.menuTop .who .cr b{color:#7fe3ff;font-weight:700;text-shadow:0 0 14px rgba(88,210,255,.45)}
-.menuTop .who .cr .gem2d{width:.62em;height:.62em;margin-right:.18em}
-.menuGrid{display:grid;grid-template-columns:1.25fr .9fr;gap:26px}
-@media(max-width:820px){.menuGrid{grid-template-columns:1fr}}
-.playBtn{display:flex;align-items:center;gap:22px;width:100%;text-align:left;padding:28px 30px;
-  background:linear-gradient(135deg,#ff8a58,var(--ember));border:0;border-radius:6px;color:#1d0a02;
-  box-shadow:0 10px 28px rgba(242,115,63,.35);margin-bottom:14px}
-.playBtn:hover{background:linear-gradient(135deg,#ffa07a,#ff8a58);border:0;box-shadow:0 12px 32px rgba(242,115,63,.45)}
-.playIcon{font-size:38px;line-height:1}
-.playText b{display:block;font-size:34px;letter-spacing:-.02em}
-.playText small{display:block;font-size:15px;opacity:.75;margin-top:2px}
-.menuTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-@media(max-width:560px){.menuTiles{grid-template-columns:repeat(2,1fr)}}
-.tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:22px 22px;
-  border-radius:6px;background:rgba(255,255,255,.035);border:1px solid var(--rule)}
-.tile b{font-size:18px;font-weight:600}
-.tile small{font-size:12.5px;color:var(--dim)}
-.tile:hover{background:rgba(255,255,255,.07);border-color:rgba(234,240,248,.32)}
-#bTrophies{border-color:rgba(255,207,92,.45);background:linear-gradient(160deg,rgba(255,207,92,.1),rgba(255,207,92,.02))}
+.menuPanel{width:min(1200px,95vw);padding:22px 30px 18px}
+.menuTop{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.menuTop .brand{margin:0;align-items:center;gap:10px;min-width:0}
+.menuTop .brand h1{font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.menuTop .brand svg{width:26px;height:26px;margin:0}
+.seasonTag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--signal);background:rgba(235,189,98,.1);
+  border:1px solid rgba(235,189,98,.35);padding:3px 9px;border-radius:999px;font-weight:600;white-space:nowrap}
+.menuTop .who{margin:0;gap:10px;align-items:center;font-family:var(--sans);font-size:13px}
+.menuTop .who .whoName b{font-weight:600}
+.menuTop .who .cr{display:inline-flex;align-items:center;gap:4px;padding:5px 12px 5px 9px;border-radius:999px;
+  background:rgba(127,227,255,.07);border:1px solid rgba(127,227,255,.22);font-family:var(--mono);font-size:14px}
+.menuTop .who .cr b{color:#9be7ff;font-weight:700}
+.menuTop .who .cr .gem2d{width:.7em;height:.7em}
+.menuTop .who button.ghost{padding:5px 4px}
+.mHello{margin:12px 0 14px}
+.mGreet{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.2vw,38px);letter-spacing:-.02em;line-height:1.1;
+  display:flex;align-items:center;gap:12px}
+.mGreet::before{content:'\273B';color:var(--ember);font-family:var(--sans);font-size:.8em;line-height:1}
+.mSub{color:var(--dim);font-size:14.5px;margin-top:4px;min-height:1.3em}
+.menuGrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:860px){.menuGrid{grid-template-columns:minmax(0,1fr)}}
+.menuMain{min-width:0;display:flex;flex-direction:column;gap:12px}
+.mHero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px}
+@media(max-width:560px){.mHero{grid-template-columns:minmax(0,1fr)}}
+.playBtn{display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:20px 22px;margin:0;
+  background:var(--ember);border:0;border-radius:16px;color:#fff;
+  box-shadow:0 8px 24px rgba(217,119,87,.28),inset 0 1px 0 rgba(255,255,255,.18)}
+.playBtn:hover{background:#e0825f;border:0;box-shadow:0 10px 28px rgba(217,119,87,.38),inset 0 1px 0 rgba(255,255,255,.2)}
+.playIcon{flex:none;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.18);font-size:20px;padding-left:4px}
+.playText{min-width:0}
+.playText b{display:block;font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.01em;line-height:1.1}
+.playText small{display:block;font-size:13.5px;opacity:.85;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dailyCard{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:13px 16px 12px;margin:0;min-width:0;
+  border-radius:16px;border:1px solid rgba(235,189,98,.32);
+  background:linear-gradient(150deg,rgba(235,189,98,.1),rgba(217,119,87,.05) 55%,rgba(255,255,255,.02))}
+.dailyCard:hover{border-color:rgba(235,189,98,.6);background:linear-gradient(150deg,rgba(235,189,98,.15),rgba(217,119,87,.07) 55%,rgba(255,255,255,.03))}
+.dailyCard .dcTop{display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px}
+.dailyCard .dcTime{font-family:var(--mono);font-size:11.5px;color:var(--dim);white-space:nowrap}
+.dailyCard .dcKick{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--signal);margin-top:6px}
+.dailyCard > b{font-family:var(--serif);font-weight:500;font-size:20px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dailyCard > small{font-size:12px;color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dailyCard .dcPrize{display:flex;align-items:center;gap:3px;font-size:11.5px;color:#9be7ff;margin-top:3px}
+.dailyCard.closed{border-color:var(--rule);background:rgba(255,255,255,.025)}
+.dailyCard.closed .dcKick{color:var(--dim)}
+.dPill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;
+  padding:3px 9px 3px 8px;border-radius:999px;color:#7fe6c9;background:rgba(95,208,178,.12);border:1px solid rgba(95,208,178,.35)}
+.dPill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;animation:livePulse 1.6s ease-in-out infinite}
+.dailyCard.closed .dPill,.dPill.off{color:var(--dim);background:rgba(255,255,255,.05);border-color:var(--rule)}
+.dailyCard.closed .dPill::before,.dPill.off::before{animation:none;opacity:.6}
+@keyframes livePulse{50%{opacity:.25}}
+.menuTiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media(max-width:560px){.menuTiles{grid-template-columns:repeat(2,minmax(0,1fr))}.tile small{white-space:normal}}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:13px 15px;min-width:0;
+  border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--rule-2)}
+.tile b{font-size:15px;font-weight:600}
+.tile small{font-size:12px;color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile:hover{background:rgba(255,255,255,.06);border-color:var(--rule)}
+#bTrophies{border-color:rgba(235,189,98,.28);background:linear-gradient(160deg,rgba(235,189,98,.07),rgba(255,255,255,.02))}
 #bTrophies b{color:var(--signal)}
-#driverRow{margin-top:16px}
+#bStats{border-color:rgba(95,208,178,.25);background:linear-gradient(160deg,rgba(95,208,178,.07),rgba(255,255,255,.02))}
+#bStats b{color:#7fe6c9}
+#driverRow{margin:0}
 #driverRow[hidden]{display:none}
-.keysStrip{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:18px;font-size:12px;color:var(--dim)}
-.keysStrip b{font-family:var(--mono);color:var(--ink);font-weight:500;background:rgba(255,255,255,.06);
-  border:1px solid var(--rule);border-radius:3px;padding:1px 6px;margin-right:3px}
-.menuSide{display:flex;flex-direction:column;gap:14px}
-.leaderCard{padding:16px 18px 18px;border-radius:8px;border:1.5px solid rgba(255,207,92,.7);
-  background:radial-gradient(120% 90% at 50% 30%,rgba(255,207,92,.2),rgba(242,115,63,.06) 60%,rgba(7,11,24,.2));
-  box-shadow:0 0 0 1px rgba(255,207,92,.12),0 10px 36px rgba(255,190,70,.16)}
+.keysStrip{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;margin-top:14px;padding-top:10px;
+  border-top:1px solid var(--rule-2);font-size:11.5px;color:var(--dimmer)}
+.keysStrip b{font-family:var(--mono);color:var(--dim);font-weight:500;background:rgba(255,255,255,.05);
+  border:1px solid var(--rule-2);border-radius:5px;padding:1px 6px;margin-right:3px}
+.menuSide{display:flex;flex-direction:column;gap:10px;min-width:0}
+.leaderCard{padding:12px 14px 12px;border-radius:16px;border:1px solid rgba(235,189,98,.42);
+  background:radial-gradient(120% 90% at 50% 25%,rgba(235,189,98,.14),rgba(217,119,87,.04) 60%,rgba(255,255,255,.015))}
 .leaderCard[hidden]{display:none}
-.lcHead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
-.lcKick{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.16em;color:var(--signal)}
+.lcHead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+.lcKick{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;color:var(--signal)}
 .lcHead .leaderTime{font-family:var(--mono);font-size:11.5px;color:var(--aqua)}
-.lcBody{display:flex;flex-direction:column;align-items:stretch;gap:6px}
-.lcCar{width:100%;height:190px;flex:none;margin-bottom:0}
-.lcName{font-size:32px;font-weight:800;letter-spacing:-.02em;text-align:center;min-width:0;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 18px rgba(255,207,92,.35)}
-.lcName .crown{color:var(--signal);font-size:24px}
-.sectionLeaders{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lcBody{display:flex;flex-direction:column;align-items:stretch;gap:2px}
+.lcCar{width:100%;height:196px;flex:none;margin-bottom:0;border:0;background:transparent}
+.lcName{font-family:var(--serif);font-size:27px;font-weight:500;letter-spacing:-.01em;text-align:center;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.lcName .crown{color:var(--signal);font-size:20px}
+.sectionLeaders{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.aiCard .aiLines li:nth-child(n+5){display:none}
+.aiCard .aiLines li{padding:3px 0 3px 18px}
+.aiCard .aiLines li::before{top:10px}
+.youCard{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-radius:14px;border:1px solid var(--rule-2);
+  background:rgba(255,255,255,.025);overflow:hidden}
+.youCard[hidden]{display:none}
+.youCard div{padding:10px 8px 9px;text-align:center;min-width:0;border-left:1px solid var(--rule-2)}
+.youCard div:first-child{border-left:0}
+.youCard b{display:block;font-family:var(--mono);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.youCard span{font-size:10.5px;color:var(--dim);letter-spacing:.02em}
+.youCard .good b{color:var(--aqua)} .youCard .bad b{color:var(--ember)} .youCard .gold b{color:var(--signal)}
+/* ---------- today's daily ---------- */
+.dailyPanel{width:min(1120px,95vw)}
+.dGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,.9fr);gap:14px;margin-top:20px}
+@media(max-width:980px){.dGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dGrid .dMain{grid-column:1 / -1}}
+@media(max-width:620px){.dGrid{grid-template-columns:minmax(0,1fr)}.dMine b{font-size:14px}}
+.dCard{padding:16px 18px;border-radius:16px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025);min-width:0}
+.dCard h3{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:10px}
+.dMain{border-color:rgba(235,189,98,.3);background:linear-gradient(160deg,rgba(235,189,98,.08),rgba(255,255,255,.02) 60%)}
+.dStatus{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--dim)}
+.dPrize{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0;font-size:13.5px;color:var(--dim)}
+.dPrize b{color:#9be7ff;font-family:var(--mono);font-size:16px}
+.dMine{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.dMine div{padding:9px 10px;border-radius:10px;background:rgba(0,0,0,.18);border:1px solid var(--rule-2);min-width:0}
+.dMine b{display:block;font-family:var(--mono);font-size:17px;white-space:nowrap}
+.dMine span{font-size:11px;color:var(--dim)}
+.dPlay{width:100%;padding:14px;font-size:15px}
+.dailyPanel .err{min-height:1.3em;margin-top:8px;font-size:12.5px;color:var(--ember);line-height:1.45}
+.miniMap.dMap{aspect-ratio:auto;max-height:none}
+.dMap{margin-top:4px;height:210px;border-radius:12px;overflow:hidden;background:rgba(0,0,0,.16)}
+.dMap svg{display:block;width:100%;height:100%}
+.dBal{display:flex;align-items:center;gap:4px;justify-content:center;margin-top:8px;font-size:12px;color:var(--dim)}
+.dBal b{color:#9be7ff;font-family:var(--mono)}
+.dList{list-style:none;margin:0;padding:0;font-size:13.5px}
+.dList li{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--rule-2)}
+.dList li:last-child{border-bottom:0}
+.dList .p{width:1.6em;font-family:var(--mono);color:var(--dim);font-size:12px}
+.dList li:first-child .p{color:var(--signal)}
+.dList .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dList .t{font-family:var(--mono);color:var(--aqua);font-size:12.5px}
+.dList .dd{font-family:var(--mono);color:var(--dim);font-size:11.5px;width:6.8em;flex:none}
+.dList li.me .n{color:var(--ember);font-weight:600}
+.dList li.none{color:var(--dimmer);font-style:italic}
+.dNote{margin-top:12px;font-size:12px;color:var(--dimmer);line-height:1.5}
 /* the admin's messages (menu and sign-in screen) */
-.noticeBox{margin:14px 0 4px;padding:12px 16px;border-radius:6px;border:1px solid rgba(61,219,184,.4);
-  background:linear-gradient(135deg,rgba(61,219,184,.12),rgba(88,160,255,.06));color:var(--ink);
+.noticeBox{margin:0 0 14px;padding:11px 15px;border-radius:12px;border:1px solid rgba(95,208,178,.32);
+  background:linear-gradient(135deg,rgba(95,208,178,.09),rgba(255,255,255,.02));color:var(--ink);
   font-size:14px;line-height:1.55;white-space:pre-line;overflow-wrap:anywhere}
 .noticeBox[hidden]{display:none}
 .gate .noticeBox{margin:0 0 18px;font-size:13.5px}
@@ -644,17 +729,22 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .cpMode{margin-left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--dimmer);padding:3px 8px;border:1px solid var(--rule-2);border-radius:999px}
 .cpHeadR{display:flex;gap:8px;align-items:center}
 .cpHeadR button[hidden]{display:none}
-.cpBody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:16px;padding-top:14px}
-.cpChat{display:flex;flex-direction:column;min-height:0}
+.cpBody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0fr);column-gap:0;padding-top:14px;
+  transition:grid-template-columns .6s cubic-bezier(.22,.9,.24,1),column-gap .6s cubic-bezier(.22,.9,.24,1)}
+.cpBody.hasFigs{grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);column-gap:18px}
+.cpChat{display:flex;flex-direction:column;min-height:0;width:100%;max-width:800px;margin:0 auto;transition:max-width .6s cubic-bezier(.22,.9,.24,1)}
+.cpBody.hasFigs .cpChat{max-width:1400px}
 .coachLog{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:4px 6px 8px 2px}
-.cpFigs{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:2px 4px 8px 2px}
-.cpFigsEmpty{margin:auto;max-width:260px;text-align:center;color:var(--dimmer);font-size:13px;line-height:1.6;
-  padding:26px;border:1px dashed var(--rule);border-radius:10px}
+.cpFigs{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:14px;padding:2px 4px 8px 2px}
+.cpBody:not(.hasFigs) .cpFigs{overflow:hidden;padding:0}
+.cpFigsEmpty{display:none}
 @media (max-width:900px){
   .coachPanel{height:auto;min-height:94vh}
-  .cpBody{grid-template-columns:minmax(0,1fr)}
+  .cpBody,.cpBody.hasFigs{grid-template-columns:minmax(0,1fr);row-gap:14px;flex:none}
+  .cpChat{min-height:auto}
   .coachLog{height:56vh;flex:none}
   .cpFigs{overflow:visible}
+  .cpBody:not(.hasFigs) .cpFigs{display:none}
 }
 @media (max-width:520px){
   .coachPanel{padding:12px 10px}
@@ -666,9 +756,10 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .cTurn{display:flex;gap:10px;align-items:flex-start}
 .cTurn .av{flex:none;margin-top:5px}
 .cTurn .cBody{flex:1;min-width:0}
-.cMe{align-self:flex-end;max-width:82%;padding:9px 13px;border-radius:14px;border-bottom-right-radius:4px;background:rgba(88,160,255,.14);
-  border:1px solid rgba(88,160,255,.3);font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
-.cAns{font-size:14.5px;line-height:1.62;color:var(--ink);overflow-wrap:anywhere}
+.cMe{align-self:flex-end;max-width:82%;padding:10px 15px;border-radius:16px;background:var(--bg-3);
+  border:1px solid rgba(236,233,225,.06);font-size:14.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.cAns{font-family:var(--serif);font-size:16px;line-height:1.6;color:var(--ink);overflow-wrap:anywhere}
+.cAns ul{font-size:15.5px}
 .cAns p{margin:0 0 8px}
 .cAns p:last-child{margin-bottom:0}
 .cAns ul{margin:4px 0 8px;padding-left:18px}
@@ -697,14 +788,33 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .cpSend{flex:none;width:38px;height:38px;border-radius:10px;border:0;background:var(--ember);color:#1d0a02;font-size:16px;cursor:pointer}
 .cpSend:disabled{opacity:.35;cursor:default}
 /* figures */
-.fig{border-radius:12px;border:1px solid color-mix(in srgb,var(--fc) 55%,transparent);background:
-  linear-gradient(180deg,color-mix(in srgb,var(--fc) 10%,transparent),rgba(255,255,255,.015) 60px);overflow:hidden;flex:none}
-.fig.fresh{animation:figIn .45s cubic-bezier(.2,1.2,.3,1)}
+.fig{position:relative;border-radius:14px;border:1px solid color-mix(in srgb,var(--fc) 50%,transparent);background:
+  linear-gradient(180deg,color-mix(in srgb,var(--fc) 9%,transparent),rgba(255,255,255,.015) 60px);overflow:hidden;flex:none;
+  transform-origin:top right;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.fig.fresh{animation:figPop .62s cubic-bezier(.2,1.25,.32,1) both}
+.fig.fresh.late{animation-delay:.32s}
+.fig.out{animation:figOut .4s cubic-bezier(.5,0,.75,0) forwards;pointer-events:none}
 .fig.flash{animation:figFlash 1.2s ease}
-@keyframes figIn{from{transform:translateY(-10px) scale(.98);opacity:0}}
+@keyframes figPop{0%{opacity:0;transform:translateX(46px) scale(.9)}55%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes figOut{to{opacity:0;transform:translateX(40px) scale(.94);height:0;margin-top:-14px;border-width:0}}
+.fig .figLife{position:absolute;left:0;bottom:0;height:2px;width:calc(var(--life,1) * 100%);background:var(--fc);opacity:.55;transition:width .5s linear}
+.drLegend{display:flex;flex-wrap:wrap;gap:4px 12px;margin:2px 0 8px;font-size:11px;color:var(--dim)}
+.drLegend i{display:inline-block;width:10px;height:4px;border-radius:2px;margin-right:5px;vertical-align:2px}
+.drCols{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:14px;align-items:start}
+@media (max-width:1100px){.drCols{grid-template-columns:minmax(0,1fr)}}
+.drT{width:100%;border-collapse:collapse;font-size:12px}
+.drT th{font-size:10.5px;color:var(--dimmer);font-weight:500;text-align:right;padding:0 0 5px 6px;border-bottom:1px solid var(--rule-2);white-space:nowrap;max-width:6em;overflow:hidden;text-overflow:ellipsis}
+.drT td{padding:4px 0 4px 6px;border-bottom:1px solid var(--rule-2);font-family:var(--mono);text-align:right;white-space:nowrap}
+.drT td:first-child{font-family:var(--sans);color:var(--dim);text-align:left;padding-left:0}
+.drT td.good{color:var(--aqua);font-weight:700} .drT td.bad{color:var(--ember);font-weight:700}
+.drT tr:hover td{background:transparent}
+.drFix{margin:4px 0 0;padding-left:18px;font-size:12.5px;line-height:1.5;color:var(--ink)}
+.drFix li{margin:0 0 6px}
+.drFix li::marker{color:var(--fc);font-weight:700}
+.drNone{font-size:12.5px;color:var(--dim);line-height:1.5}
 @keyframes figFlash{30%{box-shadow:0 0 0 3px var(--fc)}}
 .fig header{display:flex;align-items:center;gap:10px;padding:10px 12px 8px 14px}
-.fig .figNo{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;color:#0b1220;background:var(--fc);padding:2px 8px;border-radius:5px}
+.fig .figNo{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;color:#1f1e1c;background:var(--fc);padding:2px 8px;border-radius:5px}
 .fig header b{flex:1;min-width:0;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fig .figX{background:none;border:0;color:var(--dim);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px}
 .fig .figX:hover{color:var(--ink)}
@@ -728,19 +838,19 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .figTiles div{padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid var(--rule-2)}
 .figTiles b{display:block;font-family:var(--mono);font-size:19px;color:var(--ink)}
 .figTiles span{font-size:11.5px;color:var(--dim)}
-.figMedia{position:relative;border-radius:8px;overflow:hidden;background:#0b1220;aspect-ratio:16/9}
+.figMedia{position:relative;border-radius:8px;overflow:hidden;background:#1f1e1c;aspect-ratio:16/9}
 .figMedia canvas,.figMedia img{display:block;width:100%;height:100%;object-fit:cover}
 .figMedia .ctl{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
-.figMedia .ctl button{padding:5px 10px;font-size:12px;border-radius:6px;background:rgba(7,11,24,.8);border:1px solid var(--rule);color:var(--ink)}
+.figMedia .ctl button{padding:5px 10px;font-size:12px;border-radius:6px;background:rgba(26,25,23,.8);border:1px solid var(--rule);color:var(--ink)}
 .figMedia .rec{position:absolute;right:10px;top:10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:#fff;
-  background:rgba(7,11,24,.7);padding:3px 8px;border-radius:5px}
+  background:rgba(26,25,23,.7);padding:3px 8px;border-radius:5px}
 .figChart svg{display:block;width:100%;height:auto}
-.figChart .axis{stroke:rgba(234,240,248,.15)} .figChart .gl{stroke:rgba(234,240,248,.06)}
+.figChart .axis{stroke:rgba(236,233,225,.15)} .figChart .gl{stroke:rgba(236,233,225,.06)}
 .figChart text{font:10.5px var(--mono);fill:var(--dimmer)}
 .figBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 /* podium alerts */
 .alertStack{position:fixed;right:18px;bottom:18px;z-index:70;display:flex;flex-direction:column;gap:10px;width:min(360px,92vw);pointer-events:none}
-.alertCard{pointer-events:auto;padding:12px 14px;border-radius:12px;background:rgba(10,16,30,.96);border:1px solid rgba(242,115,63,.55);
+.alertCard{pointer-events:auto;padding:12px 14px;border-radius:12px;background:rgba(40,39,36,.96);border:1px solid rgba(217,119,87,.55);
   box-shadow:0 12px 34px rgba(0,0,0,.45);animation:alertIn .5s cubic-bezier(.2,1.2,.3,1)}
 .alertCard.out{animation:alertOut .3s ease forwards}
 @keyframes alertIn{from{transform:translateX(30px);opacity:0}}
@@ -757,13 +867,12 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
   background:radial-gradient(circle at 35% 35%,#bff7ea,#3ddbb8 45%,#1b6f8f);box-shadow:0 0 10px rgba(61,219,184,.8);
   animation:aiPulse 2.4s ease-in-out infinite}
 @keyframes aiPulse{0%,100%{box-shadow:0 0 6px rgba(61,219,184,.5)}50%{box-shadow:0 0 14px rgba(61,219,184,1)}}
-.aiCard{margin-top:16px;padding:14px 16px;border-radius:8px;border:1px solid rgba(61,219,184,.35);
-  background:linear-gradient(150deg,rgba(61,219,184,.1),rgba(88,160,255,.05) 60%,rgba(7,11,24,.2))}
+.aiCard{margin:0;padding:13px 16px;border-radius:16px;border:1px solid var(--rule-2);background:rgba(255,255,255,.03)}
 .aiCard[hidden]{display:none}
 .aiHd{display:flex;align-items:center;font-size:13px}
 .aiHd b{font-weight:700;letter-spacing:.01em}
 .aiSub{margin-left:auto;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--dimmer);text-transform:uppercase}
-.aiHeadline{margin:8px 0 6px;font-size:16px;font-weight:700;line-height:1.35;color:var(--ink)}
+.aiHeadline{margin:7px 0 4px;font-family:var(--serif);font-size:18px;font-weight:500;line-height:1.35;color:var(--ink)}
 .aiLines{list-style:none;margin:0;padding:0}
 .aiLines li{position:relative;padding:4px 0 4px 18px;font-size:13px;line-height:1.45;color:var(--dim)}
 .aiLines li::before{content:'';position:absolute;left:3px;top:11px;width:6px;height:6px;border-radius:50%;background:var(--aqua)}
@@ -782,7 +891,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .stTile .stBar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
 .stTile .stBar i{display:block;height:100%;background:linear-gradient(90deg,var(--aqua),var(--signal))}
 .stHero{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 14px;padding:14px 16px;border-radius:8px;
-  border:1px solid rgba(242,115,63,.45);background:linear-gradient(120deg,rgba(242,115,63,.16),rgba(255,207,92,.06))}
+  border:1px solid rgba(217,119,87,.45);background:linear-gradient(120deg,rgba(217,119,87,.16),rgba(255,207,92,.06))}
 .stHero[hidden]{display:none}
 .stHero .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ember)}
 .stHero .t{font-size:17px;font-weight:700;line-height:1.35}
@@ -798,44 +907,43 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .stHd span{font-size:12px;color:var(--dim)}
 .stRadar{position:relative;max-width:470px;margin:0 auto}
 .stRadar svg{display:block;width:100%;height:auto;overflow:visible}
-.stRadar .ring{fill:none;stroke:rgba(234,240,248,.09);stroke-width:1}
+.stRadar .ring{fill:none;stroke:rgba(236,233,225,.09);stroke-width:1}
 .stRadar .ring.full{stroke:rgba(255,207,92,.55);stroke-dasharray:4 4}
-.stRadar .spoke{stroke:rgba(234,240,248,.08);stroke-width:1}
+.stRadar .spoke{stroke:rgba(236,233,225,.08);stroke-width:1}
 .stRadar .band{opacity:.12}
 .stRadar .secL{font:700 11px var(--mono);fill:var(--dimmer);letter-spacing:.1em}
 .stRadar .shape{fill:url(#rFill);stroke:#3ddbb8;stroke-width:2;stroke-linejoin:round;
   filter:drop-shadow(0 0 6px rgba(61,219,184,.55));transform-origin:center;transform-box:view-box;animation:rGrow .9s cubic-bezier(.2,1.1,.3,1) both}
-.stRadar .other{fill:rgba(242,115,63,.08);stroke:#f2733f;stroke-width:1.6;stroke-dasharray:5 4;stroke-linejoin:round}
+.stRadar .other{fill:rgba(217,119,87,.08);stroke:#f2733f;stroke-width:1.6;stroke-dasharray:5 4;stroke-linejoin:round}
 .stRadar .other.leadr{fill:rgba(255,207,92,.05);stroke:#ffcf5c}
 @keyframes rGrow{from{transform:scale(.15);opacity:0}to{transform:scale(1);opacity:1}}
 .stRadar .ax{cursor:pointer}
 .stRadar .ax .tag{font:700 11.5px var(--mono);fill:var(--dim)}
 .stRadar .ax .pct{font:600 10px var(--mono);fill:var(--dimmer)}
-.stRadar .ax .dot{fill:#3ddbb8;stroke:#0b1220;stroke-width:1.5}
+.stRadar .ax .dot{fill:#3ddbb8;stroke:#1f1e1c;stroke-width:1.5}
 .stRadar .ax .dot.lead{fill:#ffcf5c}
-.stRadar .ax .dot.none{fill:#0b1220;stroke:rgba(234,240,248,.35)}
+.stRadar .ax .dot.none{fill:#1f1e1c;stroke:rgba(236,233,225,.35)}
 .stRadar .ax:hover .tag,.stRadar .ax.hl .tag{fill:var(--ink)}
 .stRadar .ax.hl .dot{r:7px;fill:#f2733f;filter:drop-shadow(0 0 6px #f2733f)}
 .stRadar .ax.hl .tag{fill:#f2733f}
 .stRadar .ax.dim{opacity:.25}
-.stRadar .hub{fill:#0b1220;stroke:rgba(61,219,184,.7);stroke-width:2}
+.stRadar .hub{fill:#1f1e1c;stroke:rgba(61,219,184,.7);stroke-width:2}
 .stRadarFoot{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--dim)}
 .stRadarFoot b{color:var(--ink);font-family:var(--mono)}
 .stRadarFoot .k1::before,.stRadarFoot .k2::before,.stRadarFoot .k3::before{content:'';display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:3px}
 .stRadarFoot .k1::before{background:#3ddbb8}
 .stRadarFoot .k2::before{background:repeating-linear-gradient(90deg,#ffcf5c 0 4px,transparent 4px 7px)}
 .stRadarFoot .k3::before{background:repeating-linear-gradient(90deg,#f2733f 0 5px,transparent 5px 9px)}
-.rTip{position:absolute;pointer-events:none;z-index:5;padding:8px 10px;border-radius:6px;background:rgba(7,11,24,.95);
+.rTip{position:absolute;pointer-events:none;z-index:5;padding:8px 10px;border-radius:6px;background:rgba(26,25,23,.95);
   border:1px solid var(--rule);font-size:12px;line-height:1.45;white-space:nowrap;transform:translate(-50%,-110%)}
 .rTip[hidden]{display:none}
 .rTip b{color:var(--ink)} .rTip .g{color:var(--aqua);font-family:var(--mono)}
 /* the coach */
 .stCoach{display:flex;flex-direction:column;min-height:440px}
 #coachState{margin-left:auto;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--dimmer)}
-.coachLog{flex:1;overflow-y:auto;max-height:420px;display:flex;flex-direction:column;gap:8px;padding-right:4px}
 .cMsg{max-width:92%;padding:9px 12px;border-radius:10px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
 .cMsg.ai{align-self:flex-start;background:rgba(61,219,184,.08);border:1px solid rgba(61,219,184,.25);border-top-left-radius:3px}
-.cMsg.me{align-self:flex-end;background:rgba(242,115,63,.14);border:1px solid rgba(242,115,63,.3);border-top-right-radius:3px}
+.cMsg.me{align-self:flex-end;background:rgba(217,119,87,.14);border:1px solid rgba(217,119,87,.3);border-top-right-radius:3px}
 .cMsg.ai .mapRef{color:var(--signal);font-weight:600;cursor:pointer;text-decoration:underline dotted}
 .cMsg.typing::after{content:'▍';animation:cBlink 1s steps(2) infinite;color:var(--aqua)}
 @keyframes cBlink{50%{opacity:0}}
@@ -867,10 +975,10 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .stTable .mini i{display:block;height:100%;background:linear-gradient(90deg,#1b6f8f,#3ddbb8)}
 /* anything the coach points at */
 [data-map].hl{animation:hlPulse 1.4s ease-in-out 5}
-tr[data-map].hl td,.stRow[data-map].hl{background:rgba(242,115,63,.14)}
-@keyframes hlPulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 2px rgba(242,115,63,.55)}}
+tr[data-map].hl td,.stRow[data-map].hl{background:rgba(217,119,87,.14)}
+@keyframes hlPulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 2px rgba(217,119,87,.55)}}
 .topTen{margin-top:26px;padding:16px 18px 14px;border-radius:8px;border:1px solid rgba(255,207,92,.35);
-  background:radial-gradient(90% 120% at 30% 100%,rgba(255,207,92,.12),rgba(88,160,255,.05) 55%,rgba(7,11,24,.25))}
+  background:radial-gradient(90% 120% at 30% 100%,rgba(255,207,92,.12),rgba(88,160,255,.05) 55%,rgba(26,25,23,.25))}
 .topTen[hidden]{display:none}
 .ttHead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .ttKick{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.16em;color:var(--signal)}
@@ -893,7 +1001,7 @@ tr[data-map].hl td,.stRow[data-map].hl{background:rgba(242,115,63,.14)}
 @media (max-width:640px){.ttLabels{display:none}.ttList{display:block}.ttStage{height:190px}}
 /* small: a little car beside the section and its leader */
 .secLead{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:6px;align-items:center;
-  padding:5px 8px;border-radius:5px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025);min-width:0}
+  padding:6px 9px;border-radius:11px;border:1px solid var(--rule-2);background:rgba(255,255,255,.025);min-width:0}
 .secLead .sl{grid-column:2;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--dimmer)}
 .secLead .sn{grid-column:2;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .secLead .sn .crown{color:var(--signal)}
@@ -935,7 +1043,7 @@ tr[data-map].hl td,.stRow[data-map].hl{background:rgba(242,115,63,.14)}
 .cdBest{font-family:var(--mono);font-size:14px;color:var(--aqua)}
 /* a map's top three on a podium: the picture, and the names on the blocks */
 .podium3{position:relative;aspect-ratio:16/10;max-height:380px;margin-top:8px;border:1px solid var(--rule);border-radius:4px;overflow:hidden;
-  background:radial-gradient(90% 80% at 50% 30%,rgba(61,120,200,.18),rgba(7,11,24,.2))}
+  background:radial-gradient(90% 80% at 50% 30%,rgba(61,120,200,.18),rgba(26,25,23,.2))}
 .podium3 canvas{width:100%;height:100%;display:block}
 .p3Labels{position:absolute;inset:0;pointer-events:none}
 .p3Label{position:absolute;transform:translate(-50%,-50%);width:31%;text-align:center;line-height:1.1}
@@ -961,9 +1069,9 @@ tr[data-map].hl td,.stRow[data-map].hl{background:rgba(242,115,63,.14)}
 @keyframes selBack{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
 /* the clickable bar above a section (and the overall one at the top) */
 .secBar{display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin:0 0 10px;padding:11px 16px;
-  border:1px solid var(--rule);border-radius:4px;background:linear-gradient(90deg,rgba(242,115,63,.10),rgba(255,255,255,.02));
+  border:1px solid var(--rule);border-radius:4px;background:linear-gradient(90deg,rgba(217,119,87,.10),rgba(255,255,255,.02));
   cursor:pointer}
-.secBar:hover{border-color:rgba(242,115,63,.6);background:linear-gradient(90deg,rgba(242,115,63,.18),rgba(255,255,255,.04))}
+.secBar:hover{border-color:rgba(217,119,87,.6);background:linear-gradient(90deg,rgba(217,119,87,.18),rgba(255,255,255,.04))}
 .secBar h3{font-size:15px;letter-spacing:.02em;white-space:nowrap}
 .secBar .sl{font-family:var(--mono);font-size:12px;color:var(--dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .secBar .sl b{color:var(--signal);font-family:var(--sans)}
@@ -978,16 +1086,16 @@ tr[data-map].hl td,.stRow[data-map].hl{background:rgba(242,115,63,.14)}
 .winCar.ready{opacity:1}
 .podium .p1{align-items:center}
 /* the map from above */
-.miniMap{border:1px solid var(--rule);border-radius:4px;background:rgba(7,11,24,.45);aspect-ratio:1/1;max-height:340px;margin-top:8px}
+.miniMap{border:1px solid var(--rule);border-radius:4px;background:rgba(26,25,23,.45);aspect-ratio:1/1;max-height:340px;margin-top:8px}
 .miniMap svg{width:100%;height:100%;display:block}
 .mmTrack{fill:none;stroke:rgba(120,150,190,.45);stroke-linejoin:round;stroke-linecap:round}
 .mmLine{fill:none;stroke:#eaf0f8;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round}
 .mmStart{fill:#3ddbb8} .mmFin{fill:#ffcf5c} .mmArrow{fill:#3ddbb8}
-.mmLabel{font-family:var(--mono);font-size:10px;fill:#8798b5}
+.mmLabel{font-family:var(--mono);font-size:10px;fill:#a8a398}
 /* the section page's four maps */
 .secMaps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .secMaps .sm{border:1px solid var(--rule-2);border-radius:4px;padding:8px 10px 10px;cursor:pointer;background:rgba(255,255,255,.02)}
-.secMaps .sm:hover{border-color:rgba(234,240,248,.3)}
+.secMaps .sm:hover{border-color:rgba(236,233,225,.3)}
 .secMaps .sm .t{font-size:12.5px;font-weight:600} .secMaps .sm .t span{font-family:var(--mono);color:var(--ember);font-size:10.5px;margin-right:6px}
 .secMaps .sm .l{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .secMaps .sm .l b{color:var(--signal);font-family:var(--sans)}
@@ -995,11 +1103,11 @@ tr[data-map].hl td,.stRow[data-map].hl{background:rgba(242,115,63,.14)}
 td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 
 /* ---------- section replay: four maps at once ---------- */
-#secview{background:#0b1220}
+#secview{background:#1f1e1c}
 #secCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #secview .specTop{z-index:3}
 #secview .specBar,#secview .specTop button{pointer-events:auto}
-.svLabel{position:absolute;pointer-events:none;padding:6px 9px;background:rgba(7,11,24,.72);border:1px solid var(--rule-2);
+.svLabel{position:absolute;pointer-events:none;padding:6px 9px;background:rgba(26,25,23,.72);border:1px solid var(--rule-2);
   border-radius:6px;font-family:var(--mono);font-size:11px;max-width:calc(50% - 20px)}
 .svLabel .h{font-family:var(--sans);font-size:12.5px;font-weight:600;margin-bottom:3px;white-space:nowrap}
 .svLabel .h span{color:var(--ember);font-family:var(--mono);font-size:10.5px;margin-right:6px}
@@ -1008,12 +1116,12 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 .svLabel .r b{color:var(--ink);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .svLabel .r .tm{margin-left:auto;padding-left:10px;color:var(--aqua)}
 .svLabel .r .tm.wait{color:var(--dimmer)} .svLabel .r .tm.done{color:var(--signal)}
-.svFrame{position:absolute;pointer-events:none;border:1px solid rgba(234,240,248,.12)}
+.svFrame{position:absolute;pointer-events:none;border:1px solid rgba(236,233,225,.12)}
 /* a quarter too short for the drivers' rows: just the map's name */
 .svLabel.compact .r{display:none}
 .svLabel.compact .h{margin-bottom:0}
 .svPanel{position:absolute;right:14px;top:64px;width:286px;max-height:calc(100% - 250px);overflow-y:auto;pointer-events:auto;
-  background:rgba(7,11,24,.8);border:1px solid var(--rule);border-radius:8px;padding:12px 12px 10px;font-size:12px}
+  background:rgba(26,25,23,.8);border:1px solid var(--rule);border-radius:8px;padding:12px 12px 10px;font-size:12px}
 .svPanel h4{font-size:11px;letter-spacing:.12em;color:var(--ember);margin:0 0 8px;text-transform:uppercase}
 .svPanel .row2{display:flex;gap:7px;align-items:baseline;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-family:var(--mono)}
 .svPanel .row2 i{width:8px;height:8px;border-radius:50%;flex:0 0 auto;align-self:center}
@@ -1032,7 +1140,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 #svCamHint b{color:var(--ink);font-weight:600} #svCamHint .arrows{color:var(--dimmer)} #svDirectorHint span{color:var(--dim)}
 /* each quarter's own name tags, the followed car's keys and speed */
 .svTag{position:absolute;transform:translate(-50%,-100%);pointer-events:none;padding:2px 8px;border-radius:999px;
-  background:rgba(7,11,24,.78);border:1px solid rgba(234,240,248,.3);font-size:11.5px;font-weight:600;white-space:nowrap;
+  background:rgba(26,25,23,.78);border:1px solid rgba(236,233,225,.3);font-size:11.5px;font-weight:600;white-space:nowrap;
   display:flex;align-items:center;gap:5px}
 .svTag i{width:7px;height:7px;border-radius:50%}
 .svTag.on{border-color:var(--ember)}
@@ -1040,11 +1148,11 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 .svKeys[hidden]{display:none}
 .svKeys .keys{position:static;transform:none;gap:3px}
 .svKeys .keys .k{width:24px;height:22px;font-size:9.5px}
-.svSpd{font-family:var(--mono);font-size:12px;color:var(--aqua);background:rgba(7,11,24,.7);padding:3px 7px;border-radius:4px;
+.svSpd{font-family:var(--mono);font-size:12px;color:var(--aqua);background:rgba(26,25,23,.7);padding:3px 7px;border-radius:4px;
   display:flex;align-items:center;gap:5px;white-space:nowrap}
 .svSpd i{width:7px;height:7px;border-radius:50%}
 .svDist{position:absolute;transform:translate(-50%,-100%);padding:2px 8px;border-radius:999px;pointer-events:none;
-  background:rgba(7,11,24,.85);border:1px solid rgba(255,255,255,.6);font-family:var(--mono);font-size:11px;color:#fff}
+  background:rgba(26,25,23,.85);border:1px solid rgba(255,255,255,.6);font-family:var(--mono);font-size:11px;color:#fff}
 .svDist[hidden]{display:none}
 .svPanel .row2{cursor:pointer}
 .svPanel .row2.on .n{color:var(--ember)}
@@ -1056,7 +1164,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 /* ---------- trophy room ---------- */
 .trophyPanel{width:min(1440px,95vw)}
 .trophyStage{position:relative;width:100%;height:min(64vh,680px);border-radius:8px;overflow:hidden;
-  border:1px solid var(--rule);background:radial-gradient(120% 120% at 50% 10%,#1d2c48,#070b18);cursor:grab;
+  border:1px solid var(--rule);background:radial-gradient(120% 120% at 50% 10%,#1d2c48,#161513);cursor:grab;
   touch-action:none}
 .trophyStage:active{cursor:grabbing}
 .trophyStage canvas{width:100%;height:100%;display:block}
@@ -1238,34 +1346,48 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
   <div class="layer" id="menu" hidden>
     <div class="scrim"></div>
     <div class="panel menuPanel">
-      <div class="menuTop">
+      <header class="menuTop">
         <div class="brand">
           <svg viewBox="0 0 32 32" aria-hidden="true">
-            <path d="M1 25 L12 25 L21 7 L31 7" fill="none" stroke="#f2733f" stroke-width="3"/>
+            <path d="M1 25 L12 25 L21 7 L31 7" fill="none" stroke="#d97757" stroke-width="3"/>
             <rect x="7.5" y="18.5" width="9" height="4.5" fill="#3ddbb8"/>
-            <circle cx="10" cy="24" r="1.8" fill="#eaf0f8"/><circle cx="15.5" cy="24" r="1.8" fill="#eaf0f8"/>
+            <circle cx="10" cy="24" r="1.8" fill="#f4f1ea"/><circle cx="15.5" cy="24" r="1.8" fill="#f4f1ea"/>
           </svg>
           <h1>ai<span>Polytrack</span></h1>
           <span class="seasonTag">SEASON 1</span>
         </div>
         <div class="who" id="who" hidden>
-          <span><b id="whoName">—</b></span>
+          <span class="whoName"><b id="whoName">—</b></span>
           <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
           <button class="ghost small" id="whoOut">Sign out</button>
         </div>
+      </header>
+
+      <div class="mHello">
+        <h2 class="mGreet" id="mGreet">Welcome back</h2>
+        <p class="mSub" id="mSub"></p>
       </div>
       <div class="noticeBox" id="menuNotice" hidden></div>
 
       <div class="menuGrid">
         <div class="menuMain">
-          <button class="playBtn" id="bDrive">
-            <span class="playIcon">▶</span>
-            <span class="playText"><b>Play</b><small id="bDriveNext">Launch Pad</small></span>
-          </button>
+          <div class="mHero">
+            <button class="playBtn" id="bDrive">
+              <span class="playIcon">▶</span>
+              <span class="playText"><b>Play</b><small id="bDriveNext">Launch Pad</small></span>
+            </button>
+            <button class="dailyCard" id="bDaily">
+              <span class="dcTop"><span class="dPill" id="dailyTileState">LIVE</span><span class="dcTime" id="dailyTileTime"></span></span>
+              <span class="dcKick">TODAY'S DAILY</span>
+              <b id="dailyTileName">—</b>
+              <small id="dailyTileSub"></small>
+              <span class="dcPrize"><span class="gem2d"></span> 1 000 to the fastest at noon</span>
+            </button>
+          </div>
           <div class="menuTiles">
             <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
-            <button class="tile" id="bTrophies"><b>Trophy room</b><small id="tileTrophies">your awards</small></button>
             <button class="tile" id="bStats"><b>Coach</b><small>your times, analysed</small></button>
+            <button class="tile" id="bTrophies"><b>Trophy room</b><small id="tileTrophies">your awards</small></button>
             <button class="tile" id="bGarage"><b>Garage</b><small>paint your car</small></button>
             <button class="tile" id="bSettings"><b>Settings</b><small>account</small></button>
             <button class="tile" id="bInfo"><b>How it works</b><small>the guide</small></button>
@@ -1274,13 +1396,8 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             <label class="fld" for="driver">Driver name</label>
             <input type="text" id="driver" maxlength="14" placeholder="Driver">
           </div>
-          <div class="keysStrip">
-            <span><b>W</b> gas</span><span><b>S</b> brake</span><span><b>A D</b> steer</span>
-            <span><b>Space</b> boost</span><span><b>S</b> + <b>A D</b> drift</span><span><b>Shift</b> handbrake</span><span><b>R</b> restart</span>
-            <span><b>Esc</b> back</span>
-          </div>
           <section class="aiCard" id="aiCard" hidden>
-            <div class="aiHd"><span class="aiOrb"></span><b>aiPolytrack</b><span class="aiSub">leaderboard report</span></div>
+            <div class="aiHd"><span class="aiOrb"></span><b>Coach</b><span class="aiSub">leaderboard report</span></div>
             <p class="aiHeadline" id="aiHeadline"></p>
             <ul class="aiLines" id="aiLines"></ul>
             <div class="aiFoot">
@@ -1299,7 +1416,48 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             </div>
           </div>
           <div class="sectionLeaders" id="sectionLeaders"></div>
+          <div class="youCard" id="youCard" hidden></div>
         </aside>
+      </div>
+      <div class="keysStrip">
+        <span><b>W</b> gas</span><span><b>S</b> brake</span><span><b>A D</b> steer</span>
+        <span><b>Space</b> boost</span><span><b>S</b> + <b>A D</b> drift</span><span><b>Shift</b> handbrake</span><span><b>R</b> restart</span>
+        <span><b>Esc</b> back</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- today's daily map: its own board, its own prize, no trophies -->
+  <div class="layer" id="daily" hidden>
+    <div class="scrim"></div>
+    <div class="panel dailyPanel">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="kick">DAILY MAP · <span id="dDate"></span></div>
+          <h2 class="big" id="dName">—</h2>
+          <p class="lede" id="dBlurb" style="margin-bottom:0"></p>
+        </div>
+        <button class="ghost" id="bDailyBack">← Menu</button>
+      </div>
+      <div class="dGrid">
+        <section class="dCard dMain">
+          <div class="dStatus"><span class="dPill" id="dState">LIVE</span><span id="dCountdown"></span></div>
+          <div class="dPrize"><span class="gem2d"></span><b>1 000</b> credits to the fastest at noon PT</div>
+          <div class="dMine" id="dMine"></div>
+          <button class="primary dPlay" id="bDailyPlay">Drive · 1 credit</button>
+          <div class="dBal" id="dBal"></div>
+          <div class="err" id="dMsg"></div>
+          <div class="miniMap dMap" id="dMap"></div>
+        </section>
+        <section class="dCard">
+          <h3>Today's leaderboard</h3>
+          <ol class="dList" id="dBoard"></ol>
+        </section>
+        <section class="dCard">
+          <h3>Recent winners</h3>
+          <ul class="dList" id="dWinners"></ul>
+          <p class="dNote">Every attempt costs 1 credit. Daily maps are not part of the season: no trophies, no standings.</p>
+        </section>
       </div>
     </div>
   </div>
@@ -2957,7 +3115,7 @@ const Cloud = {
     const emit = () => {
       const boards = {}, cleared = {}, myBests = {};
       for (const r of rows.values()) {
-        if (!r || r.banned || typeof r.time_ms !== 'number' || !COURSE_IDS.includes(r.course_id)) continue;
+        if (!r || r.banned || typeof r.time_ms !== 'number' || !(COURSE_IDS.includes(r.course_id) || Daily.isId(r.course_id))) continue;
         const t = migrateLegacyTime(r.time_ms / 1000, r.course_id);
         (boards[r.course_id] = boards[r.course_id] || []).push({
           n: r.display_name || 'Driver', t, d: Number(r.updated_ms) || 0, uid: r.uid
@@ -2982,7 +3140,7 @@ const Cloud = {
         for (let from = 0; ; from += 1000) {
           const page = await this.q(this.sb.from('bests')
             .select('uid, course_id, display_name, banned, time_ms, updated_ms')
-            .in('course_id', COURSE_IDS).order('uid').order('course_id').range(from, from + 999));
+            .in('course_id', COURSE_IDS.concat(Daily.ids())).order('uid').order('course_id').range(from, from + 999));
           all.push(...page);
           if (page.length < 1000) break;
         }
@@ -5913,10 +6071,140 @@ const COURSE_IDS = LEVELS.map((l) => l.id);
 // never appear on the new maps); a score reset still clears these too
 const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24',
   's2c25', 's2c10', 's2c28', 's2c30', 's2c32'];
-function courseIndexOf(id) { return LEVELS.findIndex((l) => l.id === id); }
+/**
+ * The daily map: a new course every day, made from the date, so every
+ * player's game makes exactly the same one. Only proven pieces: turns of
+ * 45-80 m radius with gentle banks, slopes, crests, rollers, speed strips
+ * and a tabletop jump. It keeps the S-bend rule, steers back before it can
+ * loop over itself, and runs 560-780 m. A layout that fails a check (the
+ * road meeting itself, a deck edge in the grass) is dropped and the next
+ * one drawn, the same way on every device.
+ */
+const DailyGen = {
+  rng(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  },
+  ADJ: ['Copper', 'Neon', 'Velvet', 'Rapid', 'Silent', 'Golden', 'Hollow', 'Crimson', 'Glass', 'Electric', 'Midnight', 'Amber',
+    'Cobalt', 'Wild', 'Frozen', 'Solar', 'Iron', 'Lucky', 'Feral', 'Paper', 'Static', 'Ivory', 'Rusty', 'Turbo'],
+  NOUN: ['Run', 'Ridge', 'Loop', 'Dash', 'Sprint', 'Line', 'Circuit', 'Canyon', 'Ribbon', 'Spiral', 'Gauntlet', 'Drift',
+    'Pass', 'Mile', 'Rush', 'Arc', 'Bend', 'Skyway', 'Hook', 'Switch', 'Comet', 'Breaker', 'Slalom', 'Viper'],
+  /** the pieces for one attempt, as a list the build replays */
+  plan(seed) {
+    const R = this.rng(seed);
+    const rr = (a, b) => a + R() * (b - a);
+    const r1 = (v) => Math.round(v * 10) / 10;
+    const W = Math.round(rr(13, 15.4));
+    const ops = [['pad', 22, W + 4], ['straight', r1(rr(22, 40))]];
+    let len = 22 + 30, heading = 0, height = 0, since = Infinity, lastDir = 0, jumps = 0, strips = 0, after = '';
+    let prevTurn = 0, sinceTurn = Infinity;        // the last turn of any size, and the road since it
+    const target = rr(560, 760);
+    const straight = (L) => { ops.push(['straight', r1(L)]); len += L; since += L; sinceTurn += L; };
+    while (len < target) {
+      const u = R();
+      // something with a lip (crest, rollers, a jump) is followed by a short straight before any turn
+      // the car settles after a lip before any turn: longer after rollers, which lift it
+      if (after) { straight(after === 'rollers' ? rr(32, 42) : rr(24, 32)); after = ''; continue; }
+      if (u < 0.42) {
+        let dir = R() < 0.5 ? -1 : 1;
+        if (heading > 110) dir = -1; else if (heading < -110) dir = 1;
+        const arc = r1(rr(35, 100)), radius = r1(rr(48, 80));
+        const big = arc >= 55;
+        if (big && lastDir && lastDir !== dir && since < 60) straight(62 - since);
+        // any two turns the opposite way get a real straight between them
+        if (prevTurn && prevTurn !== dir && sinceTurn < 30) straight(32 - sinceTurn);
+        const bank = Math.round(Math.min(22, 6 + arc * 0.16));
+        ops.push(['curve', radius, arc * dir, { bank, chev: 1 }]);
+        len += radius * deg(arc); heading += arc * dir;
+        prevTurn = dir; sinceTurn = 0;
+        if (big) { lastDir = dir; since = 0; }
+      } else if (u < 0.56) {
+        straight(rr(26, 60));
+      } else if (u < 0.66 && strips < 3) {
+        ops.push(['strip', r1(rr(16, 22))]); len += 19; since += 19; sinceTurn += 19; strips++;
+        straight(rr(22, 34));
+      } else if (u < 0.75) {
+        if (sinceTurn < 16) straight(18 - sinceTurn);       // the bank untwists before the road tilts
+        const up = height < 4 ? 1 : height > 16 ? -1 : (R() < 0.5 ? 1 : -1);
+        const run = rr(30, 44), rise = up * rr(3, 6);
+        ops.push(['slope', r1(run), r1(rise)]); len += run; since += run; sinceTurn += run; height += rise;
+      } else if (u < 0.83) {
+        if (sinceTurn < 18) straight(20 - sinceTurn);       // never straight off a turn into a lip
+        ops.push(['crest', r1(rr(22, 28)), r1(rr(4.5, 6.5))]); len += 25; since += 25; sinceTurn += 25; after = 'lip';
+      } else if (u < 0.9) {
+        straight(sinceTurn < 30 ? 32 - sinceTurn : 18);    // square to the bumps before they start
+        ops.push(['rollers', 2, 24, r1(rr(0.55, 0.75))]); len += 48; since += 48; sinceTurn += 48; after = 'rollers';
+      } else if (jumps < 2 && len > 180) {
+        // a tabletop: a run-up, up onto a kicker, over a gap, onto a wide
+        // table, back down (never near the start: it needs speed)
+        straight(35);
+        // (a long table: a fast car that flies most of it still lands on the flat)
+        ops.push(['slope', 30, 5], ['ramp', 16, r1(rr(7, 8.5))], ['gap', r1(rr(17, 21)), -2], ['table', 44, W + 3], ['slope', 40, -5]);
+        len += 30 + 16 + 19 + 44 + 40; since += 149; sinceTurn += 149; jumps++; after = 'lip';
+      }
+    }
+    if (after || since < 20) straight(after === 'rollers' ? 36 : 26);
+    ops.push(['straight', 40], ['gate', 'finish'], ['straight', 34, { w: W + 4 }]);
+    return { W, ops };
+  },
+  run(p) {
+    const b = new TrackBuilder({ width: p.W });
+    for (const [fn, ...args] of p.ops) b[fn](...args);
+    return b.build();
+  },
+  /** does the course pass the checks? (the road never meets itself; no deck edge in the grass) */
+  ok(raw) {
+    const data = validateCourse(raw);
+    if (!data.valid) return false;
+    for (const st of data.strips) for (const f of st.frames) if (f.p[1] - (f.w / 2) * Math.abs(Math.sin(f.r)) < -0.35) return false;
+    const D = densePath(data);
+    let cum = 0;
+    D.forEach((q, k) => { if (k) cum += Math.hypot(q.x - D[k - 1].x, q.z - D[k - 1].z); q.cum = cum; });
+    for (let a = 0; a < D.length; a += 2) {
+      for (let b = a + 1; b < D.length; b += 2) {
+        const A = D[a], B = D[b];
+        if (B.cum - A.cum < 90) continue;
+        const d = Math.hypot(A.x - B.x, A.z - B.z) - Math.max(A.hw + 1 + B.reach, B.hw + 1 + A.reach);
+        if (d < 4) return false;
+      }
+    }
+    return true;
+  },
+  /** the day's level: { id, name, blurb, build } (day: 'YYYYMMDD') */
+  level(day) {
+    const base = Number(day) * 7 + 13;
+    let seed = base, p = null;
+    for (let k = 0; k < 40; k++) {
+      seed = base + k * 7919;
+      const cand = this.plan(seed);
+      try { if (this.ok(this.run(cand))) { p = cand; break; } } catch (e) { /* the S-bend rule or a bad piece: next */ }
+    }
+    if (!p) p = { W: 14, ops: [['pad', 22, 18], ['straight', 60], ['curve', 70, 60, { bank: 14, chev: 1 }], ['straight', 80], ['crest', 26, 6],
+      ['straight', 40], ['curve', 70, -60, { bank: 14, chev: 1 }], ['straight', 120], ['gate', 'finish'], ['straight', 34, { w: 18 }]] };
+    const R = this.rng(seed + 1);
+    const name = this.ADJ[Math.floor(R() * this.ADJ.length)] + ' ' + this.NOUN[Math.floor(R() * this.NOUN.length)];
+    const has = (fn) => p.ops.some((o) => o[0] === fn);
+    const bits = [has('table') ? 'a tabletop jump' : '', has('rollers') ? 'rollers' : '', has('strip') ? 'speed strips' : '', has('crest') ? 'crests' : ''].filter(Boolean);
+    return {
+      id: 'd' + day, daily: true, day, section: -1, name,
+      blurb: 'Today only' + (bits.length ? ': ' + bits.slice(0, 3).join(', ') : '') + '. Fastest at noon wins 1 000 credits.',
+      plan: p, build: () => this.run(p)
+    };
+  }
+};
+// the daily map is played as level DAILY_I, one past the season's
+const DAILY_I = LEVELS.length;
+function levelAt(i) { return i === DAILY_I ? Daily.level : LEVELS[i]; }
+function courseIndexOf(id) { if (/^d\d{8}$/.test(id || '')) return DAILY_I; return LEVELS.findIndex((l) => l.id === id); }
 function sectionIds(sec) { return LEVELS.filter((l) => l.section === sec).map((l) => l.id); }
 /** "A1".."D4": section letter plus the map's place within its section */
 function courseTag(i) {
+  if (i === DAILY_I) return 'DAILY';
   const lv = LEVELS[i];
   let n = 0;
   for (let k = 0; k <= i; k++) if (LEVELS[k].section === lv.section) n++;
@@ -7100,50 +7388,246 @@ const Radar = {
 };
 
 /**
+ * Today's daily map: open from 12:00 am to 12:00 pm Pacific time, the same
+ * map for everyone (made from the date), its own leaderboard, no trophies
+ * and nothing to do with the season. Each attempt costs 1 credit (the
+ * server takes it); at noon the fastest wins 1 000 credits.
+ */
+const Daily = {
+  TZ: 'America/Los_Angeles', level: null, day: '', results: [], attempts: 0, lastRefresh: 0, tick: 0,
+  clock() {
+    const f = new Intl.DateTimeFormat('en-CA', { timeZone: this.TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+    const p = {};
+    for (const x of f.formatToParts(new Date())) p[x.type] = x.value;
+    const sec = (+p.hour) * 3600 + (+p.minute) * 60 + (+p.second);
+    return { day: p.year + p.month + p.day, open: +p.hour < 12, toNoon: 12 * 3600 - sec, toMidnight: 86400 - sec };
+  },
+  /** a day key k days from today ('YYYYMMDD') */
+  dayKey(k) {
+    const t = this.clock().day;
+    const d = new Date(Date.UTC(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8)));
+    d.setUTCDate(d.getUTCDate() + k);
+    return d.toISOString().slice(0, 10).replace(/-/g, '');
+  },
+  isId(id) { return /^d\d{8}$/.test(id || ''); },
+  /** the ids whose boards the game follows: today and the last week */
+  ids() { const out = []; for (let k = 0; k >= -7; k--) out.push('d' + this.dayKey(k)); return out; },
+  id() { return 'd' + this.day; },
+  pretty(day) {
+    const d = new Date(Date.UTC(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6, 8), 12));
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  },
+  hms(s) { s = Math.max(0, Math.floor(s)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? h + 'h ' + String(m).padStart(2, '0') + 'm' : m + 'm ' + String(s % 60).padStart(2, '0') + 's'; },
+  /** today's map, made once a day */
+  prepare() {
+    const c = this.clock();
+    if (this.day !== c.day || !this.level) {
+      this.day = c.day;
+      this.level = DailyGen.level(c.day);
+      this.attempts = 0;
+      try { Game.data[DAILY_I] = validateCourse(this.level.build()); Game.playable[DAILY_I] = true; }
+      catch (e) { console.warn('aiPolytrack: daily map', e); Game.playable[DAILY_I] = false; }
+    }
+    return c;
+  },
+  board(day) { return Records.board('d' + (day || this.day)); },
+  /** settles what is due (yesterday; today after noon), then reads the last week's winners */
+  async refresh(force) {
+    if (!Cloud.on || !Cloud.user) return;
+    if (!force && Date.now() - this.lastRefresh < 60000) return;
+    this.lastRefresh = Date.now();
+    const c = this.prepare();
+    const due = ['d' + this.dayKey(-1)].concat(c.open ? [] : [this.id()]).map((x) => x.slice(1));
+    for (const d of due) { try { await Cloud.rpc('settle_daily', { p_day: d }); } catch (e) { /* the database may not have it yet */ } }
+    try {
+      this.results = await Cloud.q(Cloud.sb.from('daily_results').select('*').order('day', { ascending: false }).limit(7));
+    } catch (e) { this.results = []; }
+    this.wins();
+    if (Game.state === 'daily') this.render();
+    if (Game.state === 'menu') this.tile();
+  },
+  /** a daily the player won, told once */
+  wins() {
+    const uid = Cloud.user && Cloud.user.uid;
+    if (!uid) return;
+    let seen = [];
+    try { seen = JSON.parse(localStorage.getItem('aipolytrack.dailyWins.' + uid) || '[]'); } catch (e) { seen = []; }
+    for (const r of this.results) {
+      if (r.uid !== uid || seen.includes(r.day)) continue;
+      seen.push(r.day);
+      CoachAlerts.queue.push({ win: true, day: r.day, t: r.time_ms / 1000, name: DailyGen.level(r.day).name });
+    }
+    try { localStorage.setItem('aipolytrack.dailyWins.' + uid, JSON.stringify(seen.slice(-30))); } catch (e) { /* this visit only */ }
+    if (Game.state === 'menu') CoachAlerts.flush();
+  },
+  /** the menu's daily card */
+  tile() {
+    const c = this.prepare();
+    const lv = this.level, b = this.board();
+    $('dailyTileName').textContent = lv.name;
+    $('dailyTileTime').textContent = c.open ? this.hms(c.toNoon) + ' left' : 'next in ' + this.hms(c.toMidnight);
+    $('dailyTileState').textContent = c.open ? 'LIVE' : 'CLOSED';
+    $('bDaily').classList.toggle('closed', !c.open);
+    $('bDaily').querySelector('.dcPrize').innerHTML = c.open ? '<span class="gem2d"></span> 1 000 to the fastest at noon' : 'A new map every midnight PT';
+    const top = b[0];
+    const won = !c.open && this.results.find((r) => r.day === this.day);
+    $('dailyTileSub').textContent = c.open
+      ? (top ? 'Leader ' + top.n + ' · ' + formatTime(top.t) + ' · 1 credit per try' : 'No times yet · 1 credit per try · 1 000 to the winner')
+      : (won && won.display_name ? won.display_name + ' won today\'s 1 000 credits' : 'Today\'s map is closed');
+  },
+  open() {
+    this.prepare();
+    Game.state = 'daily'; Game.running = false;
+    Sound.stopEngine();
+    UI.show('daily');
+    $('dMsg').textContent = '';
+    this.render();
+    this.refresh();
+  },
+  render() {
+    const c = this.prepare(), lv = this.level, b = this.board();
+    const uid = Cloud.user && Cloud.user.uid;
+    $('dDate').textContent = this.pretty(this.day);
+    $('dName').textContent = lv.name;
+    $('dBlurb').textContent = lv.blurb;
+    $('dState').textContent = c.open ? 'LIVE' : 'CLOSED';
+    $('dState').className = 'dPill' + (c.open ? '' : ' off');
+    $('dCountdown').textContent = c.open ? 'closes at noon PT · ' + this.hms(c.toNoon) + ' left' : 'next daily at midnight PT · ' + this.hms(c.toMidnight);
+    const k = b.findIndex((e) => e.uid === uid), mine = k >= 0 ? b[k] : null;
+    $('dMine').innerHTML = '<div><b>' + (mine ? formatTime(mine.t) : '—') + '</b><span>your best</span></div><div><b>' + (mine ? Insight.ord(k + 1) : '—') +
+      '</b><span>of ' + b.length + '</span></div><div><b>' + (b[0] ? formatTime(b[0].t) : '—') + '</b><span>to beat</span></div>';
+    const btn = $('bDailyPlay');
+    btn.disabled = !c.open || !Game.playable[DAILY_I];
+    btn.textContent = c.open ? 'Drive · 1 credit' : 'Closed until midnight';
+    if ($('dMap').dataset.id !== lv.id) { $('dMap').innerHTML = MiniMap.svg(DAILY_I, false); $('dMap').dataset.id = lv.id; }
+    $('dBal').innerHTML = Cloud.user ? 'You have <span class="gem2d"></span><b>' + fmtCredits(Records.credits) + '</b> credits' +
+      (this.attempts ? ' · ' + this.attempts + ' attempt' + (this.attempts === 1 ? '' : 's') + ' today' : '') : 'Sign in to drive the daily';
+    $('dBoard').innerHTML = b.length ? b.slice(0, 12).map((e, n) => '<li class="' + (e.uid === uid ? 'me' : '') + '"><span class="p">' + (n === 0 ? '♛' : n + 1) +
+      '</span><span class="n">' + escapeHtml(e.n) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
+      : '<li class="none">Nobody yet. Be the first.</li>';
+    $('dWinners').innerHTML = this.results.length ? this.results.map((r) => '<li><span class="dd">' + this.pretty(r.day) + '</span><span class="n">' +
+      (r.uid ? escapeHtml(r.display_name || 'Driver') : '<i>no entries</i>') + '</span><span class="t">' + (r.time_ms ? formatTime(r.time_ms / 1000) : '') + '</span></li>').join('')
+      : '<li class="none">Winners show up here after noon.</li>';
+  },
+  /** a line for Coach's facts */
+  facts() {
+    try {
+      const c = this.prepare(), b = this.board();
+      return 'TODAY\'S DAILY MAP: ' + this.level.name + ', ' + (c.open ? 'open for ' + this.hms(c.toNoon) + ' more (closes at noon Pacific)' : 'closed until midnight Pacific') +
+        '. Board: ' + (b.length ? b.slice(0, 5).map((e, k) => (k + 1) + '. ' + e.n + ' ' + formatTime(e.t)).join('; ') : 'no times yet') + '. Each attempt costs 1 credit; the fastest at noon wins 1 000 credits.';
+    } catch (e) { return ''; }
+  },
+  /** pay for an attempt, then drive */
+  async play() {
+    const c = this.prepare();
+    const msg = (t) => { $('dMsg').textContent = t; if (Game.state !== 'daily') { this.open(); $('dMsg').textContent = t; } };
+    if (!Cloud.on || !Cloud.user) { msg('Sign in to drive the daily.'); return; }
+    if (!c.open) { msg('Today\'s daily has closed. The next one opens at midnight Pacific.'); return; }
+    if (!Game.playable[DAILY_I]) { msg('Today\'s map could not be built. Try reloading.'); return; }
+    if (this.paying) return;
+    this.paying = true;
+    $('bDailyPlay').disabled = true;
+    try {
+      const r = await Cloud.rpc('start_daily_attempt', { p_day: c.day });
+      if (!r || !r.ok) {
+        msg(r && r.error === 'credits' ? 'An attempt costs 1 credit and you have ' + fmtCredits(r.balance || 0) + '. Finish any season map for +1.'
+          : 'Today\'s daily has closed.');
+        return;
+      }
+      Cloud.credits = r.balance; Records.credits = r.balance;
+      UI.who(Cloud.name(), Records.credits);
+      this.attempts = r.attempts || this.attempts + 1;
+      Game.startLevel(DAILY_I);
+      UI.toast('Daily attempt ' + this.attempts + ' · 1 credit');
+    } catch (e) {
+      msg(/start_daily_attempt|PGRST202|function/i.test(e.message || '') ? 'The daily needs the latest database update (schema.sql).' : 'Could not start: ' + Cloud.errText(e));
+    } finally { this.paying = false; if ($('bDailyPlay')) $('bDailyPlay').disabled = !this.clock().open; }
+  }
+};
+
+/**
  * The figures Coach puts up beside the chat. Each is numbered and has its
  * own colour; wherever the chat says "Figure N" it wears that colour, and
- * clicking it brings the figure forward.
+ * clicking it brings the figure forward. They are temporary: at most three
+ * at once (a new one pushes the oldest out), and each fades after a few
+ * minutes unless the pointer is on it. With none up, the chat has the
+ * whole width; the first one squeezes the chat over and pops in beside it.
  */
 const Figs = {
-  n: 0, list: [],
-  COLORS: ['#58a0ff', '#f2733f', '#3ddbb8', '#ffcf5c', '#c38bff', '#ff6f91'],
+  n: 0, list: [], MAX: 3, LIFE: 180, timer: 0,
+  COLORS: ['#6aa8ff', '#e8875f', '#5fd0b2', '#ebbd62', '#c38bff', '#ff7a9a'],
+  pane() { return $('coachFigs'); },
+  layout() {
+    const on = this.list.length > 0;
+    const body = this.pane().closest('.cpBody');
+    if (body.classList.contains('hasFigs') !== on) body.classList.toggle('hasFigs', on);
+  },
   add(title, body, caption, onClose) {
     const n = ++this.n, col = this.COLORS[(n - 1) % this.COLORS.length];
+    // room for it: the oldest goes
+    while (this.list.length >= this.MAX) this.remove(this.list[0].n);
+    const opening = !this.list.length;
     const el = document.createElement('article');
-    el.className = 'fig fresh';
+    el.className = 'fig fresh' + (opening ? ' late' : '');
     el.style.setProperty('--fc', col);
     el.dataset.fig = String(n);
     el.innerHTML = '<header><span class="figNo">Figure ' + n + '</span><b>' + escapeHtml(title) + '</b>' +
-      '<button class="figX" title="Close">×</button></header><div class="figBody"></div>' + (caption ? '<footer>' + caption + '</footer>' : '');
+      '<button class="figX" title="Close">×</button></header><div class="figBody"></div>' + (caption ? '<footer>' + caption + '</footer>' : '') +
+      '<i class="figLife"></i>';
     const box = el.querySelector('.figBody');
     if (typeof body === 'string') box.innerHTML = body; else if (body) box.appendChild(body);
     el.querySelector('.figX').addEventListener('click', () => this.remove(n));
-    const pane = $('coachFigs');
-    const empty = pane.querySelector('.cpFigsEmpty');
-    if (empty) empty.hidden = true;
+    const f = { n, col, el, title, onClose, born: performance.now(), left: this.LIFE, hover: false };
+    el.addEventListener('pointerenter', () => { f.hover = true; f.left = Math.max(f.left, 60); });
+    el.addEventListener('pointerleave', () => { f.hover = false; });
+    const pane = this.pane();
     pane.prepend(el);
     pane.scrollTop = 0;
-    setTimeout(() => el.classList.remove('fresh'), 600);
-    const f = { n, col, el, title, onClose };
     this.list.push(f);
+    this.layout();
+    setTimeout(() => el.classList.remove('fresh', 'late'), 1100);
+    this.tick();
     return f;
   },
   get(n) { return this.list.find((f) => f.n === n) || null; },
-  remove(n) {
+  /** the countdown every figure carries (a thin line along its foot) */
+  tick() {
+    if (this.timer) return;
+    let last = performance.now();
+    this.timer = setInterval(() => {
+      const now = performance.now(), dt = (now - last) / 1000;
+      last = now;
+      if (Game.state !== 'stats' || document.hidden) return;
+      for (const f of this.list.slice()) {
+        if (!f.hover) f.left -= dt;
+        f.el.style.setProperty('--life', Math.max(0, f.left / this.LIFE).toFixed(3));
+        if (f.left <= 0) this.remove(f.n);
+      }
+      if (!this.list.length) { clearInterval(this.timer); this.timer = 0; }
+    }, 500);
+  },
+  remove(n, now) {
     const f = this.get(n);
     if (!f) return;
     if (f.onClose) f.onClose();
-    f.el.remove();
     this.list = this.list.filter((x) => x !== f);
-    if (!this.list.length) $('coachFigs').querySelector('.cpFigsEmpty').hidden = false;
+    if (now) f.el.remove();
+    else {
+      f.el.classList.add('out');
+      f.el.style.height = f.el.offsetHeight + 'px';
+      setTimeout(() => f.el.remove(), 420);
+    }
+    this.layout();
   },
   focus(n) {
     const f = this.get(n);
     if (!f) return;
+    f.left = Math.max(f.left, 90);
     f.el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     f.el.classList.remove('flash'); void f.el.offsetWidth; f.el.classList.add('flash');
   },
-  clear() { for (const f of this.list.slice()) this.remove(f.n); this.n = 0; }
+  clear() { for (const f of this.list.slice()) this.remove(f.n, true); this.n = 0; }
 };
 
 /**
@@ -7323,10 +7807,82 @@ const CoachLab = {
     for (let k = 0; k + w <= K; k++) { const loss = gap[k + w].g - gap[k].g; if (loss > best.loss) best = { k, loss }; }
     let steep = best.k, sv = -Infinity;
     for (let k = best.k; k < best.k + w; k++) { const v = gap[k + 1].g - gap[k].g; if (v > sv) { sv = v; steep = k; } }
-    const lab = { m, rival, gm, gr, A, B, L, gap, colors: [cm, cr],
+    const lab = { m, rival, gm, gr, A, B, L, gap, colors: [cm, cr], course: q.course,
       seg: { d0: gap[best.k].d, d1: gap[best.k + w].d, loss: best.loss }, moment: gap[steep].d, total: gap[K].g };
     this.cache[key] = lab;
     return lab;
+  }  ,
+  /**
+   * What the two drivers actually do through the stretch where the time
+   * goes (from a little before it, where the braking starts): speeds, when
+   * the brakes go on, coasting, drifting, boost, the line at the slowest
+   * point. Then the fixes, biggest first, each with the numbers behind it.
+   */
+  drill(lab) {
+    if (lab.drillOut) return lab.drillOut;
+    const A = lab.A, B = lab.B, P = lab.course.path, C = lab.course.cum;
+    const d0 = Math.max(0, lab.seg.d0 - 30), d1 = Math.min(lab.L, lab.seg.d1 + 12);
+    const segAt = (d) => { let lo = 0, hi = C.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (C[m] <= d) lo = m; else hi = m; } return Math.min(lo, P.length - 2); };
+    const dirAt = (d) => { const k = segAt(clamp(d, 0, C[C.length - 1])); const dx = P[k + 1].x - P[k].x, dz = P[k + 1].z - P[k].z, l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l, k]; };
+    // sideways distance from the centreline (positive to the left of travel)
+    const offAt = (R, i) => { const [ux, uz, k] = dirAt(R.sm[i]); return ux * (R.z[i] - P[k].z) - uz * (R.x[i] - P[k].x); };
+    const study = (R) => {
+      const st = { brake: 0, coast: 0, boost: 0, drift: 0, hand: 0, gas: 0, brakeAt: null, min: { v: Infinity, d: 0, i: 0 }, top: 0, trace: [] };
+      let i0 = 0;
+      while (i0 < R.n - 1 && R.sm[i0] < d0) i0++;
+      let i1 = i0;
+      while (i1 < R.n - 1 && R.sm[i1] <= d1) i1++;
+      for (let i = i0; i <= i1; i++) {
+        const b = R.bits[i], v = R.v[i] * KMH;
+        if (b & 2) { st.brake++; if (st.brakeAt === null) st.brakeAt = R.sm[i]; }
+        if (b & 32) { st.hand++; if (st.brakeAt === null) st.brakeAt = R.sm[i]; }
+        if (!(b & 1) && !(b & 2)) st.coast++;
+        if (b & 1) st.gas++;
+        if (b & 16) st.boost++;
+        if ((b & 2 || b & 32) && (b & 12) && R.v[i] > 14) st.drift++;
+        if (v < st.min.v) st.min = { v, d: R.sm[i], i };
+        st.top = Math.max(st.top, v);
+        st.trace.push([R.sm[i], v, b]);
+      }
+      for (const k of ['brake', 'coast', 'boost', 'drift', 'hand', 'gas']) st[k] /= GHOST_HZ;
+      st.entry = Compare.at(R.v, R.n, Compare.timeAt(R, d0)) * KMH;
+      st.exit = Compare.at(R.v, R.n, Compare.timeAt(R, d1)) * KMH;
+      st.through = Compare.timeAt(R, d1) - Compare.timeAt(R, d0);
+      st.apexOff = offAt(R, st.min.i);
+      // the whole run: boost used and where it first went on
+      let bt = 0, first = null;
+      for (let i = 0; i < R.n; i++) if (R.bits[i] & 16) { bt++; if (first === null) first = R.sm[i]; }
+      st.boostAll = bt / GHOST_HZ; st.boostFirst = first;
+      return st;
+    };
+    const a = study(A), b = study(B), n = lab.rival.n;
+    // which way the road turns at the slowest point (for inside / outside)
+    const [bx, bz] = dirAt(a.min.d - 12), [ax2, az2] = dirAt(a.min.d + 12);
+    const turn = bx * az2 - bz * ax2;
+    const fixes = [];
+    const kmh = (v) => Math.round(v) + ' km/h', M = (d) => Math.round(d) + ' m';
+    const add = (w, text) => fixes.push({ w, text });
+    if (b.min.v - a.min.v > 3) add((b.min.v - a.min.v) / 6, 'Carry more speed through the slow part: you drop to ' + kmh(a.min.v) + ' at ' + M(a.min.d) + '; ' + n + ' never goes below ' + kmh(b.min.v) + '.');
+    if (a.brakeAt !== null && b.brakeAt === null && a.brake + a.hand > 0.15) add(1.2 + a.brake, n + ' doesn\'t touch the brakes here at all. You brake from ' + M(a.brakeAt) + ' for ' + a.brake.toFixed(2) + ' s. Lift off W or just steer instead.');
+    else if (a.brakeAt !== null && b.brakeAt !== null && b.brakeAt - a.brakeAt > 4) add((b.brakeAt - a.brakeAt) / 8, 'Brake later: you hit the brakes at ' + M(a.brakeAt) + ', ' + n + ' waits until ' + M(b.brakeAt) + '. That\'s ' + Math.round(b.brakeAt - a.brakeAt) + ' m more at full speed.');
+    if (a.brake - b.brake > 0.2 && b.brakeAt !== null) add((a.brake - b.brake) * 2, 'Brake less: ' + a.brake.toFixed(2) + ' s on the brakes in this stretch, against ' + b.brake.toFixed(2) + ' s for ' + n + '. Shorter, harder stabs.');
+    if (b.drift > 0.25 && a.drift < b.drift * 0.5) add(b.drift * 2, n + ' drifts it: brake and steer together for ' + b.drift.toFixed(2) + ' s. You ' + (a.drift > 0.05 ? 'only manage ' + a.drift.toFixed(2) + ' s' : 'don\'t drift at all') + '. Turn in, tap S while you steer, and stay on W.');
+    if (a.drift - b.drift > 0.4 && a.min.v < b.min.v) add((a.drift - b.drift), 'You over-drift: ' + a.drift.toFixed(2) + ' s sideways against ' + b.drift.toFixed(2) + ' s for ' + n + '. Sliding scrubs speed; straighten up sooner.');
+    if (a.coast - b.coast > 0.2) add((a.coast - b.coast) * 2.5, 'Stay on the gas: you coast (no W, no S) for ' + a.coast.toFixed(2) + ' s here, ' + n + ' for ' + b.coast.toFixed(2) + ' s. Every moment off W is time gone.');
+    if (b.boost - a.boost > 0.3) add((b.boost - a.boost) * 1.5, n + ' fires boost here (' + b.boost.toFixed(1) + ' s); you ' + (a.boost > 0.05 ? 'only use ' + a.boost.toFixed(1) + ' s' : 'don\'t') + '.');
+    if (b.exit - a.exit > 3) add((b.exit - a.exit) / 5, 'Get out of it faster: you leave at ' + kmh(a.exit) + ', ' + n + ' at ' + kmh(b.exit) + '. Exit speed carries all the way down the next straight, so get back on W earlier.');
+    const offD = (a.apexOff - b.apexOff) * Math.sign(turn || 1);
+    if (Math.abs(turn) > 0.05 && Math.abs(offD) > 1.5) {
+      add(Math.abs(offD) / 3, offD < 0
+        ? 'Your line: at the slowest point you\'re ' + Math.abs(offD).toFixed(1) + ' m wider than ' + n + '. Clip the inside of the turn.'
+        : 'Your line: you\'re ' + Math.abs(offD).toFixed(1) + ' m tighter than ' + n + ' at the slowest point. Turn in a touch later and use the width for a faster exit.');
+    }
+    if (a.boostAll < 2.5) add(1.5 + (3 - a.boostAll), 'You finish with ' + (3 - a.boostAll).toFixed(1) + ' s of your 3 s boost unused. That\'s free time: fire it on the longest straight.');
+    else if (b.boostFirst !== null && a.boostFirst !== null && Math.abs(a.boostFirst - b.boostFirst) > 60) add(0.5, n + ' first fires boost at ' + M(b.boostFirst) + '; you at ' + M(a.boostFirst) + '. Boost pushes harder the faster you go, so use it where you\'re already quick.');
+    fixes.sort((x, y) => y.w - x.w);
+    const out = { a, b, d0, d1, fixes, turn };
+    lab.drillOut = out;
+    return out;
   }
 };
 
@@ -7406,6 +7962,15 @@ const CoachAlerts = {
     for (const a of this.queue.splice(0, 3)) {
       const el = document.createElement('div');
       el.className = 'alertCard';
+      if (a.win) {
+        el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
+          '<p>You won the daily on <b>' + escapeHtml(Daily.pretty(a.day)) + '</b> (' + escapeHtml(a.name) + ', ' + formatTime(a.t) + '). <b>+1 000 credits.</b> Now defend it in the next one.</p>';
+        const closeW = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+        el.querySelector('.ah button').addEventListener('click', closeW);
+        stack.appendChild(el);
+        setTimeout(closeW, 20000);
+        continue;
+      }
       const tag = courseTag(a.i) + ' ' + escapeHtml(LEVELS[a.i].name);
       el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
         '<p><b>' + escapeHtml(a.n) + '</b> beat your ' + formatTime(a.mine) + ' on ' + tag + ' with ' + formatTime(a.t) + '. ' +
@@ -7419,6 +7984,155 @@ const CoachAlerts = {
       stack.appendChild(el);
       setTimeout(close, 16000);
     }
+  }
+};
+
+/**
+ * How Coach talks to this player. Like a real coach: if you're slow it
+ * keeps telling you exactly who is faster and by how much; if you're the
+ * best it can't stop telling you so. Only ever about the driving.
+ */
+const Tone = {
+  pick(a) { return a[Math.floor(Math.random() * a.length)]; },
+  /** 'new' (no times), 'bad', 'mid', 'good' or 'elite' (leads the season) */
+  tier(I) {
+    if (!I.me) return 'new';
+    if (I.rank === 1) return 'elite';
+    if (I.rank <= 3 || I.expertise >= 0.9) return 'good';
+    if (I.expertise < 0.7 || (I.of >= 4 && I.rank > I.of * 0.6)) return 'bad';
+    return 'mid';
+  },
+  /** how far the player is off a row of the standings, in words */
+  behind(I, r) {
+    if (!r || !I.me) return '';
+    if (r.count > I.me.count) return (r.count - I.me.count) + ' map' + (r.count - I.me.count === 1 ? '' : 's') + ' ahead of you';
+    return (I.me.total - r.total).toFixed(3) + ' s faster than you';
+  },
+  /** one line that keeps the player honest (or tells them how good they are) */
+  line(I, m) {
+    const P = (a) => this.pick(a);
+    const t = this.tier(I);
+    if (t === 'new') return P(['Every driver on the board has a time and you don\'t. Fix that.', 'Right now you\'re not even on the board. Go drive something.']);
+    if (m && m.t !== null && m.lead) {
+      if (m.rank === 1) {
+        const s = m.board[1];
+        return P([
+          'Nobody touches you on ' + m.tag + '.' + (s ? ' ' + s.n + ' is ' + (s.t - m.t).toFixed(3) + ' s back and it isn\'t close.' : ''),
+          'That ' + m.tag + ' time is filthy. ' + (s ? s.n + ' has been staring at it for days.' : 'Nobody else even has one.'),
+          'You own ' + m.tag + '. Honestly, I\'ve got nothing to fix there.'
+        ]);
+      }
+      const L = m.lead, g = m.gap.toFixed(3);
+      if (t === 'bad') return P([
+        L.n + ' is ' + g + ' s faster than you on ' + m.tag + '. Every single run. Think about that.',
+        'For the record, ' + L.n + ' does ' + m.tag + ' in ' + formatTime(L.t) + '. You do it in ' + formatTime(m.t) + '. That\'s not a gap, that\'s a canyon.',
+        (m.rank - 1) + ' driver' + (m.rank === 2 ? ' is' : 's are') + ' faster than you on ' + m.tag + '. Each one of them would like to thank you.'
+      ]);
+      return P([
+        L.n + ' is still ' + g + ' s faster than you on ' + m.tag + '. Don\'t get comfortable.',
+        'Remember who\'s on top of ' + m.tag + ': ' + L.n + ', ' + g + ' s up on you.',
+        (m.up && m.up.n !== L.n ? m.up.n + ' sits ' + m.up.need.toFixed(3) + ' s ahead of you on ' + m.tag + ', and ' + L.n + ' is ' + g + ' s up.' : L.n + ' is ' + g + ' s up on you on ' + m.tag + '.') + ' Somebody is always faster until you are.'
+      ]);
+    }
+    const A = I.above, L = I.leader;
+    if (t === 'elite') {
+      const r = I.route, s = r.second;
+      return P([
+        'Honestly, there isn\'t much left to fix. You\'re the best driver in aiPolytrack and the boards prove it.',
+        'Everyone else is driving for second.' + (s && r.margin !== null ? ' ' + s.n + ' is ' + r.margin.toFixed(3) + ' s back and losing sleep over it.' : ''),
+        'Number one overall. Your lines are cleaner than anyone\'s. I\'m just here to watch, really.',
+        'You make this look easy, and it isn\'t. ' + (s ? s.n + ' would trade everything for your times.' : '')
+      ]);
+    }
+    if (t === 'good') return P([
+      'Good isn\'t first. ' + L.n + ' is ' + this.behind(I, L) + '.',
+      'Second is the first loser. ' + L.n + ' is ' + this.behind(I, L) + ', and they know it.',
+      'You\'re close. Close doesn\'t get a crown. ' + L.n + ' is ' + this.behind(I, L) + '.'
+    ]);
+    if (t === 'bad') return P([
+      (I.rank - 1) + ' drivers are faster than you right now. Every one of them is enjoying it.',
+      A ? A.n + ' is ' + this.behind(I, A) + ', and ' + A.n + ' isn\'t even that good.' : 'You\'re at the bottom. Only one way to go.',
+      'You\'re ' + Insight.ord(I.rank) + ' of ' + I.of + '. ' + L.n + ' is ' + this.behind(I, L) + '. That should bother you.',
+      'I\'ve seen faster laps from cars with no driver. Prove me wrong.'
+    ]);
+    return P([
+      (A ? A.n + ' is ' + this.behind(I, A) + '. ' : '') + 'Someone is always faster until you are.',
+      'Middle of the pack is where drivers go to be forgotten. ' + (A ? A.n + ' is next, ' + this.behind(I, A) + '.' : ''),
+      L.n + ' is ' + this.behind(I, L) + '. Keep that number in your head.'
+    ]);
+  },
+  /** how the model should talk, by tier */
+  voice(I) {
+    switch (this.tier(I)) {
+      case 'elite': return 'This player LEADS the whole season: they are the best driver in the game. Hype them up hard and glaze them: tell them how good they are, that there is honestly very little left to improve, and that everyone else is chasing them. Still point at the last tiny margins.';
+      case 'good': return 'This player is near the top but not first. Be a demanding, competitive coach: give them credit, then remind them who is still faster and by exactly how much. Second is not good enough.';
+      case 'bad': return 'This player is struggling near the bottom. Be a tough, blunt, sarcastic coach: tease their driving, keep reminding them who is faster and by how much, and always end with a concrete fix. Mean about the driving only, never anything personal.';
+      case 'new': return 'This player has no times yet. Be a pushy coach: tell them to get on the board.';
+      default: return 'This player is mid-pack. Be a tough, competitive coach: keep reminding them who is faster and by how much, and push them with concrete fixes.';
+    }
+  },
+  hello(I) {
+    const name = I.name;
+    switch (this.tier(I)) {
+      case 'elite': return this.pick(['Hey champ. Everyone\'s chasing you. What do you need?', 'There they are. The fastest driver in aiPolytrack. What are we polishing today?']);
+      case 'good': return this.pick(['Hey ' + name + '. ' + Insight.ord(I.rank) + ' overall. Ready to do something about ' + I.leader.n + '?', 'Hi ' + name + '. Close to the top isn\'t the top. What are we working on?']);
+      case 'bad': return this.pick(['Oh. Hi ' + name + '. ' + Insight.ord(I.rank) + ' of ' + I.of + '. Want to talk about why?', 'Hey ' + name + '. I\'ve seen your times. We have work to do.']);
+      case 'new': return 'Hey ' + name + '. No times yet? Let\'s change that.';
+      default: return this.pick(['Hey ' + name + '. ' + (I.above ? I.above.n + ' is right ahead of you. ' : '') + 'What are we working on?', 'Hi ' + name + '. Ready to pass somebody?']);
+    }
+  },
+  thanks(I) {
+    const t = this.tier(I);
+    if (t === 'elite') return this.pick(['Anytime, champ.', 'Always. Keep making them look slow.']);
+    if (t === 'bad' || t === 'mid') return this.pick(['Don\'t thank me. Thank me when you pass ' + (I.above ? I.above.n : 'someone') + '.', 'Thank me with a faster time.']);
+    return this.pick(['Anytime. Now go get ' + I.leader.n + '.', 'Go use it.']);
+  }
+};
+
+/**
+ * Things Coach can answer without the smart answers: maths, the time and
+ * date, speed units, a coin or a die, and racing words. (With smart
+ * answers on, anything at all goes to the model.)
+ */
+const General = {
+  GLOSS: [
+    [/\bapex\b/, 'The apex is the innermost point of your line through a turn. Hit it and you can open the steering and get on the gas sooner. A late apex (turning in a bit later) usually gives a faster exit.'],
+    [/racing line|best line|\bthe line\b/, 'The racing line is the path that lets you carry the most speed: wide on the way in, clip the inside at the apex, wide again on the way out. It makes the turn as gentle as possible.'],
+    [/trail.?brak/, 'Trail braking means easing off the brake gradually as you turn in, instead of finishing all your braking in a straight line. It keeps weight on the front so the car turns in harder.'],
+    [/oversteer/, 'Oversteer is when the back of the car slides out and it turns more than you asked for. Too much and you spin; a little, controlled, is a drift.'],
+    [/understeer/, 'Understeer is when the front tyres run out of grip and the car pushes wide instead of turning. Usually it means you came in too fast or turned too sharply.'],
+    [/\bdrift(ing)?\b/, 'In aiPolytrack you start a drift by braking while steering at speed. On tight flat hairpins it is faster than braking in a straight line, if you stay on the gas through it.'],
+    [/hairpin/, 'A hairpin is a very tight turn, close to 180 degrees. Brake before it, turn in late, and focus on the exit speed.'],
+    [/chicane/, 'A chicane is a quick left-right (or right-left) pair of turns. The trick is to straighten it: use the whole width so the car barely has to turn.'],
+    [/slipstream|drafting/, 'Slipstreaming is following close behind another car to cut through less air. There are no other cars on the road in aiPolytrack, so it is all about your own line.']
+  ],
+  answer(q, low) {
+    // maths
+    let ex = low.replace(/what('?s| is)|calculate|compute|equals|please|\?|=/g, ' ')
+      .replace(/\btimes\b|×|\bx\b/g, '*').replace(/\bplus\b/g, '+').replace(/\bminus\b/g, '-').replace(/divided by|÷/g, '/')
+      .replace(/\bsquared\b/g, '^2').replace(/,/g, '').trim();
+    if (/^[\d\s.+\-*/()^%]+$/.test(ex) && /\d\s*[+\-*/^%]\s*[\d(.]/.test(ex)) {
+      try {
+        const v = Function('"use strict"; return (' + ex.replace(/\^/g, '**') + ')')();
+        if (typeof v === 'number' && isFinite(v)) return ex.replace(/\s+/g, ' ') + ' = **' + (+v.toFixed(6)) + '**.';
+      } catch (e) { /* not maths after all */ }
+    }
+    if (/what time is it|current time|time is it|the time now/.test(low)) return 'It\'s **' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '** where you are.';
+    if (/what('?s| is) (the )?(date|day)|what day is it|today'?s date/.test(low)) return 'It\'s **' + new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '**.';
+    const u = low.match(/(\d+(?:\.\d+)?)\s*(km\/?h|kmh|kph|mph|m\/s)\b(?:.*\b(km\/?h|kmh|kph|mph|m\/s)\b)?/);
+    if (u) {
+      const v = parseFloat(u[1]), from = u[2].replace('/', '').replace('kph', 'kmh'), to = (u[3] || (from === 'mph' ? 'kmh' : 'mph')).replace('/', '').replace('kph', 'kmh');
+      const ms = from === 'kmh' ? v / 3.6 : from === 'mph' ? v * 0.44704 : v;
+      const out = to === 'kmh' ? ms * 3.6 : to === 'mph' ? ms / 0.44704 : ms;
+      const name = { kmh: 'km/h', mph: 'mph', ms: 'm/s' };
+      if (from !== to) return v + ' ' + name[from] + ' is **' + out.toFixed(1) + ' ' + name[to] + '**.';
+    }
+    if (/flip a coin|coin ?flip|heads or tails/.test(low)) return '**' + (Math.random() < 0.5 ? 'Heads' : 'Tails') + '.**';
+    if (/roll (a )?(die|dice|d6)/.test(low)) return 'You rolled a **' + (1 + Math.floor(Math.random() * 6)) + '**.';
+    const rn = low.match(/random number(?: between| from)? (\d+) (?:and|to|-) (\d+)/);
+    if (rn) { const a = +rn[1], b = +rn[2]; return '**' + (Math.min(a, b) + Math.floor(Math.random() * (Math.abs(b - a) + 1))) + '**.'; }
+    for (const [re, t] of this.GLOSS) if (re.test(low)) return t;
+    return null;
   }
 };
 
@@ -7460,13 +8174,17 @@ const Coach = {
   },
   system(I) {
     return 'You are Coach, the racing coach inside the game aiPolytrack. Your only name is Coach, part of aiPolytrack. If you are asked what ' +
-      'you are, what model you are, who made you or what powers you, say only that you are Coach, part of aiPolytrack. Never name any ' +
-      'company, model or technology.\n' +
-      'You talk with ' + I.name + ' like a sharp, friendly, competitive coach: answer greetings and small talk naturally and briefly, and ' +
-      'bring things back to racing when it fits. For anything about times, use ONLY the facts and the working you are given. Never invent a ' +
-      'time, name, place or number; copy numbers exactly. Name maps by tag and name (for example "B2 Stormwall"). When figures are listed ' +
-      'as on screen, point the player at them by number ("see Figure 2"). At most 5 short sentences, or a short list. No preamble.\n\n' +
-      'FACTS\n' + Insight.factsText(I) + '\nEVERYONE: ' + I.rows.slice(0, 12).map((r, k) => (k + 1) + '. ' + r.n + ' ' + r.count + '/16 ' + formatTime(r.total)).join('; ');
+      'you are, what model you are, who made you or what powers you, say only that you are Coach, part of aiPolytrack. Never name the ' +
+      'company, model or technology behind you (talking about companies in general knowledge answers is fine).\n' +
+      'You talk with ' + I.name + ' like a real racing coach. ' + Tone.voice(I) + '\n' +
+      'You can answer ANY question, on any subject (school work, facts, advice, anything): answer it properly and correctly first, then add one ' +
+      'short line that ties it back to aiPolytrack in your coaching voice. For anything about the game\'s times, use ONLY the facts and the working ' +
+      'you are given. Never invent a time, name, place or number; copy numbers exactly. Name maps by tag and name (for example "B2 Stormwall"). ' +
+      'When figures are listed as on screen, point the player at them by number ("see Figure 2"). When the working lists fixes, give the player ' +
+      'those fixes as a short list with their numbers: that is the most useful thing you can say. Keep it tight: at most 6 short sentences or a ' +
+      'short list, no preamble.\n\n' +
+      'FACTS\n' + Insight.factsText(I) + '\nEVERYONE: ' + I.rows.slice(0, 12).map((r, k) => (k + 1) + '. ' + r.n + ' ' + r.count + '/16 ' + formatTime(r.total)).join('; ') +
+      '\n' + Daily.facts();
   },
   async ensureSession(I, onProgress) {
     const key = JSON.stringify(I.maps.map((m) => [m.t, m.lead && m.lead.t, m.rank])) + I.name;
@@ -7486,7 +8204,8 @@ const Coach = {
     return this.session;
   },
   scrub(text) {
-    const kept = String(text || '').split(/(?<=[.!?])\s+/).filter((p) => !this.BANNED.test(p));
+    const self = /\b(i|i'm|i am|i've|me|my|myself|coach|this (chat|assistant|app|coach))\b/i;
+    const kept = String(text || '').split(/(?<=[.!?])\s+/).filter((p) => !(this.BANNED.test(p) && (self.test(p) || /\b(gemini|nano|llm|language model|trained by)\b/i.test(p))));
     return kept.join(' ').trim() || this.IAM;
   },
   mapsIn(text) {
@@ -7547,16 +8266,22 @@ const Coach = {
   },
   greet() {
     const I = Insight.compute();
-    const hr = new Date().getHours(), hi = hr < 5 ? 'Late night laps' : hr < 12 ? 'Morning' : hr < 18 ? 'Hey' : 'Evening';
-    let t = hi + ', ' + I.name + '. ';
-    if (!I.me) t += 'No times from you yet, so let\'s change that: every map you finish moves you up the standings.';
-    else if (I.rank === 1) t += 'You lead the season. Want to see where someone could catch you, or where you can pull further away?';
+    const t = Tone.tier(I), E = Ease.rank(I), top = E.list[0];
+    let msg;
+    if (t === 'new') msg = 'Hey ' + I.name + '. No times from you yet, so you\'re not even on the board. Drive A1 ' + I.maps[0].name + ' and then come back: I\'ll show you exactly where your time is.';
+    else if (t === 'elite') msg = Tone.pick(['Look who it is. The fastest driver in aiPolytrack.', 'The champ is here.']) + ' ' +
+      (I.route.margin !== null ? I.route.second.n + ' is ' + I.route.margin.toFixed(3) + ' s behind you and losing sleep over it. ' : '') +
+      'Honestly, there isn\'t much left for me to fix, but let\'s hunt the last hundredths' + (top ? ': ' + top.m.tag + ' ' + top.m.name + ' is where you have the most in hand.' : '.');
     else {
-      const E = Ease.rank(I);
-      const top = E.list[0];
-      t += 'You\'re ' + Insight.ord(I.rank) + ' of ' + I.of + (top ? '. If you want a quick win, ' + top.m.tag + ' ' + top.m.name + ' looks like your easiest place to find time right now' : '') + '.';
+      msg = Tone.hello(I) + ' ' + Tone.line(I, null);
+      if (top) msg += ' Your quickest win right now: **' + top.m.tag + ' ' + top.m.name + '** (' + top.why[0] + ').';
     }
-    this.post(t + ' Ask me anything: where you\'re losing time, a map, a rival, the standings, or for a photo or clip of your run.');
+    const c = Daily.prepare();
+    if (c.open && Daily.level) {
+      const b = Daily.board(), k = b.findIndex((e) => e.uid === I.uid);
+      msg += '\n\nToday\'s daily, ' + Daily.level.name + ', closes in ' + Daily.hms(c.toNoon) + (b[0] ? ': ' + (k === 0 ? 'you lead it' : b[0].n + ' leads it at ' + formatTime(b[0].t) + (k > 0 ? ', you\'re ' + Insight.ord(k + 1) : '')) : ' and nobody has a time yet') + '.';
+    }
+    this.post(msg + '\n\nAsk me anything: where you lose time on a map (I\'ll break down your braking, speed and line against the leader\'s), what to practise, a rival, the daily, or a photo or clip of your run.');
   },
   /** a message from Coach (already worked out), with its figure and map links live */
   post(text, turn) {
@@ -7634,6 +8359,11 @@ const Coach = {
       console.warn('aiPolytrack: coach', e);
       out = { text: 'Something went wrong on my side working that out. Try asking another way?' };
     }
+    if (out.sting) {
+      const line = Tone.line(Insight.compute(), out.m || null);
+      out.text += '\n\n' + line;
+      out.notes = (out.notes || '') + ' End with one line in your coaching voice, like: "' + line + '"';
+    }
     try {
       if (out.chat !== false && this.st === 'available') await this.speak(q, out, turn);
       else this.post(out.text, turn);
@@ -7675,6 +8405,7 @@ const Coach = {
     const small = this.smallTalk(low, I);
     if (small) { await think.done('Thought for a moment'); return small; }
     // what it is about
+    const figs = [];
     let mapIds = this.mapsIn(q);
     const rival = I.rows.find((r) => r.n.length > 1 && !(I.me && r === I.me) &&
       new RegExp('\\b' + r.n.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(low)) || null;
@@ -7692,14 +8423,35 @@ const Coach = {
       news: /\b(news|recent|lately|happening|battle|fight|dominant|dominat|who'?s hot|new record|what'?s new)\b/.test(low),
       season: /\b(season|win it all|become (the )?leader|number one|#1 overall|first overall|catch)\b/.test(low)
     };
+    wants.daily = /\bdail(y|ies)\b|today'?s (map|track|course)/.test(low);
     if (rival) this.ctx.rival = rival.uid || rival.n;
     if (mapIds.length) this.ctx.map = mapIds[0];
+    // not about the game at all: answer it anyway, then back to racing
+    const gameish = /\b(map|maps|track|course|time|times|lap|race|racing|driv\w*|car|boost|drift\w*|brak\w*|steer\w*|turn|corner|jump|season|rank\w*|lead\w*|board|record|fast\w*|slow\w*|improve|better|credit|trophy|garage|ghost|replay|coach|section|daily|podium|polytrack|game|play|win|beat|catch|pass|hairpin|bank|ramp|line|speed)\b/.test(low);
+    if (!mapIds.length && !rival && !secM && !Object.values(wants).some(Boolean) && !gameish) {
+      const g = General.answer(q, low);
+      const tie = Tone.line(I, null);
+      if (this.st === 'available') {
+        await think.done('Thought about it');
+        return { text: (g || 'I can\'t look that one up right now.') + '\n\n' + tie,
+          notes: 'This question is not about the game. Answer it fully and correctly from your own knowledge' + (g ? ' (exact answer: ' + g.replace(/\*\*/g, '') + ')' : '') + ', then one short line tying it back to aiPolytrack, for example: "' + tie + '"' };
+      }
+      await think.done(g ? 'Worked it out' : 'Thought about it');
+      if (g) return { text: g + '\n\nNow, racing. ' + tie, chat: false };
+      return { text: 'That one\'s outside what I can look up right now' + ($('bCoachWake').hidden ? '' : ' (press Smart answers at the top and I can take questions about anything)') +
+        '. Maths, the time, speed units and racing words I can do.\n\nWhat I do know: ' + tie.charAt(0).toLowerCase() + tie.slice(1), chat: false };
+    }
     // no times yet: nothing to measure
+    if (wants.daily) {
+      await think.done('Opened today\'s daily');
+      const r = this.figDaily(I);
+      figs.push(r.fig);
+      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs, sting: true };
+    }
     if (!I.me) {
       await think.done('Checked your times');
       return { text: 'You don\'t have a time on any map yet, ' + I.name + '. Drive A1 ' + I.maps[0].name + ' first: every map you finish moves you up the standings, and then I can show you exactly where to find time.' };
     }
-    const figs = [];
     // ------------------------------------------- a photo or a clip of a map
     if ((wants.photo || wants.clip) || (wants.where && (mapIds.length || /\b(most|biggest|where)\b/.test(low)))) {
       const m = I.maps.find((x) => x.id === (mapIds[0] || (wants.where ? (I.biggest[0] || I.maps[0]).id : this.worstMapId(I))));
@@ -7711,50 +8463,57 @@ const Coach = {
       await s1.done('Gathered both runs on ' + m.tag);
       const vs = lab.rival.n, lossTot = lab.total;
       const gapAt = (d) => Compare.timeAt(lab.A, d) - Compare.timeAt(lab.B, d);
+      const wantPhoto = wants.photo, wantClip = wants.clip || !wants.photo;
       // the lap chart once per map and rival: a follow-up points back at it
       const lapKey = m.id + ':' + (lab.rival.uid || vs);
       let lap = Figs.list.find((f) => f.key === lapKey) || null, lapNew = false;
-      if (!lap) {
+      if (!lap && !(wantPhoto && wantClip)) {
         const s2 = this.step(turn, 'Lining up the two runs, metre by metre');
         lap = this.figLapGap(lab); lap.key = lapKey; lapNew = true;
         figs.push(lap);
         await s2.done('Found the stretch where the most time goes: ' + Math.round(lab.seg.d0) + '–' + Math.round(lab.seg.d1) + ' m');
       }
+      const s5 = this.step(turn, 'Breaking down your braking, speed and line against ' + vs + '\'s');
+      const D = CoachLab.drill(lab);
+      const drill = this.figDrill(lab, D);
+      figs.push(drill);
+      await s5.done(D.fixes.length ? 'Found ' + D.fixes.length + ' thing' + (D.fixes.length === 1 ? '' : 's') + ' ' + vs + ' does better' : 'Compared every input');
       const lt0 = Compare.timeAt(lab.A, lab.seg.d0), lt1 = Compare.timeAt(lab.A, lab.seg.d1);
       const at = this.timeIn(low);
       let photo = null, clip = null;
-      if (wants.photo || !wants.clip) {
+      if (wantPhoto) {
         const s3 = this.step(turn, 'Taking a photo');
         const lt = at !== null ? clamp(at, 0, lab.gm.t) : Compare.timeAt(lab.A, lab.moment);
         photo = this.figPhoto(lab, lt); photo.lt = lt; photo.d = Compare.at(lab.A.sm, lab.A.n, lt);
         figs.push(photo);
         await s3.done('Took a photo at ' + lt.toFixed(1) + ' s');
       }
-      if (wants.clip || !wants.photo) {
-        const s4 = this.step(turn, 'Cutting a clip');
+      if (wantClip) {
+        const s4 = this.step(turn, 'Gathering footage');
         clip = this.figClip(lab, Math.max(0, lt0 - 1.2), Math.min(lab.gm.t, lt1 + 1.2));
         figs.push(clip);
         await s4.done('Cut a ' + (lt1 - lt0 + 2.4).toFixed(1) + ' s clip');
       }
       const F = (f) => 'Figure ' + f.n;
-      let text = '';
-      if (lapNew) text += m.tag + ' ' + m.name + ': over the lap you finish ' + Math.abs(lossTot).toFixed(3) + ' s ' + (lossTot > 0 ? 'behind ' : 'ahead of ') + vs + '. ' +
-        F(lap) + ' shows where it goes: the most is between ' + Math.round(lab.seg.d0) + ' and ' + Math.round(lab.seg.d1) + ' m, where you ' +
+      let text = m.tag + ' ' + m.name + ': you finish ' + Math.abs(lossTot).toFixed(3) + ' s ' + (lossTot > 0 ? 'behind ' : 'ahead of ') + vs + '. ';
+      if (lapNew) text += F(lap) + ' shows where it goes: the most is between ' + Math.round(lab.seg.d0) + ' and ' + Math.round(lab.seg.d1) + ' m, where you ' +
         (lab.seg.loss > 0 ? 'give away ' + lab.seg.loss.toFixed(3) + ' s' : 'hold your own') + '. ';
+      else if (lap && Figs.get(lap.n)) text += '(' + F(lap) + ' still shows the whole lap.) ';
+      else text += 'The most goes between ' + Math.round(lab.seg.d0) + ' and ' + Math.round(lab.seg.d1) + ' m (' + lab.seg.loss.toFixed(3) + ' s). ';
       if (photo) {
         const g = gapAt(photo.d);
-        text += F(photo) + ' is ' + (lapNew ? 'the moment it goes fastest' : 'the photo') + ', ' + photo.lt.toFixed(1) + ' s in (' + Math.round(photo.d) + ' m): you are ' +
-          Math.abs(g).toFixed(3) + ' s ' + (g >= 0 ? 'behind ' : 'ahead of ') + vs + ' at that point, with both cars at the same spot so the difference in line shows. ';
+        text += F(photo) + ' is a photo ' + photo.lt.toFixed(1) + ' s in (' + Math.round(photo.d) + ' m): ' + Math.abs(g).toFixed(3) + ' s ' + (g >= 0 ? 'behind ' : 'ahead of ') + vs + ', both cars at the same spot so the line shows. ';
       }
       if (clip) {
         const g0 = gapAt(lab.seg.d0), g1 = gapAt(lab.seg.d1);
-        text += F(clip) + ' plays that stretch with ' + vs + '’s car lined up beside yours: watch the gap go from ' + g0.toFixed(3) + ' to ' + g1.toFixed(3) + ' s. ';
+        text += F(clip) + ' plays it with ' + vs + '’s car beside yours: the gap goes from ' + g0.toFixed(3) + ' to ' + g1.toFixed(3) + ' s. ';
       }
-      if (!lapNew) text += '(' + F(lap) + ' still shows the whole lap.) ';
-      text += this.tipFor(m);
+      if (D.fixes.length) text += '\n\nWhat to change, from ' + F(drill) + ':\n' + D.fixes.slice(0, 3).map((f) => '- ' + f.text).join('\n');
+      else text += '\n\n' + F(drill) + ' has every input side by side, and honestly you match ' + vs + ' there. ' + this.tipFor(m);
       const notes = 'On ' + m.tag + ' ' + m.name + ' the player (' + formatTime(m.t) + ') is ' + lossTot.toFixed(3) + ' s behind ' + vs + ' (' + formatTime(lab.rival.t) + '). ' +
-        'The biggest loss is between ' + Math.round(lab.seg.d0) + ' m and ' + Math.round(lab.seg.d1) + ' m: ' + lab.seg.loss.toFixed(3) + ' s. ' + m.blurb;
-      return { text, notes, figs };
+        'The biggest loss is between ' + Math.round(lab.seg.d0) + ' m and ' + Math.round(lab.seg.d1) + ' m: ' + lab.seg.loss.toFixed(3) + ' s. ' +
+        (D.fixes.length ? 'FIXES (from comparing every input, biggest first): ' + D.fixes.slice(0, 4).map((f, k) => (k + 1) + ') ' + f.text).join(' ') : 'The inputs match closely.') + ' ' + m.blurb;
+      return { text, notes, figs, m, sting: true };
     }
     // ------------------------------------------- a rival
     if (rival) {
@@ -7765,7 +8524,7 @@ const Coach = {
       figs.push(f.fig);
       const sk = this.figSkill(I, rival);
       figs.push(sk);
-      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n).replace('{S}', 'Figure ' + sk.n), notes: f.notes, figs };
+      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n).replace('{S}', 'Figure ' + sk.n), notes: f.notes, figs, sting: true };
     }
     // ------------------------------------------- a section
     if (secM) {
@@ -7773,7 +8532,7 @@ const Coach = {
       await think.done('Opened section ' + secM[1].toUpperCase());
       const r = this.figSection(I, s);
       figs.push(r.fig);
-      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
+      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs, sting: true };
     }
     // ------------------------------------------- one map
     if (mapIds.length) {
@@ -7781,7 +8540,7 @@ const Coach = {
       await think.done('Looked up ' + m.tag + ' ' + m.name);
       const r = this.figMap(I, m);
       figs.push(r.fig);
-      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n) + ' Want a photo or a clip of where you lose time there?', notes: r.notes, figs };
+      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n) + (m.t !== null && m.of > 1 ? ' Ask me where you lose time there and I\'ll break down your braking, speed and line against ' + (m.rank === 1 ? m.board[1].n : m.lead.n) + '.' : ''), notes: r.notes, figs, m, sting: true };
     }
     // ------------------------------------------- easiest / hardest
     if (wants.easy || wants.hard || /\bimprove|faster|better|quicker\b/.test(low)) {
@@ -7796,11 +8555,26 @@ const Coach = {
       const easy = E.list.slice(0, 3), hard = E.list.slice(-3).reverse();
       let text = '';
       if (E.open.length && !wants.hard) text += 'First, the free points: you haven\'t finished ' + E.open.slice(0, 3).map((m) => m.tag + ' ' + m.name).join(', ') + '. A finish counts before any time does. ';
-      if (!wants.hard || wants.easy) text += 'Easiest to improve, in Figure ' + f.n + ': ' + easy.map((e) => '**' + e.m.tag + ' ' + e.m.name + '** (' + e.why[0] + (e.why[1] ? ', ' + e.why[1] : '') + ')').join('; ') + '. ';
+      if (!wants.hard || wants.easy) text += 'Easiest to improve (Figure ' + f.n + '): ' + easy.map((e) => '**' + e.m.tag + ' ' + e.m.name + '** (' + e.why[0] + (e.why[1] ? ', ' + e.why[1] : '') + ')').join('; ') + '. ';
       if (wants.hard || !wants.easy) text += 'Hardest right now (the bottom of Figure ' + f.n + '): ' + hard.map((e) => e.m.tag + ' ' + e.m.name + ' (' + e.why[0] + ')').join('; ') + '. ';
-      text += 'I read "your usual level" from how close you are to #1 across all your maps, so the easy ones are where you\'re below it.';
-      const notes = 'Easiest: ' + easy.map((e) => e.m.tag + ' ' + e.m.name + ': ' + e.why.join(', ')).join(' | ') + '. Hardest: ' + hard.map((e) => e.m.tag + ' ' + e.m.name + ': ' + e.why.join(', ')).join(' | ') + '.';
-      return { text, notes, figs };
+      let notes = 'Easiest: ' + easy.map((e) => e.m.tag + ' ' + e.m.name + ': ' + e.why.join(', ')).join(' | ') + '. Hardest: ' + hard.map((e) => e.m.tag + ' ' + e.m.name + ': ' + e.why.join(', ')).join(' | ') + '.';
+      // then the first one, worked out: exactly what to change
+      const first = !wants.hard || wants.easy ? (easy.find((e) => e.m.rank !== 1 && e.m.lead && e.m.lead.uid) || null) : null;
+      if (first) {
+        const s3 = this.step(turn, 'Gathering your run on ' + first.m.tag + ' and ' + first.m.lead.n + '\'s');
+        try {
+          const lab = await CoachLab.of(first.m, I);
+          const D = CoachLab.drill(lab);
+          const dr = this.figDrill(lab, D);
+          figs.push(dr);
+          await s3.done('Broke down ' + first.m.tag + ' input by input');
+          if (D.fixes.length) {
+            text += '\n\nStart with **' + first.m.tag + ' ' + first.m.name + '**. ' + first.m.lead.n + ' is ' + lab.total.toFixed(3) + ' s faster, and Figure ' + dr.n + ' shows why:\n' + D.fixes.slice(0, 3).map((f) => '- ' + f.text).join('\n');
+            notes += ' On ' + first.m.tag + ', FIXES: ' + D.fixes.slice(0, 3).map((f, k) => (k + 1) + ') ' + f.text).join(' ');
+          }
+        } catch (e) { await s3.done('No recording to compare on ' + first.m.tag, true); }
+      }
+      return { text, notes, figs, m: first ? first.m : null, sting: true };
     }
     // ------------------------------------------- the skill chart
     if (wants.skill) {
@@ -7811,7 +8585,7 @@ const Coach = {
       const weak = I.weakest.slice(0, 3);
       return { text: 'Figure ' + f.n + ' is your skill chart: each spoke is a map, and the further out, the closer you are to its #1. Overall you\'re at ' + Insight.pct(I.expertise) + '. ' +
         'Strongest: ' + strong.map((m) => m.tag + ' (' + (m.rank === 1 ? '#1' : Insight.pct(m.score)) + ')').join(', ') + '. Weakest: ' + weak.map((m) => m.tag + ' (' + Insight.pct(m.score) + ')').join(', ') + '.',
-        notes: 'Expertise ' + Insight.pct(I.expertise) + '. Strongest ' + strong.map((m) => m.tag).join(', ') + '. Weakest ' + weak.map((m) => m.tag).join(', ') + '.', figs };
+        notes: 'Expertise ' + Insight.pct(I.expertise) + '. Strongest ' + strong.map((m) => m.tag).join(', ') + '. Weakest ' + weak.map((m) => m.tag).join(', ') + '.', figs, sting: true };
     }
     // ------------------------------------------- news
     if (wants.news) {
@@ -7820,7 +8594,7 @@ const Coach = {
       const f = this.figNews();
       await s1.done('Read ' + LEVELS.length + ' leaderboards');
       figs.push(f.fig);
-      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n), notes: f.notes, figs };
+      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n), notes: f.notes, figs, sting: true };
     }
     // ------------------------------------------- standings / the season
     if (wants.standings || wants.season) {
@@ -7829,14 +8603,14 @@ const Coach = {
       const f = this.figStandings(I, /\btop ?10|top ten|column|podium\b/.test(low));
       await s1.done('Read the standings: ' + I.rows.length + ' drivers');
       figs.push(f.fig);
-      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n), notes: f.notes, figs };
+      return { text: f.text.replace('{F}', 'Figure ' + f.fig.n), notes: f.notes, figs, sting: true };
     }
     // ------------------------------------------- anything else
     await think.done('Thought about it');
     const T = I.target;
     return { text: 'You\'re ' + Insight.ord(I.rank) + ' of ' + I.of + ' with ' + I.me.count + '/16 maps and ' + formatTime(I.me.total) + '. ' +
-      (T ? T.text.replace(/<[^>]+>/g, '') + ' ' : '') + 'I can show you where you\'re losing time on any map (with photos and clips), which maps are easiest for you to improve on, a rival head-to-head, or the standings.',
-    notes: T ? T.text.replace(/<[^>]+>/g, '') : '' };
+      (T ? T.text.replace(/<[^>]+>/g, '') + ' ' : '') + 'Ask me where you lose time on a map and I\'ll break it down input by input, or which maps are easiest for you to improve on.',
+    notes: T ? T.text.replace(/<[^>]+>/g, '') : '', sting: true };
   },
   /** hello, thanks, how are you… (null: not small talk) */
   smallTalk(low, I) {
@@ -7844,14 +8618,14 @@ const Coach = {
     const pick = (a) => a[Math.floor(Math.random() * a.length)];
     const short = low.split(/\s+/).length <= 5 && !/\b(map|time|section|clip|photo|video|show|compare|where|standing|faster|improve)\b/.test(low);
     if (short && /^(hi|hey|hello|yo|sup|hiya|howdy|hola|gm|good (morning|afternoon|evening)|what'?s up|wassup|heya)\b/.test(low)) {
-      return { text: pick(['Hey ' + name + '! Ready to find some time?', 'Hi ' + name + '. What are we working on today?', 'Hey! Good to see you. Want to know where your easiest time is?']), notes: 'The player said hello.' };
+      return { text: Tone.hello(I), notes: 'The player said hello. Greet them back in your voice, briefly.' };
     }
-    if (/\b(thank|thanks|thx|ty|cheers|appreciate)\b/.test(low)) return { text: pick(['Anytime. Go get that time.', 'Any time! Tell me how the next run goes.', 'Happy to help. Now go take a place back.']), notes: 'The player said thanks.' };
-    if (/\bhow are (you|u)\b|how'?s it going|how you doing/.test(low)) return { text: pick(['Doing great, and watching every leaderboard. How are your runs going?', 'Good! The boards have been busy. How are you feeling about your times?']), notes: 'The player asked how Coach is.' };
-    if (/^(ok|okay|cool|nice|great|awesome|sweet|got it|alright|k)\b[\s!.]*$/.test(low)) return { text: pick(['Nice. Want me to pick your next map?', 'Good. Anything else you want to look at?']), notes: '' };
+    if (/\b(thank|thanks|thx|ty|cheers|appreciate)\b/.test(low)) return { text: Tone.thanks(I), notes: 'The player said thanks.' };
+    if (/\bhow are (you|u)\b|how'?s it going|how you doing/.test(low)) return { text: pick(['Watching every leaderboard, as always.', 'Busy. The boards never sleep.']) + ' ' + Tone.line(I, null), notes: 'The player asked how Coach is.' };
+    if (/^(ok|okay|cool|nice|great|awesome|sweet|got it|alright|k)\b[\s!.]*$/.test(low)) return { text: pick(['Good. Now go drive it.', 'Then why are you still here? The track is that way.', 'Want me to pick your next map?']), notes: '' };
     if (/\b(bye|goodbye|see ya|later|cya|gtg)\b/.test(low)) return { text: 'See you on the track, ' + name + '.', notes: 'The player is leaving.' };
     if (/\b(what can you do|help|how do (i|you) use|what do you do)\b/.test(low)) {
-      return { text: 'Here\'s what I can do:\n- Tell you which maps are easiest (and hardest) for you to improve on\n- Show where you lose time on a map, with a photo or a clip of your run next to the leader\'s\n- Compare you with any driver, map by map\n- Show your skill chart, the standings, the top 10 or what\'s been happening lately\n\nJust ask in your own words.', chat: false };
+      return { text: 'Here\'s what I can do:\n- Break down where you lose time on a map: your braking points, speeds, coasting, drifting, boost and line against the leader\'s, and exactly what to change\n- Tell you which maps are easiest (and hardest) for you to improve on\n- A photo or a clip of your run next to the leader\'s\n- Compare you with any driver, map by map\n- Today\'s daily, your skill chart, the standings, the top 10 or what\'s been happening lately\n- Anything else you want to ask\n\nJust ask in your own words.', chat: false };
     }
     if (/\b(joke|funny|lol|haha)\b/.test(low)) return { text: 'Why did the racer bring a pencil to the track? To draw a better line. Speaking of lines, want to see yours?', notes: 'The player wants a joke.' };
     return null;
@@ -7939,6 +8713,89 @@ const Coach = {
     else text = 'On ' + m.tag + ' ' + m.name + ' you\'re ' + Insight.ord(m.rank) + ' of ' + m.of + ' at ' + formatTime(m.t) + ', ' + m.gap.toFixed(3) + ' s behind ' + m.lead.n + '. ' +
       (m.up ? 'Find ' + m.up.need.toFixed(3) + ' s to pass ' + m.up.n + ' for ' + Insight.ord(m.up.to) + '. ' : '') + '{F} shows the whole field.';
     return { fig, text, notes: text.replace('{F}', 'The figure') + ' ' + m.blurb };
+  },
+  /** the breakdown: both speed traces through the stretch, the inputs under them, the numbers and the fixes */
+  figDrill(lab, D) {
+    const n = lab.rival.n, a = D.a, b = D.b, E = escapeHtml;
+    const W = 520, H = 168, P = 36, span = Math.max(1, D.d1 - D.d0);
+    const vs = a.trace.concat(b.trace).map((p) => p[1]);
+    const lo = Math.max(0, Math.floor((Math.min(...vs) - 8) / 10) * 10), hi = Math.ceil((Math.max(...vs) + 4) / 10) * 10;
+    const X = (d) => P + clamp((d - D.d0) / span, 0, 1) * (W - P - 10), Y = (v) => 8 + (1 - (v - lo) / Math.max(1, hi - lo)) * (H - 58);
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
+    svg += '<rect x="' + X(lab.seg.d0).toFixed(1) + '" y="6" width="' + (X(lab.seg.d1) - X(lab.seg.d0)).toFixed(1) + '" height="' + (H - 54) + '" fill="var(--fc)" opacity=".1"/>';
+    const step = [10, 20, 50, 100].find((x) => (hi - lo) / x <= 6) || 200;
+    for (let v = lo; v <= hi; v += step) svg += '<line class="gl" x1="' + P + '" x2="' + (W - 10) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/><text x="4" y="' + (Y(v) + 3.5).toFixed(1) + '">' + v + '</text>';
+    const COL = ['#5fd0b2', '#e8875f'];
+    const trace = (st, col) => '<polyline points="' + st.trace.map((p) => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ') + '" fill="none" stroke="' + col + '" stroke-width="2.2" stroke-linejoin="round"/>';
+    svg += trace(b, COL[1]) + trace(a, COL[0]);
+    // the slowest point of each
+    for (const [st, col] of [[a, COL[0]], [b, COL[1]]]) {
+      svg += '<circle cx="' + X(st.min.d).toFixed(1) + '" cy="' + Y(st.min.v).toFixed(1) + '" r="4" fill="' + col + '" stroke="#1f1e1c" stroke-width="1.5"/>' +
+        '<text x="' + X(st.min.d).toFixed(1) + '" y="' + (Y(st.min.v) + 15).toFixed(1) + '" text-anchor="middle" style="fill:' + col + '">' + Math.round(st.min.v) + '</text>';
+    }
+    // what each had pressed, under the chart: brake, boost, drift
+    const lane = (st, y, label) => {
+      let h = '<text x="4" y="' + (y + 6) + '" style="fill:var(--dim)">' + label + '</text>';
+      const run = (mask, col, test) => {
+        let start = null;
+        st.trace.forEach((p, k) => {
+          const on = test ? test(p[2]) : (p[2] & mask);
+          if (on && start === null) start = p[0];
+          if ((!on || k === st.trace.length - 1) && start !== null) { h += '<rect x="' + X(start).toFixed(1) + '" y="' + y + '" width="' + Math.max(2, X(p[0]) - X(start)).toFixed(1) + '" height="7" rx="2" fill="' + col + '"/>'; start = null; }
+        });
+      };
+      h += '<rect x="' + P + '" y="' + y + '" width="' + (W - P - 10) + '" height="7" rx="2" fill="rgba(255,255,255,.05)"/>';
+      run(1, 'rgba(95,208,178,.35)');
+      run(0, '#e8875f', (bt) => bt & 2 || bt & 32);
+      run(16, '#6aa8ff');
+      run(0, '#ebbd62', (bt) => (bt & 2 || bt & 32) && (bt & 12));
+      return h;
+    };
+    svg += lane(a, H - 40, 'you') + lane(b, H - 28, n.slice(0, 5));
+    svg += '<text x="' + P + '" y="' + (H - 6) + '">' + Math.round(D.d0) + ' m</text><text x="' + (W - 10) + '" y="' + (H - 6) + '" text-anchor="end">' + Math.round(D.d1) + ' m</text></svg>';
+    const legend = '<div class="drLegend"><span><i style="background:' + COL[0] + '"></i>you</span><span><i style="background:' + COL[1] + '"></i>' + E(n) + '</span>' +
+      '<span><i style="background:rgba(95,208,178,.5)"></i>gas</span><span><i style="background:#e8875f"></i>brake</span><span><i style="background:#ebbd62"></i>drift</span><span><i style="background:#6aa8ff"></i>boost</span></div>';
+    const km = (v) => Math.round(v) + ' km/h', sec = (v) => v.toFixed(2) + ' s', m = (d) => d === null ? 'never' : Math.round(d) + ' m';
+    // [label, you, them, which is better: 1 higher, -1 lower, 'late' later braking]
+    const rows = [
+      ['Speed in', a.entry, b.entry, 1, km], ['Slowest', a.min.v, b.min.v, 1, km], ['Speed out', a.exit, b.exit, 1, km],
+      ['Brakes on at', a.brakeAt, b.brakeAt, 'late', m], ['Braking', a.brake, b.brake, -1, sec], ['Coasting', a.coast, b.coast, -1, sec],
+      ['Drifting', a.drift, b.drift, 0, sec], ['Boost here', a.boost, b.boost, 1, sec], ['Time through', a.through, b.through, -1, sec]
+    ];
+    let t = '<table class="drT"><tr><th></th><th>you</th><th>' + E(n) + '</th></tr>';
+    for (const [label, x, y, dir, f] of rows) {
+      let cls = '';
+      if (dir === 'late') { if (x !== null || y !== null) cls = (x === null) ? 'good' : (y === null) ? 'bad' : (x > y + 3 ? 'good' : x < y - 3 ? 'bad' : ''); }
+      else if (dir) { const dd = (x - y) * dir, eps = f === km ? 2 : 0.08; cls = dd > eps ? 'good' : dd < -eps ? 'bad' : ''; }
+      t += '<tr><td>' + label + '</td><td class="' + cls + '">' + f(x) + '</td><td>' + f(y) + '</td></tr>';
+    }
+    t += '</table>';
+    const fixes = D.fixes.length ? '<ol class="drFix">' + D.fixes.slice(0, 4).map((x) => '<li>' + E(x.text) + '</li>').join('') + '</ol>'
+      : '<p class="drNone">You match ' + E(n) + ' input for input here. The time is in the small stuff: smoother steering, earlier throttle.</p>';
+    return Figs.add(lab.m.tag + ' ' + lab.m.name + ' · you vs ' + n + ', ' + Math.round(D.d0) + '–' + Math.round(D.d1) + ' m',
+      '<div class="figChart">' + svg + '</div>' + legend + '<div class="drCols">' + t + '<div><div class="figHd">WHAT TO CHANGE</div>' + fixes + '</div></div>',
+      'Speed through the stretch where you lose the most (shaded), with every brake, drift and boost underneath.');
+  },
+  /** today's daily: the board, the clock, where the player is */
+  figDaily(I) {
+    const c = Daily.prepare(), lv = Daily.level, b = Daily.board(), E = escapeHtml;
+    const k = b.findIndex((e) => e.uid === I.uid);
+    let h = '<div class="figTiles"><div><b>' + (c.open ? Daily.hms(c.toNoon) : 'closed') + '</b><span>' + (c.open ? 'left today' : 'next at midnight PT') + '</span></div>' +
+      '<div><b>' + (k >= 0 ? Insight.ord(k + 1) : '—') + '</b><span>of ' + b.length + '</span></div><div><b>' + (b[0] ? formatTime(b[0].t) : '—') + '</b><span>to beat</span></div></div>';
+    h += '<div class="figList" style="margin-top:6px">' + (b.length ? b.slice(0, 8).map((e, n) => '<div class="figRow' + (n === k ? ' me' : '') + '"><span class="tg" style="color:' + (n === 0 ? '#ebbd62' : 'var(--dimmer)') + '">' + (n + 1) +
+      '</span><span class="nm">' + E(e.n) + '</span><span class="v">' + formatTime(e.t) + '</span></div>').join('') : '<p class="stNote">Nobody has a time yet.</p>') + '</div>';
+    h += '<div class="figBtns"><button class="primary small" data-go="daily">Open the daily</button></div>';
+    const fig = Figs.add('Today\'s daily · ' + lv.name, h, 'Every attempt costs 1 credit. The fastest at noon Pacific wins 1 000.');
+    fig.el.querySelector('[data-go=daily]').addEventListener('click', () => Daily.open());
+    let text = 'Today\'s daily is **' + lv.name + '** ({F}). ';
+    if (!c.open) text += 'It\'s closed: the next one opens at midnight Pacific, in ' + Daily.hms(c.toMidnight) + '. ';
+    else {
+      text += 'It closes at noon Pacific, ' + Daily.hms(c.toNoon) + ' from now, and the fastest then wins 1 000 credits. ';
+      if (k === 0) text += 'You lead it at ' + formatTime(b[0].t) + (b[1] ? ', ' + (b[1].t - b[0].t).toFixed(3) + ' s up on ' + b[1].n : '') + '. Keep your foot on their neck.';
+      else if (k > 0) text += 'You\'re ' + Insight.ord(k + 1) + ' at ' + formatTime(b[k].t) + ', ' + (b[k].t - b[0].t).toFixed(3) + ' s behind ' + b[0].n + '. That\'s 1 000 credits you\'re leaving on the table.';
+      else text += b[0] ? b[0].n + ' leads at ' + formatTime(b[0].t) + ' and you haven\'t even tried. One credit a go.' : 'Nobody has a time yet. One credit and it\'s yours to lose.';
+    }
+    return { fig, text, notes: text.replace('{F}', 'the figure') };
   },
   figLapGap(lab) {
     const W = 520, H = 170, P = 34, gap = lab.gap, L = lab.L;
@@ -8386,10 +9243,12 @@ const CarThumbs = {
 const MiniMap = {
   cache: new Map(),
   svg(i, labels) {
-    const key = i + (labels ? 'L' : '');
+    const lvl = levelAt(i);
+    if (!lvl) return '';
+    const key = lvl.id + (labels ? 'L' : '');
     if (this.cache.has(key)) return this.cache.get(key);
     let data;
-    try { data = validateCourse(LEVELS[i].build()); } catch (e) { return ''; }
+    try { data = validateCourse(lvl.build()); } catch (e) { return ''; }
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     for (const st of data.strips) for (const f of st.frames) {
       x0 = Math.min(x0, f.p[0]); x1 = Math.max(x1, f.p[0]); z0 = Math.min(z0, f.p[2]); z1 = Math.max(z1, f.p[2]);
@@ -8413,7 +9272,7 @@ const MiniMap = {
     // just ahead of the start dot, pointing the way the course runs
     const bx = sx + hx * 6, bz = sz + hz * 6;
     const tip = [bx + hx * 9, bz + hz * 9], l = [bx - hz * 4.5, bz + hx * 4.5], r = [bx + hz * 4.5, bz - hx * 4.5];
-    let h = '<svg viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="' + escapeHtml(LEVELS[i].name) + ' from above">' + deck + line +
+    let h = '<svg viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="' + escapeHtml(lvl.name) + ' from above">' + deck + line +
       '<polygon class="mmArrow" points="' + tip.join(',') + ' ' + l.join(',') + ' ' + r.join(',') + '"/>' +
       '<circle class="mmStart" cx="' + sx + '" cy="' + sz + '" r="3.2"/>';
     if (fin) h += '<circle class="mmFin" cx="' + X(fin.pos[0]) + '" cy="' + Z(fin.pos[2]) + '" r="4"/>';
@@ -9541,7 +10400,7 @@ const Compare = {
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'secview', 'info', 'stats', 'result', 'gate', 'banned', 'spectate', 'settings',
+    ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'result', 'gate', 'banned', 'spectate', 'settings',
      'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
@@ -9598,7 +10457,7 @@ const UI = {
     this.gateError('');
   },
   course(i, name) {
-    $('hNum').textContent = courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase();
+    $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase();
     $('hName').textContent = name;
   },
   clock(t, stopped) {
@@ -10140,6 +10999,29 @@ const UI = {
     overallLeaderPreview.start();
     const colors = await Cloud.fetchCarColorsOf(top.uid);
     overallLeaderPreview.paint(colors);
+  },
+  /** the menu's greeting and where the player stands */
+  hello() {
+    const h = new Date().getHours();
+    const name = Cloud.user ? Cloud.name() : Records.driver();
+    $('mGreet').textContent = (h < 5 ? 'Late laps' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening') + (name ? ', ' + name : '');
+    const I = Insight.compute();
+    let sub = '';
+    if (!I.me) sub = 'Set a time on any map to join the season standings.';
+    else if (I.rank === 1) sub = 'You lead the season' + (I.route.margin !== null ? ' by ' + I.route.margin.toFixed(3) + ' s' : '') + '. Everyone is chasing you.';
+    else sub = 'You\'re ' + Insight.ord(I.rank) + ' of ' + I.of + ' overall' + (I.above && I.above.count === I.me.count ? ', ' + (I.me.total - I.above.total).toFixed(3) + ' s behind ' + I.above.n : '') + '.';
+    $('mSub').textContent = sub;
+    const yc = $('youCard');
+    yc.hidden = !I.me;
+    if (I.me) {
+      const short = I.rank !== 1 && I.me.count < I.leader.count;
+      const gap = I.rank === 1 ? (I.route.margin !== null ? '+' + I.route.margin.toFixed(2) : '—')
+        : short ? String(I.leader.count - I.me.count) : (I.me.total - I.leader.total).toFixed(2);
+      yc.innerHTML = '<div class="' + (I.rank === 1 ? 'gold' : '') + '"><b>' + Insight.ord(I.rank) + '</b><span>of ' + I.of + '</span></div>' +
+        '<div><b>' + I.me.count + '/16</b><span>maps</span></div>' +
+        '<div class="' + (I.wins ? 'gold' : '') + '"><b>' + I.wins + '</b><span>map records</span></div>' +
+        '<div class="' + (I.rank === 1 ? 'good' : 'bad') + '"><b>' + gap + '</b><span>' + (I.rank === 1 ? 's ahead' : short ? 'maps to #1' : 's to #1') + '</span></div>';
+    }
   },
   sectionLeaders() {
     const tops = SECTIONS.map((name, sec) => Records.overall(sectionIds(sec))[0] || null);
@@ -11502,8 +12384,16 @@ const Game = {
     scrub.addEventListener('change', endScrub);
     scrub.addEventListener('mouseup', endScrub);
     scrub.addEventListener('touchend', endScrub);
-    $('bRetry').addEventListener('click', () => this.startLevel(this.levelIndex));
-    $('bResCourses').addEventListener('click', () => this.toSelect());
+    $('bRetry').addEventListener('click', () => { if (this.levelIndex === DAILY_I) Daily.play(); else this.startLevel(this.levelIndex); });
+    $('bResCourses').addEventListener('click', () => { if (this.levelIndex === DAILY_I) Daily.open(); else this.toSelect(); });
+    $('bDaily').addEventListener('click', () => Daily.open());
+    $('bDailyBack').addEventListener('click', () => this.toMenu());
+    $('bDailyPlay').addEventListener('click', () => Daily.play());
+    // the daily clock on the menu and the daily screen
+    setInterval(() => {
+      if (this.state === 'menu') Daily.tile();
+      else if (this.state === 'daily') Daily.render();
+    }, 1000);
     $('bNext').addEventListener('click', () => {
       const n = this.nextPlayable(this.levelIndex);
       if (n < 0) this.toSelect(); else this.startLevel(n);
@@ -11548,10 +12438,10 @@ const Game = {
   },
 
   nextPlayable(from) {
-    for (let i = from + 1; i < this.data.length; i++) if (this.data[i]) return i;
+    for (let i = from + 1; i < LEVELS.length; i++) if (this.data[i]) return i;
     return -1;
   },
-  id(i) { return LEVELS[i === undefined ? this.levelIndex : i].id; },
+  id(i) { return levelAt(i === undefined ? this.levelIndex : i).id; },
   /** the first map without a time of yours, else the one you rank worst on */
   nextCourseIndex() {
     // a map picked in Settings, if it can be driven
@@ -11606,7 +12496,7 @@ const Game = {
     App.layoutBackdrop(this.course.center.x, this.course.center.z, this.course.extent);
     this.levelIndex = i;
     this.rec = [];
-    this.ghostData = this.ghostOverride || Records.ghost(LEVELS[i].id);
+    this.ghostData = this.ghostOverride || Records.ghost(levelAt(i).id);
     if (!this.ghostOverride) this.ghostOverrideName = null;
     this.fetchOwnGhost(i);
     if (this.ghostMesh) this.ghostMesh.visible = false;
@@ -11667,7 +12557,7 @@ const Game = {
     if (outcome !== 'finished' && this.time < 0.8) return;
     const kind = this.runKind || 'campaign';
     const rs = this.runStats || { top: 0, grass: 0, air: 0, far: 0 };
-    const lv = LEVELS[this.levelIndex];
+    const lv = levelAt(this.levelIndex);
     const entry = {
       kind, courseId: lv.id, courseName: lv.name, season: SEASON, outcome, reason: reason || outcome,
       timeMs: this.time * 1000,
@@ -11710,14 +12600,14 @@ const Game = {
   startLevel(i) {
     if (!this.loadLevel(i)) { this.toSelect(); return; }
     if (this.attemptCourse !== i) { this.attemptCourse = i; this.attemptNo = 1; } else this.attemptNo = (this.attemptNo || 0) + 1;
-    this.runKind = 'campaign';
+    this.runKind = i === DAILY_I ? 'daily' : 'campaign';
     this.resetRunStats();
     Input.clear();
     this.time = 0; this.started = false; this.running = true;
     this.accum = 0;
     this.state = 'play';
     UI.show('hud');
-    UI.course(i, LEVELS[i].name);
+    UI.course(i, levelAt(i).name);
     UI.best(Records.best(this.id(i)));
     UI.record(this.id(i));
     UI.clock(0, false);
@@ -12103,7 +12993,7 @@ const Game = {
     this.state = 'spectate';
     Sound.stopEngine();
     $('specName').textContent = cars.length > 1 ? cars[0].name + ' (+' + (cars.length - 1) + ' more)' : cars[0].name;
-    $('specCourse').textContent = LEVELS[idx].name + ' — ' + formatTime(cars[0].data.t);
+    $('specCourse').textContent = levelAt(idx).name + ' — ' + formatTime(cars[0].data.t);
     $('specT1').textContent = formatTime(cars[0].data.t);
     $('specScrub').max = String(Math.round(longestT * 1000));
     $('specScrub').value = '0';
@@ -12197,6 +13087,9 @@ const Game = {
     UI.overallLeaderCard();
     this.trophyTileText();
     this.flushPendingAuth();
+    Daily.tile();
+    Daily.refresh();
+    UI.hello();
     CoachAlerts.flush();                   // podium news waits for the menu (or a finished run)
   },
   /** called whenever the live leaderboard changes: redraw whatever shows it */
@@ -12204,7 +13097,8 @@ const Game = {
     const s = this.state;
     CoachAlerts.check();                   // someone knocked the player off a podium?
     if (s === 'select') this.renderSel();                    // whichever courses view is open
-    else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); }
+    else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); Daily.tile(); UI.hello(); }
+    else if (s === 'daily') Daily.render();
     else if (s === 'result') this.renderResultBoard();
     else if (s === 'trophies') {
       const list = Trophies.compute();
@@ -12452,8 +13346,9 @@ const Game = {
     Sound.stopEngine();
     Sound.finish(res.rank === 1);
 
-    $('rKick').textContent = res.rank === 1 ? 'Course record' : 'Course clear';
-    $('rName').textContent = LEVELS[this.levelIndex].name;
+    $('rKick').textContent = this.levelIndex === DAILY_I ? (res.rank === 1 ? 'Leading today’s daily' : 'Daily run')
+      : res.rank === 1 ? 'Course record' : 'Course clear';
+    $('rName').textContent = levelAt(this.levelIndex).name;
     $('rTime').textContent = formatTime(this.time);
     $('rSub').innerHTML = !prevBest
       ? 'First time on this map.'
@@ -12480,7 +13375,9 @@ const Game = {
     this.buildGhostProgress();
     UI.best(Records.best(id));
     UI.record(id);
-    $('bNext').hidden = this.nextPlayable(this.levelIndex) < 0;
+    $('bNext').hidden = this.levelIndex === DAILY_I || this.nextPlayable(this.levelIndex) < 0;
+    $('bResCourses').textContent = this.levelIndex === DAILY_I ? 'Daily' : 'Maps';
+    $('bRetry').textContent = this.levelIndex === DAILY_I ? 'Again · 1 credit' : 'Drive it again';
     $('rCampaignRow').hidden = false;
     UI.show('result');
     UI.clock(this.time, true);
@@ -12491,7 +13388,7 @@ const Game = {
    *  only keeps this session's runs), so fetch it when a map loads and
    *  this session doesn't already hold a ghost for that exact time. */
   fetchOwnGhost(i) {
-    const id = LEVELS[i].id, best = Records.best(id);
+    const id = levelAt(i).id, best = Records.best(id);
     if (!Cloud.on || !Cloud.user || !best || this.ghostOverride) return;
     const have = Records.ghost(id);
     if (have && Math.abs(have.t - best) < 0.0015) return;
@@ -12512,10 +13409,10 @@ const Game = {
   renderResultBoard() {
     const id = this.resultBoardId;
     if (!id) return;
-    const lv = LEVELS[courseIndexOf(id)];
+    const lv = levelAt(courseIndexOf(id));
     const uid = Cloud.on && Cloud.user ? Cloud.user.uid : null;
     const list = Records.board(id).slice(0, 5);
-    $('rBoardHd').textContent = 'Course leaderboard — ' + (lv ? lv.name : '');
+    $('rBoardHd').textContent = lv && lv.daily ? 'Today’s daily · the fastest at noon wins 1 000 credits' : 'Course leaderboard — ' + (lv ? lv.name : '');
     $('rBoard').innerHTML = list.map((e, i) =>
       '<li class="' + ((uid ? e.uid === uid : e.n === Records.driver()) ? 'me' : '') + '"><span>' +
       (i + 1) + '. ' + escapeHtml(e.n) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
@@ -12523,6 +13420,7 @@ const Game = {
   /** +1 credit for any finished course that isn't a race attempt */
   async awardCompletion() {
     if (!Cloud.on || !Cloud.user || Cloud.banned()) return;
+    if (this.levelIndex === DAILY_I) return;          // a daily attempt is paid for; no finish credit
     try {
       const before = Records.credits;
       if (!(await Cloud.grindCredit())) return;
@@ -12928,9 +13826,13 @@ const Game = {
     Input.sample();
     if (Input.tapped('Escape')) {
       this.logAttempt('terminated', 'menu');
-      this.toMenu(); return;
+      if (this.levelIndex === DAILY_I) Daily.open(); else this.toMenu();
+      return;
     }
-    if (Input.tapped('KeyR')) this.restartRun('Restarted', 'restart');
+    if (Input.tapped('KeyR')) {
+      if (this.levelIndex === DAILY_I) { if (this.started) { this.logAttempt('restarted', 'restart'); this.running = false; Daily.play(); } }
+      else this.restartRun('Restarted', 'restart');
+    }
     if (Input.tapped('KeyT')) UI.toggleTele();
     if (!this.started && Input.anyDrive) {
       this.started = true;
@@ -13057,7 +13959,10 @@ const Game = {
       case 'garage':
         if (!this._garageRolling) this.toMenu();
         break;
-      case 'settings': case 'trophies': case 'info': case 'stats': case 'result':
+      case 'result':
+        if (this.levelIndex === DAILY_I) Daily.open(); else this.toMenu();
+        break;
+      case 'settings': case 'trophies': case 'info': case 'stats': case 'daily':
         this.toMenu();
         break;
       default: break;          // the menu itself and sign-in
