@@ -66,9 +66,9 @@ your usual username, any password, and the invite code.
 
 ## 7. The admin login
 
-Nothing to set up. `admin.html` has its own fixed login (username
-`tobe`), checked inside the database by `admin_login` in schema.sql
-against a bcrypt hash of the password. It is the only way in: game
+Nothing to set up. `admin.html` has its own fixed logins (usernames
+`tobe` and `orion1`), checked inside the database by `admin_login` in
+schema.sql against a bcrypt hash of each password. It is the only way in: game
 accounts are never admins, and ten wrong tries lock the login for 15
 minutes. A sign-in lasts 12 hours on that device, or until **Sign out**.
 

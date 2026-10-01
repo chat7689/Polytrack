@@ -183,26 +183,30 @@ language sql stable security definer set search_path = public, pg_temp as $$
       and expires_at > now())
 $$;
 
--- username tobe; the password is checked against its bcrypt hash only (it is
--- written nowhere). Returns {token} or {error}: never raises, so a wrong try
--- is recorded (a raise would roll that back) and ten in 15 minutes lock it.
+-- usernames tobe and orion1; each password is checked against its bcrypt hash
+-- only (neither is written anywhere). Returns {token, user} or {error}: never
+-- raises, so a wrong try is recorded (a raise would roll that back) and ten
+-- in 15 minutes lock the login.
 create or replace function public.admin_login(p_user text, p_password text) returns jsonb
 language plpgsql volatile security definer set search_path = public, pg_temp as $$
-declare tok text;
+declare tok text; u text := lower(btrim(coalesce(p_user, ''))); h text;
 begin
   delete from public.admin_login_fails where at < now() - interval '15 minutes';
   if (select count(*) from public.admin_login_fails) >= 10 then
     return jsonb_build_object('error', 'Too many wrong tries. Wait 15 minutes and try again.');
   end if;
-  if lower(btrim(coalesce(p_user, ''))) <> 'tobe'
-     or extensions.crypt(coalesce(p_password, ''), '$2a$12$7mFGBgeGU0V3YYlkxN08BO5PyRC21aq.7YVUJZrKVp5x0jgAzGKuS') <> '$2a$12$7mFGBgeGU0V3YYlkxN08BO5PyRC21aq.7YVUJZrKVp5x0jgAzGKuS' then
+  select a.hash into h from (values
+    ('tobe', '$2a$12$7mFGBgeGU0V3YYlkxN08BO5PyRC21aq.7YVUJZrKVp5x0jgAzGKuS'),
+    ('orion1', '$2a$12$Jy8HBbqrt.q4AcknYhNm0eAJrkShlh0RvCC15CAWjuwJF25qVYbYi')
+  ) as a(name, hash) where a.name = u;
+  if h is null or extensions.crypt(coalesce(p_password, ''), h) <> h then
     insert into public.admin_login_fails default values;
     return jsonb_build_object('error', 'That username and password do not match.');
   end if;
   delete from public.admin_sessions where expires_at < now();
   tok := encode(extensions.gen_random_bytes(32), 'hex');
   insert into public.admin_sessions (token_hash, expires_at) values (public._token_hash(tok), now() + interval '12 hours');
-  return jsonb_build_object('token', tok);
+  return jsonb_build_object('token', tok, 'user', u);
 end $$;
 
 -- signing out ends this token's session

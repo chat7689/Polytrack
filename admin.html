@@ -458,7 +458,9 @@ async function useToken(token) {
   try { admin = await rpc('is_admin'); } catch (e) { say('authMsg', 'No connection to Supabase: ' + e.message, 'err'); return false; }
   if (!admin) { storeToken(''); sb = makeClient(null); return false; }
   storeToken(token);
-  $('whoami').textContent = 'tobe';
+  let who = '';
+  try { who = localStorage.getItem('aipolytrack-admin-user') || ''; } catch (e) { /* this visit only */ }
+  $('whoami').textContent = who || 'admin';
   $('btnOut').classList.remove('hide');
   $('cardAuth').classList.add('hide');
   $('panel').classList.remove('hide');
@@ -476,6 +478,7 @@ $('btnIn').addEventListener('click', async () => {
     const r = await q(makeClient(null).rpc('admin_login', { p_user: $('email').value, p_password: $('pass').value }));
     if (!r || !r.token) { say('authMsg', (r && r.error) || 'That username and password do not match.', 'err'); return; }
     $('pass').value = '';
+    try { localStorage.setItem('aipolytrack-admin-user', r.user || ''); } catch (e) { /* this visit only */ }
     if (!(await useToken(r.token))) say('authMsg', 'Signed in, but the server did not accept the session. Try again.', 'err');
   } catch (e) {
     say('authMsg', /admin_login|PGRST202|function/i.test(e.message)
@@ -487,6 +490,7 @@ $('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnIn')
 $('btnOut').addEventListener('click', async () => {
   try { await rpc('admin_logout'); } catch (e) { /* the token dies in 12 hours anyway */ }
   storeToken('');
+  try { localStorage.removeItem('aipolytrack-admin-user'); } catch (e) { /* nothing kept */ }
   sb = makeClient(null);
   showSignIn('');
 });
