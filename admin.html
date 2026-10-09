@@ -132,6 +132,7 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
     <h1>ai<span>Polytrack</span> admin</h1>
     <div class="row" id="whoRow" style="align-items:center">
       <span class="who" id="whoami"></span>
+      <a class="small hide" id="lnkPreview" href="./#preview" target="_blank" rel="noopener" style="color:var(--dim);font-size:12.5px;text-decoration:none;border:1px solid var(--rule);border-radius:6px;padding:4px 9px">Season 2 preview</a>
       <button class="small hide" id="btnOut">Sign out</button>
     </div>
   </div>
@@ -517,7 +518,7 @@ const storedToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ''; 
 const storeToken = (t) => { try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch (e) { /* this visit only */ } };
 function showSignIn(msg) {
   $('panel').classList.add('hide'); $('cardAuth').classList.remove('hide');
-  $('btnOut').classList.add('hide'); $('whoami').textContent = '';
+  $('btnOut').classList.add('hide'); $('whoami').textContent = ''; $('lnkPreview').classList.add('hide');
   if (msg) say('authMsg', msg, 'err');
 }
 /** a token from this device (or a fresh sign-in): if the server still takes it, open the panel */
@@ -531,6 +532,7 @@ async function useToken(token) {
   try { who = localStorage.getItem('aipolytrack-admin-user') || ''; } catch (e) { /* this visit only */ }
   $('whoami').textContent = who || 'admin';
   $('btnOut').classList.remove('hide');
+  $('lnkPreview').classList.remove('hide');
   $('cardAuth').classList.add('hide');
   $('panel').classList.remove('hide');
   say('authMsg', '');

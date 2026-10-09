@@ -137,7 +137,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
    every screen, so it would cover them) */
 body[data-screen=menu] .creditBadge,body[data-screen=spectate] .creditBadge,body[data-screen=secview] .creditBadge,
 body[data-screen=garage] .creditBadge,body[data-screen=trophies] .creditBadge,body[data-screen=settings] .creditBadge,
-body[data-screen=info] .creditBadge,body[data-screen=stats] .creditBadge,body[data-screen=daily] .creditBadge,body[data-screen=select] .creditBadge{display:none}
+body[data-screen=info] .creditBadge,body[data-screen=stats] .creditBadge,body[data-screen=daily] .creditBadge,body[data-screen=select] .creditBadge,body[data-screen=preview] .creditBadge{display:none}
 .creditBadge b{color:#7fe3ff;font-size:15px;font-weight:700}
 .creditBadge small{color:var(--dim);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
 /* the Settings rows, and the guide */
@@ -663,6 +663,24 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .youCard b{display:block;font-family:var(--mono);font-weight:600;font-size:15px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .youCard span{font-size:10.5px;color:var(--dim);letter-spacing:.02em}
 .youCard .good b{color:var(--aqua)} .youCard .bad b{color:var(--ember)}
+/* ---------- the private preview ---------- */
+.previewBar{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;padding:9px 14px;border-radius:10px;
+  border:1px dashed rgba(61,219,184,.45);background:rgba(61,219,184,.05);color:var(--ink);font-weight:600;font-size:13.5px}
+.previewBar[hidden]{display:none}
+.previewBar span{font-weight:400;font-size:12px;color:var(--dim)}
+.previewPanel{width:min(1240px,95vw)}
+.pvSec{font-size:13px;font-weight:600;color:var(--dim);margin:20px 0 8px}
+.pvGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media(max-width:980px){.pvGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.pvGrid{grid-template-columns:minmax(0,1fr)}}
+.pvCard{padding:12px 13px;border-radius:10px;border:1px solid var(--rule-2);display:flex;flex-direction:column;gap:6px;min-width:0}
+.pvTop{display:flex;align-items:baseline;gap:8px}
+.pvTag{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.pvTop b{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pvBest{font-family:var(--mono);font-size:11.5px;color:var(--aqua)}
+.pvCard p{font-size:12px;color:var(--dim);line-height:1.45;min-height:3em}
+.miniMap.pvMap{margin:0;max-height:none;aspect-ratio:4/3}
+.pvBtns{display:flex;gap:6px;flex-wrap:wrap}
 /* ---------- today's daily ---------- */
 .dailyPanel{width:min(1120px,95vw)}
 .dGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,.9fr);gap:14px;margin-top:20px}
@@ -1369,6 +1387,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
               <span class="dcPrize"><span class="gem2d"></span> 1 000 to the fastest at noon</span>
             </button>
           </div>
+          <button class="previewBar" id="bPreview" hidden>Season 2 preview <span>only you can see this · not released</span></button>
           <div class="menuTiles">
             <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
             <button class="tile" id="bStats"><b>Coach</b><small>your times, analysed</small></button>
@@ -1409,6 +1428,23 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <span><b>Space</b> boost</span><span><b>S</b> + <b>A D</b> drift</span><span><b>Shift</b> handbrake</span><span><b>R</b> restart</span>
         <span><b>Esc</b> back</span>
       </div>
+    </div>
+  </div>
+
+  <!-- the private preview of next season's maps -->
+  <div class="layer" id="preview" hidden>
+    <div class="scrim"></div>
+    <div class="panel previewPanel">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="kick">PRIVATE PREVIEW · NOT RELEASED</div>
+          <h2 class="big">Season 2 maps</h2>
+          <p class="lede" style="margin-bottom:0">Only you can see these (you're signed in to the admin page in this browser).
+            Drive them, or watch the test driver. Times here aren't saved anywhere and nothing on them can reach the leaderboards.</p>
+        </div>
+        <button class="ghost" id="bPreviewBack">&larr; Menu</button>
+      </div>
+      <div id="pvList"></div>
     </div>
   </div>
 
@@ -3973,8 +4009,10 @@ const CAR = {
   // simply a very draggy, low-grip material (its grip lives on the
   // surface itself): nothing caps speed on it, the car just can't be fast.
   // Loose ground resists more the faster you roll through it (sinkage),
-  // so grass: 0.30 + 0.04 per m/s of the tyre's own rolling speed.
-  rollTrack: 0.015, rollGrass: 0.30, rollGrassSpeed: 0.04,
+  // so grass: 0.38 + 0.09 per m/s of the tyre's own rolling speed (flat out
+  // on grass the car makes 3.7 m/s, a third of what it used to: cutting
+  // across never pays).
+  rollTrack: 0.015, rollGrass: 0.38, rollGrassSpeed: 0.09,
   // Brake drift: braking while steering at speed.
   driftMinSpeed: 12, driftHoldSlip: 0.12,
   // how the slide is shared out: brake bias shift toward the rear, the
@@ -5002,11 +5040,78 @@ class TrackBuilder {
         chev: (o.chev && i % 2 === 0) ? o.chev : 0,
         pier: this.n % this.pierEvery === 0,
         pad: !!o.pad,
-        boost: !!o.boost
+        boost: !!o.boost,
+        noBank: !!o.bridge
       });
     }
     this.path.push(this.p.toArray());
     if (!this._inCurve) this.sinceTurn += len;
+    return this;
+  }
+  /** road on stilts: no earth bank under it, so it can cross over other road */
+  bridge(len, o) { return this.slab(len, 0, Object.assign({}, o, { bridge: true })); }
+
+  /**
+   * A vertical loop. The road eases up into it (a clothoid: the bend
+   * tightens gradually instead of starting at full curvature), climbs,
+   * runs upside down over the top, comes down and eases out level again.
+   * Its radius is rBottom low down and rTop at the top, a teardrop like a
+   * real coaster loop, so the car isn't crushed at the bottom yet still has
+   * the speed to stay on at the top. It moves sideways by `shift` metres
+   * along the way, so the way out runs beside the way in. Its frames are
+   * fixed: the profile smoothing leaves them exactly as built. No earth bank
+   * is built under it.
+   */
+  loop(rBottom, rTop, shift, o) {
+    o = o || {};
+    const w = o.w || this.w;
+    const ease = o.ease || 16;                      // metres of easing in and out
+    const kb = 1 / rBottom, base = this.p.clone(), fwd = this.dir(new THREE.Vector3());
+    const side = new THREE.Vector3(Math.cos(this.h), 0, -Math.sin(this.h));     // local +X
+    const R = (th) => rBottom + (rTop - rBottom) * Math.sin(th / 2) ** 2;
+    const thEase = ease * kb / 2;                   // angle turned while easing in
+    if (!this.cur) {
+      this.cur = { frames: [], segs: [] };
+      this.strips.push(this.cur);
+      this.cur.frames.push(this._frame(0, 0, w));
+    }
+    const TWO = Math.PI * 2, ds = SEG * 0.6;
+    let th = 0, s = 0, along = 0, up = 0, phase = 0, sOut = 0, k = 0;
+    const kappa = () => {
+      if (phase === 0) return kb * Math.min(s / ease, 1);
+      if (phase === 1) return 1 / R(th);
+      return kb * Math.max(1 - sOut / ease, 0);
+    };
+    for (let guard = 0; guard < 4000 && th < TWO - 1e-6; guard++) {
+      let kk = kappa();
+      let dth = kk * ds;
+      if (phase === 0 && s + ds >= ease) phase = 1;
+      if (phase === 1 && th + dth >= TWO - thEase) phase = 2;
+      if (phase === 2) {
+        kk = kappa();
+        dth = kk * ds;
+        if (kk <= 1e-6 || th + dth > TWO) dth = TWO - th;
+        sOut += ds;
+      }
+      const mid = th + dth / 2;
+      along += Math.cos(mid) * ds; up += Math.sin(mid) * ds;
+      th += dth; s += ds;
+      const u = th / TWO;
+      const lat = shift * (u - Math.sin(TWO * u) / TWO);
+      this.p.copy(base).addScaledVector(fwd, along).addScaledVector(side, lat);
+      this.p.y = base.y + up;
+      const f = this._frame(-th, 0, w);
+      f.fixed = true;
+      this.n++;
+      this.cur.frames.push(f);
+      this.cur.segs.push({ grip: 1, curb: w > 4, dash: w >= 9.5, chev: 0, pier: false, pad: false, boost: !!o.boost, noBank: true, loop: true });
+      if (++k % 4 === 0) this.path.push(this.p.toArray());
+    }
+    // land exactly level, on the original heading
+    const last = this.cur.frames[this.cur.frames.length - 1];
+    last.t = 0;
+    this.path.push(this.p.toArray());
+    this.sinceTurn += s;
     return this;
   }
 
@@ -5126,7 +5231,7 @@ class TrackBuilder {
       const ease = profile((i + 0.5) / segs);
       this.h += segArc / 2;
       this.slab(chord, rise, {
-        w: o.w, roll: bank * ease, grip: o.grip, boost: o.boost,
+        w: o.w, roll: bank * ease, grip: o.grip, boost: o.boost, bridge: o.bridge,
         chev: (i % 3 === 0) ? chev : 0, dash: o.boost ? false : o.dash
       });
       this.h += segArc / 2;
@@ -5153,7 +5258,7 @@ class TrackBuilder {
     // blend. Keep that surface (frames only) so replays of those ghosts can
     // be moved onto today's road exactly (see buildCourse's roadShift).
     const oldSurface = this.strips.map((st) => ({ frames: st.frames.map((fr) => ({
-      p: [fr.p[0], fr.y0 + fr.sink0 - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r0, w: fr.w })) }));
+      p: [fr.p[0], fr.y0 + fr.sink0 - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r0, w: fr.w, fixed: fr.fixed })) }));
     smoothProfile(oldSurface, 7, false);
     easeBanking(this.strips);
     liftBankedTurns(this.strips);
@@ -5164,7 +5269,7 @@ class TrackBuilder {
       ? this.strips.map((st) => ({ frames: st.frames.map((fr) => ({
         p: [fr.p[0], fr.p[1] - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r, w: fr.w })) }))
       : null;
-    for (const st of this.strips) for (const fr of st.frames) { delete fr.y0; delete fr.sink0; delete fr.r0; delete fr.roller; delete fr.bump; }
+    for (const st of this.strips) for (const fr of st.frames) { delete fr.y0; delete fr.sink0; delete fr.r0; delete fr.roller; delete fr.bump; delete fr.fixed; }
     // gates stand on the finished road surface (the lift and the profile
     // smoothing above can move it a metre from where the cursor was)
     for (const g of this.gates) {
@@ -5205,6 +5310,7 @@ function easeBanking(strips) {
     const r0 = F.map((f) => f.r);
     if (!r0.some((r) => r)) continue;
     for (let i = 0; i < n; i++) {
+      if (F[i].fixed) continue;                    // a loop stays flat across
       let sw = 0, sr = 0;
       for (let j = 0; j < n; j++) {
         const d = dist[j] - dist[i];
@@ -5262,7 +5368,12 @@ function smoothProfile(strips, iterations, long = true) {
     if (n < 4) continue;
     for (let it = 0; it < iterations; it++) {
       const y = F.map((f) => f.p[1]);
-      for (let i = 1; i < n - 1; i++) if (!F[i].roller) F[i].p[1] = 0.25 * y[i - 1] + 0.5 * y[i] + 0.25 * y[i + 1];
+      for (let i = 1; i < n - 1; i++) {
+        if (F[i].roller || F[i].fixed) continue;
+        // next to a loop the road holds its own height (the loop is not a hill)
+        const ya = F[i - 1].fixed ? y[i] : y[i - 1], yb = F[i + 1].fixed ? y[i] : y[i + 1];
+        F[i].p[1] = 0.25 * ya + 0.5 * y[i] + 0.25 * yb;
+      }
     }
     // Then a much longer blend away from the strip ends, so the top of a
     // hill is a wide rounded crest the car stays on rather than a lip that
@@ -5270,24 +5381,25 @@ function smoothProfile(strips, iterations, long = true) {
     // PROFILE_KEEP of either end of a strip nothing changes, so every jump's
     // take-off and landing stay exactly as built.
     const dist = [0];
-    for (let i = 1; i < n; i++) dist.push(dist[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2]));
+    for (let i = 1; i < n; i++) dist.push(dist[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2], F[i].fixed ? F[i].p[1] - F[i - 1].p[1] : 0));
     const len = dist[n - 1];
     const y0 = F.map((f) => f.p[1]);
     for (let i = 1; long && i < n - 1; i++) {
-      if (F[i].roller) continue;
+      if (F[i].roller || F[i].fixed) continue;
       const fromEnd = Math.min(dist[i], len - dist[i]);
       const keep = clamp((fromEnd - PROFILE_KEEP) / PROFILE_BLEND, 0, 1);
       if (keep <= 0) continue;
       let sw = 0, sy = 0;
       for (let j = 0; j < n; j++) {
         const d = dist[j] - dist[i];
-        if (Math.abs(d) > 3 * PROFILE_SIGMA || F[j].roller) continue;
+        if (Math.abs(d) > 3 * PROFILE_SIGMA || F[j].roller || F[j].fixed) continue;
         const wgt = Math.exp(-0.5 * (d / PROFILE_SIGMA) * (d / PROFILE_SIGMA));
         sw += wgt; sy += wgt * y0[j];
       }
       F[i].p[1] = y0[i] + (sy / sw - y0[i]) * keep;
     }
     for (let i = 0; i < n; i++) {
+      if (F[i].fixed) continue;
       const a = F[Math.max(0, i - 1)], b = F[Math.min(n - 1, i + 1)];
       const dy = b.p[1] - a.p[1];
       const dh = Math.hypot(b.p[0] - a.p[0], b.p[2] - a.p[2]);
@@ -5492,6 +5604,7 @@ function buildCourse(data, scene, world) {
     bank: new MeshBuilder(), strip: new MeshBuilder(), arrow: new MeshBuilder()
   };
   const chevs = [];
+  const pillarAt = [], loopLegs = [];
   const q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
   const p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
   const x0 = new THREE.Vector3(), x1 = new THREE.Vector3();
@@ -5561,12 +5674,21 @@ function buildCourse(data, scene, world) {
       // it is gentle (about 26 degrees) so the car can always climb back on.
       const fl0 = bankL.foot[i], fl1 = bankL.foot[i + 1];
       const fr0 = bankR.foot[i], fr1 = bankR.foot[i + 1];
+      if (s.noBank) {
+        // a bridge or a loop: the deck's own sides and underside, nothing to the ground
+        M.side.quad(l0, l0d, l1d, l1);
+        M.side.quad(r0, r1, r1d, r0d);
+        if (!s.loop) world.addQuad(l0, l0d, l1d, l1, 1, 0.3), world.addQuad(r0, r1, r1d, r0d, 1, 0.3);
+        if (!s.loop && i % 4 === 0) pillarAt.push({ p: p0.clone(), u: u0.clone(), w: a.w });
+        if (s.loop && i % 5 === 0) loopLegs.push({ p: p0.clone(), u: u0.clone() });
+      } else {
       // smooth shading along the bank (a flat-shaded, non-planar quad lit
       // its two triangles differently: a sawtooth band under the road edge)
       M.bank.quadN(l0, l1, fl1, fl0, bankL.norm[i], bankL.norm[i + 1], bankL.norm[i + 1], bankL.norm[i]);
       M.bank.quadN(r0, fr0, fr1, r1, bankR.norm[i], bankR.norm[i], bankR.norm[i + 1], bankR.norm[i + 1]);
       world.addQuad(l0, l1, fl1, fl0, 0.5, 0.9, false, null, false);
       world.addQuad(r0, fr0, fr1, r1, 0.5, 0.9, false, null, false);
+      }
       M.side.quad(l0d, l1d, r1d, r0d);
 
       if (s.boost && i % 2 === 0) {
@@ -5587,7 +5709,7 @@ function buildCourse(data, scene, world) {
       // A thin cap left a hollow under the start of a raised landing ramp,
       // and a car that came up short on a jump could drive into it and end
       // up inside the track.
-      if (i === 0 || i === F.length - 2) {
+      if ((i === 0 || i === F.length - 2) && !s.noBank) {
         if (i === 0) {
           M.side.quad(l0, fl0, fr0, r0);
           world.addQuad(l0, fl0, fr0, r0, 1, 1.00);
@@ -5634,6 +5756,25 @@ function buildCourse(data, scene, world) {
     root.add(im);
   };
   inst(chevs, MAT.chev);
+  // Pillars under bridges, where no other road runs underneath; a loop
+  // stands on a few legs from the ground to its lower half.
+  {
+    const denseAll = densePath(data);
+    const under = (x, z, y) => denseAll.some((q) => q.y < y - 3 && Math.hypot(q.x - x, q.z - z) < q.hw + 4);
+    const posts = [];
+    for (const b of pillarAt) {
+      const top = b.p.y - DECK_T - 0.1, h = top - GROUND_Y;
+      if (h < 1.5 || b.u.y < 0.7 || under(b.p.x, b.p.z, b.p.y)) continue;
+      posts.push(new THREE.Matrix4().compose(new THREE.Vector3(b.p.x, GROUND_Y + h / 2, b.p.z), new THREE.Quaternion(), new THREE.Vector3(1.6, h, 1.6)));
+    }
+    for (const b of loopLegs) {
+      if (b.u.y < 0.2) continue;                     // only the lower half stands on legs
+      const top = b.p.y - DECK_T - 0.2, h = top - GROUND_Y;
+      if (h < 1.5 || under(b.p.x, b.p.z, b.p.y)) continue;
+      posts.push(new THREE.Matrix4().compose(new THREE.Vector3(b.p.x, GROUND_Y + h / 2, b.p.z), new THREE.Quaternion(), new THREE.Vector3(1.0, h, 1.0)));
+    }
+    inst(posts, MAT.pier);
+  }
   const instGeo = (list, geo, mat) => {
     if (!list.length) return;
     const im = new THREE.InstancedMesh(geo, mat, list.length);
@@ -5704,6 +5845,7 @@ function buildCourse(data, scene, world) {
   const path = data.path.map((q) => new THREE.Vector3(q[0], q[1], q[2]));
   const cum = [0];
   for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + path[i].distanceTo(path[i - 1]));
+  const cps = courseCheckpoints(data);
 
   world.index();
   scene.add(root);
@@ -5750,11 +5892,47 @@ function buildCourse(data, scene, world) {
   };
   return {
     roadShift,
-    root, gates, path, cum, length: cum[cum.length - 1],
+    root, gates, path, cum, cps, length: cum[cum.length - 1],
     minY: isFinite(minY) ? minY : 0, segments: segCount, tris: world.tris.length,
     props: props.tree.length + props.rock.length,
     center: ext.center, extent: ext.extent
   };
+}
+
+/**
+ * Checkpoints every CP_EVERY metres of road up to the finish gate. A run
+ * has to pass them in order (one missed here and there is forgiven, two in
+ * a row are not), so leaving the road to cut across to a later part of it
+ * never finishes. Each is a column: within the road's half width plus
+ * CP_SIDE metres across, from just under the deck to well above it (a car
+ * flying a jump passes high over the landing's checkpoints). In a loop it
+ * is a ball instead.
+ */
+const CP_EVERY = 20, CP_SIDE = 10;
+function courseCheckpoints(data) {
+  const finish = (data.gates || []).find((g) => g.kind === 'finish');
+  const frames = [];
+  for (const st of data.strips) for (const f of st.frames) frames.push(f);
+  if (!frames.length || !finish) return [];
+  let fi = frames.length - 1, fd = Infinity;
+  frames.forEach((f, k) => { const d = (f.p[0] - finish.pos[0]) ** 2 + (f.p[2] - finish.pos[2]) ** 2 + ((f.p[1] - finish.pos[1]) * 3) ** 2; if (d < fd) { fd = d; fi = k; } });
+  const out = [];
+  let acc = CP_EVERY, last = null;
+  for (let k = 0; k < fi - 2; k++) {
+    const f = frames[k];
+    if (last) acc += Math.hypot(f.p[0] - last.p[0], f.p[1] - last.p[1], f.p[2] - last.p[2]);
+    last = f;
+    if (acc < CP_EVERY) continue;
+    acc = 0;
+    const loop = Math.abs(f.t) > 0.5;
+    out.push({ x: f.p[0], y: f.p[1], z: f.p[2], hw: f.w / 2, loop });
+  }
+  return out;
+}
+function passesCheckpoint(c, p) {
+  const dx = p.x - c.x, dz = p.z - c.z, dy = p.y - c.y, r = c.hw + CP_SIDE;
+  if (c.loop) return dx * dx + dy * dy + dz * dz < r * r;
+  return dx * dx + dz * dz < r * r && dy > -6 && dy < 40;
 }
 
 function disposeCourse(course, scene) {
@@ -6209,6 +6387,436 @@ const LEVELS = [
   }
 ];
 const COURSE_IDS = LEVELS.map((l) => l.id);
+/* Next season: built and testable from the private preview (signed in to
+   the admin page in the same browser), but not released: they aren't in
+   LEVELS, the server has no rules for them (so no time on them can be
+   saved), and players never see them. Releasing = moving them into LEVELS. */
+const NEXT_SEASON = 2;
+const NEXT_LEVELS = [
+/*NEXT_LEVELS*/
+  // ---------------------------------------------------------- Section A
+  {
+    id: 's3c1', section: 0, name: 'Ignition',
+    blurb: 'Wide and fast: a speed strip, a big banked left, a tabletop over a hill and a long sweeping run home.',
+    build() {
+      const b = new TrackBuilder({ width: 15 });
+      b.pad(24, 19);
+      b.straight(36);
+      b.strip(24);
+      b.straight(26);
+      b.curve(70, 75, { bank: 30, chev: 1 });
+      b.straight(46);
+      b.slope(36, 5);
+      b.ramp(14, 8);
+      b.gap(20, -2);
+      b.table(34, 19);
+      b.slope(36, -5);
+      b.straight(30);
+      b.curve(66, -90, { bank: 34, chev: 1 });
+      b.straight(36);
+      b.crest(26, 5);
+      b.straight(26);
+      b.curve(90, 45, { bank: 18 });
+      b.straight(50);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c2', section: 0, name: 'Skip Rope',
+    blurb: 'Hop, hop, hop: a winding road full of little kickers. Keep it straight in the air.',
+    build() {
+      const b = new TrackBuilder({ width: 14 });
+      const hop = () => { b.ramp(6, 7); b.gap(7, -0.4); b.straight(16, { w: 16 }); };
+      b.pad(22, 18);
+      b.straight(34);
+      hop(); b.straight(14); hop();
+      b.straight(16);
+      b.curve(60, 50, { bank: 18, chev: 1 });
+      b.straight(18);
+      hop(); b.straight(12); hop(); b.straight(12); hop();
+      b.straight(20);
+      b.curve(58, -70, { bank: 24, chev: 1 });
+      b.straight(26);
+      b.rollers(3, 22, 0.8);
+      b.straight(30);
+      b.curve(64, 60, { bank: 20, chev: 1 });
+      b.straight(20);
+      hop(); b.straight(12); hop();
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 18 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c3', section: 0, name: 'Square Dance',
+    blurb: 'Four corners so tight you have to throw it sideways: brake and steer to drift, or Shift for the handbrake.',
+    build() {
+      const b = new TrackBuilder({ width: 16 });
+      b.pad(22, 20);
+      b.straight(60);
+      b.curve(11, 90, { bank: 6, w: 18, chev: 1 });
+      b.straight(46);
+      b.curve(11, 90, { bank: 6, w: 18, chev: 1 });
+      b.straight(50);
+      b.strip(20);
+      b.straight(24);
+      b.curve(12, -90, { bank: 6, w: 18, chev: 1 });
+      b.straight(46);
+      b.curve(12, -90, { bank: 6, w: 18, chev: 1 });
+      b.straight(40);
+      b.ramp(12, 7);
+      b.gap(16, -1);
+      b.straight(40, { w: 18 });
+      b.curve(70, 40, { bank: 16 });
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c4', section: 0, name: 'First Loop',
+    blurb: 'Hit the speed strip, keep your foot in and go all the way round. Then a long jump to finish.',
+    build() {
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 18);
+      b.straight(40);
+      b.curve(70, -60, { bank: 22, chev: 1 });
+      b.straight(30);
+      b.strip(26);
+      b.straight(24);
+      b.loop(28, 12, 20);
+      b.straight(40);
+      b.curve(64, 80, { bank: 30, chev: 1 });
+      b.straight(40);
+      b.ramp(16, 11);
+      b.gap(30, -3);
+      b.landing(20, -8, { w: 18 });
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 18 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section B
+  {
+    id: 's3c5', section: 1, name: 'Wall of Death',
+    blurb: 'Two U-turns banked almost vertical. Flat out, the wall holds you; lift and you slide down it.',
+    build() {
+      const b = new TrackBuilder({ width: 17 });
+      b.pad(24, 21);
+      b.straight(50);
+      b.strip(24);
+      b.straight(30);
+      b.curve(62, 180, { bank: 74, ramp: 0.5, chev: 1 });
+      b.straight(70);
+      b.rollers(2, 24, 0.7);
+      b.straight(40);
+      b.curve(62, -180, { bank: 76, ramp: 0.5, chev: 1 });
+      b.straight(60);
+      b.crest(24, 5);
+      b.straight(36);
+      b.gate('finish');
+      b.straight(34, { w: 21 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c6', section: 1, name: 'Big Air',
+    blurb: 'Down a mountain over three enormous jumps. Level the car in the air and land on the slope.',
+    build() {
+      const b = new TrackBuilder({ width: 15, y: 100 });
+      b.pad(22, 19);
+      b.straight(16);
+      b.slope(40, -6);
+      b.straight(16);
+      b.ramp(16, 5);
+      b.skiJump(18, 5, 58, 20, 34, { w: 20 });
+      b.landing(40, -20, { w: 20 });
+      b.curve(80, 50, { bank: 22, rise: -6, chev: 1 });
+      b.strip(20);
+      b.straight(12);
+      b.ramp(16, 6);
+      b.skiJump(20, 7, 62, 22, 36, { w: 22 });
+      b.landing(44, -22, { w: 22 });
+      b.straight(24);
+      b.ramp(18, 7);
+      b.skiJump(24, 9, 66, 24, 40, { w: 24 });
+      b.landing(48, -24, { w: 24 });
+      b.straight(46);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c7', section: 1, name: 'Figure Eight',
+    blurb: 'Round and up onto a long bridge over your own road, round the other way and back underneath it.',
+    build() {
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 18);
+      b.straight(120);
+      b.curve(45, 270, { bank: 24, rise: 10, chev: 1 });
+      b.bridge(130);
+      b.curve(45, -270, { bank: 24, rise: -10, chev: 1 });
+      b.straight(30);
+      b.strip(20);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 18 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c8', section: 1, name: 'Drift District',
+    blurb: 'City blocks: square corner after square corner. Throw it sideways or crawl round.',
+    build() {
+      const b = new TrackBuilder({ width: 16 });
+      b.pad(22, 20);
+      b.straight(50);
+      b.curve(12, 90, { bank: 5, w: 18, chev: 1 });
+      b.straight(48);
+      b.curve(12, -90, { bank: 5, w: 18, chev: 1 });
+      b.straight(50);
+      b.curve(13, -90, { bank: 5, w: 18, chev: 1 });
+      b.straight(48);
+      b.curve(13, 90, { bank: 5, w: 18, chev: 1 });
+      b.straight(56);
+      b.strip(18);
+      b.straight(30);
+      b.crest(22, 4);
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section C
+  {
+    id: 's3c9', section: 2, name: 'Corkscrew',
+    blurb: 'Climb a spiral tower on stilts, then fly off the top down to the ground.',
+    build() {
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 18);
+      b.straight(36);
+      b.strip(20);
+      b.slope(30, 3);
+      b.curve(46, 200, { bank: 22, rise: 10, chev: 1, bridge: true });
+      b.curve(46, 200, { bank: 22, rise: 10, chev: 1, bridge: true });
+      b.bridge(30);
+      b.ramp(14, 6, { bridge: true });
+      b.skiJump(24, 4, 44, 20, 30, { w: 20 });
+      b.landing(24, -20, { w: 20 });
+      b.straight(40);
+      b.curve(70, -60, { bank: 24, chev: 1 });
+      b.straight(50);
+      b.gate('finish');
+      b.straight(34, { w: 18 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c10', section: 2, name: 'Double Loop',
+    blurb: 'Two loops back to back, a steep banked turn, and the strip to get you round them.',
+    build() {
+      const b = new TrackBuilder({ width: 14 });
+      b.pad(22, 18);
+      b.straight(40);
+      b.strip(26);
+      b.straight(20);
+      b.loop(28, 12, 20);
+      b.straight(26);
+      b.strip(16);
+      b.straight(16);
+      b.loop(26, 11, -20);
+      b.straight(40);
+      b.curve(60, 160, { bank: 62, ramp: 0.5, chev: 1 });
+      b.straight(50);
+      b.crest(24, 5);
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 18 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c11', section: 2, name: 'Moguls',
+    blurb: 'A field of bumps and kickers down a winding hill. Light on the tops, flat on the landings.',
+    build() {
+      const b = new TrackBuilder({ width: 15, y: 24 });
+      const hop = (k) => { b.ramp(6, k); b.gap(6, -0.6); b.slope(14, -1, { w: 17 }); };
+      b.pad(22, 19);
+      b.straight(24);
+      b.rollers(3, 20, 0.6);
+      b.slope(20, -2);
+      hop(5); b.slope(12, -1); hop(6);
+      b.straight(16);
+      b.curve(56, 60, { bank: 22, rise: -4, chev: 1 });
+      b.slope(16, -1);
+      b.rollers(4, 18, 0.55);
+      b.slope(16, -2);
+      hop(6); b.straight(12); hop(5);
+      b.straight(24);
+      b.curve(58, -70, { bank: 24, rise: -4, chev: 1 });
+      b.straight(24);
+      hop(7);
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c12', section: 2, name: 'Sky Bridges',
+    blurb: 'Narrow bridges high in the air with gaps between them. Fall and it\'s over.',
+    build() {
+      const b = new TrackBuilder({ width: 13 });
+      b.pad(22, 17);
+      b.straight(30);
+      b.slope(60, 14);
+      b.bridge(30);
+      b.ramp(10, 5, { bridge: true });
+      b.gap(18, -1.5);
+      b.landing(12, -5, { bridge: true, w: 12 });
+      b.bridge(30, { w: 11 });
+      b.curve(60, 70, { bank: 18, chev: 1, bridge: true, w: 11 });
+      b.bridge(30, { w: 11 });
+      b.ramp(10, 6, { bridge: true, w: 11 });
+      b.gap(20, -2);
+      b.landing(12, -6, { bridge: true, w: 13 });
+      b.bridge(26, { w: 12 });
+      b.curve(60, -80, { bank: 20, chev: 1, bridge: true, w: 12 });
+      b.bridge(24, { w: 12 });
+      b.ramp(12, 7, { bridge: true, w: 12 });
+      b.gap(24, -2.5);
+      b.landing(14, -7, { bridge: true, w: 15 });
+      b.bridge(20, { w: 14 });
+      b.slope(60, -9);
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 17 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section D
+  {
+    id: 's3c13', section: 3, name: 'Cyclone',
+    blurb: 'Three walls banked steeper than anything before, left, right, left, then a crest and a jump to finish.',
+    build() {
+      const b = new TrackBuilder({ width: 16 });
+      b.pad(24, 20);
+      b.straight(40);
+      b.strip(22);
+      b.straight(20);
+      b.curve(58, 150, { bank: 68, ramp: 0.5, chev: 1 });
+      b.straight(56);
+      b.curve(56, -160, { bank: 70, ramp: 0.5, chev: 1 });
+      b.straight(50);
+      b.strip(18);
+      b.straight(24);
+      b.curve(60, 170, { bank: 72, ramp: 0.5, chev: 1 });
+      b.straight(40);
+      b.crest(26, 4);
+      b.straight(24);
+      b.ramp(14, 8);
+      b.gap(24, -2);
+      b.landing(20, -8, { w: 20 });
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c14', section: 3, name: 'Hairpin Hell',
+    blurb: 'The tightest corners in the game, with jumps between them. Drift or die.',
+    build() {
+      const b = new TrackBuilder({ width: 16 });
+      b.pad(22, 20);
+      b.straight(50);
+      b.curve(10, 90, { bank: 5, w: 18, chev: 1 });
+      b.straight(20);
+      b.curve(10, 90, { bank: 5, w: 18, chev: 1 });
+      b.straight(40);
+      b.ramp(10, 7);
+      b.gap(14, -0.5);
+      b.straight(40, { w: 18 });
+      b.curve(10, -90, { bank: 5, w: 18, chev: 1 });
+      b.straight(20);
+      b.curve(10, -90, { bank: 5, w: 18, chev: 1 });
+      b.straight(36);
+      b.strip(18);
+      b.straight(16);
+      b.curve(11, 90, { bank: 5, w: 18, chev: 1 });
+      b.straight(24);
+      b.curve(11, 90, { bank: 5, w: 18, chev: 1 });
+      b.straight(46);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c15', section: 3, name: 'Avalanche',
+    blurb: 'From the summit down: giant jumps, a wall, and a loop at the bottom to finish you off.',
+    build() {
+      const b = new TrackBuilder({ width: 15, y: 110 });
+      b.pad(22, 19);
+      b.slope(36, -5);
+      b.straight(14);
+      b.ramp(16, 5);
+      b.skiJump(20, 6, 46, 22, 36, { w: 21 });
+      b.landing(44, -22, { w: 21 });
+      b.slope(24, -4);
+      b.curve(64, 140, { bank: 56, rise: -8, ramp: 0.5, chev: 1 });
+      b.slope(30, -5);
+      b.straight(16);
+      b.ramp(16, 6);
+      b.skiJump(24, 8, 52, 24, 40, { w: 22 });
+      b.landing(48, -24, { w: 22 });
+      b.straight(36);
+      b.loop(30, 13, 20);
+      b.straight(26);
+      b.curve(70, -70, { bank: 26, chev: 1 });
+      b.straight(36);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c16', section: 3, name: 'Grand Finale',
+    blurb: 'Everything at once: a loop, a wall, two corners to drift and one last huge jump off a hill.',
+    build() {
+      const b = new TrackBuilder({ width: 15 });
+      b.pad(24, 19);
+      b.straight(40);
+      b.strip(24);
+      b.straight(20);
+      b.loop(28, 12, -20);
+      b.straight(30);
+      b.curve(70, 170, { bank: 66, ramp: 0.5, chev: 1 });
+      b.straight(46);
+      b.curve(11, -90, { bank: 5, w: 18, chev: 1 });
+      b.straight(30);
+      b.curve(11, -90, { bank: 5, w: 18, chev: 1 });
+      b.straight(20);
+      b.strip(24);
+      b.slope(50, 9);
+      b.straight(16);
+      b.ramp(14, 5);
+      b.skiJump(22, 3, 50, 22, 30, { w: 20 });
+      b.landing(40, -22, { w: 20 });
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  }
+];
 // Season 2 maps that were replaced by new ones (new ids, so their old times
 // never appear on the new maps); a score reset still clears these too
 const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24',
@@ -6341,12 +6949,21 @@ const DailyGen = {
 };
 // the daily map is played as level DAILY_I, one past the season's
 const DAILY_I = LEVELS.length;
-function levelAt(i) { return i === DAILY_I ? Daily.level : LEVELS[i]; }
+// the private preview's maps come after the daily
+const PREVIEW_BASE = DAILY_I + 1;
+const isPreview = (i) => i >= PREVIEW_BASE;
+function levelAt(i) { return i === DAILY_I ? Daily.level : isPreview(i) ? NEXT_LEVELS[i - PREVIEW_BASE] : LEVELS[i]; }
 function courseIndexOf(id) { if (/^d\d{8}$/.test(id || '')) return DAILY_I; return LEVELS.findIndex((l) => l.id === id); }
 function sectionIds(sec) { return LEVELS.filter((l) => l.section === sec).map((l) => l.id); }
 /** "A1".."D4": section letter plus the map's place within its section */
 function courseTag(i) {
   if (i === DAILY_I) return 'DAILY';
+  if (isPreview(i)) {
+    const lv = NEXT_LEVELS[i - PREVIEW_BASE];
+    let n = 0;
+    for (let k = 0; k <= i - PREVIEW_BASE; k++) if (NEXT_LEVELS[k].section === lv.section) n++;
+    return 'ABCD'.charAt(lv.section) + n;
+  }
   const lv = LEVELS[i];
   let n = 0;
   for (let k = 0; k <= i; k++) if (LEVELS[k].section === lv.section) n++;
@@ -6407,7 +7024,7 @@ class ChaseCamera {
     return out;
   }
   lookFor(car, out) {
-    let lead = car.heading - this.yaw;
+    let lead = this.looping ? 0 : car.heading - this.yaw;
     while (lead > Math.PI) lead -= Math.PI * 2;
     while (lead < -Math.PI) lead += Math.PI * 2;
     const ly = this.yaw + clamp(lead * CAM.lookLead, -CAM.lookLeadMax, CAM.lookLeadMax);
@@ -6418,6 +7035,8 @@ class ChaseCamera {
   }
   snap(car) {
     this.yaw = car.heading; this.occl = 1;
+    if (this.upV) this.upV.set(0, 1, 0);
+    this.looping = false;
     this.vel.x = this.vel.y = this.vel.z = 0;
     this.lookVel.x = this.lookVel.y = this.lookVel.z = 0;
     this.pos.copy(this.anchorFor(car, this.idealDist(car), this._anchor));
@@ -6428,14 +7047,28 @@ class ChaseCamera {
     this.apply();
   }
   update(dt, car) {
+    // nose steeply up or down, or upside down (a loop): keep looking the
+    // way the car went in, rather than swinging round as its heading flips
+    this.looping = !!(car.fwd && car.up) && (Math.abs(car.fwd.y) > 0.5 || car.up.y < 0);
     let d = car.heading - this.yaw;
     while (d > Math.PI) d -= Math.PI * 2;
     while (d < -Math.PI) d += Math.PI * 2;
-    this.yaw += d * approach(car.grounded ? CAM.yawGround : CAM.yawAir, dt);
+    if (!this.looping) this.yaw += d * approach(car.grounded ? CAM.yawGround : CAM.yawAir, dt);
+
+    // the camera's own "up": the world's, except in a loop, where it rolls
+    // with the car so the track stays under it all the way round
+    if (!this.upV) this.upV = new THREE.Vector3(0, 1, 0);
+    const upWant = this._uw || (this._uw = new THREE.Vector3());
+    if (this.looping) upWant.copy(car.up); else upWant.set(0, 1, 0);
+    this.upV.lerp(upWant, approach(this.looping ? 7 : 4, dt)).normalize();
+    const rolled = this.upV.y < 0.995;
 
     const ideal = this.idealDist(car);
-    this.updateOcclusion(dt, car, ideal);
-    const anchor = this.anchorFor(car, ideal * this.occl, this._anchor);
+    if (!rolled) this.updateOcclusion(dt, car, ideal);
+    const anchor = rolled
+      // in a loop: behind the car and on its own up side, inside the loop
+      ? this._anchor.copy(car.rPos || car.pos).addScaledVector(car.fwd, -ideal * 0.85).addScaledVector(this.upV, CAM.height)
+      : this.anchorFor(car, ideal * this.occl, this._anchor);
 
     this.pos.x = smoothDamp(this.pos.x, anchor.x, this.vel, 'x', CAM.smoothXZ, dt);
     this.pos.z = smoothDamp(this.pos.z, anchor.z, this.vel, 'z', CAM.smoothXZ, dt);
@@ -6443,9 +7076,11 @@ class ChaseCamera {
 
     const off = this._tmp.copy(this.pos).sub(anchor);
     const len = off.length();
-    if (len > CAM.leash) this.pos.copy(anchor).addScaledVector(off.multiplyScalar(1 / len), CAM.leash);
+    if (len > (rolled ? CAM.leash * 0.6 : CAM.leash)) this.pos.copy(anchor).addScaledVector(off.multiplyScalar(1 / len), rolled ? CAM.leash * 0.6 : CAM.leash);
 
-    const lk = this.lookFor(car, this._tmp);
+    const lk = rolled
+      ? this._tmp.copy(car.rPos || car.pos).addScaledVector(car.fwd, CAM.lookAhead).addScaledVector(this.upV, CAM.lookHeight)
+      : this.lookFor(car, this._tmp);
     this.look.x = smoothDamp(this.look.x, lk.x, this.lookVel, 'x', CAM.smoothLook, dt);
     this.look.y = smoothDamp(this.look.y, lk.y, this.lookVel, 'y', CAM.smoothLook, dt);
     this.look.z = smoothDamp(this.look.z, lk.z, this.lookVel, 'z', CAM.smoothLook, dt);
@@ -6588,7 +7223,7 @@ class ChaseCamera {
   }
   apply() {
     this.cam.position.copy(this.pos);
-    this.cam.up.set(0, 1, 0);
+    if (this.upV) this.cam.up.copy(this.upV); else this.cam.up.set(0, 1, 0);
     this.cam.lookAt(this.look);
   }
 }
@@ -7685,6 +8320,152 @@ const Daily = {
     } catch (e) {
       msg(/start_daily_attempt|PGRST202|function/i.test(e.message || '') ? 'The daily needs the latest database update (schema.sql).' : 'Could not start: ' + Cloud.errText(e));
     } finally { this.paying = false; if ($('bDailyPlay')) $('bDailyPlay').disabled = !this.clock().open; }
+  }
+};
+
+/**
+ * The test driver: drives a map by itself so you can watch it (the private
+ * preview's "Watch a test lap"). It follows the road's own frames (loops,
+ * banks and jumps are just more road), plans its speed from how tight the
+ * road turns ahead and how hard it can brake, keeps its speed up for
+ * jumps, levels the car in the air and boosts on long straights.
+ */
+const Autopilot = {
+  on: false, F: null, vAllow: null, idx: 0,
+  prepare(data) {
+    const F = [], q = new THREE.Quaternion(), e = new THREE.Euler();
+    let cum = 0, prev = null;
+    data.strips.forEach((st) => st.frames.forEach((f, fi) => {
+      const p = new THREE.Vector3().fromArray(f.p);
+      if (prev) cum += p.distanceTo(prev);
+      prev = p;
+      q.setFromEuler(e.set(f.t, f.y, f.r, 'YXZ'));
+      F.push({ p, fwd: new THREE.Vector3(0, 0, 1).applyQuaternion(q), up: new THREE.Vector3(0, 1, 0).applyQuaternion(q),
+        yaw: f.y, cum, first: fi === 0, last: fi === st.frames.length - 1, r: f.r });
+    }));
+    const rMin = (v) => {
+      const sMax = Math.min(lerp(CAR.maxSteer, CAR.minSteer, clamp(v / CAR.steerRef, 0, 1)), CAR.steerK / Math.pow(Math.max(v, 1), CAR.steerP));
+      return (CAR.wheelZ * 2) / Math.tan(sMax);
+    };
+    const vFor = (R) => { let lo = 3, hi = 90; for (let k = 0; k < 26; k++) { const mid = (lo + hi) / 2; if (rMin(mid) <= R) lo = mid; else hi = mid; } return lo; };
+    this.vAllow = F.map((f, i) => {
+      let tight = Infinity;
+      for (let k = Math.max(0, i - 2); k < Math.min(F.length - 1, i + 3); k++) {
+        if (F[k].last) continue;
+        let dy = F[k + 1].yaw - F[k].yaw; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI;
+        const ds = Math.hypot(F[k + 1].p.x - F[k].p.x, F[k + 1].p.z - F[k].p.z);
+        if (Math.abs(dy) > 1e-4 && ds > 0.2) tight = Math.min(tight, ds / Math.abs(dy));
+      }
+      return isFinite(tight) ? vFor(tight) * (1 + 0.9 * Math.sin(Math.min(Math.abs(f.r), 1.3))) * 1.045 : 99;
+    });
+    this.F = F; this.idx = 0;
+  },
+  input(car) {
+    const F = this.F, VA = this.vAllow;
+    if (!F || !F.length) return { throttle: 0, brake: 0, steer: 0, handbrake: 0, boost: 0 };
+    let best = this.idx, bd = Infinity;
+    for (let k = Math.max(0, this.idx - 6); k < Math.min(F.length, this.idx + 40); k++) {
+      const d = F[k].p.distanceToSquared(car.pos);
+      if (d < bd) { bd = d; best = k; }
+    }
+    const idx = this.idx = best, v = car.speed;
+    let j = idx;
+    while (j < F.length - 1 && F[j].cum - F[idx].cum < 7 + v * 0.42) j++;
+    const to = this._t || (this._t = new THREE.Vector3());
+    to.subVectors(F[j].p, car.pos);
+    const fwd = this._f || (this._f = new THREE.Vector3()), left = this._l || (this._l = new THREE.Vector3());
+    fwd.set(0, 0, 1).applyQuaternion(car.quat); left.set(1, 0, 0).applyQuaternion(car.quat);
+    const ang = Math.atan2(to.dot(left), to.dot(fwd));
+    let want = 99;
+    for (let k = idx; k < F.length && F[k].cum - F[idx].cum < 180; k++) {
+      const d = Math.max(0, F[k].cum - F[idx].cum - 4);
+      want = Math.min(want, Math.sqrt(VA[k] * VA[k] + 2 * 17.8 * d));
+    }
+    const loopy = Math.abs(F[idx].fwd.y) > 0.25 || F[idx].up.y < 0.5;
+    for (let k = idx; k < F.length - 1 && F[k].cum - F[idx].cum < 70; k++) if (F[k].last) { if (VA[k] > 30) want = Math.max(want, 40); break; }
+    let straight = true;
+    for (let k = idx; k < F.length && F[k].cum - F[idx].cum < 140; k++) if (VA[k] < 60) { straight = false; break; }
+    let air = 0;
+    if (!car.grounded) {
+      let target = 0;
+      for (let q = idx + 1; q < F.length; q++) if (F[q].first) { target = F[Math.min(F.length - 1, q + 2)].fwd.y; break; }
+      const diff = fwd.y - target;
+      air = diff > 0.06 ? 1 : diff < -0.06 ? -1 : 0;
+    }
+    return {
+      throttle: !car.grounded ? (air > 0 ? 1 : 0) : (loopy || v < want - 0.5 ? 1 : 0),
+      brake: !car.grounded ? (air < 0 ? 1 : 0) : (!loopy && v > want + 2 ? 1 : 0),
+      steer: clamp(-ang * 2.4, -1, 1), handbrake: 0,
+      boost: (straight && v > 18) || loopy ? 1 : 0
+    };
+  }
+};
+
+/**
+ * The private preview of next season's maps. Shown only in a browser that
+ * is signed in to the admin page (its admin token checks out): a button on
+ * the menu, and admin.html's "Preview next season" link. Times on these
+ * maps are never saved anywhere but this screen.
+ */
+const Preview = {
+  on: false, best: {},
+  async check() {
+    let token = '';
+    try { token = localStorage.getItem('aipolytrack-admin-token') || ''; } catch (e) { /* storage blocked */ }
+    if (!token || !SUPABASE.enabled) return false;
+    try {
+      const r = await fetch(SUPABASE.url + '/rest/v1/rpc/is_admin', { method: 'POST', body: '{}',
+        headers: { apikey: SUPABASE.key, 'Content-Type': 'application/json', 'x-admin-token': token } });
+      this.on = r.ok && (await r.json()) === true;
+    } catch (e) { this.on = false; }
+    $('bPreview').hidden = !this.on || !NEXT_LEVELS.length;
+    if (this.on && /preview/.test(location.hash) && Game.state === 'menu') this.open();
+    return this.on;
+  },
+  index(k) { return PREVIEW_BASE + k; },
+  ensure(k) {
+    const i = this.index(k);
+    if (!Game.data[i]) {
+      try { Game.data[i] = validateCourse(NEXT_LEVELS[k].build()); Game.playable[i] = Game.data[i].valid; }
+      catch (e) { console.warn('aiPolytrack: preview map', NEXT_LEVELS[k].id, e); Game.playable[i] = false; }
+    }
+    return Game.playable[i];
+  },
+  open() {
+    if (!this.on) return;
+    Autopilot.on = false;
+    Game.state = 'preview'; Game.running = false;
+    Sound.stopEngine();
+    UI.show('preview');
+    this.render();
+  },
+  render() {
+    const E = escapeHtml;
+    let h = '';
+    for (let sec = 0; sec < 4; sec++) {
+      h += '<div class="pvSec">Section ' + 'ABCD'.charAt(sec) + '</div><div class="pvGrid">';
+      NEXT_LEVELS.forEach((lv, k) => {
+        if (lv.section !== sec) return;
+        const ok = this.ensure(k), i = this.index(k), b = this.best[lv.id];
+        h += '<div class="pvCard"><div class="pvTop"><span class="pvTag">' + courseTag(i) + '</span><b>' + E(lv.name) + '</b>' +
+          (b ? '<span class="pvBest">' + formatTime(b) + '</span>' : '') + '</div>' +
+          '<p>' + E(lv.blurb) + '</p><div class="miniMap pvMap">' + (ok ? MiniMap.svg(i, false) : '') + '</div>' +
+          '<div class="pvBtns">' + (ok ? '<button class="primary small" data-drive="' + k + '">Drive</button><button class="small" data-watch="' + k + '">Watch a test lap</button>'
+            : '<span class="err">This map didn\'t build.</span>') + '</div></div>';
+      });
+      h += '</div>';
+    }
+    $('pvList').innerHTML = h;
+  },
+  drive(k, watch) {
+    if (!this.ensure(k)) return;
+    Autopilot.on = !!watch;
+    const i = this.index(k);
+    Game.startLevel(i);
+    if (watch) {
+      Autopilot.prepare(Game.data[i]);
+      UI.prompt('Test driver');
+    }
   }
 };
 
@@ -10604,7 +11385,7 @@ const Compare = {
 const UI = {
   toastT: 0,
   show(id) {
-    ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'result', 'gate', 'banned', 'spectate', 'settings',
+    ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'preview', 'result', 'gate', 'banned', 'spectate', 'settings',
      'garage', 'trophies']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
@@ -10661,7 +11442,8 @@ const UI = {
     this.gateError('');
   },
   course(i, name) {
-    $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase();
+    $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
+      : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase();
     $('hName').textContent = name;
   },
   clock(t, stopped) {
@@ -12597,7 +13379,14 @@ const Game = {
     scrub.addEventListener('mouseup', endScrub);
     scrub.addEventListener('touchend', endScrub);
     $('bRetry').addEventListener('click', () => { if (this.levelIndex === DAILY_I) Daily.play(); else this.startLevel(this.levelIndex); });
-    $('bResCourses').addEventListener('click', () => { if (this.levelIndex === DAILY_I) Daily.open(); else this.toSelect(); });
+    $('bResCourses').addEventListener('click', () => { if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else this.toSelect(); });
+    $('bPreview').addEventListener('click', () => Preview.open());
+    $('bPreviewBack').addEventListener('click', () => this.toMenu());
+    $('pvList').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-drive],button[data-watch]');
+      if (!b) return;
+      if (b.dataset.drive !== undefined) Preview.drive(+b.dataset.drive, false); else Preview.drive(+b.dataset.watch, true);
+    });
     $('bDaily').addEventListener('click', () => Daily.open());
     $('bDailyBack').addEventListener('click', () => this.toMenu());
     $('bDailyPlay').addEventListener('click', () => Daily.play());
@@ -12607,6 +13396,7 @@ const Game = {
       else if (this.state === 'daily') Daily.render();
     }, 1000);
     $('bNext').addEventListener('click', () => {
+      if (isPreview(this.levelIndex)) { Preview.drive(this.levelIndex - PREVIEW_BASE + 1, false); return; }
       const n = this.nextPlayable(this.levelIndex);
       if (n < 0) this.toSelect(); else this.startLevel(n);
     });
@@ -12765,7 +13555,7 @@ const Game = {
    * every real attempt rather than every key press.
    */
   logAttempt(outcome, reason) {
-    if (!this.course || !this.started) return;
+    if (!this.course || !this.started || isPreview(this.levelIndex) || Autopilot.on) return;
     if (outcome !== 'finished' && this.time < 0.8) return;
     const kind = this.runKind || 'campaign';
     const rs = this.runStats || { top: 0, grass: 0, air: 0, far: 0 };
@@ -12787,6 +13577,8 @@ const Game = {
   restartRun(msg, reason) {
     this.logAttempt('restarted', reason || 'restart');
     this.ticket = null;
+    this.cpNext = 0; this.cpMissRun = 0; this.cpWarned = false;
+    Autopilot.idx = 0;
     this.attemptNo = (this.attemptNo || 1) + 1;
     this.resetRunStats();
     this.car.place(this.startPose.pos, this.startPose.heading);
@@ -12813,6 +13605,8 @@ const Game = {
   startLevel(i) {
     if (!this.loadLevel(i)) { this.toSelect(); return; }
     this.ticket = null;
+    this.cpNext = 0; this.cpMissRun = 0; this.cpWarned = false;
+    Autopilot.idx = 0;
     if (this.attemptCourse !== i) { this.attemptCourse = i; this.attemptNo = 1; } else this.attemptNo = (this.attemptNo || 0) + 1;
     this.runKind = i === DAILY_I ? 'daily' : 'campaign';
     this.resetRunStats();
@@ -13304,6 +14098,7 @@ const Game = {
     Daily.tile();
     Daily.refresh();
     UI.hello();
+    if (!Preview.checked || Date.now() - Preview.checked > 60000) { Preview.checked = Date.now(); Preview.check(); }
     CoachAlerts.flush();                   // podium news waits for the menu (or a finished run)
   },
   /** called whenever the live leaderboard changes: redraw whatever shows it */
@@ -13529,6 +14324,7 @@ const Game = {
   },
 
   finishLevel() {
+    if (isPreview(this.levelIndex)) { this.finishPreview(); return; }
     this.running = false;
     this.state = 'result';
     this.finishedAtTime = this.time;
@@ -13618,6 +14414,33 @@ const Game = {
     this.awardCompletion();
     CoachAlerts.flush();                   // podium news, now that the run is over
   },
+  /** a preview run's finish: shown here, kept as this browser's ghost, saved nowhere else */
+  finishPreview() {
+    this.running = false;
+    this.state = 'result';
+    const lv = levelAt(this.levelIndex), id = lv.id, test = Autopilot.on;
+    const prev = Preview.best[id];
+    if (!test && (!prev || this.time < prev)) { Preview.best[id] = this.time; Records.setGhost(id, this.time, this.rec); }
+    Autopilot.on = false;
+    Sound.stopEngine();
+    Sound.finish(false);
+    $('rKick').textContent = test ? 'Test driver lap' : 'Preview run';
+    $('rName').textContent = lv.name;
+    $('rTime').textContent = formatTime(this.time);
+    $('rSub').textContent = 'Season ' + NEXT_SEASON + ' preview: not released, times aren\'t saved.' + (!test && prev ? ' Best here ' + formatTime(Math.min(prev, this.time)) + '.' : '');
+    $('rRaceResult').hidden = true;
+    $('rBoardHd').textContent = '';
+    $('rBoard').innerHTML = '';
+    $('bNext').hidden = this.levelIndex - PREVIEW_BASE >= NEXT_LEVELS.length - 1;
+    $('bResCourses').textContent = 'Preview';
+    $('bRetry').textContent = 'Drive it again';
+    $('rCampaignRow').hidden = false;
+    if (this.ghostMesh) this.ghostMesh.visible = false;
+    this.ghostData = Records.ghost(id);
+    this.buildGhostProgress();
+    UI.show('result');
+    UI.clock(this.time, true);
+  },
   /** Signed in, your best run's ghost lives on the server (the device
    *  only keeps this session's runs), so fetch it when a map loads and
    *  this session doesn't already hold a ghost for that exact time. */
@@ -13670,6 +14493,15 @@ const Game = {
   finishGateDue() {
     const travelled = this.course.cum[this.pathIdx] / Math.max(this.course.length, 1);
     if (travelled < 0.55) return null;
+    // every checkpoint passed (the last one may be missed)
+    const cps = this.course.cps || [];
+    if (this.cpNext < cps.length - 1) {
+      if (!this.cpWarned && this.car.pos.distanceTo(this.course.gates.find((g) => g.kind === 'finish').pos) < 30) {
+        this.cpWarned = true;
+        UI.toast('You left the road and missed part of it: this run can\'t finish. Press R.');
+      }
+      return null;
+    }
     return this.course.gates.find((g) => g.kind === 'finish' && !g.passed) || null;
   },
   /** the very front of the car's nose, in world space */
@@ -13702,7 +14534,7 @@ const Game = {
     const t1 = this.time, t0 = t1 - dt;
     const r2 = (v) => Math.round(v * 100) / 100;
     const r3 = (v) => Math.round(v * 1000) / 1000;
-    const bits = packInputBits(Input, this.car.boosting);
+    const bits = packInputBits(Autopilot.on && this._auto ? this._auto : Input, this.car.boosting);
     const want = Math.floor(t1 * GHOST_HZ) + 1;
     // The rigid body can (rarely) go non-finite for a single frame before
     // stepPlay's own watchdog notices and restarts it (see "vehicle state
@@ -14061,6 +14893,7 @@ const Game = {
   stepPlay(dt) {
     Input.sample();
     if (Input.tapped('Escape')) {
+      if (isPreview(this.levelIndex)) { Preview.open(); return; }
       this.logAttempt('terminated', 'menu');
       if (this.levelIndex === DAILY_I) Daily.open(); else this.toMenu();
       return;
@@ -14075,14 +14908,20 @@ const Game = {
       this.recPrevPos.copy(this.car.pos);
       this.recPrevQuat.copy(this.car.quat);
       UI.prompt('');
-      this.ticket = Cloud.on && Cloud.user ? Cloud.startRun(this.id()) : null;
+      this.ticket = Cloud.on && Cloud.user && !isPreview(this.levelIndex) && !Autopilot.on ? Cloud.startRun(this.id()) : null;
       this.runT = 0; this.focusT = 0;
     }
     if (this.started) {
       this.runT += dt;
       if (!document.hidden && document.hasFocus()) this.focusT += dt;
     }
-    const input = this.started ? Input : { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
+    if (Autopilot.on && !this.started) {
+      this.started = true;
+      this.recPrevPos.copy(this.car.pos);
+      this.recPrevQuat.copy(this.car.quat);
+      this.runT = 0; this.focusT = 0;
+    }
+    const input = Autopilot.on ? (this._auto = Autopilot.input(this.car)) : this.started ? Input : { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
 
     // The clock advances with the physics itself (one tick per 1/360 s
     // step), and the finish is found inside the step where the nose of the
@@ -14172,7 +15011,19 @@ const Game = {
         rs.far = Math.max(rs.far, this.course.cum[this.pathIdx] / Math.max(this.course.length, 1));
       }
     }
-    if (this.state === 'play') this.updateProgress();
+    if (this.state === 'play') { this.updateProgress(); this.updateCheckpoints(); }
+  },
+  /** the next checkpoint(s) along the road; one missed is forgiven, two in a row are not */
+  updateCheckpoints() {
+    const cps = this.course.cps;
+    if (!cps || !this.started) return;
+    const p = this.car.pos;
+    for (let guard = 0; guard < 4 && this.cpNext < cps.length; guard++) {
+      if (passesCheckpoint(cps[this.cpNext], p)) { this.cpNext++; this.cpMissRun = 0; continue; }
+      const nx = cps[this.cpNext + 1];
+      if (nx && this.cpMissRun === 0 && passesCheckpoint(nx, p)) { this.cpNext += 2; this.cpMissRun = 1; continue; }
+      break;
+    }
   },
 
   /** step the quality tier down when frames are slow, back up when they are not */
@@ -14202,7 +15053,10 @@ const Game = {
         if (!this._garageRolling) this.toMenu();
         break;
       case 'result':
-        if (this.levelIndex === DAILY_I) Daily.open(); else this.toMenu();
+        if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else this.toMenu();
+        break;
+      case 'preview':
+        this.toMenu();
         break;
       case 'settings': case 'trophies': case 'info': case 'stats': case 'daily':
         this.toMenu();
