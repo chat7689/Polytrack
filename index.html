@@ -835,6 +835,10 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .figChart text{font:10.5px var(--mono);fill:var(--dimmer)}
 .figBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 /* podium alerts */
+.captchaBox{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.55)}
+.captchaBox[hidden]{display:none}
+.captchaBox .capCard{padding:18px 20px;border-radius:12px;background:rgba(10,16,32,.98);border:1px solid var(--rule);text-align:center;min-width:300px}
+.captchaBox .capCard p{font-size:13px;color:var(--dim);margin-bottom:10px}
 .alertStack{position:fixed;right:18px;bottom:18px;z-index:70;display:flex;flex-direction:column;gap:10px;width:min(360px,92vw);pointer-events:none}
 .alertCard{pointer-events:auto;padding:12px 14px;border-radius:12px;background:rgba(10,16,30,.96);border:1px solid rgba(242,115,63,.55);
   box-shadow:0 12px 34px rgba(0,0,0,.45);animation:alertIn .5s cubic-bezier(.2,1.2,.3,1)}
@@ -1898,6 +1902,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
   </div>
   <canvas id="fxCanvas" hidden></canvas>
   <div class="alertStack" id="alertStack"></div>
+  <div class="captchaBox" id="captchaBox" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -2114,6 +2119,14 @@ const Records = {
     list.push({ n: Cloud.name(), t, d: Date.now(), uid });
     list.sort((a, b) => a.t - b.t);
     this.data.boards[id] = list;
+  },
+  /** a best the server refused: back to what it holds */
+  revertBest(id, prev) {
+    const uid = Cloud.user && Cloud.user.uid;
+    if (!uid) return;
+    if (prev) { this.useServerBest(id, prev); return; }
+    delete this.data.myBests[id];
+    this.data.boards[id] = this.board(id).filter((e) => e.uid !== uid);
   },
   /** after a score reset: this player's rows go, everyone else's stay */
   forgetPlayer(uid) {
@@ -2783,6 +2796,129 @@ const SUPABASE = {
   key: 'sb_publishable_ZdsFehUaa1KE1jzlRxbLIA_QgiOju7q'
 };
 
+/**
+ * This computer, as far as a browser can tell: a random id kept in the
+ * browser (localStorage, a cookie and IndexedDB, so clearing one doesn't
+ * lose it) and a fingerprint of the browser and screen. The server counts
+ * accounts per computer and can block one. The fingerprint is the same on
+ * identical school computers, so it is only ever a hint.
+ */
+const Device = {
+  KEY: 'aipolytrack.device', _id: null, _fp: '',
+  ok(v) { return /^[a-f0-9]{32}$/.test(v || ''); },
+  id() {
+    if (this._id) return this._id;
+    let v = null;
+    try { v = localStorage.getItem(this.KEY); } catch (e) { /* storage blocked */ }
+    if (!this.ok(v)) { const m = document.cookie.match(/(?:^|;\s*)apd=([a-f0-9]{32})/); if (m) v = m[1]; }
+    if (!this.ok(v)) {
+      const a = new Uint8Array(16);
+      crypto.getRandomValues(a);
+      v = Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
+    }
+    this._id = v;
+    this.keep(v);
+    return v;
+  },
+  keep(v) {
+    try { localStorage.setItem(this.KEY, v); } catch (e) { /* storage blocked */ }
+    try { document.cookie = 'apd=' + v + '; max-age=63072000; path=/; SameSite=Lax'; } catch (e) { /* no cookies */ }
+    this.idb((st) => st.put(v, 'device'));
+  },
+  idb(fn) {
+    try {
+      const rq = indexedDB.open('aipolytrack', 1);
+      rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+      rq.onsuccess = () => { try { const tx = rq.result.transaction('kv', 'readwrite'); fn(tx.objectStore('kv')); } catch (e) { /* no store */ } };
+    } catch (e) { /* no IndexedDB */ }
+  },
+  /** at start: an id kept only in IndexedDB comes back; the fingerprint is worked out */
+  async init() {
+    let fromDb = null;
+    if (!this._id) {
+      fromDb = await new Promise((res) => {
+        let done = false;
+        const end = (v) => { if (!done) { done = true; res(v); } };
+        setTimeout(() => end(null), 800);
+        this.idb((st) => { const g = st.get('device'); g.onsuccess = () => end(g.result || null); g.onerror = () => end(null); });
+      });
+      let ls = null;
+      try { ls = localStorage.getItem(this.KEY); } catch (e) { /* storage blocked */ }
+      if (!this.ok(ls) && this.ok(fromDb)) { this._id = fromDb; this.keep(fromDb); }
+    }
+    this.id();
+    try { this._fp = await this.fingerprint(); } catch (e) { this._fp = ''; }
+  },
+  fp() { return this._fp || ''; },
+  async fingerprint() {
+    const parts = [navigator.userAgent, navigator.language, (navigator.languages || []).join(','), navigator.platform,
+      navigator.hardwareConcurrency, navigator.deviceMemory, screen.width + 'x' + screen.height + 'x' + screen.colorDepth,
+      window.devicePixelRatio, Intl.DateTimeFormat().resolvedOptions().timeZone];
+    try {
+      const gl = document.createElement('canvas').getContext('webgl');
+      const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
+      if (ext) parts.push(gl.getParameter(ext.UNMASKED_VENDOR_WEBGL), gl.getParameter(ext.UNMASKED_RENDERER_WEBGL));
+    } catch (e) { /* no WebGL */ }
+    try {
+      const c = document.createElement('canvas'); c.width = 220; c.height = 30;
+      const x = c.getContext('2d');
+      x.textBaseline = 'top'; x.font = '16px Arial'; x.fillStyle = '#f2733f'; x.fillRect(0, 0, 60, 30);
+      x.fillStyle = '#3ddbb8'; x.fillText('aiPolytrack \u2014 0123456789', 4, 6);
+      parts.push(c.toDataURL());
+    } catch (e) { /* no canvas */ }
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(parts.join('|')));
+    return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  },
+  /** a browser being driven by a script says so (the honest ones do) */
+  auto() { return navigator.webdriver === true; }
+};
+
+/**
+ * The human check on sign-up and sign-in: Cloudflare Turnstile, switched on
+ * by putting a site key in the admin page (Settings) and turning on CAPTCHA
+ * protection in Supabase. With no site key it does nothing.
+ */
+const Captcha = {
+  site: '', script: null,
+  async siteKey() {
+    if (Notice.data && typeof Notice.data.captcha === 'string') return Notice.data.captcha;
+    try { const d = await Cloud.rpc('get_notice'); Notice.data = d || {}; Notice.at = Date.now(); return (d && d.captcha) || ''; } catch (e) { return ''; }
+  },
+  load() {
+    if (this.script) return this.script;
+    this.script = new Promise((res, rej) => {
+      const el = document.createElement('script');
+      el.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      el.async = true;
+      el.onload = () => res();
+      el.onerror = () => { this.script = null; rej(new Error('Could not load the human check. Check your connection.')); };
+      document.head.appendChild(el);
+    });
+    return this.script;
+  },
+  /** a fresh token, or undefined when the check is off */
+  async token() {
+    const site = await this.siteKey();
+    if (!site) return undefined;
+    await this.load();
+    const box = $('captchaBox');
+    return new Promise((res, rej) => {
+      box.hidden = false;
+      box.innerHTML = '<div class="capCard"><p>Checking you\'re a person\u2026</p><div id="capWidget"></div></div>';
+      let wid = null;
+      const end = () => { box.hidden = true; try { if (wid !== null) turnstile.remove(wid); } catch (e) { /* gone */ } box.innerHTML = ''; };
+      try {
+        wid = turnstile.render('#capWidget', {
+          sitekey: site, appearance: 'interaction-only', theme: 'dark',
+          callback: (t) => { end(); res(t); },
+          'error-callback': () => { end(); rej(new Error('The human check didn\'t work. Try again.')); },
+          'expired-callback': () => { end(); rej(new Error('The human check timed out. Try again.')); }
+        });
+      } catch (e) { end(); rej(new Error('The human check didn\'t load. Reload the page.')); }
+    });
+  }
+};
+
 // Supabase Auth has no username provider, so a username is mapped to a
 // hidden address nobody sees or types. Supabase refuses a second login with
 // the same address, which makes usernames unique. The database checks the
@@ -2893,7 +3029,8 @@ const Cloud = {
 
   async signIn(username, pass) {
     this.error = '';
-    const { data, error } = await this.sb.auth.signInWithPassword({ email: usernameToEmail(username), password: pass });
+    const captchaToken = await Captcha.token();
+    const { data, error } = await this.sb.auth.signInWithPassword({ email: usernameToEmail(username), password: pass, options: { captchaToken } });
     if (error) {
       const e = cloudError(error);
       // someone from before the move signing in with their old login: it
@@ -2930,7 +3067,8 @@ const Cloud = {
   /** the password is checked by signing in with it again first */
   async checkPassword(pass) {
     if (!this.user) throw new Error('Not signed in.');
-    const { error } = await this.sb.auth.signInWithPassword({ email: this.user.email, password: pass });
+    const captchaToken = await Captcha.token();
+    const { error } = await this.sb.auth.signInWithPassword({ email: this.user.email, password: pass, options: { captchaToken } });
     if (error) throw cloudError(error);
   },
   async changePassword(oldPass, newPass) {
@@ -2957,11 +3095,27 @@ const Cloud = {
     Records.forgetPlayer(this.user.uid);
   },
 
-  /** +1 credit for finishing a course (the amount is fixed by the server) */
-  async grindCredit() {
-    if (!this.user || !this.on || this.banned()) return false;
-    this.credits = await this.rpc('grant_credit', { p_kind: 'grind' });
-    return true;
+  /** which computer this player is on (and whether it is blocked) */
+  async touchDevice() {
+    if (!this.user || !this.on) return;
+    try {
+      const r = await this.rpc('touch_device', { p_device: Device.id(), p_fp: Device.fp() });
+      this.deviceBlocked = !!(r && r.blocked);
+      if (this.deviceBlocked) UI.toast('This computer is blocked from setting times.');
+    } catch (e) { /* a database from before devices: nothing to say */ }
+  },
+  /** a ticket for the run that just set off: {ok, run} or {ok:false, message} */
+  async startRun(courseId) {
+    if (!this.user || !this.on || this.banned()) return { ok: false, message: '' };
+    try {
+      return await this.rpc('start_run', { p_course: courseId, p_device: Device.id(), p_fp: Device.fp(), p_auto: Device.auto() });
+    } catch (e) { return { ok: false, message: 'The server didn\'t register this run (' + this.errText(e) + ').' }; }
+  },
+  /** the finish, checked by the server: {ok, credited, balance} or {ok:false, message} */
+  async finishRun(runId, timeMs, focus) {
+    try {
+      return await this.rpc('finish_run', { p_run: runId, p_time_ms: timeMs, p_focus: focus, p_auto: Device.auto() });
+    } catch (e) { return { ok: false, message: 'Time not uploaded. ' + this.errText(e) }; }
   },
 
   /**
@@ -2976,11 +3130,11 @@ const Cloud = {
       throw new Error('Usernames are 3-14 characters: letters, numbers, _ and - only.');
     }
     const email = usernameToEmail(username);
-    let { data, error } = await this.sb.auth.signUp({ email, password: pass });
+    let { data, error } = await this.sb.auth.signUp({ email, password: pass, options: { captchaToken: await Captcha.token() } });
     if (error && cloudError(error).code === 'auth/email-already-in-use') {
       // the login exists: a sign-up that stopped half way is finished with
       // the same password; anyone else is told the name is taken
-      const again = await this.sb.auth.signInWithPassword({ email, password: pass });
+      const again = await this.sb.auth.signInWithPassword({ email, password: pass, options: { captchaToken: await Captcha.token() } });
       if (again.error) throw cloudError(error);
       data = again.data; error = null;
     }
@@ -2991,7 +3145,7 @@ const Cloud = {
     }
     this.user = this.wrapUser(data.user);
     let res;
-    try { res = await this.rpc('claim_profile', { p_name: username.trim(), p_code: code || '' }); } catch (e) {
+    try { res = await this.rpc('claim_profile', { p_name: username.trim(), p_code: code || '', p_device: Device.id(), p_fp: Device.fp() }); } catch (e) {
       throw new Error('Your account was made but could not finish setting up (' + e.message + '). ' +
         'Sign up again with the same details in a few seconds.');
     }
@@ -2999,6 +3153,10 @@ const Cloud = {
       try { await this.sb.auth.signOut({ scope: 'local' }); } catch (e) { /* the login is gone already */ }
       this.user = null;
       if (res && res.error === 'invite') throw new Error('That invite code is not valid.');
+      if (res && res.error === 'device_limit') throw new Error('This computer already has 5 accounts, the most it can make. Sign in to one of them.');
+      if (res && res.error === 'blocked') throw new Error('This computer is blocked from making accounts.');
+      if (res && res.error === 'busy') throw new Error('Lots of accounts are being made right now. Try again in an hour.');
+      if (res && res.error === 'device') throw new Error('Reload the page and try again.');
       if (res && res.error === 'taken') { const e = new Error('taken'); e.code = 'auth/email-already-in-use'; throw e; }
       const e = new Error('invalid'); e.code = 'auth/invalid-email'; throw e;
     }
@@ -3027,6 +3185,7 @@ const Cloud = {
     }
     this.profile = { displayName: row.display_name, banned: !!row.banned };
     try { localStorage.setItem(key, JSON.stringify(this.profile)); } catch (x) { /* storage blocked */ }
+    Device.init().then(() => this.touchDevice());
     return this.profile;
   },
 
@@ -3179,7 +3338,7 @@ const Cloud = {
    * Push a personal best and its ghost in one step. The server keeps only
    * ever the faster time, and says what it has when this run is not faster.
    */
-  async pushBest(courseId, timeSec, ghostSamples) {
+  async pushBest(courseId, timeSec, ghostSamples, runId) {
     if (!this.on || !this.user || this.banned()) return;
     // never publish under the 'Driver' fallback name while the profile is
     // momentarily reloading
@@ -3201,14 +3360,7 @@ const Cloud = {
     let r = null;
     for (let attempt = 0; ; attempt++) {
       try {
-        try {
-          r = await this.rpc('submit_best', { p_course: courseId, p_time_ms: timeMs, p_samples: samples, p_v: GHOST_VERSION });
-        } catch (e) {
-          // a database from before ghost versions (schema.sql not re-run
-          // yet): save the time the old way rather than not at all
-          if (!/submit_best|PGRST202|function/i.test(e.code + ' ' + e.message)) throw e;
-          r = await this.rpc('submit_best', { p_course: courseId, p_time_ms: timeMs, p_samples: samples });
-        }
+        r = await this.rpc('submit_best', { p_course: courseId, p_time_ms: timeMs, p_samples: samples, p_v: GHOST_VERSION, p_run: runId });
         break;
       } catch (e) {
         // one retry after a dropped connection; anything else is final
@@ -7444,7 +7596,7 @@ const Daily = {
     let seen = [];
     try { seen = JSON.parse(localStorage.getItem('aipolytrack.dailyWins.' + uid) || '[]'); } catch (e) { seen = []; }
     for (const r of this.results) {
-      if (r.uid !== uid || seen.includes(r.day)) continue;
+      if (r.uid !== uid || seen.includes(r.day) || r.held || r.paid === false) continue;
       seen.push(r.day);
       CoachAlerts.queue.push({ win: true, day: r.day, t: r.time_ms / 1000, name: DailyGen.level(r.day).name });
     }
@@ -7497,7 +7649,7 @@ const Daily = {
       '</span><span class="n">' + escapeHtml(e.n) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
       : '<li class="none">Nobody yet. Be the first.</li>';
     $('dWinners').innerHTML = this.results.length ? this.results.map((r) => '<li><span class="dd">' + this.pretty(r.day) + '</span><span class="n">' +
-      (r.uid ? escapeHtml(r.display_name || 'Driver') : '<i>no entries</i>') + '</span><span class="t">' + (r.time_ms ? formatTime(r.time_ms / 1000) : '') + '</span></li>').join('')
+      (r.uid ? escapeHtml(r.display_name || 'Driver') + (r.held ? ' <i>(under review)</i>' : r.paid === false ? ' <i>(not paid)</i>' : '') : '<i>no entries</i>') + '</span><span class="t">' + (r.time_ms ? formatTime(r.time_ms / 1000) : '') + '</span></li>').join('')
       : '<li class="none">Winners show up here after noon.</li>';
   },
   /** a line for Coach's facts */
@@ -12013,6 +12165,7 @@ const Game = {
   boardSel: {}, boardShow: {}, cdShow: 10,
 
   boot() {
+    Device.init();
     buildMaterials();
     buildGeometry();
     App.init();
@@ -12633,6 +12786,7 @@ const Game = {
   },
   restartRun(msg, reason) {
     this.logAttempt('restarted', reason || 'restart');
+    this.ticket = null;
     this.attemptNo = (this.attemptNo || 1) + 1;
     this.resetRunStats();
     this.car.place(this.startPose.pos, this.startPose.heading);
@@ -12658,6 +12812,7 @@ const Game = {
 
   startLevel(i) {
     if (!this.loadLevel(i)) { this.toSelect(); return; }
+    this.ticket = null;
     if (this.attemptCourse !== i) { this.attemptCourse = i; this.attemptNo = 1; } else this.attemptNo = (this.attemptNo || 0) + 1;
     this.runKind = i === DAILY_I ? 'daily' : 'campaign';
     this.resetRunStats();
@@ -13390,17 +13545,35 @@ const Game = {
     const firstClear = !Records.cleared(id);
     const res = Records.submit(id, this.time);
     this.logAttempt('finished');
-    if (Cloud.on && Cloud.user && !Cloud.banned() && (!prevBest || this.time < prevBest)) {
-      Cloud.pushBest(id, this.time, this.rec).then((r) => {
-        if (r && r.improved === false && typeof r.serverMs === 'number') Records.useServerBest(id, r.serverMs / 1000);
-        UI.who(Cloud.name(), Records.credits);
-        this.onBoardsChanged();
+    // The server checks the finish against the run's ticket (and pays the
+    // +1 credit); only then does a new best go up, with its recording.
+    const time = this.time, rec = this.rec, ticket = this.ticket;
+    const focus = Math.round(100 * (this.focusT || 0) / Math.max(this.runT || 0, 1e-3));
+    this.ticket = null;
+    const fin = ticket ? ticket.then((t) => (t && t.ok ? Cloud.finishRun(t.run, Math.round(time * 1000), Math.min(100, focus)).then((f) => Object.assign({ run: t.run }, f))
+      : { ok: false, message: t && t.message ? 'Time not uploaded. ' + t.message : '' })) : Promise.resolve(null);
+    this.finishP = fin;
+    const isBest = !prevBest || time < prevBest;
+    if (Cloud.on && Cloud.user && !Cloud.banned()) {
+      fin.then((f) => {
+        if (!f || !f.ok) {
+          if (isBest) { Records.revertBest(id, prevBest); this.onBoardsChanged(); }
+          if (f && f.message) UI.toast(f.message);
+          return;
+        }
+        if (!isBest) return;
+        return Cloud.pushBest(id, time, rec, f.run).then((r) => {
+          if (r && r.improved === false && typeof r.serverMs === 'number') Records.useServerBest(id, r.serverMs / 1000);
+          UI.who(Cloud.name(), Records.credits);
+          this.onBoardsChanged();
+        });
       }).catch((e) => {
         console.warn('aiPolytrack: could not publish the time', e && e.message);
         // A silent failure here means the run looks saved (this device
         // still shows it) but the shared leaderboard never got it — tell
         // the player rather than let them find out days later that a
         // record run never left their machine.
+        if (isBest) { Records.revertBest(id, prevBest); this.onBoardsChanged(); }
         UI.toast('Time not uploaded. ' + Cloud.errText(e));
       });
     }
@@ -13484,7 +13657,9 @@ const Game = {
     if (this.levelIndex === DAILY_I) return;          // a daily attempt is paid for; no finish credit
     try {
       const before = Records.credits;
-      if (!(await Cloud.grindCredit())) return;
+      const f = await this.finishP;                   // the server pays it with the checked finish
+      if (!f || !f.ok || !f.credited) return;
+      Cloud.credits = f.balance; Records.credits = f.balance;
       if (this.state === 'result') CreditFX.play(1, before, Records.credits);
       else UI.who(Cloud.name(), Records.credits);
     } catch (e) { console.warn('aiPolytrack: could not award the finish credit', e && e.message); }
@@ -13900,6 +14075,12 @@ const Game = {
       this.recPrevPos.copy(this.car.pos);
       this.recPrevQuat.copy(this.car.quat);
       UI.prompt('');
+      this.ticket = Cloud.on && Cloud.user ? Cloud.startRun(this.id()) : null;
+      this.runT = 0; this.focusT = 0;
+    }
+    if (this.started) {
+      this.runT += dt;
+      if (!document.hidden && document.hasFocus()) this.focusT += dt;
     }
     const input = this.started ? Input : { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
 

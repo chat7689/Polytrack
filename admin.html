@@ -155,6 +155,7 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
       <a href="#runs" data-page="runs">Run history</a>
       <a href="#times" data-page="times">Times</a>
       <a href="#seasons" data-page="seasons">Standings</a>
+      <a href="#security" data-page="security">Security</a>
       <a href="#settings" data-page="settings">Settings</a>
     </nav>
 
@@ -265,6 +266,62 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
     </section>
 
     <!-- SETTINGS -->
+    <section class="page hide" id="page-security">
+      <div class="spread" style="margin-bottom:12px">
+        <p class="note" style="margin:0">Unusual times, payouts waiting for you, and every computer that has played.</p>
+        <button id="btnSecReload">Reload</button>
+      </div>
+      <div class="statGrid" id="secTiles"></div>
+      <div class="msg" id="secMsg"></div>
+      <h2>Times to check</h2>
+      <div class="card tableWrap">
+        <p class="note">Every time already passed the server's checks (a real run ticket, a recording that starts at the
+          start, follows the road, ends in the finish gate and never moves faster than a car can). These were let
+          through but look unusual. Watch the run in the game before you decide.</p>
+        <table>
+          <thead><tr><th>Player</th><th>Map</th><th class="r">Time</th><th class="r">Next best</th><th>Why</th><th>When</th><th></th></tr></thead>
+          <tbody id="secFlagged"></tbody>
+        </table>
+      </div>
+      <h2>Daily payouts on hold</h2>
+      <div class="card tableWrap">
+        <p class="note">A daily won with a flagged time waits here instead of paying out.</p>
+        <table>
+          <thead><tr><th>Day</th><th>Winner</th><th class="r">Time</th><th>Why</th><th></th></tr></thead>
+          <tbody id="secHeld"></tbody>
+        </table>
+      </div>
+      <h2>Computers</h2>
+      <div class="card tableWrap">
+        <p class="note">A computer is the id the game keeps in its browser: each can make at most 5 accounts.
+          <b>Block</b> stops it making accounts and setting times on any account. Someone can get around it by
+          clearing their browser data, so also ban their accounts. "Same browser" counts other ids with an
+          identical fingerprint: on a school's identical laptops that is normal, so only block a fingerprint
+          when you are sure.</p>
+        <div class="row" style="margin-bottom:10px"><input type="text" id="secFind" placeholder="Find a player, id or network"></div>
+        <table>
+          <thead><tr><th>Computer</th><th>Accounts used here</th><th class="r">Made here</th><th class="r">Same browser</th>
+            <th>Network</th><th class="r">Runs today</th><th>Last seen</th><th></th></tr></thead>
+          <tbody id="secDevices"></tbody>
+        </table>
+      </div>
+      <h2>Blocks</h2>
+      <div class="card tableWrap">
+        <table>
+          <thead><tr><th>Kind</th><th>Value</th><th>Note</th><th>Since</th><th></th></tr></thead>
+          <tbody id="secBans"></tbody>
+        </table>
+        <div class="row" style="margin-top:14px">
+          <div><label for="banKind">Block a</label><select id="banKind"><option value="device">computer id</option>
+            <option value="fp">browser fingerprint</option><option value="ip">network (IP)</option></select></div>
+          <div><label for="banValue">Value</label><input type="text" id="banValue"></div>
+          <div><label for="banNote">Note</label><input type="text" id="banNote" placeholder="why"></div>
+          <button class="danger" id="btnBan">Block</button>
+        </div>
+        <small class="hint">A network block stops everyone on it, including a whole school. Use it only for a network that isn't a school's.</small>
+      </div>
+    </section>
+
     <section class="page hide" id="page-settings">
       <h2>Messages</h2>
       <div class="card">
@@ -276,6 +333,18 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
         <textarea id="noticeLogin" rows="3" maxlength="600"></textarea>
         <div class="row" style="margin-top:12px"><button class="primary" id="btnNotice">Save messages</button></div>
         <div class="msg" id="noticeMsg"></div>
+      </div>
+      <h2>Human check (Cloudflare Turnstile)</h2>
+      <div class="card">
+        <p class="note">Stops scripts from making accounts in bulk. Make a free Turnstile widget at
+          dash.cloudflare.com (Turnstile, Add widget, add this game's web address), paste its <b>site key</b> here and
+          save, then in Supabase turn on <b>Authentication, Attack Protection, Enable CAPTCHA protection</b> with
+          Turnstile and its <b>secret key</b>. Do it in that order: with CAPTCHA on in Supabase but no site key here,
+          nobody can sign in. Leave empty to switch it off (switch it off in Supabase first).</p>
+        <label for="capSite">Site key</label>
+        <div class="row"><input type="text" id="capSite" style="width:380px" placeholder="0x4AAAA…">
+          <button class="primary" id="btnCap">Save</button></div>
+        <div class="msg" id="capMsg"></div>
       </div>
       <h2>Bring in the Firebase data</h2>
       <div class="card">
@@ -433,7 +502,7 @@ const ago = (ms) => {
   if (s < 129600) return Math.round(s / 3600) + 'h ago';
   return Math.round(s / 86400) + 'd ago';
 };
-const KIND = { campaign: 'Campaign', creditsrun: 'Credit run', race: 'Race' };
+const KIND = { campaign: 'Campaign', creditsrun: 'Credit run', race: 'Race', daily: 'Daily' };
 /** credits as the game writes them: a thin space every three digits (1 000 000) */
 const fmtCredits = (n) => { const v = Math.floor(Number(n) || 0); return (v < 0 ? '−' : '') + String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); };
 const OUTCOME = { finished: ['Finished', 'fin'], restarted: ['Restarted', 'rst'], terminated: ['Ended early', 'trm'] };
@@ -499,12 +568,13 @@ if (storedToken()) useToken(storedToken()).then((ok) => { if (!ok) showSignIn('T
 else showSignIn('');
 
 /* --------------------------------------------------------------- pages */
-const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'settings'];
+const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'security', 'settings'];
 function route() {
   const page = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
   PAGES.forEach((p) => $('page-' + p).classList.toggle('hide', p !== page));
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.page === page));
   if (page === 'settings') loadSettings();
+  if (page === 'security') loadSecurity();
 }
 addEventListener('hashchange', route);
 
@@ -1110,6 +1180,7 @@ async function loadNotice() {
     const n = (await rpc('get_notice')) || {};
     $('noticeMenu').value = n.menu || '';
     $('noticeLogin').value = n.login || '';
+    $('capSite').value = n.captcha || '';
   } catch (e) { say('noticeMsg', 'Could not read the messages: ' + e.message, 'err'); }
 }
 $('btnNotice').addEventListener('click', async () => {
@@ -1119,6 +1190,113 @@ $('btnNotice').addEventListener('click', async () => {
     say('noticeMsg', 'Saved. The game shows it the next time its menu or sign-in screen opens.', 'ok');
   } catch (e) { say('noticeMsg', e.message, 'err'); }
 });
+$('btnCap').addEventListener('click', async () => {
+  say('capMsg', 'Saving…');
+  try {
+    const r = await rpc('admin_set_captcha', { p_site: $('capSite').value });
+    say('capMsg', r.site ? 'Saved. Now turn on CAPTCHA protection in Supabase with the secret key.' : 'Switched off here.', 'ok');
+  } catch (e) { say('capMsg', e.message, 'err'); }
+});
+
+/* ------------------------------------------------------------ security */
+const FLAG = {
+  record: ['new #1 by a wide margin', 'beat the old #1 on this map by more than 2%'],
+  fast: ['very fast', 'more than 10% faster than the test driver\'s best'],
+  inputs: ['frantic steering', 'steering switched direction more than 7 times a second for the whole run'],
+  accel: ['sudden jolts', 'sideways jolts harder than any test run'],
+  speed: ['very high speed', 'moved faster than 75 m/s between two frames'],
+  norules: ['no map data', 'a daily the server has no map data for']
+};
+const flagPills = (fl) => (fl || []).map((f) => '<span class="pill trm" title="' + esc((FLAG[f] || [f, f])[1]) + '">' + esc((FLAG[f] || [f])[0]) + '</span>').join(' ');
+const mapName = (id) => /^d\d{8}$/.test(id || '') ? 'Daily ' + id.slice(1, 5) + '-' + id.slice(5, 7) + '-' + id.slice(7) : courseName(id);
+const shortId = (v) => v ? String(v).slice(0, 8) + '…' : '—';
+let sec = null;
+async function loadSecurity() {
+  say('secMsg', 'Loading…');
+  try {
+    sec = await rpc('admin_security');
+    say('secMsg', '');
+    renderSecurity();
+  } catch (e) {
+    say('secMsg', /admin_security|PGRST202|function/i.test(e.message) ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message, 'err');
+  }
+}
+function renderSecurity() {
+  if (!sec) return;
+  const st = sec.stats || {};
+  const tile = (n, l) => '<div class="statTile"><div class="n">' + esc(n) + '</div><div class="l">' + esc(l) + '</div></div>';
+  $('secTiles').innerHTML = tile(st.signups24h || 0, 'accounts made today') + tile(st.runs1h || 0, 'runs in the last hour') +
+    tile(st.devices || 0, 'computers seen') + tile(st.bans || 0, 'blocks') + tile((sec.flagged || []).length, 'times to check');
+  $('secFlagged').innerHTML = (sec.flagged || []).map((f) =>
+    '<tr><td class="name"><b>' + esc(f.name || '—') + '</b>' + realTag(f.uid) + (f.banned ? ' <span class="pill trm">banned</span>' : '') + '</td><td>' + esc(mapName(f.course)) +
+    '</td><td class="mono r">' + fmt(f.time_ms) + '</td><td class="mono r">' + (f.next_ms ? fmt(f.next_ms) : '—') + '</td><td>' + flagPills(f.flags) +
+    '</td><td class="mono">' + ago(Date.parse(f.at)) + '</td><td class="r" style="white-space:nowrap">' +
+    '<button class="small" data-act="ok" data-uid="' + esc(f.uid) + '" data-course="' + esc(f.course) + '">Looks fine</button> ' +
+    '<button class="small danger" data-act="remove" data-uid="' + esc(f.uid) + '" data-course="' + esc(f.course) + '">Remove time</button> ' +
+    (f.banned ? '' : '<button class="small danger" data-act="banplayer" data-uid="' + esc(f.uid) + '">Ban player</button> ') +
+    (f.device ? '<button class="small danger" data-act="block" data-kind="device" data-value="' + esc(f.device) + '">Block computer</button>' : '') +
+    '</td></tr>').join('') || '<tr><td colspan="7" class="empty">Nothing unusual.</td></tr>';
+  $('secHeld').innerHTML = (sec.held || []).map((h) =>
+    '<tr><td class="mono">' + esc(h.day) + '</td><td><b>' + esc(h.name || '—') + '</b>' + realTag(h.uid) + '</td><td class="mono r">' + fmt(h.time_ms) +
+    '</td><td>' + flagPills(h.flags) + '</td><td class="r" style="white-space:nowrap"><button class="small primary" data-act="pay" data-day="' + esc(h.day) +
+    '">Pay 1 000</button> <button class="small danger" data-act="refuse" data-day="' + esc(h.day) + '">Refuse</button></td></tr>').join('') ||
+    '<tr><td colspan="5" class="empty">Nothing on hold.</td></tr>';
+  renderDevices();
+  $('secBans').innerHTML = (sec.bans || []).map((b) =>
+    '<tr><td>' + esc({ device: 'computer', fp: 'browser fingerprint', ip: 'network' }[b.kind] || b.kind) + '</td><td class="mono">' + esc(b.value) +
+    '</td><td>' + esc(b.note || '') + '</td><td class="mono">' + ago(Date.parse(b.created_at)) + '</td><td class="r"><button class="small" data-act="unblock" data-kind="' +
+    esc(b.kind) + '" data-value="' + esc(b.value) + '">Remove</button></td></tr>').join('') || '<tr><td colspan="5" class="empty">No blocks.</td></tr>';
+}
+function renderDevices() {
+  const find = $('secFind').value.trim().toLowerCase();
+  const list = (sec.devices || []).filter((d) => !find || [d.id, d.fp, d.last_ip, d.first_ip].concat(d.names || []).some((v) => String(v || '').toLowerCase().includes(find)));
+  $('secDevices').innerHTML = list.slice(0, 200).map((d) =>
+    '<tr><td class="mono" title="' + esc(d.id) + '">' + esc(shortId(d.id)) + (d.banned ? ' <span class="pill trm">blocked</span>' : '') + '</td><td>' +
+    (d.names || []).map(esc).join(', ') + '</td><td class="mono r">' + d.created + ' / 5</td><td class="mono r" title="fingerprint ' + esc(d.fp || '') + '">' +
+    Math.max(0, (d.same_fp || 1) - 1) + (d.fp_banned ? ' <span class="pill trm">blocked</span>' : '') + '</td><td class="mono">' + esc(d.last_ip || '—') +
+    '</td><td class="mono r">' + d.runs_24h + '</td><td class="mono">' + ago(Date.parse(d.last_seen)) + '</td><td class="r" style="white-space:nowrap">' +
+    (d.banned ? '<button class="small" data-act="unblock" data-kind="device" data-value="' + esc(d.id) + '">Unblock</button>'
+      : '<button class="small danger" data-act="block" data-kind="device" data-value="' + esc(d.id) + '">Block</button>') +
+    (d.fp && !d.fp_banned ? ' <button class="small" data-act="block" data-kind="fp" data-value="' + esc(d.fp) + '">Block fingerprint</button>' : '') +
+    '</td></tr>').join('') || '<tr><td colspan="8" class="empty">No computers yet.</td></tr>';
+}
+$('secFind').addEventListener('input', () => { if (sec) renderDevices(); });
+$('btnSecReload').addEventListener('click', loadSecurity);
+$('btnBan').addEventListener('click', async () => {
+  const kind = $('banKind').value, value = $('banValue').value.trim();
+  if (!value) { say('secMsg', 'Type what to block.', 'err'); return; }
+  if (kind !== 'device' && !confirm('Blocking a ' + (kind === 'ip' ? 'network' : 'browser fingerprint') + ' can stop many people at once (a whole school). Block it?')) return;
+  try { await rpc('admin_ban', { p_kind: kind, p_value: value, p_note: $('banNote').value }); $('banValue').value = ''; $('banNote').value = ''; await loadSecurity(); say('secMsg', 'Blocked.', 'ok'); }
+  catch (e) { say('secMsg', e.message, 'err'); }
+});
+$('page-security').addEventListener('click', async (ev) => {
+  const b = ev.target.closest('button[data-act]');
+  if (!b) return;
+  const a = b.dataset.act;
+  try {
+    if (a === 'ok') await rpc('admin_clear_flags', { p_uid: b.dataset.uid, p_course: b.dataset.course });
+    else if (a === 'remove') {
+      if (!confirm('Remove this time and its recording?')) return;
+      await rpc('admin_remove_best', { p_uid: b.dataset.uid, p_course: b.dataset.course });
+    } else if (a === 'banplayer') {
+      if (!confirm('Ban this player? Their times leave the leaderboards.')) return;
+      await rpc('admin_set_banned', { p_uid: b.dataset.uid, p_banned: true });
+    } else if (a === 'block') {
+      const fpw = b.dataset.kind === 'fp' ? ' Every computer with this exact browser and screen (on identical school laptops, possibly many people) will be blocked.' : '';
+      const note = prompt('Block this ' + (b.dataset.kind === 'fp' ? 'browser fingerprint' : 'computer') + '?' + fpw + ' Note (why):', '');
+      if (note === null) return;
+      await rpc('admin_ban', { p_kind: b.dataset.kind, p_value: b.dataset.value, p_note: note });
+    } else if (a === 'unblock') await rpc('admin_unban', { p_kind: b.dataset.kind, p_value: b.dataset.value });
+    else if (a === 'pay') await rpc('admin_release_daily', { p_day: b.dataset.day, p_pay: true });
+    else if (a === 'refuse') {
+      if (!confirm('Refuse the payout? The time is removed and nobody is paid for that day.')) return;
+      await rpc('admin_release_daily', { p_day: b.dataset.day, p_pay: false });
+    }
+    await loadSecurity();
+    say('secMsg', 'Done.', 'ok');
+  } catch (e) { say('secMsg', e.message, 'err'); }
+});
+
 let pcCfg = null;
 async function loadSettings() {
   loadNotice();

@@ -66,11 +66,41 @@ your usual username, any password, and the invite code.
 
 ## 7. The admin login
 
-Nothing to set up. `admin.html` has its own fixed logins (usernames
-`tobe` and `orion1`), checked inside the database by `admin_login` in
-schema.sql against a bcrypt hash of each password. It is the only way in: game
-accounts are never admins, and ten wrong tries lock the login for 15
-minutes. A sign-in lasts 12 hours on that device, or until **Sign out**.
+There is exactly one admin login, and you set it yourself so its password
+never passes through anyone else. In **SQL Editor**, run (with your own
+username and a password of 12 or more characters):
+
+    select public.admin_set_login('your-username', 'your password');
+
+That removes every other admin login and signs out every admin session.
+Run it again any time to change the login. Only a bcrypt hash of the
+password is stored; no player, browser or admin page can call it. Then
+delete that query from the SQL Editor's history so the password isn't
+left there.
+
+Game accounts are never admins. Ten wrong tries from one network lock that
+network out of the admin login for 15 minutes (you can still sign in from
+anywhere else). A sign-in lasts 12 hours on that device, or until
+**Sign out**.
+
+### Human check on sign-up and sign-in (optional, recommended)
+
+1. At dash.cloudflare.com, open **Turnstile**, **Add widget**, add the
+   game's web address, and copy the **site key** and **secret key**.
+2. In `admin.html`, **Settings**, **Human check**: paste the site key and
+   save.
+3. In Supabase: **Authentication**, **Attack Protection**, **Enable
+   CAPTCHA protection**, provider Turnstile, paste the secret key, save.
+
+Do 2 before 3: with CAPTCHA on in Supabase but no site key in the game,
+nobody can sign in. To switch it off, do 3 first, then clear the key.
+
+### The map rules
+
+The server knows where every map starts and finishes, its checkpoints and
+the fastest time it will believe (`course_rules` in schema.sql, daily maps
+included through 2027-12-31). When a map's layout changes, its rules have
+to be made again, or every time on it is refused.
 
 ## 8. Bring the Firebase data in
 
