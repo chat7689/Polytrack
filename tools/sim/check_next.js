@@ -43,6 +43,12 @@ function layout(data) {
       if (Bp.y < surf - 0.3) add('BURIED', A, Bp, 'bank ' + surf.toFixed(1) + ' road ' + Bp.y.toFixed(1) + ' lat ' + lat.toFixed(0));
     }
   }
+  // every jump: the landing must start below the lip it is jumped from
+  for (let si = 1; si < data.strips.length; si++) {
+    const lip = data.strips[si - 1].frames[data.strips[si - 1].frames.length - 1], land = data.strips[si].frames[0];
+    const drop = lip.p[1] - land.p[1];
+    if (drop < 0.4) issues['LAND' + si] = 'LANDING-HIGH jump ' + si + ': lip y ' + lip.p[1].toFixed(2) + ', landing y ' + land.p[1].toFixed(2);
+  }
   return { issues: Object.values(issues), minGap, len: P[P.length - 1].cum, maxY: Math.max(...P.map((p) => p.y)) };
 }
 

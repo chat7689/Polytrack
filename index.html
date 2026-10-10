@@ -3577,6 +3577,8 @@ class Tri {
     this.track = track !== false;
     // a speed strip painted on the deck (see CAR.stripAccel)
     this.boost = boost ? 1 : 0;
+    // a barrier: the body slides along it (see CAR.barrierFriction)
+    this.slick = false;
     // cached dot products for the barycentric test
     this.d00 = this.e1.dot(this.e1);
     this.d01 = this.e1.dot(this.e2);
@@ -3699,6 +3701,7 @@ class PhysicsWorld {
       if (tg >= 0 && tg < bestT) {
         hit.t = tg;
         hit.grip = this.groundGrip;
+        hit.slick = false;
         hit.track = false;
         hit.boost = 0;
         hit.normal.set(0, 1, 0);
@@ -3709,6 +3712,7 @@ class PhysicsWorld {
     if (!best) return false;
     hit.t = bestT;
     hit.grip = best.grip;
+    hit.slick = best.slick;
     hit.track = best.track;
     hit.boost = best.boost;
     this.smoothNormal(best, bestU, bestV, hit.normal);
@@ -3758,6 +3762,7 @@ class PhysicsWorld {
       if (gd < bestDepth) {
         out.depth = gd;
         out.grip = this.groundGrip;
+        out.slick = false;
         out.normal.set(0, 1, 0);
         return true;
       }
@@ -3765,6 +3770,7 @@ class PhysicsWorld {
     if (!best) return false;
     out.depth = bestDepth;
     out.grip = best.grip;
+    out.slick = best.slick;
     this.smoothNormal(best, bestS, bestW, out.normal);
     return true;
   }
@@ -4052,6 +4058,9 @@ const CAR = {
   airPitch: 3600, airYaw: 3000,
   angDamp: 0.35, omegaMax: 13, velMax: 95,
   restitution: 0.02, hullFriction: 0.62,
+  // scraping along a barrier (only some next-season courses have them):
+  // slippery, so brushing one costs a little speed, not the whole run
+  barrierFriction: 0.1,
   // A hull impact that cancels velocity inside one substep is a 400 g spike
   // that flings the car. Real structure crushes over a few milliseconds, so
   // the impulse is capped per substep and the impact resolves over several.
@@ -4860,7 +4869,7 @@ class Vehicle {
       // recomputed each iteration: an earlier corner may have moved the body
       const wp = this._v1.copy(c).applyQuaternion(this.quat).add(this.pos);
 
-      let n = null, depth = 0;
+      let n = null, depth = 0, slick = false;
       const seg = this._v5.subVectors(wp, prev);
       const segLen = seg.length();
       if (segLen > 1e-4) {
@@ -4868,11 +4877,13 @@ class Vehicle {
         if (world.raycast(prev, seg, segLen, this._sweep, true)) {
           n = this._sweep.normal;
           depth = segLen - this._sweep.t;      // how far past the face it went
+          slick = !!this._sweep.slick;
         }
       }
       if (!n && world.probeSurface(wp, this._pen)) {
         n = this._pen.normal;
         depth = this._pen.depth;
+        slick = !!this._pen.slick;
       }
       if (!n) continue;
 
@@ -4892,7 +4903,7 @@ class Vehicle {
         if (vtLen > 0.06) {
           vt.multiplyScalar(1 / vtLen);
           const mt = this.effMass(rel, vt);
-          const jt = Math.max(-vtLen * mt, -CAR.hullFriction * j);
+          const jt = Math.max(-vtLen * mt, -(slick ? CAR.barrierFriction : CAR.hullFriction) * j);
           this.addImpulseAt(this._v3.copy(vt).multiplyScalar(jt), rel);
         }
         this.scrapeImpact = Math.max(this.scrapeImpact, clamp(-vn / 9, 0, 1));
@@ -4988,6 +4999,7 @@ class TrackBuilder {
     this.path = [[0, y0, 0]];
     this.n = 0;
     this.pierEvery = o.pierEvery || 5;
+    this.fine = !!o.fine;
     this.start = { pos: [0, y0, 7], heading: this.h };
     this.lastTurn = null;       // { dir, arc } of the previous big curve
     this.sinceTurn = Infinity;  // metres driven since that curve ended
@@ -5051,69 +5063,6 @@ class TrackBuilder {
   /** road on stilts: no earth bank under it, so it can cross over other road */
   bridge(len, o) { return this.slab(len, 0, Object.assign({}, o, { bridge: true })); }
 
-  /**
-   * A vertical loop. The road eases up into it (a clothoid: the bend
-   * tightens gradually instead of starting at full curvature), climbs,
-   * runs upside down over the top, comes down and eases out level again.
-   * Its radius is rBottom low down and rTop at the top, a teardrop like a
-   * real coaster loop, so the car isn't crushed at the bottom yet still has
-   * the speed to stay on at the top. It moves sideways by `shift` metres
-   * along the way, so the way out runs beside the way in. Its frames are
-   * fixed: the profile smoothing leaves them exactly as built. No earth bank
-   * is built under it.
-   */
-  loop(rBottom, rTop, shift, o) {
-    o = o || {};
-    const w = o.w || this.w;
-    const ease = o.ease || 16;                      // metres of easing in and out
-    const kb = 1 / rBottom, base = this.p.clone(), fwd = this.dir(new THREE.Vector3());
-    const side = new THREE.Vector3(Math.cos(this.h), 0, -Math.sin(this.h));     // local +X
-    const R = (th) => rBottom + (rTop - rBottom) * Math.sin(th / 2) ** 2;
-    const thEase = ease * kb / 2;                   // angle turned while easing in
-    if (!this.cur) {
-      this.cur = { frames: [], segs: [] };
-      this.strips.push(this.cur);
-      this.cur.frames.push(this._frame(0, 0, w));
-    }
-    const TWO = Math.PI * 2, ds = SEG * 0.6;
-    let th = 0, s = 0, along = 0, up = 0, phase = 0, sOut = 0, k = 0;
-    const kappa = () => {
-      if (phase === 0) return kb * Math.min(s / ease, 1);
-      if (phase === 1) return 1 / R(th);
-      return kb * Math.max(1 - sOut / ease, 0);
-    };
-    for (let guard = 0; guard < 4000 && th < TWO - 1e-6; guard++) {
-      let kk = kappa();
-      let dth = kk * ds;
-      if (phase === 0 && s + ds >= ease) phase = 1;
-      if (phase === 1 && th + dth >= TWO - thEase) phase = 2;
-      if (phase === 2) {
-        kk = kappa();
-        dth = kk * ds;
-        if (kk <= 1e-6 || th + dth > TWO) dth = TWO - th;
-        sOut += ds;
-      }
-      const mid = th + dth / 2;
-      along += Math.cos(mid) * ds; up += Math.sin(mid) * ds;
-      th += dth; s += ds;
-      const u = th / TWO;
-      const lat = shift * (u - Math.sin(TWO * u) / TWO);
-      this.p.copy(base).addScaledVector(fwd, along).addScaledVector(side, lat);
-      this.p.y = base.y + up;
-      const f = this._frame(-th, 0, w);
-      f.fixed = true;
-      this.n++;
-      this.cur.frames.push(f);
-      this.cur.segs.push({ grip: 1, curb: w > 4, dash: w >= 9.5, chev: 0, pier: false, pad: false, boost: !!o.boost, noBank: true, loop: true });
-      if (++k % 4 === 0) this.path.push(this.p.toArray());
-    }
-    // land exactly level, on the original heading
-    const last = this.cur.frames[this.cur.frames.length - 1];
-    last.t = 0;
-    this.path.push(this.p.toArray());
-    this.sinceTurn += s;
-    return this;
-  }
 
   straight(len, o) { return this.slab(len, 0, o); }
   slope(run, rise, o) { return this.slab(run, rise, o); }
@@ -5258,7 +5207,7 @@ class TrackBuilder {
     // blend. Keep that surface (frames only) so replays of those ghosts can
     // be moved onto today's road exactly (see buildCourse's roadShift).
     const oldSurface = this.strips.map((st) => ({ frames: st.frames.map((fr) => ({
-      p: [fr.p[0], fr.y0 + fr.sink0 - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r0, w: fr.w, fixed: fr.fixed })) }));
+      p: [fr.p[0], fr.y0 + fr.sink0 - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r0, w: fr.w })) }));
     smoothProfile(oldSurface, 7, false);
     easeBanking(this.strips);
     liftBankedTurns(this.strips);
@@ -5269,7 +5218,7 @@ class TrackBuilder {
       ? this.strips.map((st) => ({ frames: st.frames.map((fr) => ({
         p: [fr.p[0], fr.p[1] - (fr.bump || 0), fr.p[2]], t: fr.t, y: fr.y, r: fr.r, w: fr.w })) }))
       : null;
-    for (const st of this.strips) for (const fr of st.frames) { delete fr.y0; delete fr.sink0; delete fr.r0; delete fr.roller; delete fr.bump; delete fr.fixed; }
+    for (const st of this.strips) for (const fr of st.frames) { delete fr.y0; delete fr.sink0; delete fr.r0; delete fr.roller; delete fr.bump; }
     // gates stand on the finished road surface (the lift and the profile
     // smoothing above can move it a metre from where the cursor was)
     for (const g of this.gates) {
@@ -5280,7 +5229,7 @@ class TrackBuilder {
       }
       if (best) g.pos[1] = best.p[1];
     }
-    return { strips: this.strips, gates: this.gates, start: this.start, path: this.path, oldSurface, flatSurface };
+    return { strips: this.strips, gates: this.gates, start: this.start, path: this.path, oldSurface, flatSurface, fine: this.fine };
   }
 }
 
@@ -5310,7 +5259,6 @@ function easeBanking(strips) {
     const r0 = F.map((f) => f.r);
     if (!r0.some((r) => r)) continue;
     for (let i = 0; i < n; i++) {
-      if (F[i].fixed) continue;                    // a loop stays flat across
       let sw = 0, sr = 0;
       for (let j = 0; j < n; j++) {
         const d = dist[j] - dist[i];
@@ -5368,12 +5316,7 @@ function smoothProfile(strips, iterations, long = true) {
     if (n < 4) continue;
     for (let it = 0; it < iterations; it++) {
       const y = F.map((f) => f.p[1]);
-      for (let i = 1; i < n - 1; i++) {
-        if (F[i].roller || F[i].fixed) continue;
-        // next to a loop the road holds its own height (the loop is not a hill)
-        const ya = F[i - 1].fixed ? y[i] : y[i - 1], yb = F[i + 1].fixed ? y[i] : y[i + 1];
-        F[i].p[1] = 0.25 * ya + 0.5 * y[i] + 0.25 * yb;
-      }
+      for (let i = 1; i < n - 1; i++) if (!F[i].roller) F[i].p[1] = 0.25 * y[i - 1] + 0.5 * y[i] + 0.25 * y[i + 1];
     }
     // Then a much longer blend away from the strip ends, so the top of a
     // hill is a wide rounded crest the car stays on rather than a lip that
@@ -5381,25 +5324,24 @@ function smoothProfile(strips, iterations, long = true) {
     // PROFILE_KEEP of either end of a strip nothing changes, so every jump's
     // take-off and landing stay exactly as built.
     const dist = [0];
-    for (let i = 1; i < n; i++) dist.push(dist[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2], F[i].fixed ? F[i].p[1] - F[i - 1].p[1] : 0));
+    for (let i = 1; i < n; i++) dist.push(dist[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2]));
     const len = dist[n - 1];
     const y0 = F.map((f) => f.p[1]);
     for (let i = 1; long && i < n - 1; i++) {
-      if (F[i].roller || F[i].fixed) continue;
+      if (F[i].roller) continue;
       const fromEnd = Math.min(dist[i], len - dist[i]);
       const keep = clamp((fromEnd - PROFILE_KEEP) / PROFILE_BLEND, 0, 1);
       if (keep <= 0) continue;
       let sw = 0, sy = 0;
       for (let j = 0; j < n; j++) {
         const d = dist[j] - dist[i];
-        if (Math.abs(d) > 3 * PROFILE_SIGMA || F[j].roller || F[j].fixed) continue;
+        if (Math.abs(d) > 3 * PROFILE_SIGMA || F[j].roller) continue;
         const wgt = Math.exp(-0.5 * (d / PROFILE_SIGMA) * (d / PROFILE_SIGMA));
         sw += wgt; sy += wgt * y0[j];
       }
       F[i].p[1] = y0[i] + (sy / sw - y0[i]) * keep;
     }
     for (let i = 0; i < n; i++) {
-      if (F[i].fixed) continue;
       const a = F[Math.max(0, i - 1)], b = F[Math.min(n - 1, i + 1)];
       const dy = b.p[1] - a.p[1];
       const dh = Math.hypot(b.p[0] - a.p[0], b.p[2] - a.p[2]);
@@ -5430,7 +5372,7 @@ function validateCourse(data) {
   const path = (data.path || []).filter((q) => okArr(q, 3));
   const finish = gates.filter((g) => g.kind === 'finish').length;
   return {
-    strips, gates, path, start: data.start,
+    strips, gates, path, start: data.start, fine: !!data.fine,
     oldSurface: Array.isArray(data.oldSurface) ? data.oldSurface : null,
     flatSurface: Array.isArray(data.flatSurface) ? data.flatSurface : null,
     valid: strips.length > 0 && finish === 1 && path.length > 1
@@ -5595,6 +5537,74 @@ function embankment(F, side) {
   return { foot, norm };
 }
 
+/**
+ * The driving surface of one stretch of a banked turn, in small pieces: a
+ * quad whose two ends are tilted differently isn't flat, and as two
+ * triangles it folds along its diagonal, a ridge a car off the centre line
+ * hits every few metres. On a steep wall there is little weight pressing
+ * the car down to soak that up, so it popped off the surface. Cut into
+ * pieces (orientation blended along the stretch, four lanes across) the
+ * folds are a few millimetres. Only courses built with { fine: true }.
+ */
+function fineDeck(world, a, b, q0, q1, p0, p1, s) {
+  const nL = Math.min(8, Math.max(2, Math.ceil(Math.abs(b.r - a.r) / 0.008))), nW = 6;
+  const q = new THREE.Quaternion(), XA = new THREE.Vector3(1, 0, 0), YA = new THREE.Vector3(0, 1, 0), ZA = new THREE.Vector3(0, 0, 1);
+  // How the road's sideways axis turns per metre. Off the centre line a
+  // twisting road climbs or falls relative to the middle, so its true
+  // normal there leans fore or aft of the centre's "up": by 5 degrees at
+  // the edge of a quickly steepening wall. With the centre's up everywhere
+  // the dampers read a car riding up that slope at speed as lifting off the
+  // road and let that side sink into the deck.
+  const len = Math.max(p0.distanceTo(p1), 1e-3);
+  const dX = XA.clone().applyQuaternion(q1).sub(XA.clone().applyQuaternion(q0)).multiplyScalar(1 / len);
+  const rows = [];
+  for (let k = 0; k <= nL; k++) {
+    const t = k / nL;
+    q.copy(q0).slerp(q1, t);
+    const pc = new THREE.Vector3().lerpVectors(p0, p1, t), x = XA.clone().applyQuaternion(q), u = YA.clone().applyQuaternion(q), f = ZA.clone().applyQuaternion(q);
+    const hw = (a.w + (b.w - a.w) * t) / 2, row = [], nrm = [];
+    for (let j = 0; j <= nW; j++) {
+      const off = hw - (2 * hw * j) / nW;
+      row.push(pc.clone().addScaledVector(x, off));
+      const n = new THREE.Vector3().crossVectors(f.clone().addScaledVector(dX, off), x).normalize();
+      nrm.push(n.dot(u) > 0.5 ? n : u);
+    }
+    rows.push({ row, nrm });
+  }
+  const grip = s.grip === undefined ? 1 : s.grip;
+  for (let k = 0; k < nL; k++) {
+    const A = rows[k], B = rows[k + 1];
+    for (let j = 0; j < nW; j++) {
+      world.addQuad(A.row[j], A.row[j + 1], B.row[j + 1], B.row[j], grip, 1.10, false, { a: A.nrm[j], b: A.nrm[j + 1], c: B.nrm[j + 1], d: B.nrm[j] }, true, s.boost);
+    }
+  }
+}
+
+/**
+ * Which stretches of a strip are a tight corner (under 40 m radius) more
+ * than 3 m above the ground, plus 15 m either side so a car cutting in
+ * early or running out late is still inside the barriers.
+ */
+function perchedStretch(F, segs) {
+  const n = F.length - 1, cum = [0], hit = [];
+  for (let i = 0; i < n; i++) {
+    const a = F[i], b = F[i + 1];
+    const len = Math.max(Math.hypot(b.p[0] - a.p[0], b.p[1] - a.p[1], b.p[2] - a.p[2]), 1e-3);
+    cum.push(cum[i] + len);
+    let d = b.y - a.y;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    hit.push(!(segs[i] || {}).noBank && Math.abs(d) / len > 1 / 40 && Math.min(a.p[1], b.p[1]) - GROUND_Y > 3);
+  }
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    let on = false;
+    for (let j = 0; j < n && !on; j++) on = hit[j] && Math.abs(cum[j] - cum[i]) < 15;
+    out.push(on);
+  }
+  return out;
+}
+
 function buildCourse(data, scene, world) {
   const root = new THREE.Group();
   const M = {
@@ -5604,7 +5614,7 @@ function buildCourse(data, scene, world) {
     bank: new MeshBuilder(), strip: new MeshBuilder(), arrow: new MeshBuilder()
   };
   const chevs = [];
-  const pillarAt = [], loopLegs = [];
+  const pillarAt = [];
   const q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
   const p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
   const x0 = new THREE.Vector3(), x1 = new THREE.Vector3();
@@ -5619,6 +5629,7 @@ function buildCourse(data, scene, world) {
   for (const strip of data.strips) {
     const F = strip.frames;
     const bankL = embankment(F, 1), bankR = embankment(F, -1);
+    const perch = data.fine ? perchedStretch(F, strip.segs) : null;
     for (let i = 0; i < F.length - 1; i++) {
       const s = strip.segs[i] || {};
       const a = F[i], b = F[i + 1];
@@ -5643,7 +5654,33 @@ function buildCourse(data, scene, world) {
       // side skirts are buried inside the embankment, so they get no
       // collision of their own — that used to shove cars sideways.
       const NT = { a: u0.clone(), b: u0.clone(), c: u1.clone(), d: u1.clone() };
-      world.addQuad(l0, r0, r1, l1, s.grip === undefined ? 1 : s.grip, 1.10, false, NT, true, s.boost);
+      if (data.fine && (Math.abs(a.r) > 0.35 || Math.abs(b.r) > 0.35 || Math.abs(b.r - a.r) > 0.004)) fineDeck(world, a, b, q0, q1, p0, p1, s);
+      else world.addQuad(l0, r0, r1, l1, s.grip === undefined ? 1 : s.grip, 1.10, false, NT, true, s.boost);
+      // Low barriers ({ fine: true } courses): along the top edge of a steep
+      // wall, so a car can't go over it, and both sides of a tight corner
+      // high above the ground, so running wide or cutting the apex doesn't
+      // mean a fall or wedging on the bank below the edge
+      if (data.fine) {
+        const steep = Math.abs(a.r) > 0.7 && Math.abs(b.r) > 0.7;
+        const sides = perch[i] ? [true, false] : steep ? [l0.y + l1.y > r0.y + r1.y] : [];
+        for (const left of sides) {
+          const e0 = left ? l0 : r0, e1 = left ? l1 : r1;
+          // square to the deck: leaning out it would be a ramp, leaning in a
+          // ceiling a car's roof wedges under
+          const o0 = V().subVectors(left ? l0 : r0, left ? r0 : l0);
+          const t0 = V().copy(e0).addScaledVector(u0, 1.2), t1 = V().copy(e1).addScaledVector(u1, 1.2);
+          // one-sided, facing the road: the hull probe counts anything just
+          // behind a face as inside it, so a two-sided sheet would push a
+          // corner that is merely near it out through the far side
+          const fn = V().subVectors(e1, e0).cross(V().subVectors(t0, e0));
+          const k0 = world.tris.length;
+          if (fn.dot(o0) < 0) world.addQuad(e0, e1, t1, t0, 0.6, 0.5, false);
+          else world.addQuad(e0, t0, t1, e1, 0.6, 0.5, false);
+          for (let k = k0; k < world.tris.length; k++) world.tris[k].slick = true;
+          M.curb.quad(e0, e1, t1, t0);
+          M.curb.quad(e0, t0, t1, e1);
+        }
+      }
       world.addQuad(l0d, l1d, r1d, r0d, 1, 0.10);
 
       // visible top: painted curbs either side of the running surface
@@ -5675,12 +5712,11 @@ function buildCourse(data, scene, world) {
       const fl0 = bankL.foot[i], fl1 = bankL.foot[i + 1];
       const fr0 = bankR.foot[i], fr1 = bankR.foot[i + 1];
       if (s.noBank) {
-        // a bridge or a loop: the deck's own sides and underside, nothing to the ground
+        // a bridge: the deck's own sides and underside, nothing to the ground
         M.side.quad(l0, l0d, l1d, l1);
         M.side.quad(r0, r1, r1d, r0d);
-        if (!s.loop) world.addQuad(l0, l0d, l1d, l1, 1, 0.3), world.addQuad(r0, r1, r1d, r0d, 1, 0.3);
-        if (!s.loop && i % 4 === 0) pillarAt.push({ p: p0.clone(), u: u0.clone(), w: a.w });
-        if (s.loop && i % 5 === 0) loopLegs.push({ p: p0.clone(), u: u0.clone() });
+        world.addQuad(l0, l0d, l1d, l1, 1, 0.3); world.addQuad(r0, r1, r1d, r0d, 1, 0.3);
+        if (i % 4 === 0) pillarAt.push({ p: p0.clone(), u: u0.clone(), w: a.w });
       } else {
       // smooth shading along the bank (a flat-shaded, non-planar quad lit
       // its two triangles differently: a sawtooth band under the road edge)
@@ -5756,8 +5792,7 @@ function buildCourse(data, scene, world) {
     root.add(im);
   };
   inst(chevs, MAT.chev);
-  // Pillars under bridges, where no other road runs underneath; a loop
-  // stands on a few legs from the ground to its lower half.
+  // Pillars under bridges, where no other road runs underneath.
   {
     const denseAll = densePath(data);
     const under = (x, z, y) => denseAll.some((q) => q.y < y - 3 && Math.hypot(q.x - x, q.z - z) < q.hw + 4);
@@ -5766,12 +5801,6 @@ function buildCourse(data, scene, world) {
       const top = b.p.y - DECK_T - 0.1, h = top - GROUND_Y;
       if (h < 1.5 || b.u.y < 0.7 || under(b.p.x, b.p.z, b.p.y)) continue;
       posts.push(new THREE.Matrix4().compose(new THREE.Vector3(b.p.x, GROUND_Y + h / 2, b.p.z), new THREE.Quaternion(), new THREE.Vector3(1.6, h, 1.6)));
-    }
-    for (const b of loopLegs) {
-      if (b.u.y < 0.2) continue;                     // only the lower half stands on legs
-      const top = b.p.y - DECK_T - 0.2, h = top - GROUND_Y;
-      if (h < 1.5 || under(b.p.x, b.p.z, b.p.y)) continue;
-      posts.push(new THREE.Matrix4().compose(new THREE.Vector3(b.p.x, GROUND_Y + h / 2, b.p.z), new THREE.Quaternion(), new THREE.Vector3(1.0, h, 1.0)));
     }
     inst(posts, MAT.pier);
   }
@@ -5905,8 +5934,8 @@ function buildCourse(data, scene, world) {
  * a row are not), so leaving the road to cut across to a later part of it
  * never finishes. Each is a column: within the road's half width plus
  * CP_SIDE metres across, from just under the deck to well above it (a car
- * flying a jump passes high over the landing's checkpoints). In a loop it
- * is a ball instead.
+ * flying a jump passes high over the landing's checkpoints). On a very
+ * steep stretch it is a ball instead.
  */
 const CP_EVERY = 20, CP_SIDE = 10;
 function courseCheckpoints(data) {
@@ -6397,27 +6426,29 @@ const NEXT_LEVELS = [
   // ---------------------------------------------------------- Section A
   {
     id: 's3c1', section: 0, name: 'Ignition',
-    blurb: 'Wide and fast: a speed strip, a big banked left, a tabletop over a hill and a long sweeping run home.',
+    blurb: 'Fast and wide: a speed strip, a banked left, a crest, a tabletop on a hill, a right-hander and a quick S home.',
     build() {
-      const b = new TrackBuilder({ width: 15 });
+      const b = new TrackBuilder({ width: 15, fine: true });
       b.pad(24, 19);
-      b.straight(36);
+      b.straight(30);
       b.strip(24);
       b.straight(26);
-      b.curve(70, 75, { bank: 30, chev: 1 });
-      b.straight(46);
-      b.slope(36, 5);
+      b.curve(72, 70, { bank: 30, chev: 1 });
+      b.straight(40);
+      b.crest(24, 5);
+      b.straight(26);
+      b.slope(30, 4);
       b.ramp(14, 8);
       b.gap(20, -2);
-      b.table(34, 19);
-      b.slope(36, -5);
+      b.table(30, 19);
+      b.slope(34, -4);
+      b.straight(20);
+      b.curve(60, -100, { bank: 36, chev: 1 });
       b.straight(30);
-      b.curve(66, -90, { bank: 34, chev: 1 });
-      b.straight(36);
-      b.crest(26, 5);
-      b.straight(26);
-      b.curve(90, 45, { bank: 18 });
-      b.straight(50);
+      b.curve(80, 35, { bank: 14 });
+      b.straight(20);
+      b.curve(80, -35, { bank: 14 });
+      b.straight(40);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
@@ -6425,25 +6456,25 @@ const NEXT_LEVELS = [
   },
   {
     id: 's3c2', section: 0, name: 'Skip Rope',
-    blurb: 'Hop, hop, hop: a winding road full of little kickers. Keep it straight in the air.',
+    blurb: 'Two little hops, a pair of rollers, a tight hairpin, a hill with a crest and one last hop to finish.',
     build() {
-      const b = new TrackBuilder({ width: 14 });
-      const hop = () => { b.ramp(6, 7); b.gap(7, -0.4); b.straight(16, { w: 16 }); };
+      const b = new TrackBuilder({ width: 14, fine: true });
+      const hop = () => { b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: 16 }); };
       b.pad(22, 18);
-      b.straight(34);
-      hop(); b.straight(14); hop();
-      b.straight(16);
-      b.curve(60, 50, { bank: 18, chev: 1 });
-      b.straight(18);
-      hop(); b.straight(12); hop(); b.straight(12); hop();
-      b.straight(20);
-      b.curve(58, -70, { bank: 24, chev: 1 });
-      b.straight(26);
-      b.rollers(3, 22, 0.8);
       b.straight(30);
-      b.curve(64, 60, { bank: 20, chev: 1 });
-      b.straight(20);
-      hop(); b.straight(12); hop();
+      hop(); b.straight(16); hop();
+      b.curve(56, 60, { bank: 22, chev: 1 });
+      b.straight(30);
+      b.rollers(2, 22, 0.6);
+      b.straight(24);
+      b.curve(22, -160, { bank: 10, w: 18, chev: 1 });
+      b.straight(50);
+      b.slope(30, 3);
+      b.crest(22, 4);
+      b.slope(30, -3);
+      b.curve(64, 70, { bank: 24, chev: 1 });
+      b.straight(24);
+      hop();
       b.straight(30);
       b.gate('finish');
       b.straight(34, { w: 18 });
@@ -6451,74 +6482,87 @@ const NEXT_LEVELS = [
     }
   },
   {
-    id: 's3c3', section: 0, name: 'Square Dance',
-    blurb: 'Four corners so tight you have to throw it sideways: brake and steer to drift, or Shift for the handbrake.',
+    id: 's3c3', section: 0, name: 'Snake Pass',
+    blurb: 'Tight bends that link into each other, a speed strip between them, a hairpin you\'ll want to drift and a hop at the end.',
     build() {
-      const b = new TrackBuilder({ width: 16 });
+      const b = new TrackBuilder({ width: 16, fine: true });
       b.pad(22, 20);
-      b.straight(60);
-      b.curve(11, 90, { bank: 6, w: 18, chev: 1 });
-      b.straight(46);
-      b.curve(11, 90, { bank: 6, w: 18, chev: 1 });
       b.straight(50);
-      b.strip(20);
-      b.straight(24);
-      b.curve(12, -90, { bank: 6, w: 18, chev: 1 });
+      b.curve(26, 110, { bank: 12, w: 17, chev: 1 });
       b.straight(46);
-      b.curve(12, -90, { bank: 6, w: 18, chev: 1 });
-      b.straight(40);
-      b.ramp(12, 7);
-      b.gap(16, -1);
-      b.straight(40, { w: 18 });
-      b.curve(70, 40, { bank: 16 });
-      b.straight(30);
+      b.curve(24, -130, { bank: 12, w: 17, chev: 1 });
+      b.straight(48);
+      b.strip(18);
+      b.straight(20);
+      b.curve(30, 90, { bank: 14, w: 17, chev: 1 });
+      b.straight(50);
+      b.curve(22, -170, { bank: 10, w: 18, chev: 1 });
+      b.straight(44);
+      b.ramp(10, 6);
+      b.gap(10, -1.5);
+      b.landing(10, -5, { w: 17 });
+      b.straight(26, { w: 17 });
       b.gate('finish');
       b.straight(34, { w: 20 });
       return b.build();
     }
   },
   {
-    id: 's3c4', section: 0, name: 'First Loop',
-    blurb: 'Hit the speed strip, keep your foot in and go all the way round. Then a long jump to finish.',
+    id: 's3c4', section: 0, name: 'Ramp Rush',
+    blurb: 'Every kind of jump: a gap, a crest, a drop off a hill and a tabletop, with banked turns between.',
     build() {
-      const b = new TrackBuilder({ width: 14 });
-      b.pad(22, 18);
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(22, 19);
       b.straight(40);
-      b.curve(70, -60, { bank: 22, chev: 1 });
+      b.strip(20);
+      b.slope(24, 2.5);
+      b.ramp(14, 9);
+      b.gap(20, -2);
+      b.landing(18, -8, { w: 18 });
       b.straight(30);
-      b.strip(26);
-      b.straight(24);
-      b.loop(28, 12, 20);
-      b.straight(40);
       b.curve(64, 80, { bank: 30, chev: 1 });
-      b.straight(40);
-      b.ramp(16, 11);
-      b.gap(30, -3);
-      b.landing(20, -8, { w: 18 });
-      b.straight(40);
+      b.straight(36);
+      b.crest(26, 6);
+      b.straight(30);
+      b.slope(40, 8);
+      b.straight(16);
+      b.ramp(12, 5);
+      b.skiJump(14, 3, 44, 18, 24, { w: 18 });
+      b.landing(30, -18, { w: 18 });
+      b.straight(20);
+      b.curve(70, -60, { bank: 26, chev: 1 });
+      b.straight(26);
+      b.ramp(10, 7);
+      b.gap(18, -1);
+      b.table(26, 19);
+      b.slope(24, -1.5);
+      b.straight(30);
       b.gate('finish');
-      b.straight(34, { w: 18 });
+      b.straight(34, { w: 19 });
       return b.build();
     }
   },
   // ---------------------------------------------------------- Section B
   {
     id: 's3c5', section: 1, name: 'Wall of Death',
-    blurb: 'Two U-turns banked almost vertical. Flat out, the wall holds you; lift and you slide down it.',
+    blurb: 'Two U-turns banked almost vertical, with a jump and a sweeper between. Flat out, the wall holds you.',
     build() {
-      const b = new TrackBuilder({ width: 17 });
+      const b = new TrackBuilder({ width: 17, fine: true });
       b.pad(24, 21);
-      b.straight(50);
-      b.strip(24);
-      b.straight(30);
-      b.curve(62, 180, { bank: 74, ramp: 0.5, chev: 1 });
-      b.straight(70);
-      b.rollers(2, 24, 0.7);
       b.straight(40);
-      b.curve(62, -180, { bank: 76, ramp: 0.5, chev: 1 });
+      b.strip(24);
       b.straight(60);
-      b.crest(24, 5);
-      b.straight(36);
+      b.curve(64, 180, { bank: 72, ramp: 0.5, chev: 1 });
+      b.straight(30);
+      b.curve(80, -40, { bank: 16 });
+      b.straight(40);
+      b.ramp(10, 6);
+      b.gap(16, -1);
+      b.straight(30, { w: 18 });
+      b.curve(64, -180, { bank: 74, ramp: 0.5, chev: 1 });
+      b.straight(60);
+      b.crest(22, 4);
+      b.straight(30);
       b.gate('finish');
       b.straight(34, { w: 21 });
       return b.build();
@@ -6526,27 +6570,27 @@ const NEXT_LEVELS = [
   },
   {
     id: 's3c6', section: 1, name: 'Big Air',
-    blurb: 'Down a mountain over three enormous jumps. Level the car in the air and land on the slope.',
+    blurb: 'Down a mountain: two enormous jumps, a slippery hairpin between them and a speed strip into the second.',
     build() {
-      const b = new TrackBuilder({ width: 15, y: 100 });
+      const b = new TrackBuilder({ width: 15, y: 100, fine: true });
       b.pad(22, 19);
-      b.straight(16);
-      b.slope(40, -6);
+      b.slope(36, -5);
       b.straight(16);
       b.ramp(16, 5);
-      b.skiJump(18, 5, 58, 20, 34, { w: 20 });
+      b.skiJump(18, 5, 46, 20, 34, { w: 20 });
       b.landing(40, -20, { w: 20 });
-      b.curve(80, 50, { bank: 22, rise: -6, chev: 1 });
+      b.slope(30, -4);
+      b.curve(80, 60, { bank: 24, rise: -6, chev: 1 });
+      b.slope(24, -3);
+      b.straight(30);
+      b.curve(22, -150, { bank: 10, w: 18, grip: 0.8, chev: 1 });
+      b.straight(30);
       b.strip(20);
       b.straight(12);
-      b.ramp(16, 6);
-      b.skiJump(20, 7, 62, 22, 36, { w: 22 });
-      b.landing(44, -22, { w: 22 });
-      b.straight(24);
       b.ramp(18, 7);
-      b.skiJump(24, 9, 66, 24, 40, { w: 24 });
+      b.skiJump(22, 8, 52, 24, 40, { w: 24 });
       b.landing(48, -24, { w: 24 });
-      b.straight(46);
+      b.straight(26);
       b.gate('finish');
       b.straight(34, { w: 20 });
       return b.build();
@@ -6554,17 +6598,21 @@ const NEXT_LEVELS = [
   },
   {
     id: 's3c7', section: 1, name: 'Figure Eight',
-    blurb: 'Round and up onto a long bridge over your own road, round the other way and back underneath it.',
+    blurb: 'Round and up onto a long bridge over your own road, round the other way, back underneath it and over a jump.',
     build() {
-      const b = new TrackBuilder({ width: 14 });
+      const b = new TrackBuilder({ width: 14, fine: true });
       b.pad(22, 18);
-      b.straight(120);
+      b.straight(40);
+      b.strip(20);
+      b.straight(30);
       b.curve(45, 270, { bank: 24, rise: 10, chev: 1 });
       b.bridge(130);
       b.curve(45, -270, { bank: 24, rise: -10, chev: 1 });
-      b.straight(30);
-      b.strip(20);
-      b.straight(30);
+      b.slope(20, 2);
+      b.ramp(10, 4);
+      b.gap(14, -1);
+      b.landing(16, -4, { w: 18 });
+      b.straight(24);
       b.gate('finish');
       b.straight(34, { w: 18 });
       return b.build();
@@ -6572,23 +6620,23 @@ const NEXT_LEVELS = [
   },
   {
     id: 's3c8', section: 1, name: 'Drift District',
-    blurb: 'City blocks: square corner after square corner. Throw it sideways or crawl round.',
+    blurb: 'Tight, curved corners one after another, one of them slippery. Brake and steer to slide them.',
     build() {
-      const b = new TrackBuilder({ width: 16 });
+      const b = new TrackBuilder({ width: 16, fine: true });
       b.pad(22, 20);
       b.straight(50);
-      b.curve(12, 90, { bank: 5, w: 18, chev: 1 });
-      b.straight(48);
-      b.curve(12, -90, { bank: 5, w: 18, chev: 1 });
+      b.curve(22, 120, { bank: 10, w: 18, chev: 1 });
+      b.straight(46);
+      b.curve(18, -150, { bank: 10, w: 18, grip: 0.8, chev: 1 });
       b.straight(50);
-      b.curve(13, -90, { bank: 5, w: 18, chev: 1 });
-      b.straight(48);
-      b.curve(13, 90, { bank: 5, w: 18, chev: 1 });
-      b.straight(56);
       b.strip(18);
+      b.straight(20);
+      b.curve(24, 100, { bank: 12, w: 18, chev: 1 });
       b.straight(30);
-      b.crest(22, 4);
-      b.straight(40);
+      b.crest(20, 3);
+      b.straight(30);
+      b.curve(20, 160, { bank: 10, w: 18, chev: 1 });
+      b.straight(46);
       b.gate('finish');
       b.straight(34, { w: 20 });
       return b.build();
@@ -6597,72 +6645,53 @@ const NEXT_LEVELS = [
   // ---------------------------------------------------------- Section C
   {
     id: 's3c9', section: 2, name: 'Corkscrew',
-    blurb: 'Climb a spiral tower on stilts, then fly off the top down to the ground.',
+    blurb: 'Climb a spiral on stilts, fly off the top, then a hairpin and rollers to the line.',
     build() {
-      const b = new TrackBuilder({ width: 14 });
+      const b = new TrackBuilder({ width: 14, fine: true });
       b.pad(22, 18);
       b.straight(36);
       b.strip(20);
       b.slope(30, 3);
-      b.curve(46, 200, { bank: 22, rise: 10, chev: 1, bridge: true });
-      b.curve(46, 200, { bank: 22, rise: 10, chev: 1, bridge: true });
+      b.curve(40, 200, { bank: 22, rise: 10, chev: 1, bridge: true });
+      b.curve(40, 200, { bank: 22, rise: 10, chev: 1, bridge: true });
       b.bridge(30);
       b.ramp(14, 6, { bridge: true });
       b.skiJump(24, 4, 44, 20, 30, { w: 20 });
       b.landing(24, -20, { w: 20 });
-      b.straight(40);
-      b.curve(70, -60, { bank: 24, chev: 1 });
-      b.straight(50);
+      b.straight(32);
+      b.curve(24, -150, { bank: 10, w: 18, chev: 1 });
+      b.straight(30);
+      b.rollers(2, 22, 0.6);
+      b.straight(24);
       b.gate('finish');
       b.straight(34, { w: 18 });
       return b.build();
     }
   },
   {
-    id: 's3c10', section: 2, name: 'Double Loop',
-    blurb: 'Two loops back to back, a steep banked turn, and the strip to get you round them.',
+    id: 's3c10', section: 2, name: 'Glacier',
+    blurb: 'Ice on the fast sweeper and the last hairpin, a crest, a steep wall and a jump between them.',
     build() {
-      const b = new TrackBuilder({ width: 14 });
-      b.pad(22, 18);
-      b.straight(40);
-      b.strip(26);
-      b.straight(20);
-      b.loop(28, 12, 20);
-      b.straight(26);
-      b.strip(16);
-      b.straight(16);
-      b.loop(26, 11, -20);
-      b.straight(40);
-      b.curve(60, 160, { bank: 62, ramp: 0.5, chev: 1 });
-      b.straight(50);
-      b.crest(24, 5);
-      b.straight(40);
-      b.gate('finish');
-      b.straight(34, { w: 18 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c11', section: 2, name: 'Moguls',
-    blurb: 'A field of bumps and kickers down a winding hill. Light on the tops, flat on the landings.',
-    build() {
-      const b = new TrackBuilder({ width: 15, y: 24 });
-      const hop = (k) => { b.ramp(6, k); b.gap(6, -0.6); b.slope(14, -1, { w: 17 }); };
+      const b = new TrackBuilder({ width: 15, fine: true });
       b.pad(22, 19);
-      b.straight(24);
-      b.rollers(3, 20, 0.6);
-      b.slope(20, -2);
-      hop(5); b.slope(12, -1); hop(6);
-      b.straight(16);
-      b.curve(56, 60, { bank: 22, rise: -4, chev: 1 });
-      b.slope(16, -1);
-      b.rollers(4, 18, 0.55);
-      b.slope(16, -2);
-      hop(6); b.straight(12); hop(5);
-      b.straight(24);
-      b.curve(58, -70, { bank: 24, rise: -4, chev: 1 });
-      b.straight(24);
-      hop(7);
+      b.straight(36);
+      b.strip(24);
+      b.straight(20);
+      b.curve(70, 70, { bank: 28, grip: 0.7, chev: 1 });
+      b.straight(40);
+      b.slope(40, 6);
+      b.crest(24, 5);
+      b.slope(40, -6);
+      b.straight(10);
+      b.curve(60, -120, { bank: 60, ramp: 0.5, chev: 1 });
+      b.straight(26);
+      b.slope(20, 2);
+      b.ramp(12, 7);
+      b.gap(20, -1.5);
+      b.landing(14, -6, { w: 18 });
+      b.straight(20, { w: 18 });
+      b.straight(16, { grip: 0.7, w: 18 });
+      b.curve(26, 140, { bank: 12, w: 18, grip: 0.7, chev: 1 });
       b.straight(40);
       b.gate('finish');
       b.straight(34, { w: 19 });
@@ -6670,10 +6699,42 @@ const NEXT_LEVELS = [
     }
   },
   {
-    id: 's3c12', section: 2, name: 'Sky Bridges',
-    blurb: 'Narrow bridges high in the air with gaps between them. Fall and it\'s over.',
+    id: 's3c11', section: 2, name: 'Moguls',
+    blurb: 'Down a bumpy hill: rollers, hops, a hairpin and a tabletop. Light on the tops, flat on the landings.',
     build() {
-      const b = new TrackBuilder({ width: 13 });
+      const b = new TrackBuilder({ width: 15, y: 24, fine: true });
+      const hop = (k) => { b.ramp(6, k); b.gap(6, -0.6); b.slope(14, -1, { w: 17 }); };
+      b.pad(22, 19);
+      b.straight(24);
+      b.rollers(2, 20, 0.6);
+      b.slope(30, -5);
+      hop(5); b.slope(16, -3); hop(6);
+      b.straight(16);
+      b.curve(56, 60, { bank: 22, rise: -6, chev: 1 });
+      b.slope(30, -5);
+      b.bumps(2, 12, 0.7);
+      b.slope(30, -3);
+      b.straight(10);
+      b.curve(26, -150, { bank: 10, w: 18, chev: 1 });
+      b.straight(26);
+      b.slope(24, 2.5);
+      b.ramp(10, 7);
+      b.gap(14, -1.5);
+      b.table(24, 19);
+      b.slope(24, -2);
+      b.straight(20);
+      b.strip(16);
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's3c12', section: 2, name: 'Sky Bridges',
+    blurb: 'Narrow bridges high in the air with gaps between them and a bend on each. Fall and it\'s over.',
+    build() {
+      const b = new TrackBuilder({ width: 13, fine: true });
       b.pad(22, 17);
       b.straight(30);
       b.slope(60, 14);
@@ -6704,56 +6765,52 @@ const NEXT_LEVELS = [
   // ---------------------------------------------------------- Section D
   {
     id: 's3c13', section: 3, name: 'Cyclone',
-    blurb: 'Three walls banked steeper than anything before, left, right, left, then a crest and a jump to finish.',
+    blurb: 'A steep wall, a hairpin, another steep wall, then a long jump to the line.',
     build() {
-      const b = new TrackBuilder({ width: 16 });
+      const b = new TrackBuilder({ width: 16, fine: true });
       b.pad(24, 20);
-      b.straight(40);
+      b.straight(30);
       b.strip(22);
-      b.straight(20);
-      b.curve(58, 150, { bank: 68, ramp: 0.5, chev: 1 });
-      b.straight(56);
-      b.curve(56, -160, { bank: 70, ramp: 0.5, chev: 1 });
-      b.straight(50);
-      b.strip(18);
-      b.straight(24);
-      b.curve(60, 170, { bank: 72, ramp: 0.5, chev: 1 });
       b.straight(40);
-      b.crest(26, 4);
-      b.straight(24);
+      b.curve(60, 160, { bank: 70, ramp: 0.5, chev: 1 });
+      b.straight(54);
+      b.curve(22, -150, { bank: 10, w: 18, chev: 1 });
+      b.straight(46);
+      b.curve(62, 170, { bank: 72, ramp: 0.5, chev: 1 });
+      b.straight(30);
+      b.slope(30, 2.5);
       b.ramp(14, 8);
       b.gap(24, -2);
       b.landing(20, -8, { w: 20 });
-      b.straight(40);
+      b.straight(36);
       b.gate('finish');
       b.straight(34, { w: 20 });
       return b.build();
     }
   },
   {
-    id: 's3c14', section: 3, name: 'Hairpin Hell',
-    blurb: 'The tightest corners in the game, with jumps between them. Drift or die.',
+    id: 's3c14', section: 3, name: 'Serpent',
+    blurb: 'Three tight hairpins, the last one slippery, with a jump, a speed strip and a quick flick between them.',
     build() {
-      const b = new TrackBuilder({ width: 16 });
+      const b = new TrackBuilder({ width: 16, fine: true });
       b.pad(22, 20);
-      b.straight(50);
-      b.curve(10, 90, { bank: 5, w: 18, chev: 1 });
-      b.straight(20);
-      b.curve(10, 90, { bank: 5, w: 18, chev: 1 });
-      b.straight(40);
-      b.ramp(10, 7);
-      b.gap(14, -0.5);
-      b.straight(40, { w: 18 });
-      b.curve(10, -90, { bank: 5, w: 18, chev: 1 });
-      b.straight(20);
-      b.curve(10, -90, { bank: 5, w: 18, chev: 1 });
-      b.straight(36);
-      b.strip(18);
-      b.straight(16);
-      b.curve(11, 90, { bank: 5, w: 18, chev: 1 });
-      b.straight(24);
-      b.curve(11, 90, { bank: 5, w: 18, chev: 1 });
       b.straight(46);
+      b.curve(18, 170, { bank: 10, w: 18, chev: 1 });
+      b.straight(48);
+      b.ramp(10, 7);
+      b.gap(12, -2);
+      b.landing(12, -6, { w: 18 });
+      b.straight(24, { w: 18 });
+      b.curve(18, -170, { bank: 10, w: 18, chev: 1 });
+      b.straight(40);
+      b.strip(16);
+      b.straight(14);
+      b.curve(70, 30, { bank: 10 });
+      b.straight(14);
+      b.curve(70, -30, { bank: 10 });
+      b.straight(46);
+      b.curve(20, 160, { bank: 10, w: 18, grip: 0.75, chev: 1 });
+      b.straight(40);
       b.gate('finish');
       b.straight(34, { w: 20 });
       return b.build();
@@ -6761,9 +6818,9 @@ const NEXT_LEVELS = [
   },
   {
     id: 's3c15', section: 3, name: 'Avalanche',
-    blurb: 'From the summit down: giant jumps, a wall, and a loop at the bottom to finish you off.',
+    blurb: 'From the summit down: a giant jump, a descending wall, an icy run into a hairpin and a second giant jump.',
     build() {
-      const b = new TrackBuilder({ width: 15, y: 110 });
+      const b = new TrackBuilder({ width: 15, y: 110, fine: true });
       b.pad(22, 19);
       b.slope(36, -5);
       b.straight(14);
@@ -6772,16 +6829,17 @@ const NEXT_LEVELS = [
       b.landing(44, -22, { w: 21 });
       b.slope(24, -4);
       b.curve(64, 140, { bank: 56, rise: -8, ramp: 0.5, chev: 1 });
-      b.slope(30, -5);
+      b.slope(24, -5);
+      b.straight(22, { grip: 0.7 });
+      b.curve(26, -120, { bank: 12, w: 18, chev: 1 });
+      b.slope(30, -4);
       b.straight(16);
       b.ramp(16, 6);
       b.skiJump(24, 8, 52, 24, 40, { w: 22 });
       b.landing(48, -24, { w: 22 });
-      b.straight(36);
-      b.loop(30, 13, 20);
-      b.straight(26);
-      b.curve(70, -70, { bank: 26, chev: 1 });
-      b.straight(36);
+      b.straight(16);
+      b.strip(20);
+      b.straight(20);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
@@ -6789,23 +6847,23 @@ const NEXT_LEVELS = [
   },
   {
     id: 's3c16', section: 3, name: 'Grand Finale',
-    blurb: 'Everything at once: a loop, a wall, two corners to drift and one last huge jump off a hill.',
+    blurb: 'Everything at once: a steep wall, a hairpin, a hop, an icy sweeper and one last huge jump off a hill.',
     build() {
-      const b = new TrackBuilder({ width: 15 });
+      const b = new TrackBuilder({ width: 15, fine: true });
+      const hop = () => { b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: 16 }); };
       b.pad(24, 19);
       b.straight(40);
       b.strip(24);
-      b.straight(20);
-      b.loop(28, 12, -20);
       b.straight(30);
-      b.curve(70, 170, { bank: 66, ramp: 0.5, chev: 1 });
+      b.curve(66, 170, { bank: 68, ramp: 0.5, chev: 1 });
       b.straight(46);
-      b.curve(11, -90, { bank: 5, w: 18, chev: 1 });
+      b.curve(24, -160, { bank: 10, w: 18, chev: 1 });
+      b.straight(34);
+      hop(); b.straight(10);
+      b.curve(70, 60, { bank: 26, grip: 0.75, chev: 1 });
       b.straight(30);
-      b.curve(11, -90, { bank: 5, w: 18, chev: 1 });
-      b.straight(20);
       b.strip(24);
-      b.slope(50, 9);
+      b.slope(40, 8);
       b.straight(16);
       b.ramp(14, 5);
       b.skiJump(22, 3, 50, 22, 30, { w: 20 });
@@ -7024,7 +7082,7 @@ class ChaseCamera {
     return out;
   }
   lookFor(car, out) {
-    let lead = this.looping ? 0 : car.heading - this.yaw;
+    let lead = car.heading - this.yaw;
     while (lead > Math.PI) lead -= Math.PI * 2;
     while (lead < -Math.PI) lead += Math.PI * 2;
     const ly = this.yaw + clamp(lead * CAM.lookLead, -CAM.lookLeadMax, CAM.lookLeadMax);
@@ -7035,8 +7093,6 @@ class ChaseCamera {
   }
   snap(car) {
     this.yaw = car.heading; this.occl = 1;
-    if (this.upV) this.upV.set(0, 1, 0);
-    this.looping = false;
     this.vel.x = this.vel.y = this.vel.z = 0;
     this.lookVel.x = this.lookVel.y = this.lookVel.z = 0;
     this.pos.copy(this.anchorFor(car, this.idealDist(car), this._anchor));
@@ -7047,28 +7103,14 @@ class ChaseCamera {
     this.apply();
   }
   update(dt, car) {
-    // nose steeply up or down, or upside down (a loop): keep looking the
-    // way the car went in, rather than swinging round as its heading flips
-    this.looping = !!(car.fwd && car.up) && (Math.abs(car.fwd.y) > 0.5 || car.up.y < 0);
     let d = car.heading - this.yaw;
     while (d > Math.PI) d -= Math.PI * 2;
     while (d < -Math.PI) d += Math.PI * 2;
-    if (!this.looping) this.yaw += d * approach(car.grounded ? CAM.yawGround : CAM.yawAir, dt);
-
-    // the camera's own "up": the world's, except in a loop, where it rolls
-    // with the car so the track stays under it all the way round
-    if (!this.upV) this.upV = new THREE.Vector3(0, 1, 0);
-    const upWant = this._uw || (this._uw = new THREE.Vector3());
-    if (this.looping) upWant.copy(car.up); else upWant.set(0, 1, 0);
-    this.upV.lerp(upWant, approach(this.looping ? 7 : 4, dt)).normalize();
-    const rolled = this.upV.y < 0.995;
+    this.yaw += d * approach(car.grounded ? CAM.yawGround : CAM.yawAir, dt);
 
     const ideal = this.idealDist(car);
-    if (!rolled) this.updateOcclusion(dt, car, ideal);
-    const anchor = rolled
-      // in a loop: behind the car and on its own up side, inside the loop
-      ? this._anchor.copy(car.rPos || car.pos).addScaledVector(car.fwd, -ideal * 0.85).addScaledVector(this.upV, CAM.height)
-      : this.anchorFor(car, ideal * this.occl, this._anchor);
+    this.updateOcclusion(dt, car, ideal);
+    const anchor = this.anchorFor(car, ideal * this.occl, this._anchor);
 
     this.pos.x = smoothDamp(this.pos.x, anchor.x, this.vel, 'x', CAM.smoothXZ, dt);
     this.pos.z = smoothDamp(this.pos.z, anchor.z, this.vel, 'z', CAM.smoothXZ, dt);
@@ -7076,11 +7118,9 @@ class ChaseCamera {
 
     const off = this._tmp.copy(this.pos).sub(anchor);
     const len = off.length();
-    if (len > (rolled ? CAM.leash * 0.6 : CAM.leash)) this.pos.copy(anchor).addScaledVector(off.multiplyScalar(1 / len), rolled ? CAM.leash * 0.6 : CAM.leash);
+    if (len > CAM.leash) this.pos.copy(anchor).addScaledVector(off.multiplyScalar(1 / len), CAM.leash);
 
-    const lk = rolled
-      ? this._tmp.copy(car.rPos || car.pos).addScaledVector(car.fwd, CAM.lookAhead).addScaledVector(this.upV, CAM.lookHeight)
-      : this.lookFor(car, this._tmp);
+    const lk = this.lookFor(car, this._tmp);
     this.look.x = smoothDamp(this.look.x, lk.x, this.lookVel, 'x', CAM.smoothLook, dt);
     this.look.y = smoothDamp(this.look.y, lk.y, this.lookVel, 'y', CAM.smoothLook, dt);
     this.look.z = smoothDamp(this.look.z, lk.z, this.lookVel, 'z', CAM.smoothLook, dt);
@@ -7223,7 +7263,7 @@ class ChaseCamera {
   }
   apply() {
     this.cam.position.copy(this.pos);
-    if (this.upV) this.cam.up.copy(this.upV); else this.cam.up.set(0, 1, 0);
+    this.cam.up.set(0, 1, 0);
     this.cam.lookAt(this.look);
   }
 }
@@ -8325,7 +8365,7 @@ const Daily = {
 
 /**
  * The test driver: drives a map by itself so you can watch it (the private
- * preview's "Watch a test lap"). It follows the road's own frames (loops,
+ * preview's "Watch a test lap"). It follows the road's own frames (walls,
  * banks and jumps are just more road), plans its speed from how tight the
  * road turns ahead and how hard it can brake, keeps its speed up for
  * jumps, levels the car in the air and boosts on long straights.
@@ -8356,7 +8396,8 @@ const Autopilot = {
         const ds = Math.hypot(F[k + 1].p.x - F[k].p.x, F[k + 1].p.z - F[k].p.z);
         if (Math.abs(dy) > 1e-4 && ds > 0.2) tight = Math.min(tight, ds / Math.abs(dy));
       }
-      return isFinite(tight) ? vFor(tight) * (1 + 0.9 * Math.sin(Math.min(Math.abs(f.r), 1.3))) * 1.045 : 99;
+      // a banked turn holds more speed; a tight one is grip-limited, not steering-limited
+      return isFinite(tight) ? vFor(tight) * (1 + 0.9 * Math.sin(Math.min(Math.abs(f.r), 1.3))) * (tight < 40 ? 0.95 : 1.045) : 99;
     });
     this.F = F; this.idx = 0;
   },
@@ -8379,10 +8420,15 @@ const Autopilot = {
     let want = 99;
     for (let k = idx; k < F.length && F[k].cum - F[idx].cum < 180; k++) {
       const d = Math.max(0, F[k].cum - F[idx].cum - 4);
-      want = Math.min(want, Math.sqrt(VA[k] * VA[k] + 2 * 17.8 * d));
+      const dec = Math.max(6, 14 + CAR.gravity * Math.min(0, F[k].fwd.y));   // brakes less well downhill
+      want = Math.min(want, Math.sqrt(VA[k] * VA[k] + 2 * dec * d));
     }
     const loopy = Math.abs(F[idx].fwd.y) > 0.25 || F[idx].up.y < 0.5;
-    for (let k = idx; k < F.length - 1 && F[k].cum - F[idx].cum < 70; k++) if (F[k].last) { if (VA[k] > 30) want = Math.max(want, 40); break; }
+    // carry speed into a jump, unless a tight corner comes first
+    for (let k = idx; k < F.length - 1 && F[k].cum - F[idx].cum < 70; k++) {
+      if (VA[k] <= 30) break;
+      if (F[k].last) { want = Math.max(want, 40); break; }
+    }
     let straight = true;
     for (let k = idx; k < F.length && F[k].cum - F[idx].cum < 140; k++) if (VA[k] < 60) { straight = false; break; }
     let air = 0;
