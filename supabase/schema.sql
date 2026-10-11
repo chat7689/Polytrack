@@ -843,34 +843,47 @@ begin
   return 'Admin login set for ' || u || '. Every other admin login and session is gone.';
 end $$;
 
--- Ends a season: its final podium (most maps finished, then the lowest
--- total of best times, banned players left out) is kept for good as the
--- season_awards row 'final:<label>', which the game's menu shows as last
--- season's champion. Run it yourself in Supabase > SQL Editor just before
--- the new season's maps go live, with that season's map ids, e.g.
---   select public.close_season('Season 1', array['s2c1', 's2c29', ...]);
--- Running it again replaces that season's podium.
-create or replace function public.close_season(p_label text, p_courses text[]) returns jsonb
+-- Ends a season: everything its trophies came from is kept for good as the
+-- season_awards row 'final:<label>': the overall podium, each section's
+-- podium (four maps a section, in order) and every map's top three (most
+-- maps finished, then the lowest total; banned players left out). The menu
+-- shows the champion from it, titles and icons come from it, and every
+-- player's trophies from that season stay in their trophy room.
+--   select public.close_season('Season 1', array['s2c1', ...], array['Launch Pad', ...]);
+-- Running it again replaces that season's record.
+drop function if exists public.close_season(text, text[]);
+create or replace function public.close_season(p_label text, p_courses text[], p_names text[] default null) returns jsonb
 language plpgsql volatile security definer set search_path = public, pg_temp as $$
-declare v jsonb;
+declare v jsonb; podium jsonb; maps jsonb := '[]'::jsonb; secs jsonb := '[]'::jsonb; k integer; cnt integer := coalesce(array_length(p_courses, 1), 0);
 begin
-  if coalesce(btrim(p_label), '') = '' or coalesce(array_length(p_courses, 1), 0) = 0 then
+  if coalesce(btrim(p_label), '') = '' or cnt = 0 then
     raise exception 'Give the season a name and its map ids.';
   end if;
-  with b as (
-    select b.uid, count(*)::int as c, sum(b.time_ms)::bigint as tot
+  create temp table if not exists _cs_b (uid uuid, course_id text, n text, t integer, d bigint) on commit drop;
+  delete from _cs_b where true;
+  insert into _cs_b
+    select b.uid, b.course_id, coalesce((select p.display_name from public.profiles p where p.id = b.uid), b.display_name), b.time_ms, b.updated_ms
     from public.bests b
     where b.course_id = any(p_courses) and not b.banned
-      and not exists (select 1 from public.profiles p where p.id = b.uid and p.banned)
-    group by b.uid
-  ), r as (
-    select b.*, coalesce((select p.display_name from public.profiles p where p.id = b.uid), 'Driver') as n
-    from b order by c desc, tot asc limit 3
-  )
-  select jsonb_build_object('label', btrim(p_label), 'maps', array_length(p_courses, 1),
-    'closed_at', (extract(epoch from now()) * 1000)::bigint,
-    'podium', coalesce(jsonb_agg(jsonb_build_object('uid', uid, 'n', n, 'count', c, 'total_ms', tot) order by c desc, tot asc), '[]'::jsonb))
-  into v from r;
+      and not exists (select 1 from public.profiles p where p.id = b.uid and p.banned);
+  -- the overall podium
+  select coalesce(jsonb_agg(jsonb_build_object('uid', uid, 'n', n, 'count', c, 'total_ms', tot) order by c desc, tot asc), '[]'::jsonb) into podium
+  from (select uid, max(n) n, count(*)::int c, sum(t)::bigint tot from _cs_b group by uid order by c desc, tot asc limit 3) r;
+  -- every map's top three
+  for k in 1 .. cnt loop
+    maps := maps || jsonb_build_array(jsonb_build_object('id', p_courses[k], 'name', coalesce(p_names[k], p_courses[k]), 'i', k - 1,
+      'podium', (select coalesce(jsonb_agg(jsonb_build_object('uid', uid, 'n', n, 't', t) order by t, d), '[]'::jsonb)
+                 from (select * from _cs_b where course_id = p_courses[k] order by t, d limit 3) x)));
+  end loop;
+  -- each section's podium (four maps a section)
+  for k in 0 .. ((cnt - 1) / 4) loop
+    secs := secs || jsonb_build_array(jsonb_build_object('sec', k, 'maps', least(4, cnt - k * 4),
+      'podium', (select coalesce(jsonb_agg(jsonb_build_object('uid', uid, 'n', n, 'count', c, 'total_ms', tot) order by c desc, tot asc), '[]'::jsonb)
+                 from (select uid, max(n) n, count(*)::int c, sum(t)::bigint tot from _cs_b
+                       where course_id = any(p_courses[k * 4 + 1 : k * 4 + 4]) group by uid order by c desc, tot asc limit 3) r)));
+  end loop;
+  v := jsonb_build_object('label', btrim(p_label), 'maps', cnt, 'closed_at', (extract(epoch from now()) * 1000)::bigint,
+    'podium', podium, 'mapPodiums', maps, 'sections', secs);
   insert into public.season_awards (season, data) values ('final:' || btrim(p_label), v)
   on conflict (season) do update set data = excluded.data;
   return v;
@@ -1896,7 +1909,7 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
-revoke execute on function public.close_season(text, text[]) from public, anon, authenticated;
+revoke execute on function public.close_season(text, text[], text[]) from public, anon, authenticated;
 revoke execute on function public._day_runs(uuid) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
@@ -1907,9 +1920,11 @@ revoke execute on function public._see_device(text, text), public._blocked(text,
 do $$
 begin
   if not exists (select 1 from public.season_awards where season = 'final:Season 1'
-                 and jsonb_array_length(coalesce(data -> 'podium', '[]'::jsonb)) > 0) then
+                 and jsonb_array_length(coalesce(data -> 'podium', '[]'::jsonb)) > 0 and data ? 'mapPodiums') then
     perform public.close_season('Season 1', array['s2c1', 's2c29', 's2c18', 's2c4', 's2c19', 's2c6', 's2c20', 's2c26',
-      's2c21', 's2c33', 's2c27', 's2c22', 's2c23', 's2c14', 's2c31', 's2c16']);
+      's2c21', 's2c33', 's2c27', 's2c22', 's2c23', 's2c14', 's2c31', 's2c16'],
+      array['Launch Pad', 'Proving Ground', 'Pinwheel', 'Hopscotch', 'Slipstream', 'Stormwall', 'Frostbite', 'Sidewinder',
+      'Switchback', 'Riptide', 'Coil Pass', 'Whirlpool', 'Gauntlet', 'Knife Edge', 'Freefall', 'Apex Predator']);
   end if;
 end $$;
 

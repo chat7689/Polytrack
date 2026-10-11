@@ -11613,12 +11613,27 @@ const Trophies = {
     const me = forName || Records.driver();
     const mine = (e) => (uid && e.uid) ? e.uid === uid : (!uid && e.n === me);
     const out = [];
-    // a closed season's podium: the biggest trophy there is
+    // Closed seasons: every trophy won in them stays for good (the season
+    // podium, each section's and each map's top three, as close_season kept them)
     for (const f of Profiles.finals) {
       const k = (f.podium || []).findIndex((p) => uid && p.uid === uid);
       if (k >= 0 && k < 3) {
-        out.push({ kind: 'final', tier: k, size: 3, maps: LEVELS.map((l, i) => i), title: f.label + ' · ' + Profiles.TIERN[k], sub: 'Final standings · ' + f.label,
+        out.push({ kind: 'final', tier: k, size: 3, maps: [], title: f.label + ' · ' + Profiles.TIERN[k], sub: 'Final standings · ' + f.label,
           plaque: String(f.label).toUpperCase() + ' ' + Profiles.TIERN[k].toUpperCase(), time: f.podium[k].total_ms / 1000, note: f.podium[k].count + '/' + (f.maps || f.podium[k].count) + ' maps' });
+      }
+      for (const sp of f.sections || []) {
+        const j = (sp.podium || []).findIndex((p) => uid && p.uid === uid);
+        if (j < 0 || j > 2) continue;
+        const nm = SECTIONS[sp.sec] || 'Section ' + (sp.sec + 1);
+        out.push({ kind: 'section', tier: j, size: 2, maps: [], title: nm + ' · ' + PLACE[j], sub: f.label + ' · section standings',
+          plaque: (f.label + ' ' + nm).toUpperCase(), time: sp.podium[j].total_ms / 1000, note: sp.podium[j].count + '/' + sp.maps + ' maps' });
+      }
+      for (const mp of f.mapPodiums || []) {
+        const j = (mp.podium || []).findIndex((p) => uid && p.uid === uid);
+        if (j < 0 || j > 2) continue;
+        const tag = 'ABCD'.charAt(Math.floor(mp.i / 4)) + ((mp.i % 4) + 1);
+        out.push({ kind: 'map', tier: j, size: 1, maps: [], title: mp.name, sub: f.label + ' · ' + tag + ' · ' + PLACE[j] + ' place',
+          plaque: String(mp.name).toUpperCase(), time: mp.podium[j].t / 1000, note: f.label + ' ' + tag });
       }
     }
     const ov = Records.overall(COURSE_IDS);
