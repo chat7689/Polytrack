@@ -814,6 +814,39 @@ begin
   return 'Admin login set for ' || u || '. Every other admin login and session is gone.';
 end $$;
 
+-- Ends a season: its final podium (most maps finished, then the lowest
+-- total of best times, banned players left out) is kept for good as the
+-- season_awards row 'final:<label>', which the game's menu shows as last
+-- season's champion. Run it yourself in Supabase > SQL Editor just before
+-- the new season's maps go live, with that season's map ids, e.g.
+--   select public.close_season('Season 1', array['s2c1', 's2c29', ...]);
+-- Running it again replaces that season's podium.
+create or replace function public.close_season(p_label text, p_courses text[]) returns jsonb
+language plpgsql volatile security definer set search_path = public, pg_temp as $$
+declare v jsonb;
+begin
+  if coalesce(btrim(p_label), '') = '' or coalesce(array_length(p_courses, 1), 0) = 0 then
+    raise exception 'Give the season a name and its map ids.';
+  end if;
+  with b as (
+    select b.uid, count(*)::int as c, sum(b.time_ms)::bigint as tot
+    from public.bests b
+    where b.course_id = any(p_courses) and not b.banned
+      and not exists (select 1 from public.profiles p where p.id = b.uid and p.banned)
+    group by b.uid
+  ), r as (
+    select b.*, coalesce((select p.display_name from public.profiles p where p.id = b.uid), 'Driver') as n
+    from b order by c desc, tot asc limit 3
+  )
+  select jsonb_build_object('label', btrim(p_label), 'maps', array_length(p_courses, 1),
+    'closed_at', (extract(epoch from now()) * 1000)::bigint,
+    'podium', coalesce(jsonb_agg(jsonb_build_object('uid', uid, 'n', n, 'count', c, 'total_ms', tot) order by c desc, tot asc), '[]'::jsonb))
+  into v from r;
+  insert into public.season_awards (season, data) values ('final:' || btrim(p_label), v)
+  on conflict (season) do update set data = excluded.data;
+  return v;
+end $$;
+
 -- signing out ends this token's session
 create or replace function public.admin_logout() returns void
 language sql volatile security definer set search_path = public, pg_temp as $$
@@ -1764,6 +1797,7 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
+revoke execute on function public.close_season(text, text[]) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- live updates

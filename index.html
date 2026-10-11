@@ -681,6 +681,64 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .pvCard p{font-size:12px;color:var(--dim);line-height:1.45;min-height:3em}
 .miniMap.pvMap{margin:0;max-height:none;aspect-ratio:4/3}
 .pvBtns{display:flex;gap:6px;flex-wrap:wrap}
+/* ---------- coach, on the menu and in the chat ---------- */
+.cbAvatar{flex:none;width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+  font:800 15px/1 var(--sans);color:#06231d;background:linear-gradient(145deg,#7af0d6,#3ddbb8 55%,#1f9c85);
+  box-shadow:0 0 0 1px rgba(61,219,184,.35),0 4px 14px rgba(61,219,184,.22)}
+.coachBrief{padding:14px 16px 12px;border-radius:12px;border:1px solid rgba(61,219,184,.28);
+  background:linear-gradient(160deg,rgba(61,219,184,.07),rgba(255,255,255,.015) 60%)}
+.coachBrief[hidden]{display:none}
+.cbHead{display:flex;align-items:center;gap:10px}
+.cbWho{display:flex;flex-direction:column;line-height:1.15;flex:1;min-width:0}
+.cbWho b{font-size:14px;font-weight:700}
+.cbWho small{font-size:11.5px;color:var(--dim)}
+.cbLive{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--aqua);padding:2px 8px;border-radius:999px;
+  border:1px solid rgba(61,219,184,.4);display:inline-flex;align-items:center;gap:6px}
+.cbLive::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--aqua);animation:cbPulse 1.6s ease-in-out infinite}
+@keyframes cbPulse{50%{opacity:.25}}
+.cbHeadline{margin:10px 0 8px;font-size:16.5px;font-weight:700;line-height:1.35;letter-spacing:-.01em;color:var(--ink)}
+.cbItems{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:6px}
+.cbItems li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:baseline;font-size:13px;line-height:1.45;color:#c9d4e3}
+.cbItems b{color:var(--ink);font-weight:600}
+.cbTag{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.cbItems .k-crown .cbTag{color:#ffcf5c}
+.cbItems .k-close .cbTag{color:var(--ember)}
+.cbItems .k-new .cbTag{color:var(--aqua)}
+.cbItems .k-you .cbTag{color:#58a0ff}
+@media(max-width:560px){.cbItems li{grid-template-columns:minmax(0,1fr);gap:1px}}
+.cbFoot{display:flex;gap:8px;flex-wrap:wrap}
+.pfCard{border-radius:12px;border:1px solid var(--rule-2);overflow:hidden;background:rgba(255,255,255,.02)}
+.pfCard[hidden]{display:none}
+.pfKick{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.12em;color:#ffcf5c;padding:10px 14px 8px}
+.pfCard img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#0b1220}
+.pfText{margin:0;padding:10px 14px 12px;font-size:13px;line-height:1.5;color:#c9d4e3}
+.pfText b{color:var(--ink)}
+.champCard{padding:12px 14px;border-radius:10px;border:1px solid rgba(255,207,92,.4);
+  background:linear-gradient(160deg,rgba(255,207,92,.12),rgba(255,207,92,.02) 70%)}
+.champCard[hidden]{display:none}
+.champKick{color:#ffcf5c !important;font-weight:600 !important}
+.champBody{display:flex;align-items:center;gap:10px}
+.champCar{width:120px;height:84px;flex:none;border:0;background:transparent;margin:0}
+.champName{display:flex;align-items:baseline;gap:6px;font-size:19px;font-weight:700;letter-spacing:-.02em;min-width:0}
+.champName .crown{color:#ffcf5c;font-size:16px}
+.champName b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.champRest{display:flex;gap:10px;margin-top:4px;font-size:12px;color:var(--dim)}
+.champRest i{font-style:normal;font-family:var(--mono);margin-right:4px;color:var(--dimmer)}
+/* the chat */
+.cpTitle{gap:10px}
+.cpName{display:flex;flex-direction:column;line-height:1.2}
+.cpName small{font-size:11.5px;color:var(--dim);font-weight:400}
+.cTurn .cbAvatar.av{width:26px;height:26px;border-radius:8px;font-size:13px;margin-top:2px}
+.cTurn .cBody{padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.025)}
+.cTurn .cSteps:empty{display:none}
+.cMe{background:rgba(88,160,255,.14);border-color:rgba(88,160,255,.3)}
+.cpChips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cpChip{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--rule-2);background:rgba(255,255,255,.03);color:var(--dim);cursor:pointer}
+.cpChip:hover{color:var(--ink);border-color:rgba(61,219,184,.55);background:rgba(61,219,184,.08)}
+.statGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.statGrid div{padding:9px 11px;border-radius:9px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.05);min-width:0}
+.statGrid span{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.statGrid b{display:block;font-size:14px;font-weight:600;overflow-wrap:anywhere}
 /* ---------- races with friends ---------- */
 .mpBar{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 16px;border-radius:12px;
   border:1px solid rgba(242,115,63,.55);background:linear-gradient(90deg,rgba(242,115,63,.16),rgba(242,115,63,.04));color:var(--ink)}
@@ -1433,6 +1491,15 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
               <span class="dcPrize"><span class="gem2d"></span> 1 000 to the fastest at noon</span>
             </button>
           </div>
+          <section class="coachBrief" id="aiCard" hidden>
+            <div class="cbHead"><span class="cbAvatar">C</span><div class="cbWho"><b>Coach</b><small id="aiTime">Live briefing</small></div><span class="cbLive">LIVE</span></div>
+            <p class="cbHeadline" id="aiHeadline"></p>
+            <ul class="cbItems" id="aiLines"></ul>
+            <div class="cbFoot">
+              <button class="small primary" id="bAiTarget" hidden></button>
+              <button class="ghost small" id="bAiCoach">Ask Coach →</button>
+            </div>
+          </section>
           <button class="mpBar" id="bMulti"><span class="mpNew">NEW</span><b>Race friends</b><span class="mpSub">live races · up to 8 drivers · join with a code</span><span class="mpGo">→</span></button>
           <button class="previewBar" id="bPreview" hidden>Season 2 preview <span>only you can see this · not released</span></button>
           <div class="menuTiles">
@@ -1443,24 +1510,28 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             <button class="tile" id="bSettings"><b>Settings</b><small>account</small></button>
             <button class="tile" id="bInfo"><b>How it works</b><small>the guide</small></button>
           </div>
+          <section class="pfCard" id="pfCard" hidden>
+            <div class="pfKick" id="pfKick">PHOTO FINISH</div>
+            <img id="pfImg" alt="Photo finish of the newest record">
+            <p class="pfText" id="pfText"></p>
+          </section>
           <div id="driverRow">
             <label class="fld" for="driver">Driver name</label>
             <input type="text" id="driver" maxlength="14" placeholder="Driver">
           </div>
-          <section class="aiCard" id="aiCard" hidden>
-            <div class="aiHd"><b>From Coach</b><span class="aiSub"></span></div>
-            <p class="aiHeadline" id="aiHeadline"></p>
-            <ul class="aiLines" id="aiLines"></ul>
-            <div class="aiFoot">
-              <button class="small primary" id="bAiTarget" hidden></button>
-              <button class="ghost small" id="bAiCoach">Ask Coach →</button>
-            </div>
-          </section>
+
         </div>
 
         <aside class="menuSide">
+          <div class="champCard" id="champCard" hidden>
+            <div class="lcHead"><span class="lcKick champKick" id="champKick">Last season's champion</span><span class="leaderTime" id="champTime"></span></div>
+            <div class="champBody">
+              <div class="garagePreviewWrap champCar"><canvas id="champCanvas"></canvas></div>
+              <div><div class="champName"><span class="crown">♛</span><b id="champName">—</b></div><div class="champRest" id="champRest"></div></div>
+            </div>
+          </div>
           <div class="leaderCard" id="overallLeaderCard" hidden>
-            <div class="lcHead"><span class="lcKick">Season 1 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
+            <div class="lcHead"><span class="lcKick" id="overallLeaderKick">Season 1 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
             <div class="lcBody">
               <div class="garagePreviewWrap lcCar"><canvas id="overallLeaderCanvas"></canvas></div>
               <div class="lcName"><span class="crown">♛</span> <b id="overallLeaderName">—</b></div>
@@ -1915,7 +1986,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     <div class="scrim"></div>
     <div class="panel coachPanel">
       <header class="cpHead">
-        <div class="cpTitle"><span class="aiOrb"></span><b>Coach</b><span class="cpMode" id="coachState"></span></div>
+        <div class="cpTitle"><span class="cbAvatar">C</span><div class="cpName"><b>Coach</b><small>Race engineer · knows every time on every map</small></div><span class="cpMode" id="coachState"></span></div>
         <div class="cpHeadR">
           <button class="ghost small" id="bCoachWake" hidden title="Smarter, more natural answers. A one-time download; it runs on this computer.">Smart answers</button>
           <button class="ghost small cpShort" id="bCoachShort" title="Short answers: a sentence or two">Short answers</button>
@@ -1927,9 +1998,10 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <section class="cpChat">
           <div class="coachLog" id="coachLog" aria-live="polite"></div>
           <div class="cpComposer">
-            <textarea id="coachIn" rows="1" maxlength="400" autocomplete="off" placeholder="Message Coach"></textarea>
+            <textarea id="coachIn" rows="1" maxlength="400" autocomplete="off" placeholder="Ask Coach about any map, driver or time"></textarea>
             <button class="cpSend" id="bCoachSend" aria-label="Send" title="Send (Enter)">&#10148;</button>
           </div>
+          <div class="cpChips" id="coachChips"></div>
         </section>
         <aside class="cpFigs" id="coachFigs">
           <div class="cpFigsEmpty">Charts, photos and clips Coach makes appear here.</div>
@@ -7753,8 +7825,9 @@ function makePlayerCarPreview(canvasId) {
     stop() { this.running = false; }
   };
 }
-// the main menu's overall-#1 car
+// the main menu's overall-#1 car, and last season's champion
 const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
+const championPreview = makePlayerCarPreview('champCanvas');
 
 /**
  * The menu's four section leaders' cars, turning slowly on their cards.
@@ -9481,6 +9554,88 @@ const CoachAlerts = {
  * keeps telling you exactly who is faster and by how much; if you're the
  * best it can't stop telling you so. Only ever about the driving.
  */
+/**
+ * What Coach says about whoever is on top. Built only from the boards (no
+ * made-up numbers), and generous: the season leader and every map's #1 get
+ * credit for it, every time they come up.
+ */
+const Praise = {
+  pick(a) { return a[Math.floor(Math.random() * a.length)]; },
+  /** maps a driver holds #1 on */
+  wins(r) {
+    let n = 0;
+    LEVELS.forEach((lv) => { const b = Records.board(lv.id); if (b[0] && ((r.uid && b[0].uid === r.uid) || b[0].n === r.n)) n++; });
+    return n;
+  },
+  /** the season leader, in one admiring sentence */
+  leader(rows) {
+    const a = rows[0], b = rows[1];
+    if (!a) return '';
+    const w = this.wins(a);
+    const margin = b && b.count === a.count ? (b.total - a.total) : null;
+    const facts = '#1 overall' + (w ? ' with ' + w + ' of ' + LEVELS.length + ' map records' : '') +
+      (margin !== null ? ', ' + margin.toFixed(3) + ' s clear of ' + b.n : b ? ', ' + (a.count - b.count) + ' map' + (a.count - b.count === 1 ? '' : 's') + ' ahead of ' + b.n : '');
+    return this.pick([
+      a.n + ' is the driver everyone is measuring themselves against: ' + facts + '.',
+      a.n + ' has set the standard this season: ' + facts + '. Clean, fast and consistent.',
+      'Hats off to ' + a.n + ': ' + facts + '. That is what a complete season looks like.',
+      a.n + ' is in a class of their own right now: ' + facts + '.'
+    ]);
+  },
+  /** a map's #1, one sentence */
+  map(i, a, b) {
+    const tag = courseTag(i) + ' ' + LEVELS[i].name;
+    const by = b ? ', ' + (b.t - a.t).toFixed(3) + ' s ahead of ' + b.n : '';
+    return this.pick([
+      a.n + '\'s ' + formatTime(a.t) + ' on ' + tag + ' is a masterclass' + by + '.',
+      a.n + ' owns ' + tag + ' with ' + formatTime(a.t) + by + '. Textbook driving.',
+      'The benchmark on ' + tag + ' is ' + a.n + '\'s ' + formatTime(a.t) + by + '.'
+    ]);
+  },
+  /** to the player, when they are the season leader */
+  you(I) {
+    const r = I.route, w = I.wins;
+    return this.pick([
+      'You are the benchmark of this season: #1 overall' + (w ? ', fastest on ' + w + ' of ' + LEVELS.length + ' maps' : '') + '. Every time on the board is chasing yours.',
+      'Number one overall' + (r.margin !== null ? ', ' + r.margin.toFixed(3) + ' s clear of ' + r.second.n : '') + '. That is championship driving, and everyone knows it.',
+      'You have driven the most complete season of anyone' + (w ? ': ' + w + ' map records' : '') + '. The rest of the field is racing for second.'
+    ]);
+  }
+};
+
+/**
+ * The closest gaps anywhere on the boards: neighbours in each map's top
+ * five, and neighbours in the season standings, nearest first.
+ */
+Insight.battles = function (limit) {
+  const out = [];
+  LEVELS.forEach((lv, i) => {
+    const b = Records.board(lv.id);
+    for (let k = 0; k < Math.min(b.length - 1, 5); k++) {
+      const gap = b[k + 1].t - b[k].t;
+      if (gap <= 0.25) out.push({ kind: 'map', i, a: b[k], b: b[k + 1], place: k + 1, gap, when: Math.max(b[k].d || 0, b[k + 1].d || 0) });
+    }
+  });
+  const rows = Records.overall(COURSE_IDS);
+  for (let k = 0; k < Math.min(rows.length - 1, 5); k++) {
+    if (rows[k].count !== rows[k + 1].count) continue;
+    const gap = rows[k + 1].total - rows[k].total;
+    if (gap <= 1) out.push({ kind: 'overall', a: rows[k], b: rows[k + 1], place: k + 1, gap, when: 0 });
+  }
+  // the fight for a place nearer the top matters more, at the same gap
+  out.sort((x, y) => (x.gap - y.gap) || (x.place - y.place));
+  return out.slice(0, limit || 8);
+};
+/** a battle in words: "Mia is 0.004 s behind Jake for 1st on A3 Pinwheel" */
+Insight.battleText = function (x, html) {
+  const E = html ? escapeHtml : (s) => s, B = (s) => html ? '<b>' + E(s) + '</b>' : s;
+  const where = x.kind === 'overall' ? 'in the season standings' : 'on ' + courseTag(x.i) + ' ' + E(LEVELS[x.i].name);
+  const what = x.place === 1 ? 'for 1st' : 'for ' + Insight.ord(x.place);
+  if (x.gap < 0.0005) return B(x.a.n) + ' and ' + B(x.b.n) + ' are dead level ' + what + ' ' + where + '.';
+  return B(x.b.n) + ' is ' + (html ? '<b>' : '') + x.gap.toFixed(3) + ' s' + (html ? '</b>' : '') + ' behind ' + B(x.a.n) + ' ' + what + ' ' + where + '.';
+};
+
+/** The voice: a professional race engineer. Specific, calm, honest about the gaps, and generous to whoever leads. */
 const Tone = {
   pick(a) { return a[Math.floor(Math.random() * a.length)]; },
   /** 'new' (no times), 'bad', 'mid', 'good' or 'elite' (leads the season) */
@@ -9497,84 +9652,228 @@ const Tone = {
     if (r.count > I.me.count) return (r.count - I.me.count) + ' map' + (r.count - I.me.count === 1 ? '' : 's') + ' ahead of you';
     return (I.me.total - r.total).toFixed(3) + ' s faster than you';
   },
-  /** one line that keeps the player honest (or tells them how good they are) */
+  /** one closing line: the coach's note for where the player stands */
   line(I, m) {
     const P = (a) => this.pick(a);
     const t = this.tier(I);
-    if (t === 'new') return P(['Every driver on the board has a time and you don\'t. Fix that.', 'Right now you\'re not even on the board. Go drive something.']);
+    if (t === 'new') return P(['One finished run on any map puts you on the board, and from there I can show you exactly where the time is.',
+      'First job: a clean finish. Everything else builds on it.']);
     if (m && m.t !== null && m.lead) {
       if (m.rank === 1) {
         const s = m.board[1];
-        return P([
-          'Nobody touches you on ' + m.tag + '.' + (s ? ' ' + s.n + ' is ' + (s.t - m.t).toFixed(3) + ' s back and it isn\'t close.' : ''),
-          'That ' + m.tag + ' time is filthy. ' + (s ? s.n + ' has been staring at it for days.' : 'Nobody else even has one.'),
-          'You own ' + m.tag + '. Honestly, I\'ve got nothing to fix there.'
-        ]);
+        return P(['That ' + m.tag + ' time is the benchmark' + (s ? ', ' + (s.t - m.t).toFixed(3) + ' s clear of ' + s.n : '') + '. Outstanding driving.',
+          'You own ' + m.tag + '.' + (s ? ' ' + s.n + ' is ' + (s.t - m.t).toFixed(3) + ' s back, so keep an eye on the board.' : ' Nobody else has even set a time.')]);
       }
-      const L = m.lead, g = m.gap.toFixed(3);
-      if (t === 'bad') return P([
-        L.n + ' is ' + g + ' s faster than you on ' + m.tag + '. Every single run. Think about that.',
-        'For the record, ' + L.n + ' does ' + m.tag + ' in ' + formatTime(L.t) + '. You do it in ' + formatTime(m.t) + '. That\'s not a gap, that\'s a canyon.',
-        (m.rank - 1) + ' driver' + (m.rank === 2 ? ' is' : 's are') + ' faster than you on ' + m.tag + '. Each one of them would like to thank you.'
-      ]);
-      return P([
-        L.n + ' is still ' + g + ' s faster than you on ' + m.tag + '. Don\'t get comfortable.',
-        'Remember who\'s on top of ' + m.tag + ': ' + L.n + ', ' + g + ' s up on you.',
-        (m.up && m.up.n !== L.n ? m.up.n + ' sits ' + m.up.need.toFixed(3) + ' s ahead of you on ' + m.tag + ', and ' + L.n + ' is ' + g + ' s up.' : L.n + ' is ' + g + ' s up on you on ' + m.tag + '.') + ' Somebody is always faster until you are.'
-      ]);
+      if (m.up && m.up.need < 0.1) return 'You are just ' + m.up.need.toFixed(3) + ' s from passing ' + m.up.n + ' on ' + m.tag + '. One clean run does it.';
+      return P([m.lead.n + '\'s ' + formatTime(m.lead.t) + ' on ' + m.tag + ' is the target: ' + m.gap.toFixed(3) + ' s to find.',
+        'The gap to ' + m.lead.n + ' on ' + m.tag + ' is ' + m.gap.toFixed(3) + ' s. Take it one corner at a time.']);
     }
     const A = I.above, L = I.leader;
-    if (t === 'elite') {
-      const r = I.route, s = r.second;
-      return P([
-        'Honestly, there isn\'t much left to fix. You\'re the best driver in aiPolytrack and the boards prove it.',
-        'Everyone else is driving for second.' + (s && r.margin !== null ? ' ' + s.n + ' is ' + r.margin.toFixed(3) + ' s back and losing sleep over it.' : ''),
-        'Number one overall. Your lines are cleaner than anyone\'s. I\'m just here to watch, really.',
-        'You make this look easy, and it isn\'t. ' + (s ? s.n + ' would trade everything for your times.' : '')
-      ]);
-    }
-    if (t === 'good') return P([
-      'Good isn\'t first. ' + L.n + ' is ' + this.behind(I, L) + '.',
-      'Second is the first loser. ' + L.n + ' is ' + this.behind(I, L) + ', and they know it.',
-      'You\'re close. Close doesn\'t get a crown. ' + L.n + ' is ' + this.behind(I, L) + '.'
-    ]);
-    if (t === 'bad') return P([
-      (I.rank - 1) + ' drivers are faster than you right now. Every one of them is enjoying it.',
-      A ? A.n + ' is ' + this.behind(I, A) + ', and ' + A.n + ' isn\'t even that good.' : 'You\'re at the bottom. Only one way to go.',
-      'You\'re ' + Insight.ord(I.rank) + ' of ' + I.of + '. ' + L.n + ' is ' + this.behind(I, L) + '. That should bother you.',
-      'I\'ve seen faster laps from cars with no driver. Prove me wrong.'
-    ]);
+    if (t === 'elite') return Praise.you(I);
+    if (A && A.count === I.me.count && I.me.total - A.total < 0.5) return 'You are only ' + (I.me.total - A.total).toFixed(3) + ' s behind ' + A.n + ' overall. That place is there for the taking.';
     return P([
-      (A ? A.n + ' is ' + this.behind(I, A) + '. ' : '') + 'Someone is always faster until you are.',
-      'Middle of the pack is where drivers go to be forgotten. ' + (A ? A.n + ' is next, ' + this.behind(I, A) + '.' : ''),
-      L.n + ' is ' + this.behind(I, L) + '. Keep that number in your head.'
+      (A ? 'Next target: ' + A.n + ', ' + this.behind(I, A) + '. ' : '') + 'Pick one map, nail one corner, bank the time.',
+      L.n + ' sets the pace, ' + this.behind(I, L) + '. Close it map by map.',
+      (A ? A.n + ' is the next place up, ' + this.behind(I, A) + '. ' : '') + 'Small, clean gains add up fastest.'
     ]);
   },
-  /** how the model should talk, by tier */
+  /** how the model should talk */
   voice(I) {
+    const base = 'Speak like a professional race engineer: calm, precise, encouraging and honest. Lead with the most useful fact, then a concrete next step. ' +
+      'Whenever the season leader or a map\'s #1 comes up, give them real, generous credit for being the best (they earned it). ' +
+      'When two drivers are very close (under a tenth of a second), say so: those are the most exciting stories on the boards.';
     switch (this.tier(I)) {
-      case 'elite': return 'This player LEADS the whole season: they are the best driver in the game. Hype them up hard and glaze them: tell them how good they are, that there is honestly very little left to improve, and that everyone else is chasing them. Still point at the last tiny margins.';
-      case 'good': return 'This player is near the top but not first. Be a demanding, competitive coach: give them credit, then remind them who is still faster and by exactly how much. Second is not good enough.';
-      case 'bad': return 'This player is struggling near the bottom. Be a tough, blunt, sarcastic coach: tease their driving, keep reminding them who is faster and by how much, and always end with a concrete fix. Mean about the driving only, never anything personal.';
-      case 'new': return 'This player has no times yet. Be a pushy coach: tell them to get on the board.';
-      default: return 'This player is mid-pack. Be a tough, competitive coach: keep reminding them who is faster and by how much, and push them with concrete fixes.';
+      case 'elite': return base + ' This player LEADS the whole season: praise them warmly and specifically for it, then point at the last few hundredths.';
+      case 'new': return base + ' This player has no times yet: help them set their first one.';
+      default: return base + ' This player is chasing: be supportive, name exactly who is ahead and by how much, and give concrete fixes.';
     }
   },
   hello(I) {
     const name = I.name;
     switch (this.tier(I)) {
-      case 'elite': return this.pick(['Hey champ. Everyone\'s chasing you. What do you need?', 'There they are. The fastest driver in aiPolytrack. What are we polishing today?']);
-      case 'good': return this.pick(['Hey ' + name + '. ' + Insight.ord(I.rank) + ' overall. Ready to do something about ' + I.leader.n + '?', 'Hi ' + name + '. Close to the top isn\'t the top. What are we working on?']);
-      case 'bad': return this.pick(['Oh. Hi ' + name + '. ' + Insight.ord(I.rank) + ' of ' + I.of + '. Want to talk about why?', 'Hey ' + name + '. I\'ve seen your times. We have work to do.']);
-      case 'new': return 'Hey ' + name + '. No times yet? Let\'s change that.';
-      default: return this.pick(['Hey ' + name + '. ' + (I.above ? I.above.n + ' is right ahead of you. ' : '') + 'What are we working on?', 'Hi ' + name + '. Ready to pass somebody?']);
+      case 'elite': return this.pick(['Welcome back, ' + name + '. Still the one everyone is chasing.', 'Good to see you, ' + name + '. Number one overall, and it shows.']);
+      case 'new': return 'Hi ' + name + '. Let\'s get your first time on the board.';
+      default: return this.pick(['Hi ' + name + '. ' + Insight.ord(I.rank) + ' overall right now.' + (I.above ? ' ' + I.above.n + ' is the next place up.' : ''),
+        'Welcome back, ' + name + '. Ready to make up some places?']);
     }
   },
   thanks(I) {
-    const t = this.tier(I);
-    if (t === 'elite') return this.pick(['Anytime, champ.', 'Always. Keep making them look slow.']);
-    if (t === 'bad' || t === 'mid') return this.pick(['Don\'t thank me. Thank me when you pass ' + (I.above ? I.above.n : 'someone') + '.', 'Thank me with a faster time.']);
-    return this.pick(['Anytime. Now go get ' + I.leader.n + '.', 'Go use it.']);
+    return this.tier(I) === 'elite' ? this.pick(['Any time. Keep setting the standard.', 'Always a pleasure.'])
+      : this.pick(['Any time. Go and put it into practice.', 'Glad it helps.' + (I.above ? ' ' + I.above.n + ' is next.' : '')]);
+  }
+};
+
+/**
+ * The newest record on the boards as a photo finish: the record holder's
+ * car on the line, the runner-up's car where it was at that same moment,
+ * and the distance between it and the line measured on the picture.
+ * Rendered once per new record, with the coach's camera.
+ */
+const PhotoFinish = {
+  key: '', busy: false, shown: null,
+  pick() {
+    let best = null;
+    LEVELS.forEach((lv, i) => {
+      const b = Records.board(lv.id);
+      if (b.length < 2 || !b[0].uid || !b[1].uid) return;
+      const d = b[0].d || 0;
+      if (!best || d > best.d) best = { i, a: b[0], b: b[1], d };
+    });
+    return best;
+  },
+  async update() {
+    const card = $('pfCard');
+    const p = Cloud.on && Cloud.user ? this.pick() : null;
+    if (!p) { card.hidden = true; return; }
+    const id = LEVELS[p.i].id, key = id + p.a.uid + p.a.t + p.b.uid + p.b.t;
+    if (key === this.key && this.shown) { card.hidden = false; return; }
+    if (this.busy) return;
+    this.busy = true;
+    try {
+      const [ga, gb, ca, cb] = await Promise.all([Cloud.fetchGhost(id, p.a.uid), Cloud.fetchGhost(id, p.b.uid),
+        Cloud.fetchCarColorsOf(p.a.uid), Cloud.fetchCarColorsOf(p.b.uid)]);
+      if (!ga || !gb) { card.hidden = true; return; }
+      const shot = this.render(p, ga, gb, ca, cb);
+      this.key = key; this.shown = shot;
+      $('pfImg').src = shot.url;
+      const E = escapeHtml, tag = courseTag(p.i) + ' ' + E(LEVELS[p.i].name);
+      const gap = p.b.t - p.a.t;
+      $('pfKick').textContent = 'PHOTO FINISH · ' + (p.d ? Insight.ago(p.d).toUpperCase() : 'LATEST RECORD');
+      $('pfText').innerHTML = '<b>' + E(p.a.n) + '</b> holds the record on ' + tag + ' at <b>' + formatTime(p.a.t) + '</b>. ' +
+        (gap < 0.0005 ? '<b>' + E(p.b.n) + '</b> matched it to the thousandth.' :
+          '<b>' + E(p.b.n) + '</b> was <b>' + shot.dist.toFixed(1) + ' m</b> from the line when ' + E(p.a.n) + ' crossed it: <b>' + gap.toFixed(3) + ' s</b>.');
+      $('pfCard').dataset.map = p.i;
+      card.hidden = false;
+    } catch (e) {
+      console.warn('aiPolytrack: photo finish', e);
+      card.hidden = true;
+    } finally { this.busy = false; }
+  },
+  /** the picture: side on to the finish line, both cars, the gap measured */
+  render(p, ga, gb, ca, cb) {
+    const C = CoachCam, q = C.scene(p.i);
+    C.paint(C.a, ca); C.paint(C.b, cb);
+    // both solid for this one
+    const bOp = C.b.body.opacity;
+    C.b.body.opacity = C.b.dark.opacity = 1;
+    const t1 = ga.t;
+    SectionView.ghostAt(q, ga, t1, C.a.mesh.position, C.a.mesh.quaternion);
+    SectionView.ghostAt(q, gb, Math.min(t1, gb.t), C.b.mesh.position, C.b.mesh.quaternion);
+    const gate = q.course.gates.find((g) => g.kind === 'finish');
+    const nose = (m) => new THREE.Vector3(0, 0, NOSE_Z).applyQuaternion(m.quaternion).add(m.position);
+    const na = nose(C.a.mesh), nb = nose(C.b.mesh);
+    const dir = new THREE.Vector3(gate.dir.x, 0, gate.dir.z).normalize();
+    const toLine = (n) => -((n.x - gate.pos.x) * dir.x + (n.z - gate.pos.z) * dir.z);
+    // the record holder's nose is on the line at that instant (recordings
+    // are 20 samples a second, so measure from it rather than from the gate)
+    const tied = p.b.t - p.a.t < 0.0005;
+    const dist = tied ? 0 : Math.max(0, toLine(nb) - toLine(na));
+    // where the line is, level with the runner-up's nose
+    const onLine = nb.clone().addScaledVector(dir, dist);
+    const side = new THREE.Vector3(dir.z, 0, -dir.x);
+    const mid = na.clone().add(nb).multiplyScalar(0.5);
+    const span = na.distanceTo(nb);
+    const cam = q.camera;
+    // side on, far enough out to be clear of the finish arch's posts and a
+    // little behind the line, so the post nearest the camera isn't in the way
+    const back = clamp(span * 0.85 + 16, 17, 50);
+    cam.position.copy(mid).addScaledVector(side, back).addScaledVector(dir, -5 - span * 0.1);
+    cam.position.y = mid.y + 2.2 + back * 0.08;
+    cam.lookAt(mid.x, mid.y + 0.4, mid.z);
+    // a long lens: the two cars and a few metres either side fill the frame
+    const fov0 = cam.fov;
+    cam.fov = clamp(2 * Math.atan((span + 14) / (2 * back * cam.aspect)) * 180 / Math.PI, 8, fov0);
+    cam.updateProjectionMatrix();
+    cam.updateMatrixWorld();
+    q.sky.position.copy(cam.position);
+    C.renderer.render(q.scene, cam);
+    C.b.body.opacity = C.b.dark.opacity = bOp;
+    const W = C.W, H = C.H;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(C.renderer.domElement, 0, 0, W, H);
+    const scr = (v) => { const u = v.clone().project(cam); return [(u.x * 0.5 + 0.5) * W, (-u.y * 0.5 + 0.5) * H]; };
+    const ground = (v) => { const u = v.clone(); u.y -= 0.42; return u; };
+    // the finish line: a dashed upright through the line point
+    const Lb = scr(ground(onLine)), Lt = scr(onLine.clone().setY(onLine.y + 2.6));
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2; ctx.setLineDash([7, 6]);
+    ctx.beginPath(); ctx.moveTo(Lb[0], Lb[1] + 26); ctx.lineTo(Lt[0], Lt[1]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '700 15px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+    ctx.fillText('FINISH', Lt[0], Lt[1] - 8);
+    // the measurement, just under the cars: from the runner-up's nose to the line
+    const B0 = scr(ground(nb)), B1 = Lb;
+    const y = Math.max(B0[1], B1[1]) + 18;
+    const x0 = B0[0], x1 = B1[0];
+    if (Math.abs(x1 - x0) > 6) {
+      ctx.strokeStyle = '#ffcf5c'; ctx.fillStyle = '#ffcf5c'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(x0, B0[1] + 4); ctx.lineTo(x0, y + 10); ctx.moveTo(x1, B1[1] + 4); ctx.lineTo(x1, y + 10); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      const head = (x, s) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + s * 11, y - 6); ctx.lineTo(x + s * 11, y + 6); ctx.closePath(); ctx.fill(); };
+      const s = x1 > x0 ? 1 : -1;
+      head(x0, s); head(x1, -s);
+    }
+    const label = tied ? 'dead heat' : dist.toFixed(1) + ' m';
+    ctx.font = '700 22px ui-monospace, monospace';
+    const lw = ctx.measureText(label).width + 22, lx = (x0 + x1) / 2 - lw / 2, ly = y + 12;
+    ctx.fillStyle = 'rgba(7,11,24,.88)'; ctx.fillRect(lx, ly, lw, 32);
+    ctx.fillStyle = '#ffcf5c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, lx + lw / 2, ly + 17);
+    // a tag over each car: place, name, time
+    const tagAt = (m, place, name, time, col, lift) => {
+      const pt = scr(m.position.clone().setY(m.position.y + 1.6));
+      ctx.font = '700 17px system-ui, sans-serif';
+      const text = place + '  ' + name + '   ' + time;
+      const tw = ctx.measureText(text).width + 26, x = clamp(pt[0] - tw / 2, 8, W - tw - 8), yy = pt[1] - 40 - lift;
+      ctx.fillStyle = 'rgba(7,11,24,.88)'; ctx.fillRect(x, yy, tw, 32);
+      ctx.fillStyle = col; ctx.fillRect(x, yy, 5, 32);
+      ctx.fillStyle = '#eaf0f8'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + 14, yy + 17);
+    };
+    const hex = (col, fb) => col ? '#' + hslToHex(col.primary.h, col.primary.s, col.primary.l).toString(16).padStart(6, '0') : fb;
+    const pa = scr(C.a.mesh.position), pb = scr(C.b.mesh.position);
+    const crowd = Math.abs(pa[0] - pb[0]) < 260;
+    tagAt(C.a.mesh, '1st', p.a.n, formatTime(p.a.t), hex(ca, '#3ddbb8'), crowd && pa[1] <= pb[1] ? 40 : 0);
+    tagAt(C.b.mesh, '2nd', p.b.n, '+' + (p.b.t - p.a.t).toFixed(3) + ' s', hex(cb, '#f2733f'), crowd && pa[1] > pb[1] ? 40 : 0);
+    ctx.restore();
+    cam.fov = fov0; cam.updateProjectionMatrix();
+    return { url: c.toDataURL('image/jpeg', 0.88), dist };
+  }
+};
+
+/**
+ * Last season's champion, kept on the menu after a new season starts: the
+ * podium written by close_season() (supabase/schema.sql) when a season
+ * ends, as a 'final:<label>' row of season_awards.
+ */
+const Champion = {
+  data: null, at: 0,
+  async load() {
+    if (!Cloud.on || !Cloud.user || Date.now() - this.at < 5 * 60000) return;
+    this.at = Date.now();
+    try {
+      const rows = await Cloud.q(Cloud.sb.from('season_awards').select('season, data').like('season', 'final:%'));
+      const list = (rows || []).map((r) => r.data).filter((d) => d && Array.isArray(d.podium) && d.podium.length);
+      list.sort((a, b) => (b.closed_at || 0) - (a.closed_at || 0));
+      this.data = list[0] || null;
+    } catch (e) { this.data = null; }
+    this.render();
+  },
+  render() {
+    const card = $('champCard'), d = this.data;
+    card.hidden = !d;
+    if (!d) { championPreview.stop(); return; }
+    const E = escapeHtml, [a, b, c] = d.podium;
+    $('champKick').textContent = String(d.label || 'Last season') + ' champion';
+    $('champName').textContent = a.n;
+    $('champTime').textContent = a.count + '/' + (d.maps || a.count) + ' maps · ' + formatTime(a.total_ms / 1000);
+    $('champRest').innerHTML = [b, c].filter(Boolean).map((r, k) => '<span><i>' + (k + 2) + '</i>' + E(r.n) + '</span>').join('');
+    if (Game.state === 'menu') {
+      championPreview.start();
+      Cloud.fetchCarColorsOf(a.uid).then((col) => championPreview.paint(col)).catch(() => {});
+    }
   }
 };
 
@@ -9720,10 +10019,17 @@ const Coach = {
       $('bCoachSend').addEventListener('click', () => { if (this.busy) this.stop(); else this.send(box.value); });
       $('bCoachNew').addEventListener('click', () => this.reset());
       $('bCoachWake').addEventListener('click', () => this.wake());
+      $('coachChips').addEventListener('click', (e) => { const b = e.target.closest('button[data-q]'); if (b && !this.busy) this.send(b.dataset.q); });
       grow();
     }
     this.refreshState();
     this.setShort(this.short());
+    const I = Insight.compute();
+    const qs = ['What\'s happening on the boards?', 'Show me the closest battles'];
+    if (I.me) qs.push('My stats', 'Where am I losing the most time?', 'Which maps should I practise?');
+    qs.push('Who holds the most records?');
+    if (Daily.prepare().open) qs.push('How is today\'s daily going?');
+    $('coachChips').innerHTML = qs.map((q) => '<button class="cpChip" data-q="' + escapeHtml(q) + '">' + escapeHtml(q) + '</button>').join('');
     if (!$('coachLog').children.length) this.greet();
     setTimeout(() => $('coachIn').focus(), 50);
   },
@@ -9758,22 +10064,23 @@ const Coach = {
   greet() {
     const I = Insight.compute();
     const t = Tone.tier(I), E = Ease.rank(I), top = E.list[0];
-    let msg;
-    if (t === 'new') msg = 'Hey ' + I.name + '. No times from you yet, so you\'re not even on the board. Drive A1 ' + I.maps[0].name + ' and then come back: I\'ll show you exactly where your time is.';
-    else if (t === 'elite') msg = Tone.pick(['Look who it is. The fastest driver in aiPolytrack.', 'The champ is here.']) + ' ' +
-      (I.route.margin !== null ? I.route.second.n + ' is ' + I.route.margin.toFixed(3) + ' s behind you and losing sleep over it. ' : '') +
-      'Honestly, there isn\'t much left for me to fix, but let\'s hunt the last hundredths' + (top ? ': ' + top.m.tag + ' ' + top.m.name + ' is where you have the most in hand.' : '.');
-    else {
-      msg = Tone.hello(I) + ' ' + Tone.line(I, null);
-      if (top) msg += ' Your quickest win right now: **' + top.m.tag + ' ' + top.m.name + '** (' + top.why[0] + ').';
-    }
+    const parts = [Tone.hello(I)];
+    if (t === 'elite') parts.push(Praise.you(I));
+    else if (I.rows.length) parts.push(Praise.leader(I.rows));
+    const bat = Insight.battles(8);
+    const mineB = I.uid ? bat.find((x) => x.a.uid === I.uid || x.b.uid === I.uid) : null;
+    if (mineB) parts.push('Your closest fight: ' + Insight.battleText(mineB));
+    else if (bat[0]) parts.push('Closest on the boards: ' + Insight.battleText(bat[0]));
+    let msg = parts.join(' ');
+    if (t === 'new') msg += '\n\nStart with **A1 ' + I.maps[0].name + '**: one finished run puts you on the board, and then I can show you exactly where the time is.';
+    else if (top) msg += '\n\nBest use of your next run: **' + top.m.tag + ' ' + top.m.name + '** (' + top.why[0] + ').';
     const c = Daily.prepare();
     if (c.open && Daily.level) {
       const b = Daily.board(), k = b.findIndex((e) => e.uid === I.uid);
       msg += '\n\nToday\'s daily, ' + Daily.level.name + ', closes in ' + Daily.hms(c.toNoon) + (b[0] ? ': ' + (k === 0 ? 'you lead it' : b[0].n + ' leads it at ' + formatTime(b[0].t) + (k > 0 ? ', you\'re ' + Insight.ord(k + 1) : '')) : ' and nobody has a time yet') + '.';
     }
-    if (this.short()) { this.post(this.shorten(msg) + ' Ask me anything.'); return; }
-    this.post(msg + '\n\nAsk me anything: where you lose time on a map (I\'ll break down your braking, speed and line against the leader\'s), what to practise, a rival, the daily, or a photo or clip of your run.');
+    if (this.short()) { this.post(this.shorten(msg)); return; }
+    this.post(msg + '\n\nAsk me anything, or pick a suggestion below: the closest battles, your full stats, where you lose time on a map, or a photo or clip of your run.');
   },
   /** a message from Coach (already worked out), with its figure and map links live */
   post(text, turn) {
@@ -9790,7 +10097,7 @@ const Coach = {
   turn() {
     const d = document.createElement('div');
     d.className = 'cTurn';
-    d.innerHTML = '<span class="aiOrb av"></span><div class="cBody"><div class="cSteps"></div><div class="cAns typing"></div></div>';
+    d.innerHTML = '<span class="cbAvatar av">C</span><div class="cBody"><div class="cSteps"></div><div class="cAns typing"></div></div>';
     $('coachLog').appendChild(d);
     this.scroll();
     return d;
@@ -9971,6 +10278,9 @@ const Coach = {
       season: /\b(season|win it all|become (the )?leader|number one|#1 overall|first overall|catch)\b/.test(low)
     };
     wants.daily = /\bdail(y|ies)\b|today'?s (map|track|course)/.test(low);
+    wants.close = /\b(closest|close (times|battles?|gaps?|races?|ones|fights?)|tight(est)?|photo ?finish(es)?|neck and neck|battles?|rivalr(y|ies)|how close)\b/.test(low);
+    wants.records = /\b(most (records|wins|#1s?|number ones?|first places?)|who (owns|holds|has) (the )?(most|records)|record holders?)\b/.test(low);
+    wants.mine = /\b(my (stats|statistics|profile|numbers|summary|season)|how am i doing|stats|statistics|report card)\b/.test(low);
     if (rival) this.ctx.rival = rival.uid || rival.n;
     if (mapIds.length) this.ctx.map = mapIds[0];
     // not about the game at all: answer it anyway, then back to racing
@@ -9994,6 +10304,34 @@ const Coach = {
       const r = this.figDaily(I);
       figs.push(r.fig);
       return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs, sting: true };
+    }
+    // ------------------------------------------- the boards at large
+    if (!mapIds.length && !rival) {
+      if (/\b(closest|close (times|battles?|gaps?|races?|ones|fights?)|tight(est)?|photo ?finish(es)?|neck and neck|battles?|rivalr(y|ies)|how close)\b/.test(low)) {
+        const s1 = this.step(turn, 'Comparing neighbouring times on every leaderboard');
+        await think.done('Thought about it');
+        const r = this.figBattles(I);
+        await s1.done(r ? 'Found the ' + r.n + ' closest gaps' : 'Read every leaderboard');
+        if (!r) return { text: 'Nobody is within a quarter of a second of anyone else right now. The boards are spread out.' };
+        figs.push(r.fig);
+        return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
+      }
+      if (/\b(most (records|wins|#1s?|number ones?|first places?)|who (owns|holds|has) (the )?(most|records)|record holders?)\b/.test(low)) {
+        const s1 = this.step(turn, 'Counting every map\'s #1');
+        await think.done('Thought about it');
+        const r = this.figRecords(I);
+        await s1.done('Counted ' + LEVELS.length + ' maps');
+        figs.push(r.fig);
+        return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
+      }
+      if (I.me && /\b(my (stats|statistics|profile|numbers|summary|season)|how am i doing|stats|statistics|report card)\b/.test(low)) {
+        const s1 = this.step(turn, 'Pulling your numbers from all 16 maps');
+        await think.done('Thought about it');
+        const r = this.figProfile(I);
+        await s1.done('Pulled ' + I.me.count + ' finished maps');
+        figs.push(r.fig);
+        return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
+      }
     }
     if (!I.me) {
       await think.done('Checked your times');
@@ -10087,7 +10425,8 @@ const Coach = {
       await think.done('Looked up ' + m.tag + ' ' + m.name);
       const r = this.figMap(I, m);
       figs.push(r.fig);
-      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n) + (m.t !== null && m.of > 1 ? ' Ask me where you lose time there and I\'ll break down your braking, speed and line against ' + (m.rank === 1 ? m.board[1].n : m.lead.n) + '.' : ''), notes: r.notes, figs, m, sting: true };
+      const nb = m.board[0] && m.rank !== 1 ? Praise.map(m.i, m.board[0], m.board[1]) + ' ' : '';
+      return { text: nb + r.text.replace('{F}', 'Figure ' + r.fig.n) + (m.t !== null && m.of > 1 ? ' Ask me where you lose time there and I\'ll break down your braking, speed and line against ' + (m.rank === 1 ? m.board[1].n : m.lead.n) + '.' : ''), notes: r.notes, figs, m, sting: true };
     }
     // ------------------------------------------- easiest / hardest
     if (wants.easy || wants.hard || /\bimprove|faster|better|quicker\b/.test(low)) {
@@ -10168,11 +10507,11 @@ const Coach = {
       return { text: Tone.hello(I), notes: 'The player said hello. Greet them back in your voice, briefly.' };
     }
     if (/\b(thank|thanks|thx|ty|cheers|appreciate)\b/.test(low)) return { text: Tone.thanks(I), notes: 'The player said thanks.' };
-    if (/\bhow are (you|u)\b|how'?s it going|how you doing/.test(low)) return { text: pick(['Watching every leaderboard, as always.', 'Busy. The boards never sleep.']) + ' ' + Tone.line(I, null), notes: 'The player asked how Coach is.' };
-    if (/^(ok|okay|cool|nice|great|awesome|sweet|got it|alright|k)\b[\s!.]*$/.test(low)) return { text: pick(['Good. Now go drive it.', 'Then why are you still here? The track is that way.', 'Want me to pick your next map?']), notes: '' };
+    if (/\bhow are (you|u)\b|how'?s it going|how you doing/.test(low)) return { text: pick(['Doing well, thanks. Watching every leaderboard.', 'All good here.']) + ' ' + Tone.line(I, null), notes: 'The player asked how Coach is.' };
+    if (/^(ok|okay|cool|nice|great|awesome|sweet|got it|alright|k)\b[\s!.]*$/.test(low)) return { text: pick(['Great. Want me to pick your next map?', 'Good. Ask me about any map and I\'ll show you where the time is.']), notes: '' };
     if (/\b(bye|goodbye|see ya|later|cya|gtg)\b/.test(low)) return { text: 'See you on the track, ' + name + '.', notes: 'The player is leaving.' };
     if (/\b(what can you do|help|how do (i|you) use|what do you do)\b/.test(low)) {
-      return { text: 'Here\'s what I can do:\n- Break down where you lose time on a map: your braking points, speeds, coasting, drifting, boost and line against the leader\'s, and exactly what to change\n- Tell you which maps are easiest (and hardest) for you to improve on\n- A photo or a clip of your run next to the leader\'s\n- Compare you with any driver, map by map\n- Today\'s daily, your skill chart, the standings, the top 10 or what\'s been happening lately\n- Anything else you want to ask\n\nJust ask in your own words.', chat: false };
+      return { text: 'Here\'s what I can do:\n- Break down where you lose time on a map: your braking points, speeds, coasting, drifting, boost and line against the leader\'s, and exactly what to change\n- Tell you which maps are easiest (and hardest) for you to improve on\n- A photo or a clip of your run next to the leader\'s\n- Compare you with any driver, map by map\n- The closest battles on the boards, who holds the most records, and your full season in numbers\n- Today\'s daily, your skill chart, the standings, the top 10 or what\'s been happening lately\n- Anything else you want to ask\n\nJust ask in your own words.', chat: false };
     }
     if (/\b(joke|funny|lol|haha)\b/.test(low)) return { text: 'Why did the racer bring a pencil to the track? To draw a better line. Speaking of lines, want to see yours?', notes: 'The player wants a joke.' };
     return null;
@@ -10423,6 +10762,71 @@ const Coach = {
       ms.filter((m) => m.rank === 1).length + ' held at #1. ' + (worst ? 'The most time is on ' + worst.tag + ' ' + worst.name + ' (' + worst.gap.toFixed(3) + ' s behind ' + worst.lead.n + ').' : '');
     return { fig, text, notes: text.replace('{F}', 'the figure') };
   },
+  figBattles(I) {
+    const E = escapeHtml, list = Insight.battles(10);
+    if (!list.length) return null;
+    const isMe = (x) => I.uid && (x.a.uid === I.uid || x.b.uid === I.uid);
+    let h = '<div class="figList">';
+    for (const x of list) {
+      h += '<div class="figRow' + (isMe(x) ? ' me' : '') + '"' + (x.kind === 'map' ? ' data-map="' + LEVELS[x.i].id + '"' : '') + '><span class="tg">' + (x.kind === 'map' ? courseTag(x.i) : 'ALL') + '</span>' +
+        '<span class="nm">' + E(x.a.n) + ' · ' + E(x.b.n) + '<small>for ' + Insight.ord(x.place) + (x.kind === 'map' ? ' on ' + E(LEVELS[x.i].name) : ' in the season') + '</small></span>' +
+        '<span class="v">' + (x.gap < 0.0005 ? 'level' : x.gap.toFixed(3) + ' s') + '</span></div>';
+    }
+    const fig = Figs.add('Closest battles', h + '</div>', 'Neighbouring places on each map\'s top five and in the season standings, closest first.');
+    const mine = list.find(isMe);
+    let text = 'The tightest fight on the boards: ' + Insight.battleText(list[0]) + (list[1] ? ' Next: ' + Insight.battleText(list[1]) : '');
+    if (mine && list.indexOf(mine) > 1) text += ' Yours: ' + Insight.battleText(mine);
+    text += ' All ' + list.length + ' are in {F}.';
+    return { fig, n: list.length, text, notes: text.replace('{F}', 'the figure') };
+  },
+  figRecords(I) {
+    const E = escapeHtml, by = {};
+    LEVELS.forEach((lv, i) => {
+      const b = Records.board(lv.id);
+      if (!b[0]) return;
+      const k = b[0].uid || b[0].n;
+      (by[k] = by[k] || { n: b[0].n, uid: b[0].uid, maps: [] }).maps.push(i);
+    });
+    const list = Object.values(by).sort((a, b) => b.maps.length - a.maps.length);
+    const most = list[0] ? list[0].maps.length : 1;
+    let h = '<div class="figList">';
+    list.slice(0, 10).forEach((r, k) => {
+      const mine = I.uid && r.uid === I.uid;
+      h += '<div class="figRow' + (mine ? ' me' : '') + '"><span class="tg" style="color:' + (k < 3 ? ['#ffcf5c', '#dfe7f2', '#e3a36f'][k] : 'var(--dimmer)') + '">' + (k + 1) + '</span><span class="nm">' + E(r.n) +
+        '<small>' + r.maps.map((i) => courseTag(i)).join(' ') + '</small></span><span class="v">' + r.maps.length + '</span><span class="fbar"><i style="background:' + (mine ? '#3ddbb8' : '#ffcf5c') + '" data-w="' + Math.round(r.maps.length / most * 100) + '"></i></span></div>';
+    });
+    const fig = Figs.add('Map records', h + '</div>', 'Who holds #1 on how many of the ' + LEVELS.length + ' maps.');
+    requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+    const a = list[0];
+    let text = a ? a.n + ' holds ' + a.maps.length + ' of the ' + LEVELS.length + ' map records, more than anyone: a remarkable run of form. ' : '';
+    if (list[1]) text += list[1].n + ' has ' + list[1].maps.length + (list[2] ? ', ' + list[2].n + ' ' + list[2].maps.length : '') + '. ';
+    const mine = I.uid ? list.find((r) => r.uid === I.uid) : null;
+    if (mine && mine !== a) text += 'You hold ' + mine.maps.length + '. ';
+    text += 'The full count is in {F}.';
+    return { fig, text, notes: text.replace('{F}', 'the figure') };
+  },
+  figProfile(I) {
+    const done = I.maps.filter((m) => m.t !== null);
+    const pod = done.filter((m) => m.rank <= 3).length;
+    const avg = done.length ? done.reduce((a, m) => a + m.gap, 0) / done.length : 0;
+    const best = done.slice().sort((a, b) => (a.rank - b.rank) || (b.score - a.score))[0];
+    const climb = I.climbs[0];
+    const cells = [
+      ['Overall', Insight.ord(I.rank) + ' of ' + I.of], ['Maps finished', I.me.count + '/' + LEVELS.length], ['Season total', formatTime(I.me.total)],
+      ['Map records', String(I.wins)], ['Podiums', String(pod)], ['Average gap to #1', avg.toFixed(3) + ' s'],
+      ['Best map', best ? best.tag + ' ' + best.name + ' · ' + Insight.ord(best.rank) : '—'],
+      ['Next place to gain', climb ? climb.tag + ': ' + climb.up.need.toFixed(3) + ' s to pass ' + climb.up.n : '—'],
+      ['Above you', I.above ? I.above.n + ' · ' + Tone.behind(I, I.above) : 'nobody'],
+      ['Below you', I.below ? I.below.n + (I.below.count === I.me.count ? ' · ' + (I.below.total - I.me.total).toFixed(3) + ' s back' : ' · ' + (I.me.count - I.below.count) + ' fewer maps') : 'nobody']
+    ];
+    const h = '<div class="statGrid">' + cells.map(([k, v]) => '<div><span>' + k + '</span><b>' + escapeHtml(v) + '</b></div>').join('') + '</div>';
+    const fig = Figs.add('Your season in numbers', h, '');
+    let text = 'You are ' + Insight.ord(I.rank) + ' of ' + I.of + ' with ' + I.me.count + '/' + LEVELS.length + ' maps, ' + I.wins + ' map record' + (I.wins === 1 ? '' : 's') + ' and ' + pod + ' podium' + (pod === 1 ? '' : 's') + '. ' +
+      'On average you are ' + avg.toFixed(3) + ' s off #1 per map' + (best ? ', and your strongest is ' + best.tag + ' ' + best.name + ' (' + Insight.ord(best.rank) + ')' : '') + '. ';
+    if (climb) text += 'The cheapest place to gain: ' + climb.up.need.toFixed(3) + ' s on ' + climb.tag + ' ' + climb.name + ' passes ' + climb.up.n + '. ';
+    text += 'Everything is in {F}.';
+    return { fig, text, notes: text.replace('{F}', 'the figure') };
+  },
   figNews() {
     const B = Insight.buzz(), E = escapeHtml;
     const items = [];
@@ -10439,7 +10843,7 @@ const Coach = {
     h += '<div class="figHd">LATEST PODIUM TIMES</div>' + recent.slice(0, 6).map((x) => '<div class="figRow" data-map="' + LEVELS[x.i].id + '"><span class="tg">' + courseTag(x.i) + '</span><span class="nm">' +
       E(x.e.n) + ' <small>' + Insight.ord(x.k + 1) + ' on ' + E(LEVELS[x.i].name) + ', ' + Insight.ago(x.e.d) + '</small></span><span class="v">' + formatTime(x.e.t) + '</span></div>').join('');
     const fig = Figs.add('What\'s been happening', h + '</div>', '');
-    const text = (a ? a.n + ' leads the season' + (b && b.count === a.count ? ' by ' + (b.total - a.total).toFixed(3) + ' s over ' + b.n : '') + '. ' : '') +
+    const text = (a ? Praise.leader(B.rows) + ' ' : '') +
       (B.dominant ? B.dominant.n + ' is the most dominant, holding #1 on ' + B.dominant.maps.length + ' maps. ' : '') +
       (B.battle ? 'The hottest fight is ' + B.battle.a.n + ' vs ' + B.battle.b.n + ' on ' + courseTag(B.battle.i) + ' ' + LEVELS[B.battle.i].name + ', ' + B.battle.gap.toFixed(3) + ' s apart. ' : '') +
       'The latest podium times are in {F}.';
@@ -10469,7 +10873,7 @@ const Coach = {
       requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
     }
     const r = I.route;
-    let text = I.leader.n + ' leads the season (' + I.leader.count + '/16, ' + formatTime(I.leader.total) + ') in {F}. ';
+    let text = Praise.leader(I.rows) + ' The full table is in {F}. ';
     if (r.kind === 'lead') text = 'You lead the season' + (r.margin !== null ? ' by ' + r.margin.toFixed(3) + ' s over ' + r.second.n : '') + '. Everyone else is in {F}.';
     else if (r.kind === 'finish') text += 'You\'re ' + Insight.ord(I.rank) + '. They have ' + I.leader.count + ' maps to your ' + I.me.count + ', and maps count before time: finish ' + r.maps.map((m) => m.tag).join(', ') + ' first.';
     else if (r.kind === 'time') text += 'You\'re ' + Insight.ord(I.rank) + ', ' + r.need.toFixed(3) + ' s back over the season. Matching #1 on ' + r.maps.map((m) => m.tag + ' ' + m.name).slice(0, 4).join(', ') + (r.maps.length > 4 ? ' and ' + (r.maps.length - 4) + ' more' : '') + ' would put you on top.';
@@ -10481,7 +10885,7 @@ const Coach = {
  *  dominates, the closest recent fight, the newest record, and the
  *  player's own next target. */
 const Buzz = {
-  headlineFor: '', headline: '',
+  headlineFor: '', headline: '', leadKey: '', lead: '',
   render() {
     const B = Insight.buzz();
     const card = $('aiCard');
@@ -10489,31 +10893,45 @@ const Buzz = {
     if (card.hidden) return;
     const I = Insight.compute();
     const E = escapeHtml, T = (i) => courseTag(i) + ' ' + E(LEVELS[i].name);
-    const lines = [];
-    const [a, b, c] = B.top;
-    if (a) lines.push(['gold', '<b>' + E(a.n) + '</b> leads the season' + (b && b.count === a.count ? ' by <b>' + (b.total - a.total).toFixed(3) + ' s</b> over ' + E(b.n) :
-      b ? ', with ' + (a.count - b.count) + ' more map' + (a.count - b.count === 1 ? '' : 's') + ' finished than ' + E(b.n) : '') + (c ? ', ' + E(c.n) + ' third' : '') + '.']);
-    if (B.dominant && B.dominant.maps.length > 1) lines.push(['', '<b>' + E(B.dominant.n) + '</b> holds #1 on <b>' + B.dominant.maps.length + ' of 16</b> maps, the most of anyone.']);
-    if (B.battle) lines.push(['hot', '<b>' + E(B.battle.a.n) + '</b> and <b>' + E(B.battle.b.n) + '</b> are ' + B.battle.gap.toFixed(3) + ' s apart on ' + T(B.battle.i) +
-      (B.battle.when ? ', last traded ' + Insight.ago(B.battle.when) : '') + '.']);
-    if (B.fresh && B.fresh.d && (!B.battle || B.fresh.i !== B.battle.i)) lines.push(['', 'Newest record: <b>' + E(B.fresh.n) + '</b> on ' + T(B.fresh.i) + ', ' + formatTime(B.fresh.t) + ' (' + Insight.ago(B.fresh.d) + ').']);
-    if (I.me && I.rank > 1) lines.push(['', 'You are <b>' + Insight.ord(I.rank) + '</b>' + (I.above && I.above.count === I.me.count ? ', ' + (I.me.total - I.above.total).toFixed(3) + ' s behind ' + E(I.above.n) : '') + '.']);
-    $('aiLines').innerHTML = lines.map(([cls, h]) => '<li' + (cls ? ' class="' + cls + '"' : '') + '>' + h + '</li>').join('');
-    $('aiHeadline').textContent = this.pickHeadline(B, I);
+    const items = [];
+    // the season leader gets their due, the same words until the standings change
+    const lk = this.key(B);
+    if (this.leadKey !== lk) { this.lead = Praise.leader(B.rows); this.leadKey = lk; }
+    const a = B.rows[0];
+    items.push(['crown', 'Season leader', E(this.lead).replace(E(a.n), '<b>' + E(a.n) + '</b>')]);
+    // the closest fights on the boards
+    const bat = Insight.battles(8);
+    bat.slice(0, 2).forEach((x) => items.push(['close', x.gap < 0.05 ? 'Photo finish' : 'Close battle', Insight.battleText(x, true)]));
+    const mineB = I.uid ? bat.find((x) => (x.a.uid === I.uid || x.b.uid === I.uid)) : null;
+    if (mineB && bat.indexOf(mineB) > 1) items.push(['you', 'Your battle', Insight.battleText(mineB, true)]);
+    if (B.fresh && B.fresh.d) items.push(['new', 'New record', '<b>' + E(B.fresh.n) + '</b> set ' + formatTime(B.fresh.t) + ' on ' + T(B.fresh.i) + ', ' + Insight.ago(B.fresh.d) + '.']);
+    if (I.me && I.rank > 1) items.push(['you', 'You', Insight.ord(I.rank) + ' of ' + I.of + (I.above && I.above.count === I.me.count ? ', <b>' + (I.me.total - I.above.total).toFixed(3) + ' s</b> behind ' + E(I.above.n) : '') + '.']);
+    else if (I.me) items.push(['you', 'You', 'You lead the season. Outstanding.']);
+    const c = Daily.prepare();
+    if (c.open && Daily.level) {
+      const b = Daily.board();
+      items.push(['today', 'Today', 'The daily, ' + E(Daily.level.name) + ', closes in ' + Daily.hms(c.toNoon) + (b[0] ? ': <b>' + E(b[0].n) + '</b> leads at ' + formatTime(b[0].t) + '.' : '. Nobody has a time yet.')]);
+    }
+    $('aiLines').innerHTML = items.map(([cls, label, h]) => '<li class="k-' + cls + '"><span class="cbTag">' + label + '</span><span class="cbTx">' + h + '</span></li>').join('');
+    $('aiHeadline').textContent = this.pickHeadline(B, I, bat);
+    const d = new Date();
+    $('aiTime').textContent = 'Updated ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const tg = I.target;
     const btn = $('bAiTarget');
     btn.hidden = !tg;
     if (tg) { btn.textContent = 'Drive ' + tg.m.tag + ' · ' + tg.why.toLowerCase(); btn.onclick = () => Game.startLevel(tg.m.i); }
     this.polish(B);
   },
-  pickHeadline(B, I) {
+  pickHeadline(B, I, bat) {
     if (this.headline && this.headlineFor === this.key(B)) return this.headline;
-    const a = B.top[0];
+    const a = B.top[0], x = bat && bat[0];
+    if (x && x.gap < 0.05) return x.gap < 0.0005 ? x.a.n + ' and ' + x.b.n + ' are dead level' + (x.kind === 'map' ? ' on ' + courseTag(x.i) + ' ' + LEVELS[x.i].name : ' in the standings') + '.'
+      : x.gap.toFixed(3) + ' s between ' + x.a.n + ' and ' + x.b.n + (x.kind === 'map' ? ' on ' + courseTag(x.i) + ' ' + LEVELS[x.i].name : ' in the standings') + '.';
     if (B.battle && B.battle.gap < 0.1) return 'Photo finish on ' + courseTag(B.battle.i) + ': ' + B.battle.a.n + ' and ' + B.battle.b.n + ', ' + B.battle.gap.toFixed(3) + ' s apart.';
     if (B.duel && B.duel.gap < 2) return a.n + ' and ' + B.duel.b.n + ' are fighting for the season: ' + B.duel.gap.toFixed(3) + ' s in it.';
     if (B.dominant && B.dominant.maps.length >= 8) return B.dominant.n + ' is running away with it: #1 on ' + B.dominant.maps.length + ' maps.';
     if (I.me && I.target && I.target.m.up && I.target.m.up.need < 0.3) return 'You are ' + I.target.m.up.need.toFixed(3) + ' s from ' + Insight.ord(I.target.m.up.to) + ' on ' + I.target.m.tag + '.';
-    return a.n + ' leads the season. Everyone else is chasing.';
+    return a.n + ' leads the season, and the whole field is chasing.';
   },
   key(B) { return B.top.map((r) => r.n + r.total.toFixed(3)).join('|') + (B.battle ? B.battle.gap.toFixed(3) : ''); },
   /** with an on-device language model, a livelier headline; only kept if every number in it is in the facts */
@@ -11951,7 +12369,7 @@ const UI = {
      'garage', 'trophies', 'multi']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
-    if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
+    if (id !== 'menu') { overallLeaderPreview.stop(); championPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
     if (id !== 'stats') TopTen.stop();
     if (id === 'menu' || id === 'gate') Notice.show();
     $('boot').hidden = true;             // the loading notice ends when any screen shows
@@ -12539,6 +12957,10 @@ const UI = {
     const rows = Records.overall(COURSE_IDS);
     this.sectionLeaders();
     Buzz.render();
+    PhotoFinish.update();
+    Champion.render();
+    Champion.load();
+    $('overallLeaderKick').textContent = 'Season ' + SEASON + ' leader';
     if (!rows.length) { card.hidden = true; overallLeaderPreview.stop(); return; }
     card.hidden = false;
     const top = rows[0];

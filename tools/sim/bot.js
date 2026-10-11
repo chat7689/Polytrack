@@ -122,7 +122,7 @@ function run(m, data, opts) {
     if (input.handbrake) st.hbTime += H;
     if (!car.step(H, world, input)) { st.fail = 'nan'; break; }
     t += H;
-    if (Math.floor(t * HZ) + 1 > rec.length) rec.push([car.pos.x, car.pos.y, car.pos.z, (input.throttle ? 1 : 0) | (input.brake ? 2 : 0) | (input.steer < -0.05 ? 4 : 0) | (input.steer > 0.05 ? 8 : 0) | (car.boosting ? 16 : 0) | (input.handbrake ? 32 : 0)]);
+    if (Math.floor(t * HZ) + 1 > rec.length) rec.push([car.pos.x, car.pos.y, car.pos.z].concat(opts.full ? [car.quat.x, car.quat.y, car.quat.z, car.quat.w] : []).concat([(input.throttle ? 1 : 0) | (input.brake ? 2 : 0) | (input.steer < -0.05 ? 4 : 0) | (input.steer > 0.05 ? 8 : 0) | (car.boosting ? 16 : 0) | (input.handbrake ? 32 : 0)]));
     // numbers
     st.top = Math.max(st.top, v);
     {
@@ -161,7 +161,8 @@ function run(m, data, opts) {
     if (off > 4) { st.fail = 'offtrack'; st.at = idx; break; }
     if (car.stuckTime > 0.9) { st.fail = 'stuck'; st.at = idx; break; }
     if (car.pos.y < m.GROUND_Y - 8) { st.fail = 'fell'; st.at = idx; break; }
-    if (gate && F[idx].cum > F[F.length - 1].cum * 0.5 && car.pos.distanceToSquared(gate.pos) < gate.radius * gate.radius && Math.abs(car.pos.y - gate.pos.y) < 7) {
+    const noseOver = () => { const n = new THREE.Vector3(0, 0, 2.03).applyQuaternion(car.quat).add(car.pos); return (n.x - gate.pos.x) * gate.dir.x + (n.z - gate.pos.z) * gate.dir.z >= 0; };
+    if (gate && F[idx].cum > F[F.length - 1].cum * 0.5 && (opts.full ? noseOver() && car.pos.distanceToSquared(gate.pos) < 400 : car.pos.distanceToSquared(gate.pos) < gate.radius * gate.radius) && Math.abs(car.pos.y - gate.pos.y) < 7) {
       st.finished = true; st.time = t; rec.push([car.pos.x, car.pos.y, car.pos.z, 1]);
       st.cpOk = cpNext >= cps.length - 1; st.cpSingles = cpSingles; st.cpNext = cpNext; st.cps = cps.length; break;
     }
