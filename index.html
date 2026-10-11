@@ -762,6 +762,29 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .dayCh.done{border-color:rgba(61,219,184,.45)}
 .dayCh.done .dayChBar i{background:var(--aqua)}
 .dayCh.done b{color:var(--aqua)}
+/* ---------- what's new ---------- */
+.wnBox{position:fixed;inset:0;z-index:88;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.7);padding:16px;
+  animation:wnFade .3s ease}
+.wnBox[hidden]{display:none}
+@keyframes wnFade{from{opacity:0}}
+.wnPanel{width:min(860px,100%);max-height:92vh;overflow:auto;border-radius:18px;border:1px solid var(--rule-2);
+  background:linear-gradient(170deg,#141c2e,#0a0f1c 65%);box-shadow:0 40px 100px rgba(0,0,0,.6);animation:wnUp .45s cubic-bezier(.2,1,.3,1)}
+@keyframes wnUp{from{transform:translateY(24px) scale(.98);opacity:0}}
+.wnHero{padding:26px 28px 18px;background:radial-gradient(120% 140% at 0% 0%,rgba(242,115,63,.28),transparent 55%),radial-gradient(90% 120% at 100% 0%,rgba(61,219,184,.18),transparent 60%);
+  border-bottom:1px solid var(--rule-2)}
+.wnHero h2{font-size:34px;font-weight:800;letter-spacing:-.03em;margin:4px 0 6px}
+.wnHero p{color:#c9d4e3;font-size:14.5px;margin:0}
+.wnGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:18px 22px}
+@media(max-width:640px){.wnGrid{grid-template-columns:minmax(0,1fr)}.wnHero h2{font-size:26px}}
+.wnItem{display:flex;gap:12px;align-items:flex-start;padding:12px 13px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  opacity:0;transform:translateY(8px);animation:pmIn .4s ease forwards;animation-delay:calc(.25s + var(--d))}
+.wnIc{flex:none;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,rgba(242,115,63,.25),rgba(242,115,63,.08));border:1px solid rgba(242,115,63,.4)}
+.wnIc svg{width:19px;height:19px;fill:none;stroke:#ffb48f;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.wnItem b{display:block;font-size:14px;margin-bottom:2px}
+.wnItem p{margin:0;font-size:12.5px;line-height:1.45;color:var(--dim)}
+.wnFoot{justify-content:space-between;align-items:center;gap:12px;padding:6px 22px 20px}
+.wnNote{font-size:13px;color:#ffcf5c}
 /* ---------- titles, icons, profile cards ---------- */
 .pIcon{--ps:28px;position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--ps);height:var(--ps);
   border-radius:calc(var(--ps) * .24);overflow:hidden;vertical-align:middle;margin-right:calc(var(--ps) * .3);isolation:isolate;
@@ -1699,6 +1722,19 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <button class="ghost" id="bPreviewBack">&larr; Menu</button>
       </div>
       <div id="pvList"></div>
+    </div>
+  </div>
+
+  <!-- what's new: once per player when a new season goes live -->
+  <div class="wnBox" id="wnBox" hidden>
+    <div class="wnPanel" role="dialog" aria-labelledby="wnTitle">
+      <div class="wnHero">
+        <div class="kick" id="wnKick">WHAT'S NEW</div>
+        <h2 id="wnTitle">Season 2 is here</h2>
+        <p>Sixteen brand-new maps, live races with friends and a lot more. Here's what changed.</p>
+      </div>
+      <div class="wnGrid" id="wnGrid"></div>
+      <div class="row wnFoot"><span class="wnNote" id="wnNote"></span><button class="primary" id="bWnGo">Let's race</button></div>
     </div>
   </div>
 
@@ -9495,6 +9531,64 @@ function ordinal(n) {
 }
 
 /**
+ * What's new: a one-time window the first time a player reaches the menu
+ * after a new season goes live (SEASON at least WhatsNew.SEASON). Seen is
+ * remembered in this browser. index.html#whatsnew shows it any time.
+ */
+const WhatsNew = {
+  SEASON: 2, KEY: 'whatsNew',
+  ITEMS: [
+    ['map', 'Sixteen new maps', 'Steep walls, ski jumps, tight hairpins, bridges in the sky and a new finale. Every time starts from zero.'],
+    ['flag', 'Race friends live', 'Make a room, share the four-letter code and race up to eight friends at once on the same GO.'],
+    ['crown', 'Season 1 champions', 'Last season\'s podium keeps its glory: titles and shiny icons next to their names, and the champion on the menu.'],
+    ['target', 'Perfection score', 'Your time against #1 on every map, averaged, to the thousandth. Finish all sixteen to get one.'],
+    ['coach', 'A smarter Coach', 'A live briefing on the menu, the closest battles, everyone\'s stats and your Perfection worked out on screen.'],
+    ['photo', 'Photo finish', 'The newest record on the menu as a photo finish: both cars and the gap measured to the line.'],
+    ['gem', 'More credits', '+100 the first time you finish each map, and +300 for 300 finished runs in a day.'],
+    ['card', 'Profile cards', 'Click any name for their card, their car and their trophy room.'],
+    ['key', 'Your controls', 'Set your own keys in Settings.'],
+    ['friend', 'Invite friends', 'Send your link: friends can join without an invite code.']
+  ],
+  ICON: {
+    map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/>',
+    flag: '<path d="M5 21V4 M5 4h11l-2 4 2 4H5"/>',
+    crown: '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>',
+    target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+    coach: '<path d="M4 5h16v11H9l-5 4z"/>',
+    photo: '<rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',
+    gem: '<path d="M6 4h12l3 5-9 11L3 9z M3 9h18"/>',
+    card: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M14 10h4 M14 14h4 M6 16h6"/>',
+    key: '<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h1 M11 11h1 M15 11h2 M7 14h10"/>',
+    friend: '<circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5 M17 8v6 M14 11h6"/>'
+  },
+  /** from the menu: show once, the first time after the season goes live */
+  maybe() {
+    if (/whatsnew/.test(location.hash)) { this.open(); return; }
+    if (SEASON < this.SEASON || !Cloud.user) return;
+    if (Prefs.get(this.KEY, 0) >= this.SEASON) return;
+    this.open();
+  },
+  open() {
+    $('wnKick').textContent = 'WHAT\'S NEW IN SEASON ' + this.SEASON;
+    $('wnTitle').textContent = 'Season ' + this.SEASON + ' is here';
+    $('wnGrid').innerHTML = this.ITEMS.map(([ic, t, d], k) => '<div class="wnItem" style="--d:' + (k * 0.06).toFixed(2) + 's"><span class="wnIc"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+      this.ICON[ic] + '</svg></span><div><b>' + t + '</b><p>' + d + '</p></div></div>').join('');
+    this.note();
+    $('wnBox').hidden = false;
+  },
+  /** last season's champion gets a line (again once the podium has loaded) */
+  note() {
+    const champ = Champion.data && Champion.data.podium && Champion.data.podium[0];
+    $('wnNote').textContent = champ ? 'Congratulations to ' + champ.n + ', ' + (Champion.data.label || 'last season') + '\'s champion.' : '';
+  },
+  close() {
+    $('wnBox').hidden = true;
+    Prefs.set(this.KEY, Math.max(SEASON, this.SEASON));
+    if (/whatsnew/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* fine */ } }
+  }
+};
+
+/**
  * Profiles: a driver's season titles and icon (from closed seasons' podiums,
  * so everyone sees the same thing and nobody can set their own), their name
  * as a link to their profile card, and the card itself.
@@ -10412,6 +10506,7 @@ const Champion = {
       const had = Profiles.finals.length;
       Profiles.finals = list;
       if (list.length !== had) Profiles.refresh();
+      if (!$('wnBox').hidden) WhatsNew.note();
     } catch (e) { this.data = null; }
     this.render();
   },
@@ -14900,6 +14995,8 @@ const Game = {
       if (a && !e.target.closest('input')) { e.preventDefault(); e.stopPropagation(); Profiles.open(a.dataset.uid || null, a.dataset.n); }
     }, true);
     $('bPcClose').addEventListener('click', () => Profiles.close());
+    $('bWnGo').addEventListener('click', () => WhatsNew.close());
+    $('wnBox').addEventListener('click', (e) => { if (e.target.id === 'wnBox') WhatsNew.close(); });
     $('pcBox').addEventListener('click', (e) => { if (e.target.id === 'pcBox') Profiles.close(); });
     $('bPcTrophies').addEventListener('click', () => { const w = Profiles.cur; Profiles.close(); if (w) this.toTrophies(w); });
     $('bPcCoach').addEventListener('click', () => {
@@ -15823,6 +15920,7 @@ const Game = {
     UI.hello();
     if (!Preview.checked || Date.now() - Preview.checked > 60000) { Preview.checked = Date.now(); Preview.check(); }
     CoachAlerts.flush();                   // podium news waits for the menu (or a finished run)
+    WhatsNew.maybe();
   },
   /** called whenever the live leaderboard changes: redraw whatever shows it */
   onBoardsChanged() {
