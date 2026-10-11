@@ -762,6 +762,59 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .dayCh.done{border-color:rgba(61,219,184,.45)}
 .dayCh.done .dayChBar i{background:var(--aqua)}
 .dayCh.done b{color:var(--aqua)}
+/* ---------- the menu, fitted ---------- */
+.menuPanel{width:min(1240px,96vw);padding:18px 24px 18px}
+.mHello{margin:10px 0 12px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mGreet{font-size:clamp(20px,2.1vw,26px)}
+.mSub{margin-top:0;font-size:13px}
+.menuGrid{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px}
+.menuMain{gap:10px}
+.mHero{gap:10px}
+.playBtn{padding:14px 18px}
+.dailyCard{padding:10px 14px}
+.mRow2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.mRow2 .mpBar{padding:10px 14px;gap:10px;height:100%}
+.mpTxt{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.2}
+.mpTxt b{font-size:15px}
+.mpTxt .mpSub{font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mRow2 .dayCh{padding:9px 13px 10px;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px}
+.mRow2 .dayCh .dayChT{grid-column:1/-1;font-size:11.5px}
+.mRow2 .dayCh:not([hidden]) ~ * {}
+@media(max-width:620px){.mRow2{grid-template-columns:minmax(0,1fr)}}
+.menuTiles{gap:8px}
+.tile{padding:10px 13px}
+.coachBrief{padding:12px 14px 12px}
+.cbHead{gap:10px}
+.cbHead button{flex:none}
+.cbHeadline{margin:8px 0 6px;font-size:15px}
+.cbItems{gap:5px;margin-bottom:0}
+.cbItems li{grid-template-columns:92px minmax(0,1fr);font-size:12.5px}
+.cbGo{margin-top:10px}
+.cbGo[hidden]{display:none}
+.coachIc{width:62%;height:62%;fill:none;stroke:#06231d;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cbAvatar{width:32px;height:32px}
+.cTurn .cbAvatar.av{width:28px;height:28px}
+.menuSide{gap:10px}
+.champStrip{display:flex;align-items:center;gap:2px;width:100%;text-align:left;padding:9px 12px;border-radius:10px;cursor:pointer;color:var(--ink);
+  border:1px solid rgba(255,207,92,.45);background:linear-gradient(100deg,rgba(255,207,92,.16),rgba(255,207,92,.03) 70%)}
+.champStrip[hidden]{display:none}
+.champStrip:hover{border-color:#ffcf5c}
+.csTxt{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.csTxt small{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ffcf5c}
+.csTxt b{font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csRest{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-size:11px;color:var(--dim);white-space:nowrap}
+.csRest #champTime{font-family:var(--mono);color:var(--ink)}
+.csRest #champRest{display:flex;gap:8px}
+.csRest i{font-style:normal;font-family:var(--mono);margin-right:3px;color:var(--dimmer)}
+.leaderCard{padding:10px 12px}
+.lcCar{height:150px}
+.lcName{font-size:18px}
+.youCard div{padding:8px 6px 7px}
+.pfBox{position:fixed;inset:0;z-index:86;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.7);padding:16px}
+.pfBox[hidden]{display:none}
+.pfBox .pfCard{width:min(820px,100%);background:#0d1424;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+.pfBox .pfCard .row{padding-right:10px}
+@media(max-width:900px){.menuGrid{grid-template-columns:minmax(0,1fr)}}
 /* ---------- what's new ---------- */
 .wnBox{position:fixed;inset:0;z-index:88;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.7);padding:16px;
   animation:wnFade .3s ease}
@@ -1644,51 +1697,43 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
               <span class="dcPrize"><span class="gem2d"></span> 1 000 to the fastest at noon</span>
             </button>
           </div>
-          <section class="coachBrief" id="aiCard" hidden>
-            <div class="cbHead"><span class="cbAvatar">C</span><div class="cbWho"><b>Coach</b><small id="aiTime">Live briefing</small></div><span class="cbLive">LIVE</span></div>
-            <p class="cbHeadline" id="aiHeadline"></p>
-            <ul class="cbItems" id="aiLines"></ul>
-            <div class="cbFoot">
-              <button class="small primary" id="bAiTarget" hidden></button>
-              <button class="ghost small" id="bAiCoach">Ask Coach →</button>
+          <div class="mRow2">
+            <button class="mpBar" id="bMulti"><span class="mpNew">NEW</span><span class="mpTxt"><b>Race friends</b><span class="mpSub">live · up to 8 · join with a code</span></span><span class="mpGo">→</span></button>
+            <div class="dayCh" id="dayCh" hidden title="Finish 300 runs today (any maps, the daily included) for 300 credits on top of the usual 1 a run. Resets at midnight Pacific.">
+              <span class="dayChK">Daily challenge</span>
+              <b id="dayChCount">0 / 300 runs</b>
+              <span class="dayChT">300 runs today · <span class="gem2d"></span> +300</span>
+              <span class="dayChBar"><i id="dayChBar"></i></span>
             </div>
-          </section>
-          <button class="mpBar" id="bMulti"><span class="mpNew">NEW</span><b>Race friends</b><span class="mpSub">live races · up to 8 drivers · join with a code</span><span class="mpGo">→</span></button>
-          <div class="dayCh" id="dayCh" hidden title="Finish 300 runs today (any maps, the daily included) for 300 credits on top of the usual 1 a run. Resets at midnight Pacific.">
-            <span class="dayChK">Daily challenge</span>
-            <span class="dayChT">Finish 300 runs today · <span class="gem2d"></span> +300</span>
-            <b id="dayChCount">0 / 300 runs</b>
-            <span class="dayChBar"><i id="dayChBar"></i></span>
           </div>
-          <button class="previewBar" id="bPreview" hidden>Season 2 preview <span>only you can see this · not released</span></button>
+          <button class="previewBar" id="bPreview" hidden>Next season preview <span>only you can see this · not released</span></button>
           <div class="menuTiles">
             <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
             <button class="tile" id="bStats"><b>Coach</b><small>your times, analysed</small></button>
             <button class="tile" id="bTrophies"><b>Trophy room</b><small id="tileTrophies">your awards</small></button>
             <button class="tile" id="bGarage"><b>Garage</b><small>paint your car</small></button>
-            <button class="tile" id="bSettings"><b>Settings</b><small>account</small></button>
+            <button class="tile" id="bSettings"><b>Settings</b><small>account &amp; controls</small></button>
             <button class="tile" id="bInfo"><b>How it works</b><small>the guide</small></button>
           </div>
-          <section class="pfCard" id="pfCard" hidden>
-            <div class="pfKick" id="pfKick">PHOTO FINISH</div>
-            <img id="pfImg" alt="Photo finish of the newest record">
-            <p class="pfText" id="pfText"></p>
+          <section class="coachBrief" id="aiCard" hidden>
+            <div class="cbHead"><span class="cbAvatar"><svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg></span><div class="cbWho"><b>Coach</b><small id="aiTime">Live briefing</small></div>
+              <button class="ghost small" id="bPhoto" hidden>Photo finish</button><button class="ghost small" id="bAiCoach">Ask Coach →</button></div>
+            <p class="cbHeadline" id="aiHeadline"></p>
+            <ul class="cbItems" id="aiLines"></ul>
+            <button class="small primary cbGo" id="bAiTarget" hidden></button>
           </section>
           <div id="driverRow">
             <label class="fld" for="driver">Driver name</label>
             <input type="text" id="driver" maxlength="14" placeholder="Driver">
           </div>
-
         </div>
 
         <aside class="menuSide">
-          <div class="champCard" id="champCard" hidden>
-            <div class="lcHead"><span class="lcKick champKick" id="champKick">Last season's champion</span><span class="leaderTime" id="champTime"></span></div>
-            <div class="champBody">
-              <div class="garagePreviewWrap champCar"><canvas id="champCanvas"></canvas></div>
-              <div><div class="champName"><span class="crown">♛</span><b id="champName">—</b></div><div class="champRest" id="champRest"></div></div>
-            </div>
-          </div>
+          <button class="champStrip" id="champCard" hidden title="Last season's champion: open their card">
+            <span id="champIcon"></span>
+            <span class="csTxt"><small id="champKick">Season 1 champion</small><b id="champName">—</b></span>
+            <span class="csRest"><span id="champTime"></span><span id="champRest"></span></span>
+          </button>
           <div class="leaderCard" id="overallLeaderCard" hidden>
             <div class="lcHead"><span class="lcKick" id="overallLeaderKick">Season 2 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
             <div class="lcBody">
@@ -1699,11 +1744,6 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <div class="sectionLeaders" id="sectionLeaders"></div>
           <div class="youCard" id="youCard" hidden></div>
         </aside>
-      </div>
-      <div class="keysStrip" id="keysStrip">
-        <span><b>W</b> gas</span><span><b>S</b> brake</span><span><b>A D</b> steer</span>
-        <span><b>Space</b> boost</span><span><b>S</b> + <b>A D</b> drift</span><span><b>Shift</b> handbrake</span><span><b>R</b> restart</span>
-        <span><b>Esc</b> back</span>
       </div>
     </div>
   </div>
@@ -1736,6 +1776,15 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
       <div class="wnGrid" id="wnGrid"></div>
       <div class="row wnFoot"><span class="wnNote" id="wnNote"></span><button class="primary" id="bWnGo">Let's race</button></div>
     </div>
+  </div>
+
+  <!-- the newest record as a photo finish (opened from Coach's briefing) -->
+  <div class="pfBox" id="pfBox" hidden>
+    <section class="pfCard" id="pfCard">
+      <div class="row" style="justify-content:space-between;align-items:center"><div class="pfKick" id="pfKick">PHOTO FINISH</div><button class="ghost small" id="bPfClose">Close</button></div>
+      <img id="pfImg" alt="Photo finish of the newest record">
+      <p class="pfText" id="pfText"></p>
+    </section>
   </div>
 
   <!-- a driver's profile card -->
@@ -2200,7 +2249,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     <div class="scrim"></div>
     <div class="panel coachPanel">
       <header class="cpHead">
-        <div class="cpTitle"><span class="cbAvatar">C</span><div class="cpName"><b>Coach</b><small>Race engineer · knows every time on every map</small></div><span class="cpMode" id="coachState"></span></div>
+        <div class="cpTitle"><span class="cbAvatar"><svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg></span><div class="cpName"><b>Coach</b><small>Race engineer · knows every time on every map</small></div><span class="cpMode" id="coachState"></span></div>
         <div class="cpHeadR">
           <button class="ghost small" id="bCoachWake" hidden title="Smarter, more natural answers. A one-time download; it runs on this computer.">Smart answers</button>
           <button class="ghost small cpShort" id="bCoachShort" title="Short answers: a sentence or two">Short answers</button>
@@ -7712,45 +7761,6 @@ function makePlayerCarPreview(canvasId) {
       addEventListener('resize', () => { if (this.running) this.resize(); });
     },
 
-    /**
-     * The driver's credits on the ground beside the car: a plate with the
-     * number and a little pile of gems (null takes it away).
-     */
-    setCredits(n) {
-      this.ensureBuilt();
-      if (this.plate) { this.scene.remove(this.plate); this.plate.traverse((o) => { if (o.material && o.material.map) o.material.map.dispose(); }); this.plate = null; }
-      if (n === null || n === undefined) return;
-      const c = document.createElement('canvas');
-      c.width = 512; c.height = 160;
-      const x = c.getContext('2d');
-      x.fillStyle = 'rgba(7,11,24,.82)';
-      x.beginPath(); x.roundRect ? x.roundRect(4, 4, 504, 152, 34) : x.rect(4, 4, 504, 152); x.fill();
-      x.strokeStyle = 'rgba(47,180,236,.8)'; x.lineWidth = 5; x.stroke();
-      x.fillStyle = '#2fb4ec'; x.font = '700 84px system-ui, sans-serif'; x.textBaseline = 'middle'; x.textAlign = 'left';
-      x.fillText('◆', 34, 84);
-      x.fillStyle = '#eaf0f8'; x.font = '800 78px ui-monospace, monospace';
-      x.fillText(fmtCredits(n), 124, 86);
-      const tex = new THREE.CanvasTexture(c);
-      tex.encoding = THREE.sRGBEncoding;
-      const plate = new THREE.Group();
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(1.75, 0.55), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }));
-      m.renderOrder = 10;   // always in front of the turning car
-      m.rotation.x = -Math.PI / 2 + 0.7;
-      plate.add(m);
-      const gemMat = (col) => new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.2, metalness: 0.1, flatShading: true });
-      [[0x2fb4ec, -1.1, 0.05], [0x34d17f, -1.25, -0.22], [0xffbe3d, -0.95, -0.27]].forEach(([col, gx, gz]) => {
-        const g = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), gemMat(col));
-        g.scale.set(1, 1.4, 1); g.position.set(gx, 0.18, gz);
-        plate.add(g);
-      });
-      // in front of the turning car, clear of it, tilted up toward the camera
-      plate.position.set(1.5, -0.42, 1.7);
-      plate.rotation.y = -0.35;
-      plate.scale.setScalar(1);
-      this.scene.add(plate);
-      this.plate = plate;
-    },
-
     /** colors is whatever Cloud.fetchCarColorsOf(uid) resolved to. */
     paint(colors) {
       this.ensureBuilt();
@@ -7790,7 +7800,7 @@ function makePlayerCarPreview(canvasId) {
 }
 // the main menu's overall-#1 car, and last season's champion
 const overallLeaderPreview = makePlayerCarPreview('overallLeaderCanvas');
-const championPreview = makePlayerCarPreview('champCanvas');
+
 
 /**
  * The menu's four section leaders' cars, turning slowly on their cards.
@@ -7798,7 +7808,7 @@ const championPreview = makePlayerCarPreview('champCanvas');
  * card's own small canvas, so four cars cost one WebGL context, not four.
  */
 const SectionCars = {
-  renderer: null, failed: false, running: false, angle: 0, slots: [null, null, null, null], W: 240, H: 120, credits: [null, null, null, null],
+  renderer: null, failed: false, running: false, angle: 0, slots: [null, null, null, null], W: 240, H: 120,
   ensure() {
     if (this.renderer || this.failed) return !!this.renderer;
     try {
@@ -7849,16 +7859,6 @@ const SectionCars = {
         const scale = Math.min(c.width / this.W, c.height / this.H);
         const dw = this.W * scale, dh = this.H * scale;
         ctx.drawImage(this.renderer.domElement, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
-        // their credits on the ground beside the car
-        const cr = this.credits[sec];
-        if (cr !== null && cr !== undefined) {
-          const fs = Math.max(9, Math.round(c.height * 0.2)), txt = '◆ ' + fmtCredits(cr);
-          ctx.font = '700 ' + fs + 'px ui-monospace, monospace';
-          const tw = ctx.measureText(txt).width + fs * 0.9, th = fs * 1.35, tx = c.width - tw - 2, ty = c.height - th - 1;
-          ctx.fillStyle = 'rgba(7,11,24,.78)'; ctx.fillRect(tx, ty, tw, th);
-          ctx.fillStyle = '#2fb4ec'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-          ctx.fillText(txt, tx + fs * 0.45, ty + th / 2 + 1);
-        }
       });
       requestAnimationFrame(loop);
     };
@@ -9102,6 +9102,9 @@ function ordinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+/** Coach's picture: a race engineer's headset */
+const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg>';
+
 /**
  * What's new: a one-time window the first time a player reaches the menu
  * after a new season goes live (SEASON at least WhatsNew.SEASON). Seen is
@@ -9939,7 +9942,7 @@ const PhotoFinish = {
     return best;
   },
   async update() {
-    const card = $('pfCard');
+    const card = $('bPhoto');                // the briefing's button; the picture has its own window
     const p = Cloud.on && Cloud.user ? this.pick() : null;
     if (!p) { card.hidden = true; return; }
     const id = LEVELS[p.i].id, key = id + p.a.uid + p.a.t + p.b.uid + p.b.t;
@@ -9959,7 +9962,6 @@ const PhotoFinish = {
       $('pfText').innerHTML = '<b>' + E(p.a.n) + '</b> holds the record on ' + tag + ' at <b>' + formatTime(p.a.t) + '</b>. ' +
         (gap < 0.0005 ? '<b>' + E(p.b.n) + '</b> matched it to the thousandth.' :
           '<b>' + E(p.b.n) + '</b> was <b>' + shot.dist.toFixed(1) + ' m</b> from the line when ' + E(p.a.n) + ' crossed it: <b>' + gap.toFixed(3) + ' s</b>.');
-      $('pfCard').dataset.map = p.i;
       card.hidden = false;
     } catch (e) {
       console.warn('aiPolytrack: photo finish', e);
@@ -10085,16 +10087,13 @@ const Champion = {
   render() {
     const card = $('champCard'), d = this.data;
     card.hidden = !d;
-    if (!d) { championPreview.stop(); return; }
+    if (!d) return;
     const E = escapeHtml, [a, b, c] = d.podium;
+    $('champIcon').innerHTML = Profiles.icon(a.uid, 30) || '<span class="pIcon t0" style="--ps:30px"><b>♛</b></span>';
     $('champKick').textContent = String(d.label || 'Last season') + ' champion';
     $('champName').textContent = a.n;
-    $('champTime').textContent = a.count + '/' + (d.maps || a.count) + ' maps · ' + formatTime(a.total_ms / 1000);
+    $('champTime').textContent = formatTime(a.total_ms / 1000);
     $('champRest').innerHTML = [b, c].filter(Boolean).map((r, k) => '<span><i>' + (k + 2) + '</i>' + E(r.n) + '</span>').join('');
-    if (Game.state === 'menu') {
-      championPreview.start();
-      Cloud.fetchCarColorsOf(a.uid).then((col) => championPreview.paint(col)).catch(() => {});
-    }
   }
 };
 
@@ -10320,7 +10319,7 @@ const Coach = {
   turn() {
     const d = document.createElement('div');
     d.className = 'cTurn';
-    d.innerHTML = '<span class="cbAvatar av">C</span><div class="cBody"><div class="cSteps"></div><div class="cAns typing"></div></div>';
+    d.innerHTML = '<span class="cbAvatar av">' + COACH_ICON + '</span><div class="cBody"><div class="cSteps"></div><div class="cAns typing"></div></div>';
     $('coachLog').appendChild(d);
     this.scroll();
     return d;
@@ -11222,19 +11221,13 @@ const Buzz = {
     items.push(['crown', 'Season leader', E(this.lead).replace(E(a.n), '<b>' + E(a.n) + '</b>')]);
     // the closest fights on the boards
     const bat = Insight.battles(8);
-    bat.slice(0, 2).forEach((x) => items.push(['close', x.gap < 0.05 ? 'Photo finish' : 'Close battle', Insight.battleText(x, true)]));
     const mineB = I.uid ? bat.find((x) => (x.a.uid === I.uid || x.b.uid === I.uid)) : null;
-    if (mineB && bat.indexOf(mineB) > 1) items.push(['you', 'Your battle', Insight.battleText(mineB, true)]);
-    if (B.fresh && B.fresh.d) items.push(['new', 'New record', '<b>' + E(B.fresh.n) + '</b> set ' + formatTime(B.fresh.t) + ' on ' + T(B.fresh.i) + ', ' + Insight.ago(B.fresh.d) + '.']);
+    if (bat[0]) items.push(['close', bat[0].gap < 0.05 ? 'Photo finish' : 'Close battle', Insight.battleText(bat[0], true)]);
+    if (mineB && mineB !== bat[0]) items.push(['you', 'Your battle', Insight.battleText(mineB, true)]);
     const perf = I.perfection === null ? ' Finish ' + (LEVELS.length - I.done) + ' more map' + (LEVELS.length - I.done === 1 ? '' : 's') + ' to get your Perfection score.'
       : ' Perfection <b>' + Insight.perfText(I.perfection) + '</b>.';
     if (I.me && I.rank > 1) items.push(['you', 'You', Insight.ord(I.rank) + ' of ' + I.of + (I.above && I.above.count === I.me.count ? ', <b>' + (I.me.total - I.above.total).toFixed(3) + ' s</b> behind ' + E(I.above.n) : '') + '.' + perf]);
     else if (I.me) items.push(['you', 'You', 'You lead the season. Outstanding.' + perf]);
-    const c = Daily.prepare();
-    if (c.open && Daily.level) {
-      const b = Daily.board();
-      items.push(['today', 'Today', 'The daily, ' + E(Daily.level.name) + ', closes in ' + Daily.hms(c.toNoon) + (b[0] ? ': <b>' + E(b[0].n) + '</b> leads at ' + formatTime(b[0].t) + '.' : '. Nobody has a time yet.')]);
-    }
     $('aiLines').innerHTML = items.map(([cls, label, h]) => '<li class="k-' + cls + '"><span class="cbTag">' + label + '</span><span class="cbTx">' + h + '</span></li>').join('');
     $('aiHeadline').textContent = this.pickHeadline(B, I, bat);
     const d = new Date();
@@ -12705,7 +12698,7 @@ const UI = {
      'garage', 'trophies', 'multi']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
-    if (id !== 'menu') { overallLeaderPreview.stop(); championPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
+    if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
     if (id !== 'stats') TopTen.stop();
     if (id === 'menu' || id === 'gate') Notice.show();
     $('boot').hidden = true;             // the loading notice ends when any screen shows
@@ -13316,10 +13309,7 @@ const UI = {
     overallLeaderPreview.start();
     const colors = await Cloud.fetchCarColorsOf(top.uid);
     overallLeaderPreview.paint(colors);
-    const leaders = [top.uid].concat(SECTIONS.map((nm, sec) => (Records.overall(sectionIds(sec))[0] || {}).uid)).filter(Boolean);
-    const cr = await Cloud.publicCredits(leaders);
-    overallLeaderPreview.setCredits(cr[top.uid]);
-    SECTIONS.forEach((nm, sec) => { const t = Records.overall(sectionIds(sec))[0]; SectionCars.credits[sec] = t ? cr[t.uid] : null; });
+
   },
   /** the menu's greeting and where the player stands */
   hello() {
@@ -14567,6 +14557,10 @@ const Game = {
       if (a && !e.target.closest('input')) { e.preventDefault(); e.stopPropagation(); Profiles.open(a.dataset.uid || null, a.dataset.n); }
     }, true);
     $('bPcClose').addEventListener('click', () => Profiles.close());
+    $('bPhoto').addEventListener('click', () => { $('pfBox').hidden = false; });
+    $('bPfClose').addEventListener('click', () => { $('pfBox').hidden = true; });
+    $('pfBox').addEventListener('click', (e) => { if (e.target.id === 'pfBox') $('pfBox').hidden = true; });
+    $('champCard').addEventListener('click', () => { const d = Champion.data, a = d && d.podium[0]; if (a) Profiles.open(a.uid, a.n); });
     $('bWnGo').addEventListener('click', () => WhatsNew.close());
     $('wnBox').addEventListener('click', (e) => { if (e.target.id === 'wnBox') WhatsNew.close(); });
     $('pcBox').addEventListener('click', (e) => { if (e.target.id === 'pcBox') Profiles.close(); });

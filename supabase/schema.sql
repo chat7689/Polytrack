@@ -1906,7 +1906,8 @@ revoke execute on function public._see_device(text, text), public._blocked(text,
 -- after that the row exists and this does nothing.
 do $$
 begin
-  if not exists (select 1 from public.season_awards where season = 'final:Season 1') then
+  if not exists (select 1 from public.season_awards where season = 'final:Season 1'
+                 and jsonb_array_length(coalesce(data -> 'podium', '[]'::jsonb)) > 0) then
     perform public.close_season('Season 1', array['s2c1', 's2c29', 's2c18', 's2c4', 's2c19', 's2c6', 's2c20', 's2c26',
       's2c21', 's2c33', 's2c27', 's2c22', 's2c23', 's2c14', 's2c31', 's2c16']);
   end if;
