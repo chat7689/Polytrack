@@ -668,6 +668,12 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .youCard b{display:block;font-family:var(--mono);font-weight:600;font-size:15px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .youCard span{font-size:10.5px;color:var(--dim);letter-spacing:.02em}
 .youCard .good b{color:var(--aqua)} .youCard .bad b{color:var(--ember)}
+.youCard .perfRow{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;border-left:0;border-top:1px solid var(--rule-2);text-align:left;padding:9px 12px}
+.youCard .perfRow span{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.youCard .perfRow b{font-size:17px;color:#ffcf5c;overflow:visible}
+.youCard .perfRow.na b{color:var(--dimmer)}
+.youCard .perfRow.perfect b{color:#fff;text-shadow:0 0 12px rgba(255,207,92,.8)}
+.youCard .perfRow small{margin-left:auto;font-size:11px;color:var(--dimmer);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ---------- the private preview ---------- */
 .previewBar{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;padding:9px 14px;border-radius:10px;
   border:1px dashed rgba(61,219,184,.45);background:rgba(61,219,184,.05);color:var(--ink);font-weight:600;font-size:13.5px}
@@ -8227,6 +8233,7 @@ const Insight = {
       toGain: done.reduce((a, m) => a + m.gap, 0)
     };
     I.missing = maps.filter((m) => m.t === null && m.of > 0).concat(maps.filter((m) => m.t === null && m.of === 0));
+    I.perfection = this.perfection(maps);
     I.weakest = done.slice().sort((a, b) => a.score - b.score);
     I.biggest = done.slice().sort((a, b) => b.gap - a.gap);
     I.climbs = done.filter((m) => m.up).sort((a, b) => a.up.need - b.up.need);
@@ -8234,6 +8241,18 @@ const Insight = {
     I.target = this.target(I);
     return I;
   },
+  /**
+   * Perfection: on each map, #1's time over yours (100% when you are #1),
+   * averaged over every map of the season. Only with all of them finished;
+   * otherwise null. Cut (not rounded) to thousandths, so 100.000% means
+   * #1 on every single map.
+   */
+  perfection(maps) {
+    if (!maps.length || maps.some((m) => m.t === null || !m.lead)) return null;
+    const avg = maps.reduce((a, m) => a + Math.min(1, m.lead.t / m.t), 0) / maps.length;
+    return Math.floor(avg * 100 * 1000 + 1e-6) / 1000;
+  },
+  perfText(v) { return v === null ? 'N/A' : v.toFixed(3) + '%'; },
   /** the cheapest way to the top of the overall standings */
   route(I) {
     if (!I.me) return { kind: 'start' };
@@ -8308,6 +8327,8 @@ const Insight = {
         (I.leader && I.rank !== 1 ? '. Season leader: ' + I.leader.n + ' (' + I.leader.count + '/16 maps, ' + formatTime(I.leader.total) + ')' : '. The player IS the season leader') + '.');
     } else L.push('OVERALL: no times yet.');
     L.push('Standings rule: most maps finished first, then the lowest total of best times.');
+    L.push('PERFECTION SCORE: ' + (I.perfection === null ? 'N/A: the player has not finished all ' + LEVELS.length + ' maps (' + (LEVELS.length - I.done) + ' to go). Encourage them to finish every map to get one.'
+      : this.perfText(I.perfection) + ' (on each map, the #1 time divided by the player\'s, averaged over all ' + LEVELS.length + '; 100% only when #1 on every map).'));
     L.push('MAPS (tag name | player best, place | #1 on the map | behind #1 | driver just above and the gap to them):');
     for (const m of I.maps) {
       L.push(m.tag + ' ' + m.name + ' | ' + (m.t === null ? 'not finished' : formatTime(m.t) + ', ' + this.ord(m.rank) + ' of ' + m.of) + ' | ' +
@@ -9694,6 +9715,9 @@ const Tone = {
         'The gap to ' + m.lead.n + ' on ' + m.tag + ' is ' + m.gap.toFixed(3) + ' s. Take it one corner at a time.']);
     }
     const A = I.above, L = I.leader;
+    if (I.perfection === null && I.done >= LEVELS.length - 4 && Math.random() < 0.5) {
+      return 'Only ' + (LEVELS.length - I.done) + ' map' + (LEVELS.length - I.done === 1 ? '' : 's') + ' left to finish. Do all ' + LEVELS.length + ' and you unlock your Perfection score.';
+    }
     if (t === 'elite') return Praise.you(I);
     if (A && A.count === I.me.count && I.me.total - A.total < 0.5) return 'You are only ' + (I.me.total - A.total).toFixed(3) + ' s behind ' + A.n + ' overall. That place is there for the taking.';
     return P([
@@ -10097,6 +10121,8 @@ const Coach = {
     if (mineB) parts.push('Your closest fight: ' + Insight.battleText(mineB));
     else if (bat[0]) parts.push('Closest on the boards: ' + Insight.battleText(bat[0]));
     let msg = parts.join(' ');
+    if (I.me && I.perfection === null) msg += ' You have ' + (LEVELS.length - I.done) + ' map' + (LEVELS.length - I.done === 1 ? '' : 's') + ' left to finish: do all ' + LEVELS.length + ' and you get a Perfection score, your time against #1 on every map.';
+    else if (I.perfection !== null) msg += ' Your Perfection score: **' + Insight.perfText(I.perfection) + '**.';
     if (t === 'new') msg += '\n\nStart with **A1 ' + I.maps[0].name + '**: one finished run puts you on the board, and then I can show you exactly where the time is.';
     else if (top) msg += '\n\nBest use of your next run: **' + top.m.tag + ' ' + top.m.name + '** (' + top.why[0] + ').';
     const c = Daily.prepare();
@@ -10303,6 +10329,7 @@ const Coach = {
       season: /\b(season|win it all|become (the )?leader|number one|#1 overall|first overall|catch)\b/.test(low)
     };
     wants.daily = /\bdail(y|ies)\b|today'?s (map|track|course)/.test(low);
+    wants.perfect = /\bperfect(ion)?\b/.test(low);
     wants.close = /\b(closest|close (times|battles?|gaps?|races?|ones|fights?)|tight(est)?|photo ?finish(es)?|neck and neck|battles?|rivalr(y|ies)|how close)\b/.test(low);
     wants.records = /\b(most (records|wins|#1s?|number ones?|first places?)|who (owns|holds|has) (the )?(most|records)|record holders?)\b/.test(low);
     wants.mine = /\b(my (stats|statistics|profile|numbers|summary|season)|how am i doing|stats|statistics|report card)\b/.test(low);
@@ -10332,6 +10359,14 @@ const Coach = {
     }
     // ------------------------------------------- the boards at large
     if (!mapIds.length && !rival) {
+      if (/\bperfect(ion)?\b/.test(low)) {
+        await think.done('Thought about it');
+        const s1 = this.step(turn, 'Comparing your time with #1 on every map');
+        const r = this.figPerfection(I);
+        await s1.done(I.perfection === null ? 'Checked all ' + LEVELS.length + ' maps' : 'Worked out ' + LEVELS.length + ' percentages');
+        figs.push(r.fig);
+        return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
+      }
       if (/\b(closest|close (times|battles?|gaps?|races?|ones|fights?)|tight(est)?|photo ?finish(es)?|neck and neck|battles?|rivalr(y|ies)|how close)\b/.test(low)) {
         const s1 = this.step(turn, 'Comparing neighbouring times on every leaderboard');
         await think.done('Thought about it');
@@ -10804,6 +10839,31 @@ const Coach = {
     text += ' All ' + list.length + ' are in {F}.';
     return { fig, n: list.length, text, notes: text.replace('{F}', 'the figure') };
   },
+  figPerfection(I) {
+    const E = escapeHtml;
+    let h = '<div class="figList">';
+    for (const m of I.maps) {
+      const pc = m.t !== null && m.lead ? Math.min(1, m.lead.t / m.t) * 100 : null;
+      h += '<div class="figRow' + (m.rank === 1 ? ' me' : '') + '" data-map="' + m.id + '"><span class="tg">' + m.tag + '</span><span class="nm">' + E(m.name) +
+        '<small>' + (pc === null ? 'not finished' : m.rank === 1 ? 'you are #1' : '#1 ' + E(m.lead.n) + ' · ' + formatTime(m.lead.t)) + '</small></span>' +
+        '<span class="v">' + (pc === null ? '—' : (Math.floor(pc * 1000 + 1e-6) / 1000).toFixed(3) + '%') + '</span>' +
+        '<span class="fbar"><i style="background:' + (pc === null ? 'transparent' : pc >= 99.9995 ? '#ffcf5c' : '#3ddbb8') + '" data-w="' + (pc === null ? 0 : Math.max(0, (pc - 50) * 2).toFixed(1)) + '"></i></span></div>';
+    }
+    const fig = Figs.add('Perfection · ' + Insight.perfText(I.perfection), h + '</div>', 'On each map, #1\'s time divided by yours. The score is the average over all ' + LEVELS.length + ' maps; bars start at 50%.');
+    requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+    let text;
+    if (I.perfection === null) {
+      const left = I.maps.filter((m) => m.t === null);
+      text = 'You don\'t have a Perfection score yet: it needs a time on all ' + LEVELS.length + ' maps, and you have ' + left.length + ' to go (' + left.slice(0, 4).map((m) => m.tag + ' ' + m.name).join(', ') + (left.length > 4 ? ' and more' : '') + '). ' +
+        'Finish them and I\'ll work it out: your time against #1 on every map, averaged. Your maps so far are in {F}.';
+    } else {
+      const low = I.maps.slice().sort((a, b) => (a.lead.t / a.t) - (b.lead.t / b.t))[0];
+      text = 'Your Perfection score is **' + Insight.perfText(I.perfection) + '**: your time against #1 on each of the ' + LEVELS.length + ' maps, averaged. ' +
+        (I.perfection >= 99.9995 ? 'That is perfect: #1 on every single map. Truly exceptional driving.' :
+          'It only reaches 100% with #1 on every map. Your lowest is ' + low.tag + ' ' + low.name + ' at ' + (Math.floor(Math.min(1, low.lead.t / low.t) * 100000 + 1e-6) / 1000).toFixed(3) + '%, the quickest way to raise it. ') + 'Every map is in {F}.';
+    }
+    return { fig, text, notes: text.replace('{F}', 'the figure') };
+  },
   figRecords(I) {
     const E = escapeHtml, by = {};
     LEVELS.forEach((lv, i) => {
@@ -10838,6 +10898,7 @@ const Coach = {
     const climb = I.climbs[0];
     const cells = [
       ['Overall', Insight.ord(I.rank) + ' of ' + I.of], ['Maps finished', I.me.count + '/' + LEVELS.length], ['Season total', formatTime(I.me.total)],
+      ['Perfection', I.perfection === null ? 'N/A · ' + (LEVELS.length - I.done) + ' maps to go' : Insight.perfText(I.perfection)],
       ['Map records', String(I.wins)], ['Podiums', String(pod)], ['Average gap to #1', avg.toFixed(3) + ' s'],
       ['Best map', best ? best.tag + ' ' + best.name + ' · ' + Insight.ord(best.rank) : '—'],
       ['Next place to gain', climb ? climb.tag + ': ' + climb.up.need.toFixed(3) + ' s to pass ' + climb.up.n : '—'],
@@ -10849,6 +10910,8 @@ const Coach = {
     let text = 'You are ' + Insight.ord(I.rank) + ' of ' + I.of + ' with ' + I.me.count + '/' + LEVELS.length + ' maps, ' + I.wins + ' map record' + (I.wins === 1 ? '' : 's') + ' and ' + pod + ' podium' + (pod === 1 ? '' : 's') + '. ' +
       'On average you are ' + avg.toFixed(3) + ' s off #1 per map' + (best ? ', and your strongest is ' + best.tag + ' ' + best.name + ' (' + Insight.ord(best.rank) + ')' : '') + '. ';
     if (climb) text += 'The cheapest place to gain: ' + climb.up.need.toFixed(3) + ' s on ' + climb.tag + ' ' + climb.name + ' passes ' + climb.up.n + '. ';
+    text += I.perfection === null ? 'Finish the other ' + (LEVELS.length - I.done) + ' maps and you get a Perfection score too. '
+      : 'Your Perfection score is ' + Insight.perfText(I.perfection) + '. ';
     text += 'Everything is in {F}.';
     return { fig, text, notes: text.replace('{F}', 'the figure') };
   },
@@ -10930,8 +10993,10 @@ const Buzz = {
     const mineB = I.uid ? bat.find((x) => (x.a.uid === I.uid || x.b.uid === I.uid)) : null;
     if (mineB && bat.indexOf(mineB) > 1) items.push(['you', 'Your battle', Insight.battleText(mineB, true)]);
     if (B.fresh && B.fresh.d) items.push(['new', 'New record', '<b>' + E(B.fresh.n) + '</b> set ' + formatTime(B.fresh.t) + ' on ' + T(B.fresh.i) + ', ' + Insight.ago(B.fresh.d) + '.']);
-    if (I.me && I.rank > 1) items.push(['you', 'You', Insight.ord(I.rank) + ' of ' + I.of + (I.above && I.above.count === I.me.count ? ', <b>' + (I.me.total - I.above.total).toFixed(3) + ' s</b> behind ' + E(I.above.n) : '') + '.']);
-    else if (I.me) items.push(['you', 'You', 'You lead the season. Outstanding.']);
+    const perf = I.perfection === null ? ' Finish ' + (LEVELS.length - I.done) + ' more map' + (LEVELS.length - I.done === 1 ? '' : 's') + ' to get your Perfection score.'
+      : ' Perfection <b>' + Insight.perfText(I.perfection) + '</b>.';
+    if (I.me && I.rank > 1) items.push(['you', 'You', Insight.ord(I.rank) + ' of ' + I.of + (I.above && I.above.count === I.me.count ? ', <b>' + (I.me.total - I.above.total).toFixed(3) + ' s</b> behind ' + E(I.above.n) : '') + '.' + perf]);
+    else if (I.me) items.push(['you', 'You', 'You lead the season. Outstanding.' + perf]);
     const c = Daily.prepare();
     if (c.open && Daily.level) {
       const b = Daily.board();
@@ -13016,7 +13081,10 @@ const UI = {
       yc.innerHTML = '<div class="' + (I.rank === 1 ? 'gold' : '') + '"><b>' + Insight.ord(I.rank) + '</b><span>of ' + I.of + '</span></div>' +
         '<div><b>' + I.me.count + '/16</b><span>maps</span></div>' +
         '<div class="' + (I.wins ? 'gold' : '') + '"><b>' + I.wins + '</b><span>map records</span></div>' +
-        '<div class="' + (I.rank === 1 ? 'good' : 'bad') + '"><b>' + gap + '</b><span>' + (I.rank === 1 ? 's ahead' : short ? 'maps to #1' : 's to #1') + '</span></div>';
+        '<div class="' + (I.rank === 1 ? 'good' : 'bad') + '"><b>' + gap + '</b><span>' + (I.rank === 1 ? 's ahead' : short ? 'maps to #1' : 's to #1') + '</span></div>' +
+        '<div class="perfRow' + (I.perfection === null ? ' na' : I.perfection >= 99.9995 ? ' perfect' : '') + '" title="On each map, #1\'s time divided by yours, averaged over all ' + LEVELS.length + ' maps">' +
+        '<span>Perfection</span><b>' + Insight.perfText(I.perfection) + '</b><small>' +
+        (I.perfection === null ? 'finish all ' + LEVELS.length + ' maps to get one · ' + (LEVELS.length - I.done) + ' to go' : 'your time vs #1, averaged over all ' + LEVELS.length + ' maps') + '</small></div>';
     }
   },
   sectionLeaders() {
