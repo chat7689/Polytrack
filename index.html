@@ -762,6 +762,18 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .dayCh.done{border-color:rgba(61,219,184,.45)}
 .dayCh.done .dayChBar i{background:var(--aqua)}
 .dayCh.done b{color:var(--aqua)}
+/* ---------- controls ---------- */
+.keyList{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.keyRow{display:grid;grid-template-columns:minmax(0,1fr) 128px 128px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.keyRow b{display:block;font-size:13.5px;font-weight:600}
+.keyRow small{display:block;font-size:11.5px;color:var(--dim)}
+.keyCap{font-family:var(--mono);font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--ink);
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid var(--rule-2);
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.keyCap:hover{border-color:rgba(61,219,184,.55)}
+.keyCap.empty{color:var(--dimmer)}
+.keyCap.listen{color:#06231d;background:var(--aqua);border-color:var(--aqua);animation:newGlow 1.2s ease-in-out infinite}
+@media(max-width:560px){.keyRow{grid-template-columns:minmax(0,1fr) 92px 92px}}
 /* ---------- invite friends ---------- */
 .refBtn{border-color:rgba(61,219,184,.45);color:var(--aqua)}
 .refBox{position:fixed;inset:0;z-index:85;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.6);padding:16px}
@@ -1583,7 +1595,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <div class="youCard" id="youCard" hidden></div>
         </aside>
       </div>
-      <div class="keysStrip">
+      <div class="keysStrip" id="keysStrip">
         <span><b>W</b> gas</span><span><b>S</b> brake</span><span><b>A D</b> steer</span>
         <span><b>Space</b> boost</span><span><b>S</b> + <b>A D</b> drift</span><span><b>Shift</b> handbrake</span><span><b>R</b> restart</span>
         <span><b>Esc</b> back</span>
@@ -1905,6 +1917,15 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <div><b>Coach short answers</b><small>Coach keeps it to a sentence or two. Also in the Coach screen.</small></div>
         <button class="small" id="bCoachShortSet">Off</button>
       </div>
+      <div class="rule"></div>
+
+      <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <h3 style="font-size:13px;font-weight:600">CONTROLS</h3>
+        <button class="ghost small" id="bKeysReset">Reset to defaults</button>
+      </div>
+      <p class="lede" style="font-size:12.5px;margin-bottom:12px">Click a key, then press the one you want. Two keys per action;
+        Backspace clears one, Esc cancels. Esc itself always goes back.</p>
+      <div class="keyList" id="keyList"></div>
       <div class="rule"></div>
 
       <div id="setOnlineOnly">
@@ -2778,19 +2799,119 @@ const CarColor = {
 };
 
 /* --------------------------------------------------------------- 2. input */
+/**
+ * Key bindings: up to two keys per action, saved in this browser. Esc
+ * (back / menu) is fixed. Input asks Keys whether an action's keys are
+ * down or were just tapped, so every place that reads the keyboard follows
+ * the player's bindings.
+ */
+const Keys = {
+  ACTIONS: [
+    ['gas', 'Gas', 'Also tips the nose down in the air'],
+    ['brake', 'Brake / reverse', 'Also tips the nose up in the air'],
+    ['left', 'Steer left', ''], ['right', 'Steer right', ''],
+    ['boost', 'Boost', ''], ['handbrake', 'Handbrake', ''],
+    ['restart', 'Restart', 'In a race with friends: back on the road'],
+    ['tele', 'Telemetry', 'Show or hide the gauges']
+  ],
+  DEF: {
+    gas: ['KeyW', 'ArrowUp'], brake: ['KeyS', 'ArrowDown'], left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'],
+    boost: ['Space', ''], handbrake: ['ShiftLeft', 'ShiftRight'], restart: ['KeyR', ''], tele: ['KeyT', '']
+  },
+  map: null,
+  load() {
+    if (this.map) return this.map;
+    const saved = Prefs.get('keys', null) || {};
+    this.map = {};
+    for (const [a] of this.ACTIONS) {
+      const v = Array.isArray(saved[a]) ? saved[a] : this.DEF[a];
+      this.map[a] = [String(v[0] || ''), String(v[1] || '')].map((c) => /^[A-Za-z0-9]{1,24}$/.test(c) && c !== 'Escape' ? c : '');
+    }
+    return this.map;
+  },
+  save() { Prefs.set('keys', this.map); this.labels(); },
+  codes(a) { return this.load()[a].filter(Boolean); },
+  held(a, down) { for (const c of this.codes(a)) if (down.has(c)) return true; return false; },
+  /** binds a key; anywhere else it was bound it comes off, and that action is returned */
+  bind(a, slot, code) {
+    const m = this.load();
+    let moved = null;
+    if (code) for (const [b] of this.ACTIONS) for (let k = 0; k < 2; k++) if (m[b][k] === code && !(b === a && k === slot)) { m[b][k] = ''; moved = b; }
+    m[a][slot] = code;
+    if (!m[a][0] && m[a][1]) { m[a][0] = m[a][1]; m[a][1] = ''; }
+    this.save();
+    return moved;
+  },
+  reset() { this.map = null; Prefs.set('keys', null); this.load(); this.labels(); },
+  name(code) {
+    if (!code) return '—';
+    const n = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Space: 'Space', ShiftLeft: 'Left Shift', ShiftRight: 'Right Shift',
+      ControlLeft: 'Left Ctrl', ControlRight: 'Right Ctrl', AltLeft: 'Left Alt', AltRight: 'Right Alt', Enter: 'Enter', Backspace: 'Backspace',
+      CapsLock: 'Caps Lock', Tab: 'Tab', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\',
+      Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/' }[code];
+    if (n) return n;
+    if (/^Key[A-Z]$/.test(code)) return code.slice(3);
+    if (/^Digit\d$/.test(code)) return code.slice(5);
+    if (/^Numpad/.test(code)) return 'Num ' + code.slice(6);
+    return code;
+  },
+  /** one action's keys for the help lines: "W / ↑" */
+  label(a) { return this.codes(a).map((c) => this.name(c)).join(' / ') || '—'; },
+  /** the key hints on the HUD and the menu follow the bindings */
+  labels() {
+    const L = (a) => escapeHtml(this.codes(a).map((c) => this.name(c))[0] || '—');
+    const h = $('hKeys');
+    if (h) h.innerHTML = '<b>' + L('gas') + ' ' + L('left') + ' ' + L('brake') + ' ' + L('right') + '</b> drive &nbsp; <b>' + L('brake') + '</b>+steer drift &nbsp; <b>' +
+      L('boost') + '</b> boost &nbsp; <b>' + L('handbrake') + '</b> handbrake &nbsp; <b>' + L('restart') + '</b> restart &nbsp; <b>' + L('tele') + '</b> telemetry &nbsp; <b>Esc</b> menu';
+    const k = $('keysStrip');
+    if (k) k.innerHTML = '<span><b>' + L('gas') + '</b> gas</span><span><b>' + L('brake') + '</b> brake</span><span><b>' + L('left') + ' ' + L('right') + '</b> steer</span>' +
+      '<span><b>' + L('boost') + '</b> boost</span><span><b>' + L('brake') + '</b> + <b>' + L('left') + ' ' + L('right') + '</b> drift</span><span><b>' + L('handbrake') + '</b> handbrake</span>' +
+      '<span><b>' + L('restart') + '</b> restart</span><span><b>Esc</b> back</span>';
+  },
+  /** the Settings list; listening = [action, slot] while waiting for a key */
+  listening: null,
+  render() {
+    const m = this.load();
+    $('keyList').innerHTML = this.ACTIONS.map(([a, label, hint]) => '<div class="keyRow"><div><b>' + label + '</b>' + (hint ? '<small>' + hint + '</small>' : '') + '</div>' +
+      [0, 1].map((k) => {
+        const on = this.listening && this.listening[0] === a && this.listening[1] === k;
+        return '<button class="keyCap' + (on ? ' listen' : '') + (m[a][k] ? '' : ' empty') + '" data-a="' + a + '" data-k="' + k + '">' + (on ? 'Press a key…' : escapeHtml(this.name(m[a][k]))) + '</button>';
+      }).join('') + '</div>').join('');
+  },
+  listen(a, k) { this.listening = [a, k]; this.render(); },
+  /** a key pressed while listening: bind it (Esc cancels, Backspace/Delete clears) */
+  capture(e) {
+    if (!this.listening) return false;
+    e.preventDefault(); e.stopPropagation();
+    const [a, k] = this.listening;
+    this.listening = null;
+    if (e.code === 'Escape') { this.render(); return true; }
+    if (e.code === 'Backspace' || e.code === 'Delete') {
+      if (k === 0 && !this.load()[a][1]) UI.toast('Every action needs at least one key.');
+      else this.bind(a, k, '');
+      this.render(); return true;
+    }
+    const moved = this.bind(a, k, e.code);
+    if (moved && moved !== a) UI.toast(this.name(e.code) + ' moved from ' + this.ACTIONS.find((x) => x[0] === moved)[1] + ' to ' + this.ACTIONS.find((x) => x[0] === a)[1] + '.');
+    this.render();
+    return true;
+  }
+};
+
 const Input = {
   down: new Set(), taps: new Set(),
   throttle: 0, brake: 0, steer: 0, handbrake: 0, boost: 0, anyDrive: false,
   init() {
     const track = (e, isDown) => {
       const c = e.code;
+      if (isDown && Keys.capture(e)) return;
       if (c === 'Tab' || e.metaKey || e.ctrlKey || e.altKey) return;
       const typing = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
-      if (!typing && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(c)) e.preventDefault();
+      if (!typing && (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(c) || Keys.codes('boost').includes(c))) e.preventDefault();
       if (isDown) { if (!this.down.has(c)) this.taps.add(c); this.down.add(c); }
       else this.down.delete(c);
     };
-    addEventListener('keydown', (e) => track(e, true));
+    addEventListener('keydown', (e) => track(e, true), true);
     addEventListener('keyup', (e) => track(e, false));
     addEventListener('blur', () => this.clear());
   },
@@ -2801,18 +2922,20 @@ const Input = {
       this.throttle = this.brake = this.steer = this.handbrake = this.boost = 0;
       return;
     }
-    const up = d.has('KeyW') || d.has('ArrowUp');
-    const dn = d.has('KeyS') || d.has('ArrowDown');
-    const lf = d.has('KeyA') || d.has('ArrowLeft');
-    const rt = d.has('KeyD') || d.has('ArrowRight');
+    const up = Keys.held('gas', d);
+    const dn = Keys.held('brake', d);
+    const lf = Keys.held('left', d);
+    const rt = Keys.held('right', d);
     this.throttle = up ? 1 : 0;
     this.brake = dn ? 1 : 0;
     this.steer = (rt ? 1 : 0) - (lf ? 1 : 0);
-    this.boost = d.has('Space') ? 1 : 0;
-    this.handbrake = (d.has('ShiftLeft') || d.has('ShiftRight')) ? 1 : 0;
+    this.boost = Keys.held('boost', d) ? 1 : 0;
+    this.handbrake = Keys.held('handbrake', d) ? 1 : 0;
     this.anyDrive = up || dn;
   },
   tapped(code) { if (this.taps.has(code)) { this.taps.delete(code); return true; } return false; },
+  /** an action's key was just pressed (its bound keys, see Keys) */
+  acted(a) { for (const c of Keys.codes(a)) if (this.tapped(c)) return true; return false; },
   endFrame() { this.taps.clear(); },
   clear() {
     this.down.clear(); this.taps.clear();
@@ -9046,7 +9169,7 @@ const Multi = {
   step(dt) {
     const g = Game, R = this.race;
     if (Input.tapped('Escape')) { this.forfeit(); return true; }
-    if (Input.tapped('KeyT')) UI.toggleTele();
+    if (Input.acted('tele')) UI.toggleTele();
     if (!this.racing) return true;          // over: the car waits for the room screen
     if (R && !R.done && R.firstFin) this.checkEnd();
     if (this.finished) { this.hud(); return true; }
@@ -9064,7 +9187,7 @@ const Multi = {
       this.goFlash -= dt;
       UI.prompt(this.goFlash > 0 ? 'GO!' : '');
     }
-    if (Input.tapped('KeyR') && this.go) this.respawn();
+    if (Input.acted('restart') && this.go) this.respawn();
     if (this.go) {
       this.maxIdx = Math.max(this.maxIdx, g.pathIdx);
       this.sendAcc += dt;
@@ -14232,9 +14355,7 @@ const Game = {
       return false;
     }
 
-    $('hKeys').innerHTML = '<b>W A S D</b> drive &nbsp; <b>S</b>+steer drift &nbsp; <b>Space</b> boost &nbsp; ' +
-      '<b>Shift</b> handbrake &nbsp; <b>R</b> restart &nbsp; <b>T</b> telemetry &nbsp; ' +
-      '<b>Esc</b> menu';
+    Keys.labels();
     this.wire();
     this.loadLevel(this.data.findIndex(Boolean), true);
 
@@ -14531,6 +14652,8 @@ const Game = {
       $('bCoachMenu').textContent = Prefs.get('coachMenu', true) ? 'On' : 'Off';
     });
     $('bCoachShortSet').addEventListener('click', () => Coach.setShort(!Coach.short()));
+    $('keyList').addEventListener('click', (e) => { const b = e.target.closest('.keyCap'); if (b) Keys.listen(b.dataset.a, +b.dataset.k); });
+    $('bKeysReset').addEventListener('click', () => { Keys.reset(); Keys.render(); UI.toast('Controls are back to the defaults.'); });
     $('bCoachShort').addEventListener('click', () => Coach.setShort(!Coach.short()));
     $('bBoardWipe').addEventListener('click', () => {
       Records.wipe();
@@ -15450,6 +15573,7 @@ const Game = {
     const chosen = Prefs.get('playCourse', 'auto');
     pick.value = courseIndexOf(chosen) >= 0 ? chosen : 'auto';
     $('setUser').textContent = Cloud.on ? Cloud.name() : Records.driver();
+    Keys.listening = null; Keys.render();
     $('setOldPass').value = ''; $('setNewPass').value = '';
     $('setPassMsg').textContent = ''; $('setResetMsg').textContent = ''; $('setResetPass').value = '';
     // password change and cloud score reset only make sense signed in —
@@ -16142,11 +16266,11 @@ const Game = {
       if (this.levelIndex === DAILY_I) Daily.open(); else this.toMenu();
       return;
     }
-    if (this.runKind !== 'multi' && Input.tapped('KeyR')) {
+    if (this.runKind !== 'multi' && Input.acted('restart')) {
       if (this.levelIndex === DAILY_I) { if (this.started) { this.logAttempt('restarted', 'restart'); this.running = false; Daily.play(); } }
       else this.restartRun('Restarted', 'restart');
     }
-    if (this.runKind !== 'multi' && Input.tapped('KeyT')) UI.toggleTele();
+    if (this.runKind !== 'multi' && Input.acted('tele')) UI.toggleTele();
     if (!this.started && Input.anyDrive && this.runKind !== 'multi') {
       this.started = true;
       this.recPrevPos.copy(this.car.pos);
