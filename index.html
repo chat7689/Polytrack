@@ -681,6 +681,51 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .pvCard p{font-size:12px;color:var(--dim);line-height:1.45;min-height:3em}
 .miniMap.pvMap{margin:0;max-height:none;aspect-ratio:4/3}
 .pvBtns{display:flex;gap:6px;flex-wrap:wrap}
+/* ---------- races with friends ---------- */
+.mpBar{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 16px;border-radius:12px;
+  border:1px solid rgba(242,115,63,.55);background:linear-gradient(90deg,rgba(242,115,63,.16),rgba(242,115,63,.04));color:var(--ink)}
+.mpBar b{font-size:16px}
+.mpBar .mpSub{font-size:12.5px;color:var(--dim);flex:1;min-width:0}
+.mpBar .mpNew{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:999px;background:var(--ember);color:#130a06}
+.mpBar .mpGo{font-size:18px;color:var(--ember)}
+.mpBar:hover{border-color:var(--ember)}
+@media(max-width:560px){.mpBar .mpSub{display:none}}
+.mpPanel{width:min(1080px,95vw)}
+.mpEntry,.mpRoom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+.mpEntry{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mpEntry[hidden],.mpRoom[hidden]{display:none}
+@media(max-width:860px){.mpRoom,.mpEntry{grid-template-columns:minmax(0,1fr)}}
+.mpNote{font-size:12.5px;color:var(--dim);margin-bottom:12px}
+.mpJoinRow{gap:8px}
+#mpJoinCode{width:7em;font-family:var(--mono);font-size:18px;letter-spacing:.2em;text-transform:uppercase}
+.mpCodeRow{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.mpCodeK{font-size:12px;color:var(--dim)}
+#mpCode{font-family:var(--mono);font-size:30px;letter-spacing:.18em;color:var(--ink)}
+.mpPlayers,.mpRes{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
+.mpPlayers li,.mpRes li{display:flex;align-items:center;gap:8px;font-size:13.5px;min-width:0}
+.mpPlayers i,.mpRes i,.mpStand i{width:10px;height:10px;border-radius:3px;flex:none}
+.mpPlayers b,.mpRes b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.mpYou,.mpHost,.mpRacing{font-size:10.5px;font-family:var(--mono);padding:1px 6px;border-radius:999px;border:1px solid var(--rule-2);color:var(--dim)}
+.mpHost{color:#ffcf5c;border-color:rgba(255,207,92,.4)}
+.mpRacing{color:var(--aqua);border-color:rgba(61,219,184,.4)}
+#mpMap{width:100%;margin-bottom:8px}
+.mpMapName{display:block;font-size:15px;margin-bottom:6px}
+.miniMap.mpMap{margin:0 0 12px;aspect-ratio:4/3;max-height:none}
+.mpStart{width:100%}
+.mpWait{font-size:13px;color:var(--dim)}
+.mpRes .mpPl{font-family:var(--mono);font-size:12px;width:2.6em;color:var(--dim)}
+.mpRes em,.mpStand em{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
+.mpRes li.me b,.mpStand li.me span{color:var(--ember)}
+.mpStand{position:absolute;left:18px;top:130px;width:210px;padding:10px 12px;border-radius:10px;background:rgba(7,11,24,.62);
+  border:1px solid rgba(255,255,255,.08);pointer-events:none}
+.mpStand[hidden]{display:none}
+.mpPos{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.mpPos b{font-size:26px;font-weight:700}
+.mpPos small{font-size:12px;color:var(--dim)}
+.mpStand ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.mpStand li{display:flex;align-items:center;gap:7px;font-size:12.5px;min-width:0}
+.mpStand li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.mpStand li.out{opacity:.45}
 /* ---------- today's daily ---------- */
 .dailyPanel{width:min(1120px,95vw)}
 .dGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,.9fr);gap:14px;margin-top:20px}
@@ -1253,6 +1298,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
       </div>
       <div class="hud-bl" id="hKeys"></div>
       <div class="hud-br" id="hProg">0%</div>
+      <div class="mpStand" id="mpStand" hidden></div>
       <div class="prompt" id="hPrompt">Hold W to launch</div>
       <div class="bar"><i id="hBar"></i></div>
     </div>
@@ -1387,6 +1433,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
               <span class="dcPrize"><span class="gem2d"></span> 1 000 to the fastest at noon</span>
             </button>
           </div>
+          <button class="mpBar" id="bMulti"><span class="mpNew">NEW</span><b>Race friends</b><span class="mpSub">live races · up to 8 drivers · join with a code</span><span class="mpGo">→</span></button>
           <button class="previewBar" id="bPreview" hidden>Season 2 preview <span>only you can see this · not released</span></button>
           <div class="menuTiles">
             <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
@@ -1445,6 +1492,55 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <button class="ghost" id="bPreviewBack">&larr; Menu</button>
       </div>
       <div id="pvList"></div>
+    </div>
+  </div>
+
+  <!-- live races with friends -->
+  <div class="layer" id="multi" hidden>
+    <div class="scrim"></div>
+    <div class="panel mpPanel">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="kick">LIVE · UP TO 8 DRIVERS</div>
+          <h2 class="big">Race friends</h2>
+          <p class="lede" style="margin-bottom:0">Everyone starts on the same GO and sees each other's cars. Crash and you're put back on the road with the clock still running.
+            Races don't count for the leaderboards.</p>
+        </div>
+        <button class="ghost" id="bMpBack">&larr; Menu</button>
+      </div>
+      <div id="mpEntry" class="mpEntry">
+        <section class="dCard">
+          <h3>Start a room</h3>
+          <p class="mpNote">You get a four-letter code to give your friends.</p>
+          <button class="primary" id="bMpCreate">Create a room</button>
+        </section>
+        <section class="dCard">
+          <h3>Join a room</h3>
+          <p class="mpNote">Type the code a friend gives you.</p>
+          <div class="row mpJoinRow"><input type="text" id="mpJoinCode" maxlength="4" placeholder="ABCD" autocomplete="off" spellcheck="false"><button class="primary" id="bMpJoin">Join</button></div>
+        </section>
+      </div>
+      <div id="mpRoom" class="mpRoom" hidden>
+        <section class="dCard mpRoomCard">
+          <div class="mpCodeRow"><span class="mpCodeK">Room code</span><b id="mpCode">—</b><button class="ghost small" id="bMpCopy">Copy</button></div>
+          <h3>Drivers <span id="mpCount"></span></h3>
+          <ul class="mpPlayers" id="mpPlayers"></ul>
+          <button class="ghost small" id="bMpLeave">Leave room</button>
+        </section>
+        <section class="dCard">
+          <h3>Map</h3>
+          <select id="mpMap"></select>
+          <b class="mpMapName" id="mpMapName"></b>
+          <div class="miniMap mpMap" id="mpMapPrev"></div>
+          <button class="primary mpStart" id="bMpStart">Start race</button>
+          <p class="mpWait" id="mpWait" hidden></p>
+        </section>
+        <section class="dCard" id="mpResults" hidden>
+          <h3 id="mpResHd">Last race</h3>
+          <ol class="mpRes" id="mpResList"></ol>
+        </section>
+      </div>
+      <div class="err" id="mpMsg"></div>
     </div>
   </div>
 
@@ -8498,6 +8594,444 @@ const Preview = {
 };
 
 /**
+ * Live races with friends. A room is a Supabase Realtime channel named by a
+ * four-letter code: presence says who is in it (name, colours, whether they
+ * are racing), broadcast carries the race itself (the host's start, each
+ * car's position five times a second, finishes). Nothing touches the
+ * database, and race results never reach the leaderboards.
+ *
+ * Everyone starts from their own 3-2-1-GO when the host's start arrives, and
+ * each player's time is their own clock from their own GO, so a slow
+ * connection moves a car on other people's screens a little but never
+ * changes anyone's time or place. Crashing, falling or pressing R puts the
+ * car back at the last safe piece of road passed, with the clock running.
+ * Once the first car finishes, the others have MP_GRACE seconds.
+ */
+const MP_HZ = 5, MP_MAX = 8, MP_GRACE = 30, MP_COUNT = 3.2, MP_DELAY = 0.3;
+const MP_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+const Multi = {
+  ch: null, code: '', key: '', me: null, players: {}, creating: false, joinedAt: 0,
+  status: '', race: null, last: null, racing: false, finished: false, sendAcc: 0, viewing: false,
+
+  /* ---------------------------------------------------------- room */
+  open() {
+    if (!Cloud.on || !Cloud.user || !Cloud.name()) { UI.toast('Sign in to race friends.'); return; }
+    Autopilot.on = false;
+    Game.state = 'multi'; Game.running = false;
+    Sound.stopEngine();
+    UI.show('multi');
+    this.render();
+  },
+  async create() {
+    let c = '';
+    for (let k = 0; k < 4; k++) c += MP_LETTERS.charAt(Math.floor(Math.random() * MP_LETTERS.length));
+    await this.join(c, true);
+  },
+  async join(code, creating) {
+    code = String(code || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (!/^[A-Z]{4}$/.test(code)) { this.say('Room codes are four letters.'); return; }
+    await this.leave(true);
+    this.code = code; this.creating = !!creating; this.players = {}; this.race = null; this.last = null;
+    this.key = Cloud.user.uid.slice(0, 8) + Math.random().toString(36).slice(2, 6);
+    const c1 = CarColor.primary, c2 = CarColor.secondary;
+    this.joinedAt = Date.now();
+    this.me = { k: this.key, n: String(Cloud.name()).slice(0, 16), c1: hslToHex(c1.h, c1.s, c1.l), c2: hslToHex(c2.h, c2.s, c2.l),
+      j: this.joinedAt, st: 'lobby', m: 0, mid: LEVELS[0].id };
+    this.status = 'Connecting…'; this.render();
+    // everyone in the room must be on the same topic, so (unlike the other
+    // channels) this name is reused; leave() removes the old one first
+    const ch = Cloud.sb.channel('mp-' + code, {
+      config: { broadcast: { self: false }, presence: { key: this.key } }
+    });
+    this.ch = ch;
+    ch.on('presence', { event: 'sync' }, () => { if (this.ch === ch) this.onSync(); });
+    for (const ev of ['start', 'pos', 'fin', 'quit']) {
+      ch.on('broadcast', { event: ev }, (m) => { if (this.ch === ch) this.onMsg(ev, m && m.payload); });
+    }
+    ch.subscribe(async (st) => {
+      if (this.ch !== ch) return;
+      if (st === 'SUBSCRIBED') {
+        this.status = '';
+        await ch.track(this.me);
+        // an empty room you didn't create: there is no such room
+        setTimeout(() => {
+          if (this.ch !== ch || this.creating) return;
+          if (Object.keys(this.players).length <= 1) { this.leave(); this.say('No room with code ' + code + ' — check the letters.'); }
+        }, 2500);
+      } else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') {
+        this.status = 'Can\'t reach the race server — check your connection.';
+        this.render();
+      }
+    });
+  },
+  async leave(quiet) {
+    if (this.racing) this.forfeit(true);
+    const ch = this.ch;
+    this.ch = null; this.code = ''; this.players = {}; this.race = null; this.last = null; this.status = '';
+    if (ch) { try { await ch.untrack(); } catch (e) { /* gone already */ } await Cloud.sb.removeChannel(ch); }
+    if (!quiet) this.render();
+  },
+  say(msg) { this.status = msg; this.render(); },
+  retrack() { if (this.ch && this.me) this.ch.track(this.me); },
+  list() {
+    return Object.values(this.players).sort((a, b) => (a.j - b.j) || (a.k < b.k ? -1 : 1));
+  },
+  host() { const l = this.list(); return l.length ? l[0] : null; },
+  isHost() { const h = this.host(); return !!h && h.k === this.key; },
+  onSync() {
+    const st = this.ch.presenceState(), players = {};
+    for (const key in st) {
+      const m = st[key] && st[key][0];
+      if (!m || typeof m.k !== 'string') continue;
+      players[m.k] = {
+        k: m.k, n: String(m.n || 'Driver').slice(0, 16), c1: m.c1 | 0, c2: m.c2 | 0, j: +m.j || 0,
+        st: m.st === 'race' ? 'race' : 'lobby', m: m.m | 0, mid: String(m.mid || '')
+      };
+    }
+    this.players = players;
+    // a full room: the latest arrivals step back out
+    const l = this.list();
+    if (l.length > MP_MAX && l.findIndex((p) => p.k === this.key) >= MP_MAX) { this.leave(); this.say('That room is full (' + MP_MAX + ' drivers).'); return; }
+    // anyone who left mid-race is out of it
+    if (this.race) for (const k in this.race.racers) if (!players[k] && k !== this.key) this.race.racers[k].gone = true;
+    if (this.race) this.checkEnd();
+    this.render();
+  },
+  setMap(i) {
+    if (!this.isHost() || !LEVELS[i]) return;
+    this.me.m = i; this.me.mid = LEVELS[i].id; this.retrack(); this.render();
+  },
+
+  /* ---------------------------------------------------------- race */
+  start() {
+    if (!this.isHost() || (this.race && !this.race.done)) return;
+    const i = this.me.m;
+    if (!Game.playable[i]) { UI.toast('That map could not be loaded — pick another.'); return; }
+    const ks = this.list().filter((p) => p.st === 'lobby').map((p) => p.k).slice(0, MP_MAX);
+    const msg = { r: Math.random().toString(36).slice(2, 10), i, id: LEVELS[i].id, ks };
+    this.ch.send({ type: 'broadcast', event: 'start', payload: msg });
+    this.onMsg('start', msg);
+  },
+  onMsg(ev, p) {
+    if (!p || typeof p !== 'object') return;
+    if (ev === 'start') {
+      if (this.race && !this.race.done) return;
+      if (!Array.isArray(p.ks) || typeof p.r !== 'string') return;
+      const ks = p.ks.filter((k) => typeof k === 'string').slice(0, MP_MAX);
+      const racers = {};
+      for (const k of ks) {
+        const pl = this.players[k] || (k === this.key ? this.me : null);
+        racers[k] = { k, n: pl ? pl.n : 'Driver', c1: pl ? pl.c1 : 0xcccccc, c2: pl ? pl.c2 : 0x777777, buf: [], d: 0, fin: null, quit: false, gone: false };
+      }
+      this.race = { r: p.r, i: p.i | 0, racers, firstFin: 0, done: false, mine: ks.includes(this.key) };
+      if (this.race.mine) {
+        if (!LEVELS[p.i] || LEVELS[p.i].id !== p.id) {
+          racers[this.key].quit = true;
+          this.say('This race is on a map your game doesn\'t have yet — refresh the page.');
+          return;
+        }
+        this.begin();
+      } else this.render();
+      return;
+    }
+    const R = this.race;
+    if (!R || R.r !== p.r || R.done) return;
+    const rc = R.racers[p.k];
+    if (!rc || p.k === this.key) return;
+    if (ev === 'pos') {
+      const ok = (a, n) => Array.isArray(a) && a.length === n && a.every((v) => Number.isFinite(v));
+      if (!Number.isFinite(p.t) || !ok(p.p, 3) || !ok(p.q, 4) || !ok(p.v, 3)) return;
+      rc.buf.push({ t: p.t, p: p.p, q: p.q, v: p.v, b: !!p.b });
+      rc.buf.sort((a, b) => a.t - b.t);
+      if (rc.buf.length > 16) rc.buf.splice(0, rc.buf.length - 16);
+      if (Number.isFinite(p.d)) rc.d = p.d;
+    } else if (ev === 'fin') {
+      if (!Number.isFinite(p.t) || p.t <= 0 || rc.fin) return;
+      rc.fin = p.t;
+      if (!R.firstFin) R.firstFin = performance.now();
+      this.checkEnd();
+    } else if (ev === 'quit') {
+      rc.quit = true;
+      this.checkEnd();
+    }
+    if (!this.racing) this.render();
+  },
+  /** the race is over when nobody is still driving, or the grace time is up */
+  checkEnd() {
+    const R = this.race;
+    if (!R || R.done) return;
+    const live = Object.values(R.racers).filter((r) => !r.fin && !r.quit && !r.gone);
+    const graceUp = R.firstFin && performance.now() - R.firstFin > MP_GRACE * 1000;
+    if (live.length && !graceUp) return;
+    R.done = true;
+    this.last = { i: R.i, rows: this.standings(true) };
+    if (this.racing) {
+      this.racing = false;
+      if (!this.finished) UI.toast('Time\'s up');
+      setTimeout(() => this.backToRoom(), this.finished ? 1600 : 900);
+    } else this.render();
+    this.me.st = 'lobby'; this.retrack();
+  },
+  /** finished first (by time), then everyone else by how far they got */
+  standings(final) {
+    const R = this.race;
+    if (!R) return [];
+    const rows = Object.values(R.racers).map((r) => ({
+      k: r.k, n: r.n, c1: r.c1, fin: r.fin, out: r.quit || r.gone || (final && !r.fin),
+      d: r.k === this.key && this.racing && Game.course ? Game.course.cum[Game.pathIdx] : r.d
+    }));
+    rows.sort((a, b) => (a.fin != null) !== (b.fin != null) ? (a.fin != null ? -1 : 1)
+      : a.fin != null ? a.fin - b.fin : (a.out !== b.out ? (a.out ? 1 : -1) : b.d - a.d));
+    return rows;
+  },
+
+  /** this car's part: load the map, hold it for the countdown, then go */
+  begin() {
+    const R = this.race, i = R.i;
+    Game.ghostOverride = null; Game.ghostOverrideName = null; Game.extraGhosts = [];
+    this.racing = true; this.finished = false; this.sendAcc = 0;
+    Game.startLevel(i);
+    if (Game.state !== 'play') { this.racing = false; this.forfeit(); return; }
+    Game.ghostData = null; Game.ghostDist = null;
+    Game.runKind = 'multi';
+    this.cd = MP_COUNT; this.go = false; this.goFlash = 0; this.maxIdx = 0;
+    this.respawns = this.safeSpots(Game.data[i], Game.course);
+    // paint a spare car for each of the others
+    let slot = 0;
+    for (const k in R.racers) {
+      if (k === this.key) continue;
+      const rc = R.racers[k], s = Game.extraSpecMeshes[slot];
+      rc.slot = s ? slot : -1; slot++;
+      if (!s) continue;
+      s.bodyMat.color.setHex(rc.c1); s.darkMat.color.setHex(rc.c2);
+      s.bodyMat.opacity = s.darkMat.opacity = 0.8;
+      s.mesh.visible = false;
+    }
+    for (let k = slot; k < Game.extraSpecMeshes.length; k++) Game.extraSpecMeshes[k].mesh.visible = false;
+    $('mpStand').hidden = false;
+    UI.prompt('');
+    this.me.st = 'race'; this.retrack();
+    this.hud();
+  },
+  /**
+   * Places a car can be put back on: level, unbanked road at least 8 m from
+   * either end of a stretch (so never on a jump's lip or landing), each with
+   * the index on the course path it sits nearest.
+   */
+  safeSpots(data, course) {
+    const out = [{ idx: 0, pos: Game.startPose.pos.clone(), heading: Game.startPose.heading }];
+    const path = course.path;
+    let lastCum = 0, j = 0;
+    for (const st of data.strips) {
+      const F = st.frames;
+      let cum = 0;
+      for (let f = 1; f < F.length; f++) {
+        cum += Math.hypot(F[f].p[0] - F[f - 1].p[0], F[f].p[2] - F[f - 1].p[2]);
+        const left = F.length - 1 - f;
+        if (cum < 8 || left < 3 || Math.abs(F[f].r) > 0.18 || Math.abs(F[f].t) > 0.12) continue;
+        const p = new THREE.Vector3(F[f].p[0], F[f].p[1], F[f].p[2]);
+        let best = j, bd = Infinity;
+        for (let k = j; k < Math.min(path.length, j + 400); k++) { const d = path[k].distanceToSquared(p); if (d < bd) { bd = d; best = k; } }
+        if (bd > 25) continue;
+        j = best;
+        const c = course.cum[best];
+        if (c - lastCum < 15) continue;
+        lastCum = c;
+        out.push({ idx: best, pos: p.add(new THREE.Vector3(0, CAR.comHeight + 0.15, 0)), heading: F[f].y });
+      }
+    }
+    return out;
+  },
+  respawn(msg) {
+    let spot = this.respawns[0];
+    for (const s of this.respawns) if (s.idx <= this.maxIdx) spot = s;
+    const g = Game;
+    g.car.place(spot.pos, spot.heading);
+    g.chase.snap(g.car);
+    g.pathIdx = spot.idx; g.offTrack = 0; g.hungTime = 0; g.accum = 0;
+    g.recPrevPos.copy(g.car.pos); g.recPrevQuat.copy(g.car.quat);
+    UI.flash(); Sound.respawn();
+    UI.toast(msg && msg !== 'Restarted' ? msg.replace('restarted', 'back on the road') : 'Back on the road');
+  },
+  forfeit(silent) {
+    const R = this.race;
+    if (R && !R.done && R.racers[this.key] && !R.racers[this.key].fin) {
+      R.racers[this.key].quit = true;
+      if (this.ch) this.ch.send({ type: 'broadcast', event: 'quit', payload: { r: R.r, k: this.key } });
+    }
+    this.racing = false;
+    if (R) this.checkEnd();
+    if (!silent) this.backToRoom();
+  },
+  backToRoom() {
+    this.racing = false;
+    $('mpStand').hidden = true;
+    for (const s of Game.extraSpecMeshes) s.mesh.visible = false;
+    Game.hideAllTags();
+    if (Game.state === 'play' || Game.state === 'multi') this.open();
+  },
+
+  /** from Game.stepPlay, after the input is sampled: true = skip the rest */
+  step(dt) {
+    const g = Game, R = this.race;
+    if (Input.tapped('Escape')) { this.forfeit(); return true; }
+    if (Input.tapped('KeyT')) UI.toggleTele();
+    if (!this.racing) return true;          // over: the car waits for the room screen
+    if (R && !R.done && R.firstFin) this.checkEnd();
+    if (this.finished) { this.hud(); return true; }
+    if (!this.go) {
+      this.cd -= dt;
+      UI.prompt(this.cd > 0 ? String(Math.ceil(this.cd)) : '');
+      if (this.cd <= 0) {
+        this.go = true; this.goFlash = 0.9;
+        g.started = true; g.time = 0; g.accum = 0;
+        g.recPrevPos.copy(g.car.pos); g.recPrevQuat.copy(g.car.quat);
+        g.runT = 0; g.focusT = 0;
+        Sound.boostFire();
+      }
+    } else if (this.goFlash > 0) {
+      this.goFlash -= dt;
+      UI.prompt(this.goFlash > 0 ? 'GO!' : '');
+    }
+    if (Input.tapped('KeyR') && this.go) this.respawn();
+    if (this.go) {
+      this.maxIdx = Math.max(this.maxIdx, g.pathIdx);
+      this.sendAcc += dt;
+      if (this.sendAcc >= 1 / MP_HZ) { this.sendAcc = 0; this.send(); }
+      if (R && R.firstFin && !this.finished && this.goFlash <= 0) {
+        const left = Math.max(0, MP_GRACE - (performance.now() - R.firstFin) / 1000);
+        UI.prompt('Race ends in ' + Math.ceil(left) + ' s');
+      }
+    }
+    this.hud();
+    return false;
+  },
+  send() {
+    const c = Game.car, r3 = (v) => Math.round(v * 100) / 100, r4 = (v) => Math.round(v * 1e4) / 1e4;
+    if (!this.ch || !this.race) return;
+    this.ch.send({ type: 'broadcast', event: 'pos', payload: {
+      r: this.race.r, k: this.key, t: r3(Game.time),
+      p: [r3(c.pos.x), r3(c.pos.y), r3(c.pos.z)], q: [r4(c.quat.x), r4(c.quat.y), r4(c.quat.z), r4(c.quat.w)],
+      v: [r3(c.vel.x), r3(c.vel.y), r3(c.vel.z)], d: Math.round(Game.course.cum[Game.pathIdx] * 10) / 10, b: c.boosting ? 1 : 0
+    } });
+  },
+  /** from Game.finishLevel: this car crossed the line */
+  myFinish() {
+    const R = this.race, t = Game.time;
+    this.finished = true;
+    if (!R) return;
+    R.racers[this.key].fin = t;
+    if (!R.firstFin) R.firstFin = performance.now();
+    this.send();
+    this.ch.send({ type: 'broadcast', event: 'fin', payload: { r: R.r, k: this.key, t } });
+    const place = this.standings().findIndex((r) => r.k === this.key) + 1;
+    UI.prompt(ordinal(place) + ' · ' + formatTime(t));
+    Sound.finish(false);
+    this.checkEnd();
+  },
+
+  /** the other cars, drawn MP_DELAY s behind their own clocks (from Game.updateGhost) */
+  drawCars(dt) {
+    const R = this.race, g = Game;
+    g.ghostMesh.visible = false; g.specMesh.visible = false;
+    g.updateGhostTag('race', false);
+    if (!R) return;
+    const places = {};
+    this.standings().forEach((r, n) => { places[r.k] = n + 1; });
+    const now = g.time - MP_DELAY;
+    for (const k in R.racers) {
+      const rc = R.racers[k];
+      if (k === this.key || rc.slot < 0 || rc.slot == null) continue;
+      const s = g.extraSpecMeshes[rc.slot], key = 'mp' + rc.slot;
+      const b = rc.buf;
+      if (!this.go || !b.length || rc.quit || rc.gone) {
+        s.mesh.visible = false; setGhostFlame(s.mesh, false, dt); g.updateGhostTag(key, false); continue;
+      }
+      let a = b[0], c = b[0];
+      for (let n = 0; n < b.length; n++) { if (b[n].t <= now) a = b[n]; if (b[n].t >= now) { c = b[n]; break; } c = b[n]; }
+      const m = s.mesh;
+      if (c.t > a.t) {
+        const u = clamp((now - a.t) / (c.t - a.t), 0, 1);
+        m.position.set(lerp(a.p[0], c.p[0], u), lerp(a.p[1], c.p[1], u), lerp(a.p[2], c.p[2], u));
+        _gq1.set(a.q[0], a.q[1], a.q[2], a.q[3]); _gq2.set(c.q[0], c.q[1], c.q[2], c.q[3]);
+        m.quaternion.copy(_gq1).slerp(_gq2, u);
+      } else {
+        // past the newest sample: carry on along its velocity for a moment
+        const ex = rc.fin ? 0 : clamp(now - c.t, 0, 0.4);
+        m.position.set(c.p[0] + c.v[0] * ex, c.p[1] + c.v[1] * ex, c.p[2] + c.v[2] * ex);
+        m.quaternion.set(c.q[0], c.q[1], c.q[2], c.q[3]);
+      }
+      m.visible = true;
+      setGhostFlame(m, a.b, dt);
+      const kmh = rc.fin ? 0 : Math.hypot(c.v[0], c.v[1], c.v[2]) * KMH;
+      g.updateGhostTag(key, true, m, rc.n, { kmh, place: rc.fin ? places[k] : null });
+    }
+  },
+  hud() {
+    const rows = this.standings(), me = rows.findIndex((r) => r.k === this.key) + 1;
+    const E = escapeHtml;
+    let h = '<div class="mpPos"><b>' + (me ? ordinal(me) : '—') + '</b><small>of ' + rows.length + '</small></div><ol>';
+    for (const r of rows) {
+      h += '<li class="' + (r.k === this.key ? 'me' : '') + (r.out ? ' out' : '') + '"><i style="background:#' + (r.c1 >>> 0).toString(16).padStart(6, '0') + '"></i>' +
+        '<span>' + E(r.n) + '</span><em>' + (r.fin != null ? formatTime(r.fin) : r.out ? 'out' : '') + '</em></li>';
+    }
+    h += '</ol>';
+    const el = $('mpStand');
+    if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  },
+
+  /* ---------------------------------------------------------- screen */
+  render() {
+    if (Game.state !== 'multi') return;
+    const E = escapeHtml, inRoom = !!this.ch;
+    $('mpEntry').hidden = inRoom;
+    $('mpRoom').hidden = !inRoom;
+    $('mpMsg').textContent = this.status || '';
+    if (!inRoom) return;
+    $('mpCode').textContent = this.code;
+    const l = this.list(), host = this.host(), amHost = this.isHost();
+    $('mpCount').textContent = l.length + ' / ' + MP_MAX;
+    let h = '';
+    for (const p of l) {
+      h += '<li><i style="background:#' + (p.c1 >>> 0).toString(16).padStart(6, '0') + '"></i><b>' + E(p.n) + '</b>' +
+        (p.k === this.key ? '<span class="mpYou">you</span>' : '') +
+        (host && p.k === host.k ? '<span class="mpHost">host</span>' : '') +
+        (p.st === 'race' ? '<span class="mpRacing">racing</span>' : '') + '</li>';
+    }
+    $('mpPlayers').innerHTML = h;
+    // the map: the host picks, everyone sees it
+    const m = host ? (amHost ? this.me.m : host.m) : 0;
+    const sel = $('mpMap');
+    if (sel.options.length !== LEVELS.length) sel.innerHTML = LEVELS.map((lv, i) => '<option value="' + i + '">' + E(courseTag(i) + '  ' + lv.name) + '</option>').join('');
+    sel.value = String(m);
+    sel.disabled = !amHost;
+    $('mpMapName').textContent = LEVELS[m] ? LEVELS[m].name : '—';
+    $('mpMapPrev').innerHTML = Game.playable[m] ? MiniMap.svg(m, false) : '';
+    const R = this.race, busy = R && !R.done;
+    const start = $('bMpStart');
+    start.hidden = !amHost;
+    start.disabled = !!busy;
+    start.textContent = busy ? 'Race in progress…' : l.length < 2 ? 'Start (just you)' : 'Start race · ' + l.filter((p) => p.st === 'lobby').length + ' drivers';
+    $('mpWait').hidden = amHost;
+    $('mpWait').textContent = busy ? 'Race in progress — you\'re in the next one.' : 'Waiting for ' + (host ? host.n : 'the host') + ' to start…';
+    // the last race (or the one running now, if you're watching from here)
+    const res = busy ? { i: R.i, rows: this.standings(), live: true } : this.last;
+    $('mpResults').hidden = !res;
+    if (res) {
+      $('mpResHd').textContent = (res.live ? 'Racing now · ' : 'Last race · ') + (LEVELS[res.i] ? LEVELS[res.i].name : '');
+      const win = res.rows.find((r) => r.fin != null);
+      $('mpResList').innerHTML = res.rows.map((r, n) => '<li class="' + (r.k === this.key ? 'me' : '') + '"><span class="mpPl">' + (r.fin != null ? ordinal(n + 1) : '—') + '</span>' +
+        '<i style="background:#' + (r.c1 >>> 0).toString(16).padStart(6, '0') + '"></i><b>' + E(r.n) + '</b><em>' +
+        (r.fin != null ? formatTime(r.fin) + (win && r !== win ? ' <small>+' + (r.fin - win.fin).toFixed(3) + '</small>' : '') : r.out ? 'did not finish' : 'driving…') + '</em></li>').join('');
+    }
+  }
+};
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/**
  * The figures Coach puts up beside the chat. Each is numbered and has its
  * own colour; wherever the chat says "Figure N" it wears that colour, and
  * clicking it brings the figure forward. They are temporary: at most three
@@ -11414,7 +11948,7 @@ const UI = {
   toastT: 0,
   show(id) {
     ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'preview', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'garage', 'trophies']
+     'garage', 'trophies', 'multi']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
     if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
@@ -13409,6 +13943,18 @@ const Game = {
     $('bRetry').addEventListener('click', () => { if (this.levelIndex === DAILY_I) Daily.play(); else this.startLevel(this.levelIndex); });
     $('bResCourses').addEventListener('click', () => { if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else this.toSelect(); });
     $('bPreview').addEventListener('click', () => Preview.open());
+    $('bMulti').addEventListener('click', () => Multi.open());
+    $('bMpBack').addEventListener('click', () => this.goBack());
+    $('bMpCreate').addEventListener('click', () => Multi.create());
+    $('bMpJoin').addEventListener('click', () => Multi.join($('mpJoinCode').value));
+    $('mpJoinCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') Multi.join($('mpJoinCode').value); });
+    $('mpJoinCode').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); });
+    $('bMpLeave').addEventListener('click', () => Multi.leave());
+    $('bMpStart').addEventListener('click', () => Multi.start());
+    $('mpMap').addEventListener('change', (e) => Multi.setMap(+e.target.value));
+    $('bMpCopy').addEventListener('click', () => {
+      try { navigator.clipboard.writeText(Multi.code); UI.toast('Code copied'); } catch (e) { /* no clipboard */ }
+    });
     $('bPreviewBack').addEventListener('click', () => this.toMenu());
     $('pvList').addEventListener('click', (ev) => {
       const b = ev.target.closest('button[data-drive],button[data-watch]');
@@ -13583,7 +14129,7 @@ const Game = {
    * every real attempt rather than every key press.
    */
   logAttempt(outcome, reason) {
-    if (!this.course || !this.started || isPreview(this.levelIndex) || Autopilot.on) return;
+    if (!this.course || !this.started || isPreview(this.levelIndex) || Autopilot.on || this.runKind === 'multi') return;
     if (outcome !== 'finished' && this.time < 0.8) return;
     const kind = this.runKind || 'campaign';
     const rs = this.runStats || { top: 0, grass: 0, air: 0, far: 0 };
@@ -13603,6 +14149,7 @@ const Game = {
     Cloud.logRun(entry);
   },
   restartRun(msg, reason) {
+    if (Multi.racing) { Multi.respawn(msg); return; }
     this.logAttempt('restarted', reason || 'restart');
     this.ticket = null;
     this.cpNext = 0; this.cpMissRun = 0; this.cpWarned = false;
@@ -13650,7 +14197,7 @@ const Game = {
     UI.delta(null);
     UI.progress(0);
     UI.prompt('Hold W to launch');
-    if (this.ghostData) {
+    if (this.ghostData && !Multi.racing) {
       UI.toast(this.ghostOverrideName
         ? 'Chasing ' + this.ghostOverrideName + ' — ' + formatTime(this.ghostData.t)
         : 'Chasing your best run — ' + formatTime(this.ghostData.t));
@@ -14352,6 +14899,7 @@ const Game = {
   },
 
   finishLevel() {
+    if (this.runKind === 'multi') { Multi.myFinish(); return; }
     if (isPreview(this.levelIndex)) { this.finishPreview(); return; }
     this.running = false;
     this.state = 'result';
@@ -14478,7 +15026,7 @@ const Game = {
     const have = Records.ghost(id);
     if (have && Math.abs(have.t - best) < 0.0015) return;
     Cloud.fetchGhost(id).then((g) => {
-      if (!g || this.levelIndex !== i || this.ghostOverride) return;
+      if (!g || this.levelIndex !== i || this.ghostOverride || Multi.racing) return;
       Records.data.ghosts[id] = g;
       if (!this.started) { this.ghostData = g; this.buildGhostProgress(); }
     });
@@ -14591,6 +15139,7 @@ const Game = {
   },
 
   updateGhost(dt) {
+    if (this.runKind === 'multi') { Multi.drawCars(dt); return; }
     const g = this.ghostData;
     // Racing against a specific other player (this.ghostOverrideName set)
     // uses the full-detail, translucent, that-player's-own-colors mesh
@@ -14920,18 +15469,19 @@ const Game = {
 
   stepPlay(dt) {
     Input.sample();
-    if (Input.tapped('Escape')) {
+    if (this.runKind === 'multi') { if (Multi.step(dt)) return; }
+    else if (Input.tapped('Escape')) {
       if (isPreview(this.levelIndex)) { Preview.open(); return; }
       this.logAttempt('terminated', 'menu');
       if (this.levelIndex === DAILY_I) Daily.open(); else this.toMenu();
       return;
     }
-    if (Input.tapped('KeyR')) {
+    if (this.runKind !== 'multi' && Input.tapped('KeyR')) {
       if (this.levelIndex === DAILY_I) { if (this.started) { this.logAttempt('restarted', 'restart'); this.running = false; Daily.play(); } }
       else this.restartRun('Restarted', 'restart');
     }
-    if (Input.tapped('KeyT')) UI.toggleTele();
-    if (!this.started && Input.anyDrive) {
+    if (this.runKind !== 'multi' && Input.tapped('KeyT')) UI.toggleTele();
+    if (!this.started && Input.anyDrive && this.runKind !== 'multi') {
       this.started = true;
       this.recPrevPos.copy(this.car.pos);
       this.recPrevQuat.copy(this.car.quat);
@@ -15085,6 +15635,9 @@ const Game = {
         break;
       case 'preview':
         this.toMenu();
+        break;
+      case 'multi':
+        Multi.leave().then(() => this.toMenu());
         break;
       case 'settings': case 'trophies': case 'info': case 'stats': case 'daily':
         this.toMenu();
