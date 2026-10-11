@@ -119,6 +119,14 @@ create table if not exists public.season_awards (
   data jsonb not null default '{}'
 );
 
+-- who brought whom: a player who signed up from a friend's link
+create table if not exists public.referrals (
+  uid uuid primary key,
+  referrer uuid not null,
+  at timestamptz not null default now()
+);
+create index if not exists referrals_referrer on public.referrals (referrer, at);
+
 create table if not exists public.admin_notes (
   uid uuid primary key,
   real_name text not null,
@@ -1296,6 +1304,7 @@ declare
   v_ip text := public._client_ip();
   v_fp text := left(coalesce(p_fp, ''), 64);
   why text;
+  ref_by uuid;
 begin
   if me is null then raise exception 'not signed in' using errcode = '28000'; end if;
   if exists (select 1 from public.profiles where id = me) then
@@ -1321,8 +1330,20 @@ begin
     if exists (select 1 from public.profiles where lower(display_name) = lower(p_name)) then
       return jsonb_build_object('ok', false, 'error', 'taken');
     end if;
-    select value ->> 'code' into inv from public.settings where key = 'invite';
-    if inv is null or not (trim(typed) = inv or upper(regexp_replace(typed, '\s', '', 'g')) = upper(inv)) then why := 'invite'; end if;
+    -- a friend's link ("ref:Name") counts as an invite: the friend must be a
+    -- real, unbanned player, can bring at most 10 a day, and the admin can
+    -- switch links off (settings 'referrals' {"on": false})
+    if typed ~* '^ref:[A-Za-z0-9_-]{3,14}$' then
+      if coalesce((select value ->> 'on' from public.settings where key = 'referrals'), 'true') <> 'false' then
+        select id into ref_by from public.profiles where lower(display_name) = lower(substr(typed, 5)) and not banned;
+      end if;
+      if ref_by is null or (select count(*) from public.referrals where referrer = ref_by and at > now() - interval '1 day') >= 10 then
+        why := 'invite';
+      end if;
+    else
+      select value ->> 'code' into inv from public.settings where key = 'invite';
+      if inv is null or not (trim(typed) = inv or upper(regexp_replace(typed, '\s', '', 'g')) = upper(inv)) then why := 'invite'; end if;
+    end if;
   end if;
   if why is not null then
     -- the login goes too, so the name is free again
@@ -1330,10 +1351,17 @@ begin
     return jsonb_build_object('ok', false, 'error', why);
   end if;
   insert into public.profiles (id, display_name) values (me, p_name);
+  if ref_by is not null then insert into public.referrals (uid, referrer) values (me, ref_by) on conflict (uid) do nothing; end if;
   insert into public.signup_log (uid, device_id, fp, ip) values (me, p_device, v_fp, v_ip);
   perform public._see_device(p_device, v_fp);
   return jsonb_build_object('ok', true);
 end $$;
+
+-- how many friends signed up from the calling player's link
+create or replace function public.my_referrals() returns integer
+language sql stable security definer set search_path = public, pg_temp as $$
+  select count(*)::int from public.referrals where referrer = (public._player()).id
+$$;
 
 -- the +1 credit now comes only with a finished run (finish_run)
 drop function if exists public.grant_credit(text);
@@ -1723,6 +1751,7 @@ alter table public.credit_events enable row level security;
 alter table public.car_customization enable row level security;
 alter table public.run_log enable row level security;
 alter table public.season_awards enable row level security;
+alter table public.referrals enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -1736,7 +1765,7 @@ declare t text;
 begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
-                          'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids',
+                          'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);

@@ -750,6 +750,18 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .statGrid div{padding:9px 11px;border-radius:9px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.05);min-width:0}
 .statGrid span{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
 .statGrid b{display:block;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+/* ---------- invite friends ---------- */
+.refBtn{border-color:rgba(61,219,184,.45);color:var(--aqua)}
+.refBox{position:fixed;inset:0;z-index:85;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.6);padding:16px}
+.refBox[hidden]{display:none}
+.refPanel{width:min(560px,100%);padding:22px 24px;border-radius:14px;background:var(--bg-2,#0d1424);border:1px solid var(--rule-2);
+  box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.refPanel .lede{margin:6px 0 14px}
+.refRow{gap:8px;margin:4px 0 12px;align-items:center}
+#refLink{flex:1;min-width:0;font-family:var(--mono);font-size:13px}
+#refMsg{width:100%;resize:none;font:13px/1.5 var(--sans);margin-bottom:4px;padding:10px 12px;border-radius:8px;
+  color:var(--ink);background:rgba(255,255,255,.04);border:1px solid var(--rule-2)}
+.refCount{font-size:12.5px;color:var(--dim)}
 /* ---------- races with friends ---------- */
 .mpBar{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 16px;border-radius:12px;
   border:1px solid rgba(242,115,63,.55);background:linear-gradient(90deg,rgba(242,115,63,.16),rgba(242,115,63,.04));color:var(--ink)}
@@ -1477,6 +1489,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <div class="who" id="who" hidden>
           <span class="whoName"><b id="whoName">—</b></span>
           <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
+          <button class="small refBtn" id="bInvite">Invite friends</button>
           <button class="ghost small" id="whoOut">Sign out</button>
         </div>
       </header>
@@ -1574,6 +1587,25 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <button class="ghost" id="bPreviewBack">&larr; Menu</button>
       </div>
       <div id="pvList"></div>
+    </div>
+  </div>
+
+  <!-- invite friends: a link to paste anywhere -->
+  <div class="refBox" id="refBox" hidden>
+    <div class="refPanel" role="dialog" aria-labelledby="refTitle">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="kick">BRING YOUR FRIENDS</div>
+          <h2 class="big" id="refTitle">Invite friends</h2>
+        </div>
+        <button class="ghost small" id="bRefClose">Close</button>
+      </div>
+      <p class="lede">Send this link to a friend: paste it in a chat, a Google Doc or an email. It opens aiPolytrack ready to make an account, no invite code needed.</p>
+      <label class="fld" for="refLink">Your link</label>
+      <div class="row refRow"><input type="text" id="refLink" readonly><button class="primary" id="bRefCopy">Copy link</button></div>
+      <label class="fld" for="refMsg">Or send it with a message</label>
+      <textarea id="refMsg" rows="3" readonly></textarea>
+      <div class="row refRow"><button id="bRefCopyMsg">Copy message</button><span class="refCount" id="refCount"></span></div>
     </div>
   </div>
 
@@ -3387,7 +3419,7 @@ const Cloud = {
     if (!res || !res.ok) {
       try { await this.sb.auth.signOut({ scope: 'local' }); } catch (e) { /* the login is gone already */ }
       this.user = null;
-      if (res && res.error === 'invite') throw new Error('That invite code is not valid.');
+      if (res && res.error === 'invite') throw new Error(/^ref:/i.test(code || '') ? 'That invite link isn\'t working any more. Ask your friend for a new one, or use an invite code.' : 'That invite code is not valid.');
       if (res && res.error === 'device_limit') throw new Error('This computer already has 5 accounts, the most it can make. Sign in to one of them.');
       if (res && res.error === 'blocked') throw new Error('This computer is blocked from making accounts.');
       if (res && res.error === 'busy') throw new Error('Lots of accounts are being made right now. Try again in an hour.');
@@ -9151,6 +9183,60 @@ function ordinal(n) {
 }
 
 /**
+ * Bringing friends: every signed-in player has a link (the game's address
+ * with ?ref=TheirName). Opening it lands on "Create an account" with the
+ * invite already taken care of: the server accepts a real, unbanned
+ * player's name in place of the invite code (claim_profile).
+ */
+const Referral = {
+  from: null, auto: true, count: null,
+  init() {
+    let r = null;
+    try { r = new URLSearchParams(location.search).get('ref'); } catch (e) { /* no query */ }
+    if (r && /^[A-Za-z0-9_-]{3,14}$/.test(r)) {
+      this.from = r;
+      try { sessionStorage.setItem('aipolytrack-ref', r); } catch (e) { /* storage blocked */ }
+    } else {
+      try { const s = sessionStorage.getItem('aipolytrack-ref'); if (s && /^[A-Za-z0-9_-]{3,14}$/.test(s)) this.from = s; } catch (e) { /* storage blocked */ }
+    }
+  },
+  link() {
+    const base = location.origin + location.pathname.replace(/index\.html$/, '');
+    return base + '?ref=' + encodeURIComponent(Cloud.name() || '');
+  },
+  message() {
+    return 'I\'m racing on aiPolytrack: 16 maps, live races with friends and a leaderboard for every map. ' +
+      'Make an account with my link (no code needed) and try to beat my times: ' + this.link();
+  },
+  async open() {
+    if (!Cloud.on || !Cloud.user) { UI.toast('Sign in to get your invite link.'); return; }
+    $('refLink').value = this.link();
+    $('refMsg').value = this.message();
+    $('refBox').hidden = false;
+    $('refCount').textContent = '';
+    try {
+      this.count = await Cloud.rpc('my_referrals');
+      $('refCount').textContent = this.count ? this.count + ' friend' + (this.count === 1 ? ' has' : 's have') + ' joined with your link.' : 'Nobody has joined with your link yet.';
+    } catch (e) { /* the count is a nicety */ }
+  },
+  close() { $('refBox').hidden = true; },
+  /** signed in: the friend's link has done its job */
+  done() {
+    if (!this.from) return;
+    this.from = null;
+    try { sessionStorage.removeItem('aipolytrack-ref'); } catch (e) { /* storage blocked */ }
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* not allowed */ }
+  },
+  async copy(id, what) {
+    const el = $(id);
+    try { await navigator.clipboard.writeText(el.value); }
+    catch (e) { el.select(); try { document.execCommand('copy'); } catch (e2) { /* nothing more to try */ } }
+    UI.toast(what + ' copied. Paste it anywhere: a chat, a Google Doc, an email.');
+  }
+};
+Referral.init();
+
+/**
  * The figures Coach puts up beside the chat. Each is numbered and has its
  * own colour; wherever the chat says "Figure N" it wears that colour, and
  * clicking it brings the figure forward. They are temporary: at most three
@@ -12499,12 +12585,17 @@ const UI = {
   gateError(msg) { $('gErr').textContent = msg || ''; },
   creating: false,
   gateMode(creating) {
+    // arriving from a friend's link opens on "Create an account"
+    if (Referral.from && Referral.auto) creating = true;
     this.creating = creating;
-    $('gateTitle').textContent = creating ? 'Create an account' : 'Sign in';
-    $('gateNote').textContent = creating
-      ? 'You need an invite code from whoever runs this server. Played before? Use your old username — no code needed.'
-      : 'aiPolytrack is invite-only. Sign in to load your times.';
-    $('gNewFields').hidden = !creating;
+    const invited = creating && Referral.from;
+    $('gateTitle').textContent = creating ? (invited ? Referral.from + ' invited you' : 'Create an account') : 'Sign in';
+    $('gateNote').textContent = invited
+      ? 'Pick a username and a password and you\'re in: no invite code needed with ' + Referral.from + '\'s link.'
+      : creating
+        ? 'You need an invite code from whoever runs this server. Played before? Use your old username — no code needed.'
+        : 'aiPolytrack is invite-only. Sign in to load your times.';
+    $('gNewFields').hidden = !creating || !!invited;
     $('gGo').textContent = creating ? 'Create account' : 'Sign in';
     $('gToggle').textContent = creating ? 'Sign in instead' : 'Create an account';
     $('gSwitch').firstChild.textContent = creating
@@ -14259,6 +14350,7 @@ const Game = {
     name.addEventListener('blur', () => Records.setDriver(name.value));
 
     $('gToggle').addEventListener('click', () => {
+      Referral.auto = false;
       UI.gateMode(!UI.creating);
     });
     $('gGo').addEventListener('click', async () => {
@@ -14280,13 +14372,14 @@ const Game = {
         // (Cloud reporting a signed-out state) without the user re-clicking
         // the toggle — reading a stale local flag would then silently keep
         // calling signUp() even though the button now reads "Sign in".
-        if (UI.creating) await Cloud.signUp(user, pw, $('gCode').value);
+        if (UI.creating) await Cloud.signUp(user, pw, Referral.from && !$('gCode').value.trim() ? 'ref:' + Referral.from : $('gCode').value);
         else await Cloud.signIn(user, pw);
         UI.gateError('');
         // The auth-state listener sits out while Cloud.busy is set, so this
         // flow reports its own outcome once sign-up/sign-in has actually
         // finished writing (or loading) the profile.
         await this.onAuth(Cloud.user, Cloud.profile);
+        if (Cloud.user) Referral.done();
       } catch (e) {
         // a returning player is taken straight to "Create an account",
         // with what they typed still filled in
@@ -14298,6 +14391,11 @@ const Game = {
     });
     $('bnOut').addEventListener('click', () => Cloud.signOut());
     $('whoOut').addEventListener('click', () => Cloud.signOut());
+    $('bInvite').addEventListener('click', () => Referral.open());
+    $('bRefClose').addEventListener('click', () => Referral.close());
+    $('refBox').addEventListener('click', (e) => { if (e.target.id === 'refBox') Referral.close(); });
+    $('bRefCopy').addEventListener('click', () => Referral.copy('refLink', 'Link'));
+    $('bRefCopyMsg').addEventListener('click', () => Referral.copy('refMsg', 'Message'));
 
     $('bDrive').addEventListener('click', () => this.startLevel(this.nextCourseIndex()));
     $('bCourses').addEventListener('click', () => this.toSelect('list'));
