@@ -762,6 +762,58 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .dayCh.done{border-color:rgba(61,219,184,.45)}
 .dayCh.done .dayChBar i{background:var(--aqua)}
 .dayCh.done b{color:var(--aqua)}
+/* ---------- titles, icons, profile cards ---------- */
+.pIcon{--ps:28px;position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--ps);height:var(--ps);
+  border-radius:calc(var(--ps) * .24);overflow:hidden;vertical-align:middle;margin-right:calc(var(--ps) * .3);isolation:isolate;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -2px 3px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.4)}
+.pIcon b{position:relative;z-index:2;font:900 calc(var(--ps) * .62)/1 var(--sans);letter-spacing:-.04em;
+  background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.75) 45%,rgba(0,0,0,.25) 100%);-webkit-background-clip:text;background-clip:text;
+  color:transparent;filter:drop-shadow(0 1px 0 rgba(0,0,0,.45))}
+.pIcon::before{content:'';position:absolute;inset:0;z-index:0}
+.pIcon::after{content:'';position:absolute;z-index:1;top:-60%;left:-80%;width:55%;height:220%;transform:rotate(25deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:pShine 3.4s ease-in-out infinite}
+@keyframes pShine{0%,55%{left:-80%}100%{left:140%}}
+.pIcon.t0::before{background:radial-gradient(circle at 30% 20%,#fff7d0,#ffd56a 30%,#e0a51e 62%,#8a5a06)}
+.pIcon.t0{box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -2px 3px rgba(80,45,0,.5),0 0 12px rgba(255,200,60,.55),0 2px 8px rgba(0,0,0,.4)}
+.pIcon.t1::before{background:radial-gradient(circle at 30% 20%,#ffffff,#e4ebf3 30%,#a9b6c6 62%,#5d6a7a)}
+.pIcon.t1{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -2px 3px rgba(30,40,55,.5),0 0 10px rgba(210,225,245,.45),0 2px 8px rgba(0,0,0,.4)}
+.pIcon.t2::before{background:radial-gradient(circle at 30% 20%,#ffe2c4,#e8a56a 30%,#b8692f 62%,#5e300c)}
+.pIcon.t2{box-shadow:inset 0 1px 0 rgba(255,235,210,.8),inset 0 -2px 3px rgba(60,25,0,.5),0 0 10px rgba(230,150,80,.45),0 2px 8px rgba(0,0,0,.4)}
+.pIcon.none::before{background:linear-gradient(160deg,#2a3346,#151b29)}
+.pIcon.none::after{display:none}
+.pIcon.none b{background:none;color:var(--dim);filter:none}
+.pLink{color:inherit;text-decoration:none;display:inline-flex;align-items:center;max-width:100%}
+.pLink:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+td .pIcon{margin-right:7px}
+.pfc{font-family:var(--mono);color:#ffcf5c}
+.pfc.na{color:var(--dimmer)}
+.whoName{display:inline-flex;align-items:center;gap:0;background:none;border:0;padding:2px 4px;border-radius:8px;cursor:pointer;color:var(--ink)}
+.whoName:hover{background:rgba(255,255,255,.05)}
+.whoTxt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.whoTxt small{font-size:10.5px;font-weight:600;color:#ffcf5c;letter-spacing:.02em}
+.whoTxt small[hidden]{display:none}
+.pcBox{position:fixed;inset:0;z-index:86;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.62);padding:16px}
+.pcBox[hidden]{display:none}
+.pcCard{position:relative;width:min(440px,100%);padding:22px 22px 18px;border-radius:18px;border:1px solid var(--rule-2);
+  background:linear-gradient(165deg,#141c2e,#0b1120 70%);box-shadow:0 30px 80px rgba(0,0,0,.55)}
+.pcCard.t0{border-color:rgba(255,207,92,.55);background:linear-gradient(165deg,#2a2412,#0f1322 60%)}
+.pcCard.t1{border-color:rgba(220,230,245,.45);background:linear-gradient(165deg,#222a36,#0f1322 60%)}
+.pcCard.t2{border-color:rgba(232,165,106,.5);background:linear-gradient(165deg,#2a1d14,#0f1322 60%)}
+.pcX{position:absolute;top:14px;right:14px}
+.pcTop{display:flex;align-items:center;gap:4px;padding-right:70px}
+.pcWho{display:flex;flex-direction:column;min-width:0}
+.pcWho b{font-size:24px;font-weight:800;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcTitle{font-size:13px;font-weight:700;color:#ffcf5c;letter-spacing:.02em}
+.pcCard.t1 .pcTitle{color:#e4ebf3} .pcCard.t2 .pcTitle{color:#e8a56a}
+.pcTitle.none{color:var(--dimmer);font-weight:500}
+.pcCar{width:100%;height:170px;margin:6px 0 8px;border:0;background:transparent}
+.pcStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.pcStats div{padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);min-width:0}
+.pcStats span{display:block;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+.pcStats b{display:block;font-family:var(--mono);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcStats .gold b{color:#ffcf5c}
+.pcBtns{gap:8px;flex-wrap:wrap}
+#trophyTitle{display:flex;align-items:center}
 /* ---------- controls ---------- */
 .keyList{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
 .keyRow{display:grid;grid-template-columns:minmax(0,1fr) 128px 128px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
@@ -1511,7 +1563,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <span class="seasonTag">Season 1</span>
         </div>
         <div class="who" id="who" hidden>
-          <span class="whoName"><b id="whoName">—</b></span>
+          <button class="whoName" id="whoCard" title="Your profile card"><span id="whoIcon"></span><span class="whoTxt"><b id="whoName">—</b><small id="whoTitle"></small></span></button>
           <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
           <button class="small refBtn" id="bInvite">Invite friends</button>
           <button class="ghost small" id="whoOut">Sign out</button>
@@ -1617,6 +1669,20 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <button class="ghost" id="bPreviewBack">&larr; Menu</button>
       </div>
       <div id="pvList"></div>
+    </div>
+  </div>
+
+  <!-- a driver's profile card -->
+  <div class="pcBox" id="pcBox" hidden>
+    <div class="pcCard" id="pcCard" role="dialog" aria-labelledby="pcName">
+      <button class="ghost small pcX" id="bPcClose">Close</button>
+      <div class="pcTop">
+        <span class="pcIcon" id="pcIcon"></span>
+        <div class="pcWho"><b id="pcName">—</b><span class="pcTitle" id="pcTitle"></span></div>
+      </div>
+      <div class="garagePreviewWrap pcCar"><canvas id="pcCanvas"></canvas></div>
+      <div class="pcStats" id="pcStats"></div>
+      <div class="row pcBtns"><button class="primary small" id="bPcTrophies">View trophy room</button><button class="small" id="bPcCoach">Perfection with Coach</button></div>
     </div>
   </div>
 
@@ -1877,7 +1943,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     <div class="scrim"></div>
     <div class="panel trophyPanel">
       <div class="row" style="justify-content:space-between;align-items:baseline">
-        <h2 class="big">Trophy room</h2>
+        <h2 class="big" id="trophyTitle">Trophy room</h2>
         <button class="ghost" id="bTrophyBack">← Menu</button>
       </div>
       <div class="trophyStage">
@@ -3846,6 +3912,20 @@ const Cloud = {
   },
 
   /** the equipped colors of any player, to paint their ghost */
+  /** other players' balances: {uid: credits}; cached for a minute */
+  _pc: {}, _pcAt: {},
+  async publicCredits(uids) {
+    const want = [...new Set(uids.filter(Boolean))].filter((u) => !(this._pcAt[u] > Date.now() - 60000)).slice(0, 40);
+    if (want.length && this.on && this.user) {
+      try {
+        const r = await this.rpc('public_credits', { p_uids: want });
+        for (const u of want) { this._pc[u] = r && r[u] !== undefined ? r[u] | 0 : null; this._pcAt[u] = Date.now(); }
+      } catch (e) { /* shown as unknown */ }
+    }
+    const out = {};
+    for (const u of uids) out[u] = this._pc[u] === undefined ? null : this._pc[u];
+    return out;
+  },
   async fetchCarColorsOf(uid) {
     const fallback = { primary: { h: 0, s: 80, l: 55 }, secondary: { h: 0, s: 60, l: 37 } };
     if (!this.on || !uid) return fallback;
@@ -7994,6 +8074,45 @@ function makePlayerCarPreview(canvasId) {
       addEventListener('resize', () => { if (this.running) this.resize(); });
     },
 
+    /**
+     * The driver's credits on the ground beside the car: a plate with the
+     * number and a little pile of gems (null takes it away).
+     */
+    setCredits(n) {
+      this.ensureBuilt();
+      if (this.plate) { this.scene.remove(this.plate); this.plate.traverse((o) => { if (o.material && o.material.map) o.material.map.dispose(); }); this.plate = null; }
+      if (n === null || n === undefined) return;
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 160;
+      const x = c.getContext('2d');
+      x.fillStyle = 'rgba(7,11,24,.82)';
+      x.beginPath(); x.roundRect ? x.roundRect(4, 4, 504, 152, 34) : x.rect(4, 4, 504, 152); x.fill();
+      x.strokeStyle = 'rgba(47,180,236,.8)'; x.lineWidth = 5; x.stroke();
+      x.fillStyle = '#2fb4ec'; x.font = '700 84px system-ui, sans-serif'; x.textBaseline = 'middle'; x.textAlign = 'left';
+      x.fillText('◆', 34, 84);
+      x.fillStyle = '#eaf0f8'; x.font = '800 78px ui-monospace, monospace';
+      x.fillText(fmtCredits(n), 124, 86);
+      const tex = new THREE.CanvasTexture(c);
+      tex.encoding = THREE.sRGBEncoding;
+      const plate = new THREE.Group();
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(1.75, 0.55), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }));
+      m.renderOrder = 10;   // always in front of the turning car
+      m.rotation.x = -Math.PI / 2 + 0.7;
+      plate.add(m);
+      const gemMat = (col) => new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.2, metalness: 0.1, flatShading: true });
+      [[0x2fb4ec, -1.1, 0.05], [0x34d17f, -1.25, -0.22], [0xffbe3d, -0.95, -0.27]].forEach(([col, gx, gz]) => {
+        const g = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), gemMat(col));
+        g.scale.set(1, 1.4, 1); g.position.set(gx, 0.18, gz);
+        plate.add(g);
+      });
+      // in front of the turning car, clear of it, tilted up toward the camera
+      plate.position.set(1.5, -0.42, 1.7);
+      plate.rotation.y = -0.35;
+      plate.scale.setScalar(1);
+      this.scene.add(plate);
+      this.plate = plate;
+    },
+
     /** colors is whatever Cloud.fetchCarColorsOf(uid) resolved to. */
     paint(colors) {
       this.ensureBuilt();
@@ -8041,7 +8160,7 @@ const championPreview = makePlayerCarPreview('champCanvas');
  * card's own small canvas, so four cars cost one WebGL context, not four.
  */
 const SectionCars = {
-  renderer: null, failed: false, running: false, angle: 0, slots: [null, null, null, null], W: 240, H: 120,
+  renderer: null, failed: false, running: false, angle: 0, slots: [null, null, null, null], W: 240, H: 120, credits: [null, null, null, null],
   ensure() {
     if (this.renderer || this.failed) return !!this.renderer;
     try {
@@ -8092,6 +8211,16 @@ const SectionCars = {
         const scale = Math.min(c.width / this.W, c.height / this.H);
         const dw = this.W * scale, dh = this.H * scale;
         ctx.drawImage(this.renderer.domElement, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
+        // their credits on the ground beside the car
+        const cr = this.credits[sec];
+        if (cr !== null && cr !== undefined) {
+          const fs = Math.max(9, Math.round(c.height * 0.2)), txt = '◆ ' + fmtCredits(cr);
+          ctx.font = '700 ' + fs + 'px ui-monospace, monospace';
+          const tw = ctx.measureText(txt).width + fs * 0.9, th = fs * 1.35, tx = c.width - tw - 2, ty = c.height - th - 1;
+          ctx.fillStyle = 'rgba(7,11,24,.78)'; ctx.fillRect(tx, ty, tw, th);
+          ctx.fillStyle = '#2fb4ec'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+          ctx.fillText(txt, tx + fs * 0.45, ty + th / 2 + 1);
+        }
       });
       requestAnimationFrame(loop);
     };
@@ -9326,6 +9455,83 @@ function ordinal(n) {
 }
 
 /**
+ * Profiles: a driver's season titles and icon (from closed seasons' podiums,
+ * so everyone sees the same thing and nobody can set their own), their name
+ * as a link to their profile card, and the card itself.
+ */
+const Profiles = {
+  finals: [], cur: null,
+  TIERN: ['Gold', 'Silver', 'Bronze'],
+  /** a driver's best title: the newest closed season they made the podium of */
+  award(uid) {
+    if (!uid) return null;
+    for (const f of this.finals) {
+      const k = (f.podium || []).findIndex((p) => p.uid === uid);
+      if (k >= 0 && k < 3) {
+        const num = (String(f.label).match(/\d+/) || ['★'])[0];
+        return { season: f.label, num, tier: k, title: f.label + ' ' + this.TIERN[k] };
+      }
+    }
+    return null;
+  },
+  /** the square icon: the season's number in gold, silver or bronze ('' without a title) */
+  icon(uid, size) {
+    const a = this.award(uid);
+    if (!a) return '';
+    return '<span class="pIcon t' + a.tier + '" style="--ps:' + (size || 28) + 'px" title="' + escapeHtml(a.title) + '"><b>' + escapeHtml(a.num) + '</b></span>';
+  },
+  /** a name on a board: icon, then the name as a link to the card */
+  name(uid, n, size) {
+    return '<a href="#" class="pLink" data-uid="' + escapeHtml(uid || '') + '" data-n="' + escapeHtml(n) + '">' + this.icon(uid, size || 18) + escapeHtml(n) + '</a>';
+  },
+  /** Perfection for any driver: null unless they have every map */
+  perfection(uid, n) {
+    const maps = LEVELS.map((lv) => {
+      const b = Records.board(lv.id), e = b.find(Insight.finder(uid, n));
+      return { t: e ? e.t : null, lead: b[0] ? { t: b[0].t } : null };
+    });
+    return Insight.perfection(maps);
+  },
+  /** titles arrived: whatever shows names redraws */
+  refresh() {
+    if (Cloud.user) UI.who(Cloud.name(), Records.credits);
+    if (Game.state === 'select') Game.renderSel();
+  },
+  preview: null,
+  async open(uid, n) {
+    if (!n) return;
+    const E = escapeHtml, aw = this.award(uid);
+    this.cur = { uid, n };
+    $('pcIcon').innerHTML = this.icon(uid, 56) || '<span class="pIcon none" style="--ps:56px"><b>' + E(n.charAt(0).toUpperCase()) + '</b></span>';
+    $('pcName').textContent = n;
+    $('pcTitle').textContent = aw ? aw.title : 'No title yet';
+    $('pcTitle').classList.toggle('none', !aw);
+    $('pcCard').className = 'pcCard' + (aw ? ' t' + aw.tier : '');
+    const rows = Records.overall(COURSE_IDS), ri = rows.findIndex(Insight.finder(uid, n)), r = ri >= 0 ? rows[ri] : null;
+    let wins = 0, pods = 0;
+    LEVELS.forEach((lv) => { const k = Records.board(lv.id).findIndex(Insight.finder(uid, n)); if (k === 0) wins++; if (k >= 0 && k < 3) pods++; });
+    const pf = this.perfection(uid, n);
+    const cell = (k, v, cls) => '<div' + (cls ? ' class="' + cls + '"' : '') + '><span>' + k + '</span><b>' + v + '</b></div>';
+    const draw = (credits) => {
+      $('pcStats').innerHTML = cell('Season ' + SEASON, r ? Insight.ord(ri + 1) + ' of ' + rows.length : '—') + cell('Maps', (r ? r.count : 0) + '/' + LEVELS.length) +
+        cell('Map records', String(wins)) + cell('Podiums', String(pods)) +
+        cell('Perfection', Insight.perfText(pf), 'gold') + cell('Credits', credits === null || credits === undefined ? '—' : '◆ ' + fmtCredits(credits));
+    };
+    draw(null);
+    $('bPcTrophies').textContent = Cloud.user && uid === Cloud.user.uid ? 'Your trophy room' : 'View ' + n + '\'s trophy room';
+    $('pcBox').hidden = false;
+    if (!this.preview) this.preview = makePlayerCarPreview('pcCanvas');
+    this.preview.start();
+    if (uid) {
+      Cloud.fetchCarColorsOf(uid).then((c) => { if (this.cur && this.cur.uid === uid && c) this.preview.paint(c); }).catch(() => {});
+      const cr = Cloud.user && uid === Cloud.user.uid ? { [uid]: Records.credits } : await Cloud.publicCredits([uid]);
+      if (this.cur && this.cur.uid === uid) draw(cr[uid]);
+    }
+  },
+  close() { $('pcBox').hidden = true; this.cur = null; if (this.preview) this.preview.stop(); }
+};
+
+/**
  * The daily challenge on the menu: finished runs today out of DAY_GOAL.
  * The server counts (only finishes it accepted) and pays; this just shows
  * the count, from my_day() and from every finish's reply.
@@ -10163,6 +10369,9 @@ const Champion = {
       const list = (rows || []).map((r) => r.data).filter((d) => d && Array.isArray(d.podium) && d.podium.length);
       list.sort((a, b) => (b.closed_at || 0) - (a.closed_at || 0));
       this.data = list[0] || null;
+      const had = Profiles.finals.length;
+      Profiles.finals = list;
+      if (list.length !== had) Profiles.refresh();
     } catch (e) { this.data = null; }
     this.render();
   },
@@ -11637,11 +11846,20 @@ function engraveMap(ctx, i, x, y, w, h) {
   ctx.lineWidth = lw * 0.8; ctx.stroke();
 }
 const Trophies = {
-  compute() {
-    const uid = Cloud.user && Cloud.user.uid;
-    const me = Records.driver();
+  /** a driver's trophies (yours when uid is not given) */
+  compute(forUid, forName) {
+    const uid = forUid || forName ? forUid : Cloud.user && Cloud.user.uid;
+    const me = forName || Records.driver();
     const mine = (e) => (uid && e.uid) ? e.uid === uid : (!uid && e.n === me);
     const out = [];
+    // a closed season's podium: the biggest trophy there is
+    for (const f of Profiles.finals) {
+      const k = (f.podium || []).findIndex((p) => uid && p.uid === uid);
+      if (k >= 0 && k < 3) {
+        out.push({ kind: 'final', tier: k, size: 3, maps: LEVELS.map((l, i) => i), title: f.label + ' · ' + Profiles.TIERN[k], sub: 'Final standings · ' + f.label,
+          plaque: String(f.label).toUpperCase() + ' ' + Profiles.TIERN[k].toUpperCase(), time: f.podium[k].total_ms / 1000, note: f.podium[k].count + '/' + (f.maps || f.podium[k].count) + ' maps' });
+      }
+    }
     const ov = Records.overall(COURSE_IDS);
     const r = ov.findIndex(mine);
     if (r >= 0 && r < 3) {
@@ -11777,8 +11995,9 @@ const TrophyRoom = {
     this.scene.add(this.floor);
     this.root = new THREE.Group();
     this.scene.add(this.root);
-    // your own car, in whatever you've painted it (shared MAT.body/bodyDark)
-    this.car = buildCarMesh().group;
+    // the owner's car: their own colours (your own, or whoever's room this is)
+    this.bodyMat = MAT.body.clone(); this.darkMat = MAT.bodyDark.clone();
+    this.car = buildCarMesh(this.bodyMat, this.darkMat).group;
     this.car.position.y = 0.45;
     this.car.rotation.y = deg(-30);
     this.scene.add(this.car);
@@ -12187,6 +12406,9 @@ const TrophyRoom = {
 
   start(data) {
     this.ensureBuilt();
+    const col = data.colors;
+    if (col) { this.bodyMat.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l)); this.darkMat.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l)); }
+    else { this.bodyMat.color.copy(MAT.body.color); this.darkMat.color.copy(MAT.bodyDark.color); }
     this.build(data);
     this.resize();
     if (this.running) return;
@@ -12726,6 +12948,10 @@ const UI = {
     this.creditBadge(name ? credits : null);
     if (!name) return;
     $('whoName').textContent = name;
+    const me = Cloud.user && Cloud.user.uid, aw = me ? Profiles.award(me) : null;
+    $('whoIcon').innerHTML = me ? Profiles.icon(me, 26) : '';
+    $('whoTitle').textContent = aw ? aw.title : '';
+    $('whoTitle').hidden = !aw;
     $('whoCredits').textContent = fmtCredits(credits);
   },
 
@@ -13169,7 +13395,7 @@ const UI = {
           h += '<td>' + (e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
             (checked ? ' checked' : '') + ' aria-label="Select ' + escapeHtml(e.n) + '">' : '') + '</td>';
         }
-        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(e.n) +
+        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + Profiles.name(e.uid, e.n, 18) +
           (mine ? ' <small class="youTag">(you)</small>' : '') + freshTag(e) + '</td><td class="t">' + formatTime(e.t) +
           '</td><td class="d">' + (isFinite(when.getTime()) && e.d ? when.toLocaleDateString() : '') + '</td></tr>';
       });
@@ -13322,6 +13548,10 @@ const UI = {
     overallLeaderPreview.start();
     const colors = await Cloud.fetchCarColorsOf(top.uid);
     overallLeaderPreview.paint(colors);
+    const leaders = [top.uid].concat(SECTIONS.map((nm, sec) => (Records.overall(sectionIds(sec))[0] || {}).uid)).filter(Boolean);
+    const cr = await Cloud.publicCredits(leaders);
+    overallLeaderPreview.setCredits(cr[top.uid]);
+    SECTIONS.forEach((nm, sec) => { const t = Records.overall(sectionIds(sec))[0]; SectionCars.credits[sec] = t ? cr[t.uid] : null; });
   },
   /** the menu's greeting and where the player stands */
   hello() {
@@ -13383,7 +13613,7 @@ const UI = {
     const show = Game.boardShow[tabKey] || 10;
     const uid = Cloud.user && Cloud.user.uid, me = Records.driver();
     let h = '<table><thead><tr>' + (pick ? '<th></th>' : '') + '<th></th><th>Driver</th><th style="text-align:right">Maps</th>' +
-      '<th style="text-align:right">Total</th></tr></thead><tbody>';
+      (tabKey === 'all' ? '<th style="text-align:right">Perfection</th>' : '') + '<th style="text-align:right">Total</th></tr></thead><tbody>';
     rows.slice(0, show).forEach((r, k) => {
       const mine = (uid && r.uid) ? r.uid === uid : r.n === me;
       const ok = pick && pick.whole.has(r.uid), checked = ok && pick.sel.has(r.uid);
@@ -13392,9 +13622,11 @@ const UI = {
         h += ok ? '<td><input type="checkbox" class="selBox" data-uid="' + escapeHtml(r.uid) + '"' + (checked ? ' checked' : '') +
           ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all ' + ids.length + ' maps">—</td>';
       }
+      const pf = tabKey === 'all' ? Profiles.perfection(r.uid, r.n) : undefined;
       h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' +
-        escapeHtml(r.n) + '</td><td class="d">' + r.count + ' / ' + ids.length + '</td><td class="t">' +
-        formatTime(r.total) + '</td></tr>';
+        Profiles.name(r.uid, r.n, 18) + '</td><td class="d">' + r.count + ' / ' + ids.length + '</td>' +
+        (pf !== undefined ? '<td class="d pfc' + (pf === null ? ' na' : '') + '" title="Perfection: #1\'s time over theirs on every map, averaged">' + Insight.perfText(pf) + '</td>' : '') +
+        '<td class="t">' + formatTime(r.total) + '</td></tr>';
     });
     h += '</tbody></table>';
     if (rows.length > show) h += '<button class="ghost small moreBtn" data-more="' + tabKey + '">Show more (' + (rows.length - show) + ') ▾</button>';
@@ -14561,6 +14793,21 @@ const Game = {
     $('bnOut').addEventListener('click', () => Cloud.signOut());
     $('whoOut').addEventListener('click', () => Cloud.signOut());
     $('bInvite').addEventListener('click', () => Referral.open());
+    $('whoCard').addEventListener('click', () => { if (Cloud.user) Profiles.open(Cloud.user.uid, Cloud.name()); });
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('.pLink');
+      if (a && !e.target.closest('input')) { e.preventDefault(); e.stopPropagation(); Profiles.open(a.dataset.uid || null, a.dataset.n); }
+    }, true);
+    $('bPcClose').addEventListener('click', () => Profiles.close());
+    $('pcBox').addEventListener('click', (e) => { if (e.target.id === 'pcBox') Profiles.close(); });
+    $('bPcTrophies').addEventListener('click', () => { const w = Profiles.cur; Profiles.close(); if (w) this.toTrophies(w); });
+    $('bPcCoach').addEventListener('click', () => {
+      const w = Profiles.cur; Profiles.close();
+      if (!w) return;
+      this.toStats();
+      const mine = Cloud.user && w.uid === Cloud.user.uid;
+      setTimeout(() => Coach.send(mine ? 'Show me my perfection score' : 'Show me ' + w.n + '\'s perfection score'), 300);
+    });
     $('bRefClose').addEventListener('click', () => Referral.close());
     $('refBox').addEventListener('click', (e) => { if (e.target.id === 'refBox') Referral.close(); });
     $('bRefCopy').addEventListener('click', () => Referral.copy('refLink', 'Link'));
@@ -15414,10 +15661,25 @@ const Game = {
   flushPendingAuth() {
     if (this.authPending) this.onAuth(Cloud.user, Cloud.profile);
   },
-  async toTrophies() {
+  async toTrophies(who) {
     this.state = 'trophies'; this.running = false;
+    this.trophyOwner = who && !(Cloud.user && who.uid === Cloud.user.uid) ? who : null;
     Sound.stopEngine();
     UI.show('trophies');
+    const other = this.trophyOwner;
+    $('trophyTitle').innerHTML = other ? Profiles.icon(other.uid, 30) + escapeHtml(other.n) + '\'s trophy room' : 'Trophy room';
+    if (other) {
+      const draw = (credits, colors) => {
+        const list = Trophies.compute(other.uid, other.n);
+        UI.trophyList(list);
+        if (credits === null) $('trophyCreditNum').textContent = '—';
+        TrophyRoom.start({ credits: credits || 0, counter: credits !== null, trophies: list, colors });
+      };
+      draw(null, null);
+      const [cr, colors] = await Promise.all([Cloud.publicCredits([other.uid]), Cloud.fetchCarColorsOf(other.uid).catch(() => null)]);
+      if (this.state === 'trophies' && this.trophyOwner === other) draw(cr[other.uid], colors);
+      return;
+    }
     const draw = () => {
       const list = Trophies.compute();
       UI.trophyList(list);
@@ -15469,7 +15731,7 @@ const Game = {
     else if (s === 'menu') { UI.overallLeaderCard(); this.trophyTileText(); Daily.tile(); UI.hello(); }
     else if (s === 'daily') Daily.render();
     else if (s === 'result') this.renderResultBoard();
-    else if (s === 'trophies') {
+    else if (s === 'trophies' && !this.trophyOwner) {
       const list = Trophies.compute();
       UI.trophyList(list);
       TrophyRoom.start({ credits: Cloud.on ? Records.credits : 0, counter: Cloud.on, trophies: list });

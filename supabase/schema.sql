@@ -1385,6 +1385,19 @@ begin
     'paid', exists (select 1 from public.credit_events where uid = p.id and kind = 'daily_runs' and note = 'day ' || d));
 end $$;
 
+-- other players' credit balances, for their profile card, trophy room and
+-- the menu's leader cars (up to 40 at a time)
+create or replace function public.public_credits(p_uids uuid[]) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); out jsonb := '{}'::jsonb; u uuid;
+begin
+  if coalesce(array_length(p_uids, 1), 0) > 40 then raise exception 'too many'; end if;
+  foreach u in array coalesce(p_uids, '{}') loop
+    out := out || jsonb_build_object(u::text, public._balance(u));
+  end loop;
+  return out;
+end $$;
+
 -- how many friends signed up from the calling player's link
 create or replace function public.my_referrals() returns integer
 language sql stable security definer set search_path = public, pg_temp as $$
