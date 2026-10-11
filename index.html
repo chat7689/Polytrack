@@ -14114,7 +14114,7 @@ const SectionView = {
       } else if (Math.abs(da - db) < 0.5) gapTxt = 'Side by side';
       else {
         const when = this.timeAtDist(behind, this.distAt(ahead, t));
-        gapTxt = '<b>' + escapeHtml(ahead.name) + '</b> ahead' + (when !== null ? ' by ' + Math.max(0, when - t).toFixed(2) + ' s' : '') +
+        gapTxt = '<b>' + escapeHtml(ahead.name) + '</b> ahead' + (when !== null ? ' by ' + Math.max(0, when - t).toFixed(3) + ' s' : '') +
           ' · ' + Math.round(Math.abs(da - db)) + ' m';
       }
       top.innerHTML = h + '<div class="gap">' + gapTxt + '</div>';
