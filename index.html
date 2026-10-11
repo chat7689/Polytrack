@@ -10863,7 +10863,7 @@ const Coach = {
       return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs, sting: true };
     }
     // ------------------------------------------- a Perfection score: yours or anyone's
-    const everyonePerf = /(best|highest|top|everyone'?s|all|who has the (best|highest)) perfection|perfection (scores|leaderboard|ranking|table)/.test(low);
+    const everyonePerf = /\b(best|highest|top|everyone'?s|all|who has the (best|highest)) perfection|perfection (scores|leaderboard|ranking|table)\b/.test(low);
     if (wants.perfect && !mapIds.length && !everyonePerf) {
       const P = rival ? Insight.compute(rival.uid || null, rival.n) : I;
       const nm = rival ? rival.n : null;
