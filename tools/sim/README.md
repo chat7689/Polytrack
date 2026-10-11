@@ -22,5 +22,7 @@ track builder and maps straight out of `../../index.html`.
   height, lane, wheel compression and loads) between two distances.
 - `node where.js s3c6 x,y,z` — which part of the road a world position is
   next to; `node frames.js s3c6 400 470` — the road's frames between two
-  distances; `node high_corners.js` — tight corners high above the ground.
+  distances; `node high_corners.js` — tight corners high above the ground;
+  `node crossings.js` — any road passing over or under another (the user
+  doesn't want any).
 - `node live_sum.js` — the live season's test-driver total, for comparison.
