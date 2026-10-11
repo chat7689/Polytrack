@@ -2476,8 +2476,18 @@ function formatTime(t) {
   const ms = Math.round((t % 1) * 1000) % 1000;
   return m + ':' + String(s).padStart(2, '0') + '.' + String(ms).padStart(3, '0');
 }
+/** a time difference in seconds, to the thousandth: +0.147 / \u22120.052 */
 function formatDelta(d) {
-  return (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(2);
+  const ms = Math.round(d * 1000);
+  return (ms >= 0 ? '+' : '\u2212') + (Math.abs(ms) / 1000).toFixed(3);
+}
+/**
+ * The difference between two times exactly as the screen shows them: each
+ * is rounded to the millisecond first (as formatTime does), so the gap
+ * always matches the two times printed beside it.
+ */
+function formatGap(a, b) {
+  return formatDelta((Math.round(a * 1000) - Math.round(b * 1000)) / 1000);
 }
 /**
  * Times used to be recorded and displayed only to the hundredth of a
@@ -9641,13 +9651,13 @@ const CoachLab = {
     const kmh = (v) => Math.round(v) + ' km/h', M = (d) => Math.round(d) + ' m';
     const add = (w, text) => fixes.push({ w, text });
     if (b.min.v - a.min.v > 3) add((b.min.v - a.min.v) / 6, 'Carry more speed through the slow part: you drop to ' + kmh(a.min.v) + ' at ' + M(a.min.d) + '; ' + n + ' never goes below ' + kmh(b.min.v) + '.');
-    if (a.brakeAt !== null && b.brakeAt === null && a.brake + a.hand > 0.15) add(1.2 + a.brake, n + ' doesn\'t touch the brakes here at all. You brake from ' + M(a.brakeAt) + ' for ' + a.brake.toFixed(2) + ' s. Lift off W or just steer instead.');
+    if (a.brakeAt !== null && b.brakeAt === null && a.brake + a.hand > 0.15) add(1.2 + a.brake, n + ' doesn\'t touch the brakes here at all. You brake from ' + M(a.brakeAt) + ' for ' + a.brake.toFixed(3) + ' s. Lift off W or just steer instead.');
     else if (a.brakeAt !== null && b.brakeAt !== null && b.brakeAt - a.brakeAt > 4) add((b.brakeAt - a.brakeAt) / 8, 'Brake later: you hit the brakes at ' + M(a.brakeAt) + ', ' + n + ' waits until ' + M(b.brakeAt) + '. That\'s ' + Math.round(b.brakeAt - a.brakeAt) + ' m more at full speed.');
-    if (a.brake - b.brake > 0.2 && b.brakeAt !== null) add((a.brake - b.brake) * 2, 'Brake less: ' + a.brake.toFixed(2) + ' s on the brakes in this stretch, against ' + b.brake.toFixed(2) + ' s for ' + n + '. Shorter, harder stabs.');
-    if (b.drift > 0.25 && a.drift < b.drift * 0.5) add(b.drift * 2, n + ' drifts it: brake and steer together for ' + b.drift.toFixed(2) + ' s. You ' + (a.drift > 0.05 ? 'only manage ' + a.drift.toFixed(2) + ' s' : 'don\'t drift at all') + '. Turn in, tap S while you steer, and stay on W.');
-    if (a.drift - b.drift > 0.4 && a.min.v < b.min.v) add((a.drift - b.drift), 'You over-drift: ' + a.drift.toFixed(2) + ' s sideways against ' + b.drift.toFixed(2) + ' s for ' + n + '. Sliding scrubs speed; straighten up sooner.');
-    if (a.coast - b.coast > 0.2) add((a.coast - b.coast) * 2.5, 'Stay on the gas: you coast (no W, no S) for ' + a.coast.toFixed(2) + ' s here, ' + n + ' for ' + b.coast.toFixed(2) + ' s. Every moment off W is time gone.');
-    if (b.boost - a.boost > 0.3) add((b.boost - a.boost) * 1.5, n + ' fires boost here (' + b.boost.toFixed(1) + ' s); you ' + (a.boost > 0.05 ? 'only use ' + a.boost.toFixed(1) + ' s' : 'don\'t') + '.');
+    if (a.brake - b.brake > 0.2 && b.brakeAt !== null) add((a.brake - b.brake) * 2, 'Brake less: ' + a.brake.toFixed(3) + ' s on the brakes in this stretch, against ' + b.brake.toFixed(3) + ' s for ' + n + '. Shorter, harder stabs.');
+    if (b.drift > 0.25 && a.drift < b.drift * 0.5) add(b.drift * 2, n + ' drifts it: brake and steer together for ' + b.drift.toFixed(3) + ' s. You ' + (a.drift > 0.05 ? 'only manage ' + a.drift.toFixed(3) + ' s' : 'don\'t drift at all') + '. Turn in, tap S while you steer, and stay on W.');
+    if (a.drift - b.drift > 0.4 && a.min.v < b.min.v) add((a.drift - b.drift), 'You over-drift: ' + a.drift.toFixed(3) + ' s sideways against ' + b.drift.toFixed(3) + ' s for ' + n + '. Sliding scrubs speed; straighten up sooner.');
+    if (a.coast - b.coast > 0.2) add((a.coast - b.coast) * 2.5, 'Stay on the gas: you coast (no W, no S) for ' + a.coast.toFixed(3) + ' s here, ' + n + ' for ' + b.coast.toFixed(3) + ' s. Every moment off W is time gone.');
+    if (b.boost - a.boost > 0.3) add((b.boost - a.boost) * 1.5, n + ' fires boost here (' + b.boost.toFixed(3) + ' s); you ' + (a.boost > 0.05 ? 'only use ' + a.boost.toFixed(3) + ' s' : 'don\'t') + '.');
     if (b.exit - a.exit > 3) add((b.exit - a.exit) / 5, 'Get out of it faster: you leave at ' + kmh(a.exit) + ', ' + n + ' at ' + kmh(b.exit) + '. Exit speed carries all the way down the next straight, so get back on W earlier.');
     const offD = (a.apexOff - b.apexOff) * Math.sign(turn || 1);
     if (Math.abs(turn) > 0.05 && Math.abs(offD) > 1.5) {
@@ -9655,7 +9665,7 @@ const CoachLab = {
         ? 'Your line: at the slowest point you\'re ' + Math.abs(offD).toFixed(1) + ' m wider than ' + n + '. Clip the inside of the turn.'
         : 'Your line: you\'re ' + Math.abs(offD).toFixed(1) + ' m tighter than ' + n + ' at the slowest point. Turn in a touch later and use the width for a faster exit.');
     }
-    if (a.boostAll < 2.5) add(1.5 + (3 - a.boostAll), 'You finish with ' + (3 - a.boostAll).toFixed(1) + ' s of your 3 s boost unused. That\'s free time: fire it on the longest straight.');
+    if (a.boostAll < 2.5) add(1.5 + (3 - a.boostAll), 'You finish with ' + (3 - a.boostAll).toFixed(3) + ' s of your 3 s boost unused. That\'s free time: fire it on the longest straight.');
     else if (b.boostFirst !== null && a.boostFirst !== null && Math.abs(a.boostFirst - b.boostFirst) > 60) add(0.5, n + ' first fires boost at ' + M(b.boostFirst) + '; you at ' + M(a.boostFirst) + '. Boost pushes harder the faster you go, so use it where you\'re already quick.');
     fixes.sort((x, y) => y.w - x.w);
     const out = { a, b, d0, d1, fixes, turn };
@@ -9687,7 +9697,7 @@ const Ease = {
       const need = m.up ? m.up.need : null;
       const score = (room / m.t) * 100 + places * 0.7 + Math.min(stale, 14) * 0.05 + (need !== null && need < 0.25 ? 0.8 : 0) - (m.rank === 1 ? 1.5 : 0);
       const why = [];
-      if (room > 0.05) why.push(room.toFixed(2) + ' s off your usual level');
+      if (room > 0.05) why.push(room.toFixed(3) + ' s off your usual level');
       else why.push('you already drive it at your best');
       if (places) why.push(places + ' driver' + (places > 1 ? 's' : '') + ' in reach');
       if (need !== null) why.push(need.toFixed(3) + ' s to pass ' + m.up.n);
@@ -10638,13 +10648,13 @@ const Coach = {
         const lt = at !== null ? clamp(at, 0, lab.gm.t) : Compare.timeAt(lab.A, lab.moment);
         photo = this.figPhoto(lab, lt); photo.lt = lt; photo.d = Compare.at(lab.A.sm, lab.A.n, lt);
         figs.push(photo);
-        await s3.done('Took a photo at ' + lt.toFixed(1) + ' s');
+        await s3.done('Took a photo at ' + lt.toFixed(3) + ' s');
       }
       if (wantClip) {
         const s4 = this.step(turn, 'Gathering footage');
         clip = this.figClip(lab, Math.max(0, lt0 - 1.2), Math.min(lab.gm.t, lt1 + 1.2));
         figs.push(clip);
-        await s4.done('Cut a ' + (lt1 - lt0 + 2.4).toFixed(1) + ' s clip');
+        await s4.done('Cut a ' + (lt1 - lt0 + 2.4).toFixed(3) + ' s clip');
       }
       const F = (f) => 'Figure ' + f.n;
       let text = m.tag + ' ' + m.name + ': you finish ' + Math.abs(lossTot).toFixed(3) + ' s ' + (lossTot > 0 ? 'behind ' : 'ahead of ') + vs + '. ';
@@ -10654,7 +10664,7 @@ const Coach = {
       else text += 'The most goes between ' + Math.round(lab.seg.d0) + ' and ' + Math.round(lab.seg.d1) + ' m (' + lab.seg.loss.toFixed(3) + ' s). ';
       if (photo) {
         const g = gapAt(photo.d);
-        text += F(photo) + ' is a photo ' + photo.lt.toFixed(1) + ' s in (' + Math.round(photo.d) + ' m): ' + Math.abs(g).toFixed(3) + ' s ' + (g >= 0 ? 'behind ' : 'ahead of ') + vs + ', both cars at the same spot so the line shows. ';
+        text += F(photo) + ' is a photo ' + photo.lt.toFixed(3) + ' s in (' + Math.round(photo.d) + ' m): ' + Math.abs(g).toFixed(3) + ' s ' + (g >= 0 ? 'behind ' : 'ahead of ') + vs + ', both cars at the same spot so the line shows. ';
       }
       if (clip) {
         const g0 = gapAt(lab.seg.d0), g1 = gapAt(lab.seg.d1);
@@ -10910,7 +10920,7 @@ const Coach = {
     svg += '<text x="' + P + '" y="' + (H - 6) + '">' + Math.round(D.d0) + ' m</text><text x="' + (W - 10) + '" y="' + (H - 6) + '" text-anchor="end">' + Math.round(D.d1) + ' m</text></svg>';
     const legend = '<div class="drLegend"><span><i style="background:' + COL[0] + '"></i>you</span><span><i style="background:' + COL[1] + '"></i>' + E(n) + '</span>' +
       '<span><i style="background:rgba(61,219,184,.5)"></i>gas</span><span><i style="background:#f2733f"></i>brake</span><span><i style="background:#ffcf5c"></i>drift</span><span><i style="background:#58a0ff"></i>boost</span></div>';
-    const km = (v) => Math.round(v) + ' km/h', sec = (v) => v.toFixed(2) + ' s', m = (d) => d === null ? 'never' : Math.round(d) + ' m';
+    const km = (v) => Math.round(v) + ' km/h', sec = (v) => v.toFixed(3) + ' s', m = (d) => d === null ? 'never' : Math.round(d) + ' m';
     // [label, you, them, which is better: 1 higher, -1 lower, 'late' later braking]
     const rows = [
       ['Speed in', a.entry, b.entry, 1, km], ['Slowest', a.min.v, b.min.v, 1, km], ['Speed out', a.exit, b.exit, 1, km],
@@ -10963,14 +10973,14 @@ const Coach = {
     svg += '<polygon points="' + X(0).toFixed(1) + ',' + Y(0).toFixed(1) + ' ' + pts + ' ' + X(gap[gap.length - 1].d).toFixed(1) + ',' + Y(0).toFixed(1) + '" fill="rgba(242,115,63,.18)"/>';
     svg += '<polyline points="' + pts + '" fill="none" stroke="#f2733f" stroke-width="2"/>';
     svg += '<text x="' + P + '" y="' + (H - 6) + '">0 m</text><text x="' + (W - 10) + '" y="' + (H - 6) + '" text-anchor="end">' + Math.round(L) + ' m</text>';
-    svg += '<text x="4" y="' + (Y(hi) + 4).toFixed(1) + '">+' + hi.toFixed(2) + '</text><text x="4" y="' + (Y(0) + 4).toFixed(1) + '">0</text>';
+    svg += '<text x="4" y="' + (Y(hi) + 4).toFixed(1) + '">+' + hi.toFixed(3) + '</text><text x="4" y="' + (Y(0) + 4).toFixed(1) + '">0</text>';
     svg += '<text x="' + ((X(lab.seg.d0) + X(lab.seg.d1)) / 2).toFixed(1) + '" y="20" text-anchor="middle" style="fill:var(--fc)">−' + lab.seg.loss.toFixed(3) + ' s</text></svg>';
     return Figs.add(lab.m.tag + ' ' + lab.m.name + ' · time lost to ' + lab.rival.n + ' along the lap', '<div class="figChart">' + svg + '</div>',
       'Up means you\'re further behind at that point on the track. The shaded stretch is where the most time goes.');
   },
   figPhoto(lab, lt) {
     const p = CoachCam.photo(lab, lt);
-    return Figs.add(lab.m.tag + ' ' + lab.m.name + ' · photo at ' + lt.toFixed(1) + ' s', '<div class="figMedia"><img alt="" src="' + p.url + '"><span class="rec">PHOTO</span></div>',
+    return Figs.add(lab.m.tag + ' ' + lab.m.name + ' · photo at ' + lt.toFixed(3) + ' s', '<div class="figMedia"><img alt="" src="' + p.url + '"><span class="rec">PHOTO</span></div>',
       'Both cars at the same point on the track (' + Math.round(p.d) + ' m). You are <b>' + (p.behind >= 0 ? p.behind.toFixed(3) + ' s behind' : (-p.behind).toFixed(3) + ' s ahead') + '</b> of ' + escapeHtml(lab.rival.n) + ' here.');
   },
   figClip(lab, t0, t1) {
@@ -10980,7 +10990,7 @@ const Coach = {
     c.width = CoachCam.W; c.height = CoachCam.H;
     wrap.appendChild(c);
     wrap.insertAdjacentHTML('beforeend', '<span class="rec">● CLIP</span><div class="ctl"><button>Pause</button><button>From the start</button></div>');
-    const f = Figs.add(lab.m.tag + ' ' + lab.m.name + ' · clip, ' + t0.toFixed(1) + '–' + t1.toFixed(1) + ' s', wrap,
+    const f = Figs.add(lab.m.tag + ' ' + lab.m.name + ' · clip, ' + t0.toFixed(3) + '–' + t1.toFixed(3) + ' s', wrap,
       'Your run, with ' + escapeHtml(lab.rival.n) + '\'s car at the same point on the track. The number is how far behind you are there.', () => { if (CoachCam.clip && CoachCam.clip.canvas === c) CoachCam.stopClip(); });
     const clip = CoachCam.playClip(lab, t0, t1, c);
     const [pause, again] = wrap.querySelectorAll('.ctl button');
@@ -12565,7 +12575,7 @@ const Compare = {
         if (r.bits[i] & mask) {
           let j = i; while (j < r.n && (r.bits[j] & mask)) j++;
           h += '<rect x="' + X(i / GHOST_HZ).toFixed(1) + '" y="' + y + '" width="' + Math.max(0.8, X(j / GHOST_HZ) - X(i / GHOST_HZ)).toFixed(1) +
-            '" height="' + (rh - 3) + '" fill="' + col + '" opacity=".85" class="hp" data-tip="' + escapeHtml(label + ' ' + (i / GHOST_HZ).toFixed(2) + '–' + (j / GHOST_HZ).toFixed(2) + ' s') + '"/>';
+            '" height="' + (rh - 3) + '" fill="' + col + '" opacity=".85" class="hp" data-tip="' + escapeHtml(label + ' ' + (i / GHOST_HZ).toFixed(3) + '–' + (j / GHOST_HZ).toFixed(3) + ' s') + '"/>';
           i = j;
         } else i++;
       }
@@ -12946,7 +12956,7 @@ const UI = {
       let timeStr, subStr = '';
       if (c.finished) {
         timeStr = formatTime(c.data.t);
-        if (leader && c !== leader) subStr = '+' + formatDelta(c.data.t - leader.data.t) + 's';
+        if (leader && c !== leader) subStr = formatGap(c.data.t, leader.data.t) + 's';
       } else {
         // still driving — the one live number that actually means
         // something for an unfinished run is how far through ITS OWN
@@ -13344,8 +13354,8 @@ const UI = {
     yc.hidden = !I.me;
     if (I.me) {
       const short = I.rank !== 1 && I.me.count < I.leader.count;
-      const gap = I.rank === 1 ? (I.route.margin !== null ? '+' + I.route.margin.toFixed(2) : '—')
-        : short ? String(I.leader.count - I.me.count) : (I.me.total - I.leader.total).toFixed(2);
+      const gap = I.rank === 1 ? (I.route.margin !== null ? formatDelta(I.route.margin) : '—')
+        : short ? String(I.leader.count - I.me.count) : formatDelta(I.me.total - I.leader.total).slice(1);
       yc.innerHTML = '<div class="' + (I.rank === 1 ? 'gold' : '') + '"><b>' + Insight.ord(I.rank) + '</b><span>of ' + I.of + '</span></div>' +
         '<div><b>' + I.me.count + '/16</b><span>maps</span></div>' +
         '<div class="' + (I.wins ? 'gold' : '') + '"><b>' + I.wins + '</b><span>map records</span></div>' +
@@ -15790,8 +15800,8 @@ const Game = {
     $('rSub').innerHTML = !prevBest
       ? 'First time on this map.'
       : (this.time < prevBest
-        ? '<em>' + formatDelta(this.time - prevBest) + 's</em> new personal best (was ' + formatTime(prevBest) + ')'
-        : formatDelta(this.time - prevBest) + 's off your best (' + formatTime(prevBest) + ')');
+        ? '<em>' + formatGap(this.time, prevBest) + 's</em> new personal best (was ' + formatTime(prevBest) + ')'
+        : formatGap(this.time, prevBest) + 's off your best (' + formatTime(prevBest) + ')');
 
     if (raceResult) {
       $('rRaceResult').hidden = false;
