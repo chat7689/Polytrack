@@ -1107,10 +1107,13 @@ end $$;
 -- focus. A season run then pays its +1 credit (at most one every 10 s),
 -- and the first finish of a map pays FIRST_FINISH_BONUS once: "first" means
 -- no best on that map yet (the best goes up after this check) and the
--- bonus never paid for it before.
+-- bonus never paid for it before. Every counted finish also counts toward
+-- the daily challenge: the 300th of a day (midnight to midnight Pacific,
+-- like the daily map) pays 300 more, once a day.
 create or replace function public.finish_run(p_run uuid, p_time_ms integer, p_focus integer, p_auto boolean default false) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); r public.runs; el numeric; fl integer; credited boolean := false; bonus integer := 0;
+  day_runs integer := 0; day_bonus integer := 0; d text := to_char(now() at time zone 'America/Los_Angeles', 'YYYYMMDD');
 begin
   select * into r from public.runs where id = p_run and uid = p.id for update;
   if not found then return jsonb_build_object('ok', false, 'message', 'This run wasn''t registered with the server, so the time stays on this device only.'); end if;
@@ -1147,7 +1150,16 @@ begin
       insert into public.credit_events (uid, delta, kind, note) values (p.id, bonus, 'first_finish', 'map ' || r.course_id);
     end if;
   end if;
-  return jsonb_build_object('ok', true, 'credited', credited, 'bonus', bonus, 'balance', public._balance(p.id));
+  day_runs := public._day_runs(p.id);
+  if day_runs >= 300 then
+    perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+    if not exists (select 1 from public.credit_events where uid = p.id and kind = 'daily_runs' and note = 'day ' || d) then
+      day_bonus := 300;
+      insert into public.credit_events (uid, delta, kind, note) values (p.id, day_bonus, 'daily_runs', 'day ' || d);
+    end if;
+  end if;
+  return jsonb_build_object('ok', true, 'credited', credited, 'bonus', bonus, 'day_runs', day_runs, 'day_bonus', day_bonus,
+    'balance', public._balance(p.id));
 end $$;
 
 -- A run's recording against the map: the right number of samples for the
@@ -1355,6 +1367,22 @@ begin
   insert into public.signup_log (uid, device_id, fp, ip) values (me, p_device, v_fp, v_ip);
   perform public._see_device(p_device, v_fp);
   return jsonb_build_object('ok', true);
+end $$;
+
+-- a player's counted finishes today (the day turns at midnight Pacific)
+create or replace function public._day_runs(p_uid uuid) returns integer
+language sql stable security definer set search_path = public, pg_temp as $$
+  select count(*)::int from public.runs
+  where uid = p_uid and counted
+    and ended_at >= ((now() at time zone 'America/Los_Angeles')::date)::timestamp at time zone 'America/Los_Angeles'
+$$;
+-- the daily challenge for the calling player: finishes today, and whether today's 300 is paid
+create or replace function public.my_day() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); d text := to_char(now() at time zone 'America/Los_Angeles', 'YYYYMMDD');
+begin
+  return jsonb_build_object('runs', public._day_runs(p.id),
+    'paid', exists (select 1 from public.credit_events where uid = p.id and kind = 'daily_runs' and note = 'day ' || d));
 end $$;
 
 -- how many friends signed up from the calling player's link
@@ -1835,6 +1863,7 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
 revoke execute on function public.close_season(text, text[]) from public, anon, authenticated;
+revoke execute on function public._day_runs(uuid) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- live updates

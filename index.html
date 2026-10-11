@@ -750,6 +750,18 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .statGrid div{padding:9px 11px;border-radius:9px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.05);min-width:0}
 .statGrid span{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
 .statGrid b{display:block;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+/* ---------- the daily challenge ---------- */
+.dayCh{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px 12px;padding:10px 14px 11px;border-radius:12px;
+  border:1px solid var(--rule-2);background:rgba(255,255,255,.02)}
+.dayCh[hidden]{display:none}
+.dayChK{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#ffcf5c}
+.dayChT{font-size:12.5px;color:var(--dim);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dayCh b{font-family:var(--mono);font-size:13px}
+.dayChBar{grid-column:1/-1;height:6px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
+.dayChBar i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#ffcf5c,#f2733f);transition:width .6s ease}
+.dayCh.done{border-color:rgba(61,219,184,.45)}
+.dayCh.done .dayChBar i{background:var(--aqua)}
+.dayCh.done b{color:var(--aqua)}
 /* ---------- invite friends ---------- */
 .refBtn{border-color:rgba(61,219,184,.45);color:var(--aqua)}
 .refBox{position:fixed;inset:0;z-index:85;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.6);padding:16px}
@@ -1525,6 +1537,12 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             </div>
           </section>
           <button class="mpBar" id="bMulti"><span class="mpNew">NEW</span><b>Race friends</b><span class="mpSub">live races · up to 8 drivers · join with a code</span><span class="mpGo">→</span></button>
+          <div class="dayCh" id="dayCh" hidden title="Finish 300 runs today (any maps, the daily included) for 300 credits on top of the usual 1 a run. Resets at midnight Pacific.">
+            <span class="dayChK">Daily challenge</span>
+            <span class="dayChT">Finish 300 runs today · <span class="gem2d"></span> +300</span>
+            <b id="dayChCount">0 / 300 runs</b>
+            <span class="dayChBar"><i id="dayChBar"></i></span>
+          </div>
           <button class="previewBar" id="bPreview" hidden>Season 2 preview <span>only you can see this · not released</span></button>
           <div class="menuTiles">
             <button class="tile" id="bCourses"><b>Courses</b><small>16 maps &amp; leaderboards</small></button>
@@ -2232,6 +2250,8 @@ function hslCss(h, s, l) { return 'hsl(' + Math.round(h) + ',' + Math.round(s) +
 const NEW_FOR_MS = 5 * 60000;
 // credits for finishing a season map for the first time (paid by finish_run)
 const FIRST_FINISH_BONUS = 100;
+// the daily challenge (paid by finish_run): this many finished runs in a day
+const DAY_GOAL = 300, DAY_PRIZE = 300;
 function freshTag(e) {
   const d = e && +e.d;
   if (!d) return '';
@@ -9183,6 +9203,33 @@ function ordinal(n) {
 }
 
 /**
+ * The daily challenge on the menu: finished runs today out of DAY_GOAL.
+ * The server counts (only finishes it accepted) and pays; this just shows
+ * the count, from my_day() and from every finish's reply.
+ */
+const DayChallenge = {
+  runs: 0, paid: false, at: 0, day: '',
+  async load() {
+    if (!Cloud.on || !Cloud.user) { this.render(); return; }
+    const day = Daily.today ? Daily.today() : '';
+    if (Date.now() - this.at < 60000 && day === this.day) { this.render(); return; }
+    this.at = Date.now(); this.day = day;
+    try { const r = await Cloud.rpc('my_day'); this.runs = r.runs | 0; this.paid = !!r.paid; } catch (e) { /* keep what we had */ }
+    this.render();
+  },
+  set(runs, paid) { this.runs = runs; this.paid = paid; this.render(); },
+  render() {
+    const el = $('dayCh');
+    el.hidden = !Cloud.on || !Cloud.user;
+    if (el.hidden) return;
+    const n = Math.min(this.runs, DAY_GOAL);
+    $('dayChCount').textContent = this.paid ? 'Done today: +' + DAY_PRIZE + ' credits' : n + ' / ' + DAY_GOAL + ' runs';
+    $('dayChBar').style.width = (n / DAY_GOAL * 100).toFixed(1) + '%';
+    el.classList.toggle('done', this.paid);
+  }
+};
+
+/**
  * Bringing friends: every signed-in player has a link (the game's address
  * with ?ref=TheirName). Opening it lands on "Create an account" with the
  * invite already taken care of: the server accepts a real, unbanned
@@ -13140,6 +13187,7 @@ const UI = {
     this.sectionLeaders();
     Buzz.render();
     PhotoFinish.update();
+    DayChallenge.load();
     Champion.render();
     Champion.load();
     $('overallLeaderKick').textContent = 'Season ' + SEASON + ' leader';
@@ -15671,10 +15719,12 @@ const Game = {
     try {
       const before = Records.credits;
       const f = await this.finishP;                   // the server pays it with the checked finish
-      if (!f || !f.ok || (!f.credited && !f.bonus)) return;
+      if (f && f.ok && typeof f.day_runs === 'number') DayChallenge.set(f.day_runs, !!f.day_bonus || DayChallenge.paid);
+      if (!f || !f.ok || (!f.credited && !f.bonus && !f.day_bonus)) return;
       Cloud.credits = f.balance; Records.credits = f.balance;
-      const got = (f.credited ? 1 : 0) + (f.bonus || 0);
+      const got = (f.credited ? 1 : 0) + (f.bonus || 0) + (f.day_bonus || 0);
       if (f.bonus) UI.toast('First finish on ' + levelAt(this.levelIndex).name + ': +' + f.bonus + ' credits');
+      if (f.day_bonus) UI.toast('Daily challenge complete: ' + DAY_GOAL + ' finished runs today. +' + f.day_bonus + ' credits!');
       if (this.state === 'result') CreditFX.play(got, before, Records.credits);
       else UI.who(Cloud.name(), Records.credits);
     } catch (e) { console.warn('aiPolytrack: could not award the finish credit', e && e.message); }
