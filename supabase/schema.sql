@@ -1096,10 +1096,13 @@ end $$;
 
 -- The finish: the time has to fit the real time since the ticket, be no
 -- faster than the map allows, and come from a game window that was in
--- focus. A season run then pays its +1 credit (at most one every 10 s).
+-- focus. A season run then pays its +1 credit (at most one every 10 s),
+-- and the first finish of a map pays FIRST_FINISH_BONUS once: "first" means
+-- no best on that map yet (the best goes up after this check) and the
+-- bonus never paid for it before.
 create or replace function public.finish_run(p_run uuid, p_time_ms integer, p_focus integer, p_auto boolean default false) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare p public.profiles := public._player(); r public.runs; el numeric; fl integer; credited boolean := false;
+declare p public.profiles := public._player(); r public.runs; el numeric; fl integer; credited boolean := false; bonus integer := 0;
 begin
   select * into r from public.runs where id = p_run and uid = p.id for update;
   if not found then return jsonb_build_object('ok', false, 'message', 'This run wasn''t registered with the server, so the time stays on this device only.'); end if;
@@ -1130,8 +1133,13 @@ begin
       update public.runs set paid = true where id = r.id;
       credited := true;
     end if;
+    if not exists (select 1 from public.bests where uid = p.id and course_id = r.course_id)
+       and not exists (select 1 from public.credit_events where uid = p.id and kind = 'first_finish' and note = 'map ' || r.course_id) then
+      bonus := 100;
+      insert into public.credit_events (uid, delta, kind, note) values (p.id, bonus, 'first_finish', 'map ' || r.course_id);
+    end if;
   end if;
-  return jsonb_build_object('ok', true, 'credited', credited, 'balance', public._balance(p.id));
+  return jsonb_build_object('ok', true, 'credited', credited, 'bonus', bonus, 'balance', public._balance(p.id));
 end $$;
 
 -- A run's recording against the map: the right number of samples for the

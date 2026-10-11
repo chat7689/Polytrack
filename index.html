@@ -415,6 +415,8 @@ label.fld{font-size:12px;color:var(--dim);display:block;margin-bottom:7px}
 .card .best{color:var(--aqua)}
 .card[disabled]{opacity:.38;cursor:not-allowed}
 .card[disabled]:hover{background:rgba(255,255,255,.022);border-color:var(--rule)}
+.card .firstBonus{position:absolute;top:10px;right:12px;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 6px;
+  border-radius:999px;font:700 11px/1.4 var(--mono);color:#ffe7a3;background:rgba(255,207,92,.12);border:1px solid rgba(255,207,92,.45)}
 .card .done{position:absolute;top:13px;right:15px;width:8px;height:8px;background:var(--aqua);
   border-radius:50%;box-shadow:0 0 8px rgba(61,219,184,.7)}
 .bars{display:inline-flex;gap:3px;vertical-align:middle}
@@ -466,6 +468,9 @@ tr{transition:background .12s}
 tr:hover td{background:rgba(255,255,255,.02)}
 tr.me td{color:var(--ink);background:rgba(242,115,63,.06)} tr.me td.r{color:var(--ember)}
 .youTag{color:var(--dimmer);font-weight:400}
+.newTag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font:700 9.5px/1.4 var(--mono);letter-spacing:.08em;
+  color:#06231d;background:var(--aqua);vertical-align:1px;box-shadow:0 0 10px rgba(61,219,184,.55);animation:newGlow 1.8s ease-in-out infinite}
+@keyframes newGlow{50%{box-shadow:0 0 2px rgba(61,219,184,.2)}}
 /* a checked leaderboard row — a cooler tint than .me's ember (own best),
    distinct enough that "checked for multi race/watch" is never confused
    with "this is my own time" when both happen to apply to the same row */
@@ -2180,6 +2185,26 @@ function fmtCredits(n) {
 }
 function hslCss(h, s, l) { return 'hsl(' + Math.round(h) + ',' + Math.round(s) + '%,' + Math.round(l) + '%)'; }
 
+/**
+ * A small "NEW" tag for a leaderboard place set in the last five minutes
+ * (e.d is when it was set). It carries its own expiry, and a timer takes
+ * expired tags off the page, so a board that sits open doesn't keep
+ * calling an old time new.
+ */
+const NEW_FOR_MS = 5 * 60000;
+// credits for finishing a season map for the first time (paid by finish_run)
+const FIRST_FINISH_BONUS = 100;
+function freshTag(e) {
+  const d = e && +e.d;
+  if (!d) return '';
+  const age = Date.now() - d;
+  if (age > NEW_FOR_MS || age < -NEW_FOR_MS) return '';
+  return ' <span class="newTag" data-exp="' + (d + NEW_FOR_MS) + '" title="Set ' + Math.max(0, Math.round(age / 60000)) + ' min ago">NEW</span>';
+}
+setInterval(() => {
+  const now = Date.now();
+  document.querySelectorAll('.newTag').forEach((el) => { if (now > +el.dataset.exp) el.remove(); });
+}, 15000);
 function formatTime(t) {
   if (!isFinite(t) || t < 0) t = 0;
   const m = Math.floor(t / 60);
@@ -8472,7 +8497,7 @@ const Daily = {
     $('dBal').innerHTML = Cloud.user ? 'You have <span class="gem2d"></span><b>' + fmtCredits(Records.credits) + '</b> credits' +
       (this.attempts ? ' · ' + this.attempts + ' attempt' + (this.attempts === 1 ? '' : 's') + ' today' : '') : 'Sign in to drive the daily';
     $('dBoard').innerHTML = b.length ? b.slice(0, 12).map((e, n) => '<li class="' + (e.uid === uid ? 'me' : '') + '"><span class="p">' + (n === 0 ? '♛' : n + 1) +
-      '</span><span class="n">' + escapeHtml(e.n) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
+      '</span><span class="n">' + escapeHtml(e.n) + freshTag(e) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
       : '<li class="none">Nobody yet. Be the first.</li>';
     $('dWinners').innerHTML = this.results.length ? this.results.map((r) => '<li><span class="dd">' + this.pretty(r.day) + '</span><span class="n">' +
       (r.uid ? escapeHtml(r.display_name || 'Driver') + (r.held ? ' <i>(under review)</i>' : r.paid === false ? ' <i>(not paid)</i>' : '') : '<i>no entries</i>') + '</span><span class="t">' + (r.time_ms ? formatTime(r.time_ms / 1000) : '') + '</span></li>').join('')
@@ -12742,7 +12767,8 @@ const UI = {
           '<div class="desc">' + (playable[i] ? escapeHtml(lv.blurb) : 'Failed to load.') + '</div>' +
           this.podium(lv.id) +
           '<div class="foot"><span>your best</span><span class="best">' + (best ? formatTime(best) : '—') + '</span></div>' +
-          (Records.cleared(lv.id) ? '<span class="done"></span>' : '');
+          (Records.cleared(lv.id) ? '<span class="done"></span>'
+            : Cloud.on && Cloud.user ? '<span class="firstBonus" title="Finish this map for the first time: +' + FIRST_FINISH_BONUS + ' credits"><span class="gem2d"></span>+' + FIRST_FINISH_BONUS + '</span>' : '');
         btn.addEventListener('click', () => onPick(i));
         grid.appendChild(btn);
       });
@@ -12760,7 +12786,7 @@ const UI = {
     return '<div class="podium">' + list.slice(0, 3).map((e, k) =>
       '<div class="p ' + cls[k] + '"><span class="m">' + (k === 0 ? '♛' : String(k + 1)) + '</span>' +
       (k === 0 ? '<img class="winCar" alt="" data-uid="' + escapeHtml(e.uid || '') + '">' : '') + '<b>' +
-      escapeHtml(e.n) + '</b><span class="pt">' + formatTime(e.t) + '</span></div>').join('') + '</div>';
+      escapeHtml(e.n) + '</b>' + freshTag(e) + '<span class="pt">' + formatTime(e.t) + '</span></div>').join('') + '</div>';
   },
   /** paints every not-yet-painted winner picture under root */
   fillWinnerCars(root) {
@@ -12818,7 +12844,7 @@ const UI = {
             (checked ? ' checked' : '') + ' aria-label="Select ' + escapeHtml(e.n) + '">' : '') + '</td>';
         }
         h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(e.n) +
-          (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="t">' + formatTime(e.t) +
+          (mine ? ' <small class="youTag">(you)</small>' : '') + freshTag(e) + '</td><td class="t">' + formatTime(e.t) +
           '</td><td class="d">' + (isFinite(when.getTime()) && e.d ? when.toLocaleDateString() : '') + '</td></tr>';
       });
       h += '</tbody></table>';
@@ -15470,7 +15496,7 @@ const Game = {
     $('rBoardHd').textContent = lv && lv.daily ? 'Today’s daily · the fastest at noon wins 1 000 credits' : 'Course leaderboard — ' + (lv ? lv.name : '');
     $('rBoard').innerHTML = list.map((e, i) =>
       '<li class="' + ((uid ? e.uid === uid : e.n === Records.driver()) ? 'me' : '') + '"><span>' +
-      (i + 1) + '. ' + escapeHtml(e.n) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
+      (i + 1) + '. ' + escapeHtml(e.n) + freshTag(e) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
   },
   /** +1 credit for any finished course that isn't a race attempt */
   async awardCompletion() {
@@ -15479,9 +15505,11 @@ const Game = {
     try {
       const before = Records.credits;
       const f = await this.finishP;                   // the server pays it with the checked finish
-      if (!f || !f.ok || !f.credited) return;
+      if (!f || !f.ok || (!f.credited && !f.bonus)) return;
       Cloud.credits = f.balance; Records.credits = f.balance;
-      if (this.state === 'result') CreditFX.play(1, before, Records.credits);
+      const got = (f.credited ? 1 : 0) + (f.bonus || 0);
+      if (f.bonus) UI.toast('First finish on ' + levelAt(this.levelIndex).name + ': +' + f.bonus + ' credits');
+      if (this.state === 'result') CreditFX.play(got, before, Records.credits);
       else UI.who(Cloud.name(), Records.credits);
     } catch (e) { console.warn('aiPolytrack: could not award the finish credit', e && e.message); }
   },
