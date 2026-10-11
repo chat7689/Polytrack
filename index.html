@@ -814,6 +814,36 @@ td .pIcon{margin-right:7px}
 .pcStats .gold b{color:#ffcf5c}
 .pcBtns{gap:8px;flex-wrap:wrap}
 #trophyTitle{display:flex;align-items:center}
+/* ---------- perfection, worked out ---------- */
+.pmath{display:flex;flex-direction:column;gap:10px}
+.pmBig{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;
+  background:linear-gradient(120deg,rgba(255,207,92,.12),rgba(255,207,92,.02));border:1px solid rgba(255,207,92,.3)}
+.pmBig span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.pmBig b{font-family:var(--mono);font-size:26px;font-weight:700;color:#ffcf5c;font-variant-numeric:tabular-nums}
+.pmBig b.done{animation:pmPop .5s ease}
+@keyframes pmPop{40%{transform:scale(1.08);text-shadow:0 0 16px rgba(255,207,92,.8)}}
+.pmRows{display:flex;flex-direction:column;gap:3px}
+.pmRow{display:grid;grid-template-columns:30px minmax(0,1fr) 78px 70px;gap:8px;align-items:center;font-size:12px;opacity:0;transform:translateX(-8px);
+  animation:pmIn .35s ease forwards;animation-delay:var(--d)}
+@keyframes pmIn{to{opacity:1;transform:none}}
+.pmRow .tg{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.pmRow .eq{font-family:var(--mono);color:#c9d4e3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmRow .eq em,.pmSum em{font-style:normal;color:var(--aqua);padding:0 3px}
+.pmRow .eq i{color:var(--dimmer)}
+.pmRow b{font-family:var(--mono);text-align:right}
+.pmRow.top b{color:#ffcf5c}
+.pmRow.na{opacity:0;animation-name:pmInDim}
+@keyframes pmInDim{to{opacity:.5;transform:none}}
+.pmBar{height:6px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.pmBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3ddbb8,#ffcf5c);border-radius:inherit;
+  animation:pmBar .6s ease forwards;animation-delay:calc(var(--d) + .15s)}
+@keyframes pmBar{to{width:var(--w)}}
+.pmSum{font-family:var(--mono);font-size:13px;padding:8px 12px;border-radius:9px;background:rgba(255,255,255,.04);opacity:0;animation:pmIn .4s ease forwards;animation-delay:var(--d)}
+.pmSum b{color:#ffcf5c}
+.stRadar .ring.perf{fill:none;stroke:#ffcf5c;stroke-width:2;stroke-dasharray:6 5;opacity:0;animation:pmIn .6s ease 1.1s forwards}
+.stRadar .perfL{fill:#ffcf5c;font:700 12px var(--mono);opacity:0;animation:pmIn .6s ease 1.3s forwards}
+.stRadar .shape.grow{transform-origin:240px 240px;transform:scale(0);animation:rGrow 1s cubic-bezier(.2,1.1,.3,1) .2s forwards}
+@keyframes rGrow{to{transform:scale(1)}}
 /* ---------- controls ---------- */
 .keyList{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
 .keyRow{display:grid;grid-template-columns:minmax(0,1fr) 128px 128px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
@@ -8508,8 +8538,9 @@ const Insight = {
   },
   /** a driver's row on a board: uid first, then name (local play has no uids) */
   finder(uid, name) { return (e) => (uid && e.uid) ? e.uid === uid : e.n === name; },
-  compute() {
-    const uid = Cloud.user && Cloud.user.uid, name = Cloud.user ? Cloud.name() : Records.driver();
+  /** everything about a driver's season (yours, unless another uid/name is given) */
+  compute(forUid, forName) {
+    const uid = forName ? forUid || null : Cloud.user && Cloud.user.uid, name = forName || (Cloud.user ? Cloud.name() : Records.driver());
     const isMe = this.finder(uid, name);
     const maps = LEVELS.map((lv, i) => {
       const b = Records.board(lv.id);
@@ -8654,7 +8685,8 @@ const Insight = {
  *  the player's best is to that map's #1 (the dashed ring). */
 const Radar = {
   state: { section: null, other: null },
-  svg(I) {
+  svg(I, opts) {
+    opts = opts || {};
     const S = 480, C = S / 2, R0 = 46, R1 = 178;
     const ang = (k) => -Math.PI / 2 + (k / 16) * Math.PI * 2;
     const at = (k, r) => [C + Math.cos(ang(k)) * r, C + Math.sin(ang(k)) * r];
@@ -8679,7 +8711,15 @@ const Radar = {
     // someone to measure against: a rival the coach was asked about, else the season leader
     const other = this.otherScores(I);
     if (other) h += poly(other.scores, 'other' + (this.state.other ? '' : ' leadr'));
-    h += poly(I.maps.map((m) => m.score), 'shape');
+    h += poly(I.maps.map((m) => m.score), 'shape' + (opts.grow ? ' grow' : ''));
+    // Perfection is the average of #1's time over theirs; on this chart's
+    // scale (a time ratio from 50% at the centre to 100% at the ring) it is
+    // a circle: the gold dashed one
+    if (typeof opts.perf === 'number') {
+      const rp = rad(Insight.score(opts.perf / 100));
+      h += '<circle class="ring perf" cx="' + C + '" cy="' + C + '" r="' + rp.toFixed(1) + '"/>' +
+        '<text class="perfL" x="' + C + '" y="' + (C - rp - 6).toFixed(1) + '" text-anchor="middle">Perfection ' + opts.perf.toFixed(3) + '%</text>';
+    }
     I.maps.forEach((m, k) => {
       const [x, y] = at(k, rad(m.score));
       const [lx, ly] = at(k, R1 + 22);
@@ -10822,16 +10862,28 @@ const Coach = {
       figs.push(r.fig);
       return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs, sting: true };
     }
+    // ------------------------------------------- a Perfection score: yours or anyone's
+    const everyonePerf = /(best|highest|top|everyone'?s|all|who has the (best|highest)) perfection|perfection (scores|leaderboard|ranking|table)/.test(low);
+    if (wants.perfect && !mapIds.length && !everyonePerf) {
+      const P = rival ? Insight.compute(rival.uid || null, rival.n) : I;
+      const nm = rival ? rival.n : null;
+      await think.done('Thought about it');
+      const s1 = this.step(turn, 'Dividing #1\'s time by ' + (nm ? nm + '\'s' : 'yours') + ' on all ' + LEVELS.length + ' maps');
+      const r = this.figPerfection(P, nm);
+      figs.push(r.fig);
+      await s1.done(P.perfection === null ? 'Checked all ' + LEVELS.length + ' maps' : 'Worked out ' + LEVELS.length + ' percentages and their average');
+      if (P.done) {
+        const s2 = this.step(turn, 'Drawing it on ' + (nm ? nm + '\'s' : 'your') + ' skill chart');
+        const sk = this.figSkill(P, null, { perf: P.perfection === null ? undefined : P.perfection, grow: true, who: nm });
+        figs.push(sk);
+        await s2.done('Drew the skill chart');
+        r.text = r.text.replace('{S}', 'Figure ' + sk.n);
+      }
+      return { text: r.text.replace('{F}', 'Figure ' + r.fig.n).replace(' ({S})', ''), notes: r.notes, figs };
+    }
     // ------------------------------------------- the boards at large
     if (!mapIds.length && !rival) {
-      if (/\bperfect(ion)?\b/.test(low)) {
-        await think.done('Thought about it');
-        const s1 = this.step(turn, 'Comparing your time with #1 on every map');
-        const r = this.figPerfection(I);
-        await s1.done(I.perfection === null ? 'Checked all ' + LEVELS.length + ' maps' : 'Worked out ' + LEVELS.length + ' percentages');
-        figs.push(r.fig);
-        return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
-      }
+
       if (/\b(closest|close (times|battles?|gaps?|races?|ones|fights?)|tight(est)?|photo ?finish(es)?|neck and neck|battles?|rivalr(y|ies)|how close)\b/.test(low)) {
         const s1 = this.step(turn, 'Comparing neighbouring times on every leaderboard');
         await think.done('Thought about it');
@@ -10840,6 +10892,27 @@ const Coach = {
         if (!r) return { text: 'Nobody is within a quarter of a second of anyone else right now. The boards are spread out.' };
         figs.push(r.fig);
         return { text: r.text.replace('{F}', 'Figure ' + r.fig.n), notes: r.notes, figs };
+      }
+      if (/\b(best|highest|top|everyone'?s|all|who has the (best|highest)) perfection|perfection (scores|leaderboard|ranking|table)\b/.test(low)) {
+        await think.done('Thought about it');
+        const s1 = this.step(turn, 'Working out everyone\'s Perfection score');
+        const list = I.rows.map((r) => ({ r, p: Profiles.perfection(r.uid, r.n) })).filter((x) => x.p !== null).sort((a, b) => b.p - a.p);
+        await s1.done(list.length + ' driver' + (list.length === 1 ? ' has' : 's have') + ' all ' + LEVELS.length + ' maps');
+        if (!list.length) return { text: 'Nobody has a time on all ' + LEVELS.length + ' maps yet, so nobody has a Perfection score. The first to finish them all gets one.' };
+        let hh = '<div class="figList">';
+        list.slice(0, 12).forEach((x, k) => {
+          const mine = I.uid && x.r.uid === I.uid;
+          hh += '<div class="figRow' + (mine ? ' me' : '') + '"><span class="tg" style="color:' + (k < 3 ? ['#ffcf5c', '#dfe7f2', '#e3a36f'][k] : 'var(--dimmer)') + '">' + (k + 1) + '</span><span class="nm">' + Profiles.icon(x.r.uid, 16) + escapeHtml(x.r.n) +
+            '</span><span class="v">' + Insight.perfText(x.p) + '</span><span class="fbar"><i style="background:' + (mine ? '#3ddbb8' : '#ffcf5c') + '" data-w="' + clamp((x.p - 80) * 5, 2, 100).toFixed(1) + '"></i></span></div>';
+        });
+        const fig = Figs.add('Perfection scores', hh + '</div>', 'Drivers with all ' + LEVELS.length + ' maps. Bars start at 80%.');
+        requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+        figs.push(fig);
+        const a = list[0], mine = I.uid ? list.findIndex((x) => x.r.uid === I.uid) : -1;
+        const text = a.r.n + ' has the best Perfection score at ' + Insight.perfText(a.p) + ', the most complete driving on the boards. ' +
+          (list[1] ? list[1].r.n + ' is next at ' + Insight.perfText(list[1].p) + ' (' + (a.p - list[1].p).toFixed(3) + ' points behind). ' : '') +
+          (mine >= 0 ? 'You are ' + Insight.ord(mine + 1) + ' at ' + Insight.perfText(list[mine].p) + '. ' : I.me ? 'Finish all ' + LEVELS.length + ' maps to join them. ' : '') + 'All of them are in Figure ' + fig.n + '.';
+        return { text, notes: text, figs };
       }
       if (/\b(most (records|wins|#1s?|number ones?|first places?)|who (owns|holds|has) (the )?(most|records)|record holders?)\b/.test(low)) {
         const s1 = this.step(turn, 'Counting every map\'s #1');
@@ -11060,10 +11133,11 @@ const Coach = {
   },
 
   // ---------------------------------------------------------------- figures
-  figSkill(I, rival) {
+  figSkill(I, rival, opts) {
+    opts = opts || {};
     const prev = Radar.state.other;
     Radar.state.other = rival ? (rival.uid || rival.n) : null;
-    const { html, other } = Radar.svg(I);
+    const { html, other } = Radar.svg(I, opts);
     Radar.state.other = prev;
     const wrap = document.createElement('div');
     wrap.className = 'stRadar';
@@ -11073,9 +11147,10 @@ const Coach = {
       const m = I.maps[+g.dataset.i];
       this.send('Tell me about ' + m.tag + ' ' + m.name);
     }));
-    return Figs.add('Skill chart' + (other ? ' · you and ' + other.who.n : ''), wrap,
-      '<b>You ' + Insight.pct(I.expertise) + '</b>' + (other ? ' · ' + escapeHtml(other.who.n) + ' ' + Insight.pct(other.scores.reduce((a, b) => a + b, 0) / 16) + ' (dashed)' : '') +
-      '. The ring is #1 on that map; the centre is twice #1\'s time. Click a map to ask about it.');
+    const who = opts.who ? escapeHtml(opts.who) : 'You';
+    return Figs.add('Skill chart' + (opts.who ? ' · ' + opts.who : '') + (other ? (opts.who ? ' and ' : ' · you and ') + other.who.n : ''), wrap,
+      '<b>' + who + ' ' + Insight.pct(I.expertise) + '</b>' + (other ? ' · ' + escapeHtml(other.who.n) + ' ' + Insight.pct(other.scores.reduce((a, b) => a + b, 0) / 16) + ' (dashed)' : '') +
+      '. The outer ring is #1 on that map; the centre is twice #1\'s time.' + (typeof opts.perf === 'number' ? ' The gold ring is the Perfection score: the average of all 16.' : '') + ' Click a map to ask about it.');
   },
   figEase(I, E) {
     const maxS = Math.max(...E.list.map((e) => e.score), 0.01), minS = Math.min(...E.list.map((e) => e.score), 0);
@@ -11304,30 +11379,56 @@ const Coach = {
     text += ' All ' + list.length + ' are in {F}.';
     return { fig, n: list.length, text, notes: text.replace('{F}', 'the figure') };
   },
-  figPerfection(I) {
-    const E = escapeHtml;
-    let h = '<div class="figList">';
-    for (const m of I.maps) {
-      const pc = m.t !== null && m.lead ? Math.min(1, m.lead.t / m.t) * 100 : null;
-      h += '<div class="figRow' + (m.rank === 1 ? ' me' : '') + '" data-map="' + m.id + '"><span class="tg">' + m.tag + '</span><span class="nm">' + E(m.name) +
-        '<small>' + (pc === null ? 'not finished' : m.rank === 1 ? 'you are #1' : '#1 ' + E(m.lead.n) + ' · ' + formatTime(m.lead.t)) + '</small></span>' +
-        '<span class="v">' + (pc === null ? '—' : (Math.floor(pc * 1000 + 1e-6) / 1000).toFixed(3) + '%') + '</span>' +
-        '<span class="fbar"><i style="background:' + (pc === null ? 'transparent' : pc >= 99.9995 ? '#ffcf5c' : '#3ddbb8') + '" data-w="' + (pc === null ? 0 : Math.max(0, (pc - 50) * 2).toFixed(1)) + '"></i></span></div>';
+  /**
+   * Perfection, worked out on screen: each map's division appears in turn,
+   * then the average, and the big number counts up to it. nm: another
+   * driver's name (null: the player).
+   */
+  figPerfection(I, nm) {
+    const E = escapeHtml, cut = (v) => (Math.floor(v * 1000 + 1e-6) / 1000).toFixed(3);
+    const who = nm ? E(nm) : 'You', whose = nm ? E(nm) + '\'s' : 'yours';
+    const rows = I.maps.map((m) => ({ m, pc: m.t !== null && m.lead ? Math.min(1, m.lead.t / m.t) * 100 : null }));
+    const sum = rows.reduce((a, r) => a + (r.pc || 0), 0);
+    const left = rows.filter((r) => r.pc === null).length;
+    const step = 0.11;
+    let h = '<div class="pmBig"><span>' + who + ' · Perfection</span><b>' + (I.perfection === null ? 'N/A' : '0.000%') + '</b></div><div class="pmRows">';
+    rows.forEach(({ m, pc }, k) => {
+      h += '<div class="pmRow' + (pc === null ? ' na' : m.rank === 1 ? ' top' : '') + '" style="--d:' + (k * step).toFixed(2) + 's" data-map="' + m.id + '"><span class="tg">' + m.tag + '</span>' +
+        '<span class="eq">' + (pc === null ? '<i>not finished</i>' : formatTime(m.lead.t) + ' <em>÷</em> ' + formatTime(m.t)) + '</span>' +
+        '<b>' + (pc === null ? '—' : cut(pc) + '%') + '</b>' +
+        '<span class="pmBar"><i style="--w:' + (pc === null ? 0 : clamp((pc - 80) * 5, 2, 100)).toFixed(1) + '%"></i></span></div>';
+    });
+    h += '</div><div class="pmSum" style="--d:' + (rows.length * step + 0.25).toFixed(2) + 's">' + (I.perfection === null
+      ? 'Needs a time on all ' + LEVELS.length + ' maps: ' + left + ' to go.'
+      : 'Average: ' + cut(sum) + ' <em>÷</em> ' + LEVELS.length + ' <em>=</em> <b>' + Insight.perfText(I.perfection) + '</b>') + '</div>';
+    const wrap = document.createElement('div');
+    wrap.className = 'pmath';
+    wrap.innerHTML = h;
+    if (I.perfection !== null) {
+      const el = wrap.querySelector('.pmBig b'), start = performance.now() + (rows.length * step + 0.25) * 1000;
+      const tick = (now) => {
+        const u = clamp((now - start) / 1300, 0, 1), e = 1 - Math.pow(1 - u, 3);
+        el.textContent = cut(I.perfection * e) + '%';
+        if (u < 1) requestAnimationFrame(tick); else el.classList.add('done');
+      };
+      requestAnimationFrame(tick);
     }
-    const fig = Figs.add('Perfection · ' + Insight.perfText(I.perfection), h + '</div>', 'On each map, #1\'s time divided by yours. The score is the average over all ' + LEVELS.length + ' maps; bars start at 50%.');
-    requestAnimationFrame(() => fig.el.querySelectorAll('.fbar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }));
+    const fig = Figs.add('Perfection · ' + (nm || 'you'), wrap, 'On each map, #1\'s time ÷ ' + whose + ' (100% when #1). The score is the average of all ' + LEVELS.length + '. Bars start at 80%.');
     let text;
     if (I.perfection === null) {
-      const left = I.maps.filter((m) => m.t === null);
-      text = 'You don\'t have a Perfection score yet: it needs a time on all ' + LEVELS.length + ' maps, and you have ' + left.length + ' to go (' + left.slice(0, 4).map((m) => m.tag + ' ' + m.name).join(', ') + (left.length > 4 ? ' and more' : '') + '). ' +
-        'Finish them and I\'ll work it out: your time against #1 on every map, averaged. Your maps so far are in {F}.';
+      const lm = I.maps.filter((m) => m.t === null);
+      text = (nm ? nm + ' doesn\'t' : 'You don\'t') + ' have a Perfection score yet: it needs a time on all ' + LEVELS.length + ' maps, and ' + (nm ? 'they have ' : 'you have ') + lm.length + ' to go (' +
+        lm.slice(0, 4).map((m) => m.tag + ' ' + m.name).join(', ') + (lm.length > 4 ? ' and more' : '') + '). ' + (nm ? '' : 'Finish them and the score appears on your card. ') + 'The maps so far are in {F}.';
     } else {
       const low = I.maps.slice().sort((a, b) => (a.lead.t / a.t) - (b.lead.t / b.t))[0];
-      text = 'Your Perfection score is **' + Insight.perfText(I.perfection) + '**: your time against #1 on each of the ' + LEVELS.length + ' maps, averaged. ' +
-        (I.perfection >= 99.9995 ? 'That is perfect: #1 on every single map. Truly exceptional driving.' :
-          'It only reaches 100% with #1 on every map. Your lowest is ' + low.tag + ' ' + low.name + ' at ' + (Math.floor(Math.min(1, low.lead.t / low.t) * 100000 + 1e-6) / 1000).toFixed(3) + '%, the quickest way to raise it. ') + 'Every map is in {F}.';
+      const tops = I.maps.filter((m) => m.rank === 1).length;
+      text = (nm ? nm + '\'s' : 'Your') + ' Perfection score is **' + Insight.perfText(I.perfection) + '**. {F} works it out: on each map, #1\'s time divided by ' + whose + ', then the average of all ' + LEVELS.length +
+        ' (' + cut(sum) + ' ÷ ' + LEVELS.length + '). ' +
+        (I.perfection >= 99.9995 ? (nm ? nm + ' is' : 'You are') + ' #1 on every single map: a perfect season. Truly exceptional.'
+          : (tops ? tops + ' map' + (tops === 1 ? '' : 's') + ' at 100% (#1). ' : '') + 'The lowest is ' + low.tag + ' ' + low.name + ' at ' + cut(Math.min(1, low.lead.t / low.t) * 100) + '%, the quickest way to raise it. ') +
+        ' On the skill chart ({S}) the gold ring is that average.';
     }
-    return { fig, text, notes: text.replace('{F}', 'the figure') };
+    return { fig, text, notes: text.replace('{F}', 'the figure').replace('{S}', 'the skill chart') };
   },
   figRecords(I) {
     const E = escapeHtml, by = {};
