@@ -513,7 +513,7 @@ const ago = (ms) => {
 const KIND = { campaign: 'Campaign', creditsrun: 'Credit run', race: 'Race', daily: 'Daily' };
 /** credits as the game writes them: a thin space every three digits (1 000 000) */
 const fmtCredits = (n) => { const v = Math.floor(Number(n) || 0); return (v < 0 ? '−' : '') + String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); };
-const OUTCOME = { finished: ['Finished', 'fin'], restarted: ['Restarted', 'rst'], terminated: ['Ended early', 'trm'] };
+const OUTCOME = { finished: ['Finished', 'fin'], restarted: ['Restarted', 'rst'], terminated: ['Ended early', 'trm'], unsaved: ['Not saved', 'trm'] };
 const REASON = { restart: 'pressed R', offtrack: 'off the track', stuck: 'stuck', fell: 'fell', error: 'physics reset',
   menu: 'quit to menu', closed: 'closed the page', finished: 'crossed the line' };
 const outcomeOf = (r) => r.outcome || 'finished';

@@ -1153,7 +1153,7 @@ begin
   if not found then return jsonb_build_object('ok', false, 'message', 'This run wasn''t registered with the server, so the time stays on this device only.'); end if;
   if r.status <> 'open' then return jsonb_build_object('ok', false, 'message', 'This run was replaced by a newer one.'); end if;
   el := extract(epoch from (now() - r.started_at)) * 1000;
-  if p_time_ms is null or p_time_ms <= 0 or p_time_ms >= 600000 or p_time_ms > el + 1500 or el > p_time_ms + 120000 then
+  if p_time_ms is null or p_time_ms <= 0 or p_time_ms >= 600000 or p_time_ms > el + 6000 or el > p_time_ms + 120000 then
     update public.runs set status = 'void', ended_at = now(), time_ms = p_time_ms where id = r.id;
     return jsonb_build_object('ok', false, 'message', 'That time doesn''t match how long the run really took.');
   end if;
@@ -1875,7 +1875,7 @@ drop policy if exists own_run_insert on public.run_log;
 create policy own_run_insert on public.run_log for insert to authenticated
   with check (uid = auth.uid() and kind in ('campaign', 'creditsrun', 'race', 'daily')
               and time_ms > 0 and time_ms < 600000
-              and (outcome is null or outcome in ('finished', 'restarted', 'terminated')));
+              and (outcome is null or outcome in ('finished', 'restarted', 'terminated', 'unsaved')));
 
 -- table access for the API roles (the policies above decide the rows).
 -- The admin page is not signed in as a player, so it reaches the tables as

@@ -15767,11 +15767,15 @@ const Game = {
       : { ok: false, message: t && t.message ? 'Time not uploaded. ' + t.message : '' })) : Promise.resolve(null);
     this.finishP = fin;
     const isBest = !prevBest || time < prevBest;
+    // a time that didn't make it to the server: the reason goes in the admin's run log
+    const unsaved = (why) => Cloud.logRun({ kind: this.runKind || 'campaign', courseId: id, courseName: levelAt(this.levelIndex).name, season: SEASON,
+      outcome: 'unsaved', reason: String(why || 'unknown').slice(0, 200), timeMs: time * 1000, record: isBest });
     if (Cloud.on && Cloud.user && !Cloud.banned()) {
       fin.then((f) => {
         if (!f || !f.ok) {
           if (isBest) { Records.revertBest(id, prevBest); this.onBoardsChanged(); }
           if (f && f.message) UI.toast(f.message);
+          if (ticket || isBest) unsaved(f ? f.message || 'finish refused' : 'no run ticket');
           return;
         }
         if (!isBest) return;
@@ -15788,6 +15792,7 @@ const Game = {
         // record run never left their machine.
         if (isBest) { Records.revertBest(id, prevBest); this.onBoardsChanged(); }
         UI.toast('Time not uploaded. ' + Cloud.errText(e));
+        unsaved('recording refused: ' + Cloud.errText(e));
       });
     }
     Sound.stopEngine();
