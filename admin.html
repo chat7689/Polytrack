@@ -165,7 +165,7 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
     <!-- OVERVIEW -->
     <section class="page" id="page-overview">
       <div class="spread" style="margin-bottom:12px">
-        <p class="note" style="margin:0">Season 2 at a glance. Run numbers come from the latest
+        <p class="note" style="margin:0">Season 3 at a glance. Run numbers come from the latest
           <span id="ovRunWindow">0</span> logged attempts.</p>
         <button id="btnOvReload">Reload</button>
       </div>
@@ -238,7 +238,7 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
       <div class="card">
         <div class="row" style="margin-bottom:12px">
           <div><label for="tSeason">Season</label>
-            <select id="tSeason"><option value="2">Season 2</option><option value="prev">Season 1</option><option value="1">Old maps (archive)</option></select></div>
+            <select id="tSeason"><option value="2">Season 3</option><option value="prev">Season 2</option><option value="prev1">Season 1</option><option value="1">Old maps (archive)</option></select></div>
           <div><label for="tCourse">Map</label><select id="tCourse"></select></div>
           <button id="btnTimesReload">Reload</button>
         </div>
@@ -257,7 +257,7 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
     <section class="page hide" id="page-seasons">
       <div class="chartGrid">
         <div class="card" style="margin:0">
-          <h2>Season 2 live standings</h2>
+          <h2>Season 3 live standings</h2>
           <p class="note">Automatic, like every trophy now: the top 3 overall, in each section and on each map hold a
             trophy in their trophy room, and lose it the moment someone beats them.</p>
           <div class="tableWrap"><table><thead><tr><th>#</th><th>Driver</th><th class="r">Maps</th><th class="r">Total</th></tr></thead>
@@ -461,16 +461,22 @@ const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Steppi
   'Needle Pass','Kettle Bowl','Splinter Row','Blackwater','Anvil Yard','Cinder Loop','Longshadow','Furrow',
   'Gallows Reach','Slate Vault','Pilot Light','Wraith Line','Ironclad','Deadfall','Hollow Bend','Last Ember',
   'Endless Horizon'].map((name, i) => ({ id: 'c' + (i + 1), name }));
-// This season's maps (Season 2, live since 2026-10-10) in play order: must
+// This season's maps (Season 3, live since 2026-10-25) in play order: must
 // match LEVELS in index.html. Replaced maps get new ids, so old times on
 // retired maps never show up on the new ones.
-const S2 = [['s3c1', 'Ignition'], ['s3c2', 'Skip Rope'], ['s3c3', 'Rattler'], ['s3c4', 'Ramp Rush'],
+const S2 = [['s4c1', 'Straight Shot'], ['s4c2', 'Quarter Turn'], ['s4c3', 'U-Turn'], ['s4c4', 'Dogleg'],
+  ['s4c5', 'Cliff Drop'], ['s4c6', 'Horseshoe'], ['s4c7', 'Double Dip'], ['s4c8', 'Kink'],
+  ['s4c9', 'Tabletop'], ['s4c10', 'Black Ice'], ['s4c11', 'Speed Trap'], ['s4c12', 'Elbow'],
+  ['s4c13', 'Ripples'], ['s4c14', 'Steep Wall'], ['s4c15', 'Long Jump'], ['s4c16', 'Last Call']]
+  .map(([id, name], i) => ({ id, name, sec: Math.floor(i / 4), tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
+// last season (Season 2, closed 2026-10-25): its times stay readable
+const PREV = [['s3c1', 'Ignition'], ['s3c2', 'Skip Rope'], ['s3c3', 'Rattler'], ['s3c4', 'Ramp Rush'],
   ['s3c5', 'Wall of Death'], ['s3c6', 'Big Air'], ['s3c7', 'Riverside'], ['s3c8', 'Drift District'],
   ['s3c9', 'Zigzag'], ['s3c10', 'Glacier'], ['s3c11', 'Moguls'], ['s3c12', 'Sky Bridges'],
   ['s3c13', 'Cyclone'], ['s3c14', 'Serpent'], ['s3c15', 'Avalanche'], ['s3c16', 'Grand Finale']]
   .map(([id, name], i) => ({ id, name, sec: Math.floor(i / 4), tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
-// last season (Season 1, closed 2026-10-10): its times stay readable
-const PREV = [['s2c1', 'Launch Pad'], ['s2c29', 'Proving Ground'], ['s2c18', 'Pinwheel'], ['s2c4', 'Hopscotch'],
+// Season 1 (closed 2026-10-10)
+const PREV1 = [['s2c1', 'Launch Pad'], ['s2c29', 'Proving Ground'], ['s2c18', 'Pinwheel'], ['s2c4', 'Hopscotch'],
   ['s2c19', 'Slipstream'], ['s2c6', 'Stormwall'], ['s2c20', 'Frostbite'], ['s2c26', 'Sidewinder'],
   ['s2c21', 'Switchback'], ['s2c33', 'Riptide'], ['s2c27', 'Coil Pass'], ['s2c22', 'Whirlpool'],
   ['s2c23', 'Gauntlet'], ['s2c14', 'Knife Edge'], ['s2c31', 'Freefall'], ['s2c16', 'Apex Predator']]
@@ -480,7 +486,8 @@ const S2_IDS = new Set(S2.map((c) => c.id));
 const COURSE_NAME = {};
 S1.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (old)'; });
 S2.forEach((c) => { COURSE_NAME[c.id] = c.tag + ' ' + c.name; });
-PREV.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (Season 1)'; });
+PREV.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (Season 2)'; });
+PREV1.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (Season 1)'; });
 // this season's replaced maps, so old runs in the history still read sensibly
 [['s2c2', 'Coastline'], ['s2c3', 'Redline Bank'], ['s2c5', 'Quarry Run'], ['s2c7', 'Glass Mile'],
   ['s2c9', 'High Wire'], ['s2c12', 'Corkscrew Ridge'], ['s2c13', 'Velocity'], ['s2c15', 'Sky Harbor'],
@@ -628,18 +635,20 @@ addEventListener('hashchange', route);
 function fillCourseSelects() {
   const rc = $('rfCourse');
   if (rc.options.length === 1) {
-    const g2 = document.createElement('optgroup'); g2.label = 'Season 2';
+    const g2 = document.createElement('optgroup'); g2.label = 'Season 3';
     S2.forEach((c) => g2.appendChild(new Option(c.tag + ' ' + c.name, c.id)));
-    const gp = document.createElement('optgroup'); gp.label = 'Season 1';
+    const gp = document.createElement('optgroup'); gp.label = 'Season 2';
     PREV.forEach((c) => gp.appendChild(new Option(c.tag + ' ' + c.name, c.id)));
+    const gq = document.createElement('optgroup'); gq.label = 'Season 1';
+    PREV1.forEach((c) => gq.appendChild(new Option(c.tag + ' ' + c.name, c.id)));
     const g1 = document.createElement('optgroup'); g1.label = 'Old maps (archive)';
     S1.forEach((c) => g1.appendChild(new Option(c.name, c.id)));
-    rc.appendChild(g2); rc.appendChild(gp); rc.appendChild(g1);
+    rc.appendChild(g2); rc.appendChild(gp); rc.appendChild(gq); rc.appendChild(g1);
   }
   fillTimesCourse();
 }
 function fillTimesCourse() {
-  const v = $('tSeason').value, list = v === '1' ? S1 : v === 'prev' ? PREV : S2;
+  const v = $('tSeason').value, list = v === '1' ? S1 : v === 'prev' ? PREV : v === 'prev1' ? PREV1 : S2;
   const sel = $('tCourse');
   sel.innerHTML = '';
   list.forEach((c) => sel.appendChild(new Option(c.tag ? c.tag + ' ' + c.name : c.name, c.id)));
@@ -672,7 +681,7 @@ async function loadAll() {
         banned: !!r.banned, timeMs: r.time_ms, updatedMs: Number(r.updated_ms) || 0 };
       bests.push(v);
       const p = byUid[v.uid];
-      if (p) { if (S2_IDS.has(v.courseId)) p.s2++; else if (!String(v.courseId).startsWith('s2')) p.s1++; }
+      if (p) { if (S2_IDS.has(v.courseId)) p.s2++; else if (/^c\d/.test(v.courseId)) p.s1++; }
     });
     renderPlayers();
     renderTimes();
@@ -1064,7 +1073,7 @@ function renderTimes() {
       } catch (e) { alert('Could not delete: ' + e.message); return; }
       bests = bests.filter((b) => b.id !== r.id);
       const owner = byUid[r.uid];
-      if (owner) { if (S2_IDS.has(r.courseId)) owner.s2--; else if (!String(r.courseId).startsWith('s2')) owner.s1--; }
+      if (owner) { if (S2_IDS.has(r.courseId)) owner.s2--; else if (/^c\d/.test(r.courseId)) owner.s1--; }
       redrawAll();
     });
     tr.lastElementChild.appendChild(del);

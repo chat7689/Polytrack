@@ -24,7 +24,7 @@
   }, true);
 })();
 </script>
-<title>aiPolytrack — Season 2</title>
+<title>aiPolytrack — Season 3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1686,7 +1686,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             <circle cx="10" cy="24" r="1.8" fill="#f4f1ea"/><circle cx="15.5" cy="24" r="1.8" fill="#f4f1ea"/>
           </svg>
           <h1>ai<span>Polytrack</span></h1>
-          <span class="seasonTag">Season 2</span>
+          <span class="seasonTag">Season 3</span>
         </div>
         <div class="who" id="who" hidden>
           <button class="whoName" id="whoCard" title="Your profile card"><span id="whoIcon"></span><span class="whoTxt"><b id="whoName">—</b><small id="whoTitle"></small></span></button>
@@ -1751,11 +1751,11 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <aside class="menuSide">
           <button class="champStrip" id="champCard" hidden title="Last season's champion: open their card">
             <span id="champIcon"></span>
-            <span class="csTxt"><small id="champKick">Season 1 champion</small><b id="champName">—</b></span>
+            <span class="csTxt"><small id="champKick">Season 2 champion</small><b id="champName">—</b></span>
             <span class="csRest"><span id="champTime"></span><span id="champRest"></span></span>
           </button>
           <div class="leaderCard" id="overallLeaderCard" hidden>
-            <div class="lcHead"><span class="lcKick" id="overallLeaderKick">Season 2 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
+            <div class="lcHead"><span class="lcKick" id="overallLeaderKick">Season 3 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
             <div class="lcBody">
               <div class="garagePreviewWrap lcCar"><canvas id="overallLeaderCanvas"></canvas></div>
               <div class="lcName"><span class="crown">♛</span> <b id="overallLeaderName">—</b></div>
@@ -1775,7 +1775,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
       <div class="row" style="justify-content:space-between;align-items:flex-start">
         <div>
           <div class="kick">PRIVATE PREVIEW · NOT RELEASED</div>
-          <h2 class="big">Season 2 maps</h2>
+          <h2 class="big">Season 3 maps</h2>
           <p class="lede" style="margin-bottom:0">Only you can see these (you're signed in to the admin page in this browser).
             Drive them, or watch the test driver. Times here aren't saved anywhere and nothing on them can reach the leaderboards.</p>
         </div>
@@ -1832,8 +1832,8 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
     <div class="wnPanel" role="dialog" aria-labelledby="wnTitle">
       <div class="wnHero">
         <div class="kick" id="wnKick">WHAT'S NEW</div>
-        <h2 id="wnTitle">Season 2 is here</h2>
-        <p>Sixteen brand-new maps, live races with friends and a lot more. Here's what changed.</p>
+        <h2 id="wnTitle">Season 3 is here</h2>
+        <p>Sixteen new maps, stripped back to the essentials. Here's what changed.</p>
       </div>
       <div class="wnGrid" id="wnGrid"></div>
       <div class="row wnFoot"><span class="wnNote" id="wnNote"></span><button class="primary" id="bWnGo">Let's race</button></div>
@@ -6583,130 +6583,74 @@ function disposeCourse(course, scene) {
 }
 
 /* --------------------------------------------------------- 8. course data
-   This season (Season 2, released 2026-10-10): sixteen courses in four
-   sections of four. Sections exist so each has its own smaller overall
-   winner; they share no theme. Banked turns pivot on their inside edge,
-   no course puts two big opposite turns back to back (TrackBuilder
-   enforces it), no road crosses another, and every course is built
-   { fine: true } (see fineDeck). Season 1's maps (s2c*) are retired: their
-   times stay in the database, and close_season() kept their podium.     */
-const SEASON = 2;
+   This season (Season 3, released 2026-10-25): sixteen minimalist courses
+   in four sections of four, most with one or two turns, one just a
+   straight line with a jump. Sections exist so each has its own smaller
+   overall winner; they share no theme. No course puts two big opposite
+   turns back to back (TrackBuilder enforces it), no road crosses another,
+   and every course is built { fine: true } (see fineDeck). Earlier
+   seasons' maps (s2c*, s3c*) are retired: their times stay in the
+   database, and close_season() kept their podiums.                     */
+const SEASON = 3;
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
 const LEVELS = [
   // ---------------------------------------------------------- Section A
   {
-    id: 's3c1', section: 0, name: 'Ignition',
-    blurb: 'Fast and wide: a speed strip, a banked left, a crest, a tabletop on a hill, a right-hander and a quick S home.',
+    id: 's4c1', section: 0, name: 'Straight Shot',
+    blurb: 'A straight line and one jump. Nothing else: flat out, and land it clean.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
       b.pad(24, 19);
-      b.straight(30);
-      b.strip(24);
-      b.straight(26);
-      b.curve(72, 70, { bank: 30, chev: 1 });
-      b.straight(40);
-      b.crest(24, 5);
-      b.straight(26);
-      b.slope(30, 4);
-      b.ramp(14, 8);
-      b.gap(20, -2);
-      b.table(30, 19);
-      b.slope(34, -4);
-      b.straight(20);
-      b.curve(60, -100, { bank: 36, chev: 1 });
-      b.straight(30);
-      b.curve(80, 35, { bank: 14 });
-      b.straight(20);
-      b.curve(80, -35, { bank: 14 });
-      b.straight(40);
+      b.straight(110);
+      b.slope(24, 2.5);
+      b.ramp(14, 9);
+      b.gap(22, -2);
+      b.landing(18, -8, { w: 18 });
+      b.straight(90);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
     }
   },
   {
-    id: 's3c2', section: 0, name: 'Skip Rope',
-    blurb: 'Two little hops, a pair of rollers, a tight hairpin, a hill with a crest and one last hop to finish.',
-    build() {
-      const b = new TrackBuilder({ width: 14, fine: true });
-      const hop = () => { b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: 16 }); };
-      b.pad(22, 18);
-      b.straight(30);
-      hop(); b.straight(16); hop();
-      b.curve(56, 60, { bank: 22, chev: 1 });
-      b.straight(30);
-      b.rollers(2, 22, 0.6);
-      b.straight(24);
-      b.curve(22, -160, { bank: 10, w: 18, chev: 1 });
-      b.straight(50);
-      b.slope(30, 3);
-      b.crest(22, 4);
-      b.slope(30, -3);
-      b.curve(64, 70, { bank: 24, chev: 1 });
-      b.straight(24);
-      hop();
-      b.straight(30);
-      b.gate('finish');
-      b.straight(34, { w: 18 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c3', section: 0, name: 'Rattler',
-    blurb: 'Tight bends that link into each other, a speed strip between them, a hairpin you\'ll want to drift and a hop at the end.',
-    build() {
-      const b = new TrackBuilder({ width: 16, fine: true });
-      b.pad(22, 20);
-      b.straight(50);
-      b.curve(26, 110, { bank: 12, w: 17, chev: 1 });
-      b.straight(46);
-      b.curve(24, -130, { bank: 12, w: 17, chev: 1 });
-      b.straight(48);
-      b.strip(18);
-      b.straight(20);
-      b.curve(30, 90, { bank: 14, w: 17, chev: 1 });
-      b.straight(50);
-      b.curve(22, -170, { bank: 10, w: 18, chev: 1 });
-      b.straight(44);
-      b.ramp(10, 6);
-      b.gap(10, -1.5);
-      b.landing(10, -5, { w: 17 });
-      b.straight(26, { w: 17 });
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c4', section: 0, name: 'Ramp Rush',
-    blurb: 'Every kind of jump: a gap, a crest, a drop off a hill and a tabletop, with banked turns between.',
+    id: 's4c2', section: 0, name: 'Quarter Turn',
+    blurb: 'One straight, one banked right-hander, one straight.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(22, 19);
-      b.straight(40);
-      b.strip(20);
-      b.slope(24, 2.5);
-      b.ramp(14, 9);
-      b.gap(20, -2);
-      b.landing(18, -8, { w: 18 });
-      b.straight(30);
-      b.curve(64, 80, { bank: 30, chev: 1 });
-      b.straight(36);
-      b.crest(26, 6);
-      b.straight(30);
-      b.slope(40, 8);
-      b.straight(16);
-      b.ramp(12, 5);
-      b.skiJump(14, 3, 44, 18, 24, { w: 18 });
-      b.landing(30, -18, { w: 18 });
-      b.straight(20);
-      b.curve(70, -60, { bank: 26, chev: 1 });
-      b.straight(26);
-      b.ramp(10, 7);
-      b.gap(18, -1);
-      b.table(26, 19);
-      b.slope(24, -1.5);
-      b.straight(30);
+      b.pad(24, 19);
+      b.straight(120);
+      b.curve(60, 90, { bank: 24, chev: 1 });
+      b.straight(120);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c3', section: 0, name: 'U-Turn',
+    blurb: 'Out, round one tight hairpin, and back. Brake late or drift it.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(130);
+      b.curve(24, -180, { bank: 10, w: 18, chev: 1 });
+      b.straight(130);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c4', section: 0, name: 'Dogleg',
+    blurb: 'Two turns: a left, a straight, a right.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(90);
+      b.curve(50, -70, { bank: 22, chev: 1 });
+      b.straight(70);
+      b.curve(50, 70, { bank: 22, chev: 1 });
+      b.straight(90);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
@@ -6714,345 +6658,217 @@ const LEVELS = [
   },
   // ---------------------------------------------------------- Section B
   {
-    id: 's3c5', section: 1, name: 'Wall of Death',
-    blurb: 'Two U-turns banked almost vertical, with a jump and a sweeper between. Flat out, the wall holds you.',
+    id: 's4c5', section: 1, name: 'Cliff Drop',
+    blurb: 'Off the top of a hill in one long jump, then a single sweeper at the bottom.',
     build() {
-      const b = new TrackBuilder({ width: 17, fine: true });
-      b.pad(24, 21);
-      b.straight(40);
-      b.strip(24);
-      b.straight(60);
-      b.curve(64, 180, { bank: 72, ramp: 0.5, chev: 1 });
-      b.straight(30);
-      b.curve(80, -40, { bank: 16 });
-      b.straight(40);
-      b.ramp(10, 6);
-      b.gap(16, -1);
-      b.straight(30, { w: 18 });
-      b.curve(64, -180, { bank: 74, ramp: 0.5, chev: 1 });
-      b.straight(60);
-      b.crest(22, 4);
-      b.straight(30);
-      b.gate('finish');
-      b.straight(34, { w: 21 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c6', section: 1, name: 'Big Air',
-    blurb: 'Down a mountain: two enormous jumps with an icy sweeper and a speed strip between them, and a hairpin at the bottom.',
-    build() {
-      const b = new TrackBuilder({ width: 15, y: 100, fine: true });
+      const b = new TrackBuilder({ width: 15, y: 44, fine: true });
       b.pad(22, 19);
-      b.slope(36, -5);
-      b.straight(16);
+      b.straight(40);
       b.ramp(16, 5);
       b.skiJump(18, 5, 46, 20, 34, { w: 20 });
       b.landing(40, -20, { w: 20 });
       b.slope(30, -4);
-      b.curve(80, 60, { bank: 24, rise: -6, chev: 1 });
-      b.slope(24, -3);
-      b.curve(70, -50, { bank: 20, grip: 0.8, rise: -3, chev: 1 });
-      b.straight(20);
-      b.strip(20);
-      b.straight(12);
-      b.ramp(18, 7);
-      b.skiJump(22, 8, 52, 24, 40, { w: 24 });
-      b.landing(48, -24, { w: 24 });
-      b.slope(40, -9);
-      b.straight(12);
-      b.curve(22, -150, { bank: 10, w: 18, chev: 1 });
-      b.straight(30);
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c7', section: 1, name: 'Riverside',
-    blurb: 'A proper racing circuit: a fast sweeper, a crest, an S-bend, a small jump and a long last corner.',
-    build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(22, 19);
-      b.straight(40);
-      b.strip(20);
-      b.straight(20);
-      b.curve(80, 70, { bank: 20, chev: 1 });
-      b.straight(30);
-      b.slope(30, 3);
-      b.crest(20, 4);
-      b.slope(30, -3);
-      b.curve(45, -90, { bank: 16, chev: 1 });
-      b.straight(46);
-      b.curve(45, 80, { bank: 16, chev: 1 });
-      b.straight(26);
-      b.slope(16, 2);
-      b.ramp(10, 5);
-      b.gap(16, -1.2);
-      b.landing(14, -5, { w: 17 });
-      b.straight(20);
-      b.curve(60, -70, { bank: 18, chev: 1 });
-      b.straight(40);
+      b.straight(50);
+      b.curve(70, 60, { bank: 24, chev: 1 });
+      b.straight(70);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
     }
   },
   {
-    id: 's3c8', section: 1, name: 'Drift District',
-    blurb: 'Tight, curved corners one after another, one of them slippery. Brake and steer to slide them.',
+    id: 's4c6', section: 1, name: 'Horseshoe',
+    blurb: 'One big banked U-turn you can take flat out, and straights either side.',
     build() {
       const b = new TrackBuilder({ width: 16, fine: true });
-      b.pad(22, 20);
-      b.straight(50);
-      b.curve(22, 120, { bank: 10, w: 18, chev: 1 });
-      b.straight(46);
-      b.curve(18, -150, { bank: 10, w: 18, grip: 0.8, chev: 1 });
-      b.straight(50);
-      b.strip(18);
-      b.straight(20);
-      b.curve(24, 100, { bank: 12, w: 18, chev: 1 });
-      b.straight(30);
-      b.crest(20, 3);
-      b.straight(30);
-      b.curve(20, 160, { bank: 10, w: 18, chev: 1 });
-      b.straight(46);
+      b.pad(24, 20);
+      b.straight(100);
+      b.curve(55, 180, { bank: 40, chev: 1 });
+      b.straight(100);
       b.gate('finish');
       b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c7', section: 1, name: 'Double Dip',
+    blurb: 'A straight with two jumps on it. Keep it pointed straight on the first and you\'ll fly the second.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      const jump = () => { b.slope(20, 2); b.ramp(12, 7); b.gap(16, -1.5); b.landing(14, -6, { w: 18 }); };
+      b.pad(24, 19);
+      b.straight(80);
+      jump();
+      b.straight(70);
+      jump();
+      b.straight(70);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c8', section: 1, name: 'Kink',
+    blurb: 'Almost straight: two gentle bends and a crest between them. Find the line that needs no steering.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(80);
+      b.curve(90, 30, { bank: 8 });
+      b.straight(40);
+      b.crest(26, 5);
+      b.straight(40);
+      b.curve(90, -30, { bank: 8 });
+      b.straight(80);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
       return b.build();
     }
   },
   // ---------------------------------------------------------- Section C
   {
-    id: 's3c9', section: 2, name: 'Zigzag',
-    blurb: 'Zigzag up a climb on stilts, fly off the top, then a hairpin and rollers to the line.',
-    build() {
-      const b = new TrackBuilder({ width: 14, fine: true });
-      b.pad(22, 18);
-      b.straight(36);
-      b.strip(20);
-      b.slope(30, 3);
-      b.curve(40, 160, { bank: 22, rise: 9, chev: 1, bridge: true });
-      b.bridge(46);
-      b.curve(40, -160, { bank: 22, rise: 9, chev: 1, bridge: true });
-      b.bridge(30);
-      b.ramp(14, 6, { bridge: true });
-      b.skiJump(24, 4, 44, 20, 30, { w: 20 });
-      b.landing(24, -20, { w: 20 });
-      b.straight(32);
-      b.curve(24, -150, { bank: 10, w: 18, chev: 1 });
-      b.straight(30);
-      b.rollers(2, 22, 0.6);
-      b.straight(24);
-      b.gate('finish');
-      b.straight(34, { w: 18 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c10', section: 2, name: 'Glacier',
-    blurb: 'Ice on the fast sweeper and the last hairpin, a crest, a steep wall and a jump between them.',
+    id: 's4c9', section: 2, name: 'Tabletop',
+    blurb: 'A jump onto a flat top, down the other side and one banked left to finish.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(22, 19);
-      b.straight(36);
-      b.strip(24);
-      b.straight(20);
-      b.curve(70, 70, { bank: 28, grip: 0.7, chev: 1 });
-      b.straight(40);
-      b.slope(40, 6);
-      b.crest(24, 5);
-      b.slope(40, -6);
-      b.straight(10);
-      b.curve(60, -120, { bank: 60, ramp: 0.5, chev: 1 });
-      b.straight(26);
-      b.slope(20, 2);
-      b.ramp(12, 7);
-      b.gap(20, -1.5);
-      b.landing(14, -6, { w: 18 });
-      b.straight(20, { w: 18 });
-      b.straight(16, { grip: 0.7, w: 18 });
-      b.curve(26, 140, { bank: 12, w: 18, grip: 0.7, chev: 1 });
-      b.straight(40);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c11', section: 2, name: 'Moguls',
-    blurb: 'Down a bumpy hill: rollers, hops, a hairpin and a tabletop. Light on the tops, flat on the landings.',
-    build() {
-      const b = new TrackBuilder({ width: 15, y: 24, fine: true });
-      const hop = (k) => { b.ramp(6, k); b.gap(6, -0.6); b.slope(14, -1, { w: 17 }); };
-      b.pad(22, 19);
-      b.straight(24);
-      b.rollers(2, 20, 0.6);
-      b.slope(30, -5);
-      hop(5); b.slope(16, -3); hop(6);
-      b.straight(16);
-      b.curve(56, 60, { bank: 22, rise: -6, chev: 1 });
-      b.slope(30, -5);
-      b.bumps(2, 12, 0.7);
-      b.slope(30, -3);
-      b.straight(10);
-      b.curve(26, -150, { bank: 10, w: 18, chev: 1 });
-      b.straight(26);
-      b.slope(24, 2.5);
-      b.ramp(10, 7);
-      b.gap(14, -1.5);
-      b.table(24, 19);
-      b.slope(24, -2);
-      b.straight(20);
-      b.strip(16);
-      b.straight(30);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c12', section: 2, name: 'Sky Bridges',
-    blurb: 'Narrow bridges high in the air with gaps between them and a bend on each. Fall and it\'s over.',
-    build() {
-      const b = new TrackBuilder({ width: 13, fine: true });
-      b.pad(22, 17);
-      b.straight(30);
-      b.slope(60, 14);
-      b.bridge(30);
-      b.ramp(10, 5, { bridge: true });
-      b.gap(18, -1.5);
-      b.landing(12, -5, { bridge: true, w: 12 });
-      b.bridge(30, { w: 11 });
-      b.curve(60, 70, { bank: 18, chev: 1, bridge: true, w: 11 });
-      b.bridge(30, { w: 11 });
-      b.ramp(10, 6, { bridge: true, w: 11 });
+      b.pad(24, 19);
+      b.straight(70);
+      b.slope(30, 4);
+      b.ramp(14, 8);
       b.gap(20, -2);
-      b.landing(12, -6, { bridge: true, w: 13 });
-      b.bridge(26, { w: 12 });
-      b.curve(60, -80, { bank: 20, chev: 1, bridge: true, w: 12 });
-      b.bridge(24, { w: 12 });
-      b.ramp(12, 7, { bridge: true, w: 12 });
-      b.gap(24, -2.5);
-      b.landing(14, -7, { bridge: true, w: 15 });
-      b.bridge(20, { w: 14 });
-      b.slope(60, -9);
-      b.straight(40);
+      b.table(30, 19);
+      b.slope(34, -4);
+      b.straight(30);
+      b.curve(45, -90, { bank: 20, chev: 1 });
+      b.straight(70);
       b.gate('finish');
-      b.straight(34, { w: 17 });
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c10', section: 2, name: 'Black Ice',
+    blurb: 'A single long icy corner. Too much speed and you slide wide; too little and you lose.',
+    build() {
+      const b = new TrackBuilder({ width: 16, fine: true });
+      b.pad(24, 20);
+      b.straight(90);
+      b.curve(70, -120, { bank: 20, grip: 0.7, chev: 1 });
+      b.straight(90);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c11', section: 2, name: 'Speed Trap',
+    blurb: 'Two speed strips straight into a hairpin. How late can you brake?',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(30);
+      b.strip(30);
+      b.straight(40);
+      b.strip(30);
+      b.straight(40);
+      b.curve(22, 160, { bank: 10, w: 18, chev: 1 });
+      b.straight(80);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c12', section: 2, name: 'Elbow',
+    blurb: 'One sharp right-hander, then a little jump on the way home.',
+    build() {
+      const b = new TrackBuilder({ width: 16, fine: true });
+      b.pad(24, 20);
+      b.straight(80);
+      b.curve(26, 100, { bank: 12, w: 17, chev: 1 });
+      b.straight(60);
+      b.ramp(10, 6);
+      b.gap(10, -1.5);
+      b.landing(10, -5, { w: 17 });
+      b.straight(60, { w: 17 });
+      b.gate('finish');
+      b.straight(34, { w: 20 });
       return b.build();
     }
   },
   // ---------------------------------------------------------- Section D
   {
-    id: 's3c13', section: 3, name: 'Cyclone',
-    blurb: 'A steep wall, a hairpin, another steep wall, then a long jump to the line.',
+    id: 's4c13', section: 3, name: 'Ripples',
+    blurb: 'Rollers, one banked left, more rollers. Stay light over the tops.',
     build() {
-      const b = new TrackBuilder({ width: 16, fine: true });
-      b.pad(24, 20);
-      b.straight(30);
-      b.strip(22);
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(50);
+      b.rollers(3, 22, 0.6);
       b.straight(40);
-      b.curve(60, 160, { bank: 70, ramp: 0.5, chev: 1 });
-      b.straight(54);
-      b.curve(22, -150, { bank: 10, w: 18, chev: 1 });
-      b.straight(46);
-      b.curve(62, 170, { bank: 72, ramp: 0.5, chev: 1 });
-      b.straight(30);
-      b.slope(30, 2.5);
-      b.ramp(14, 8);
-      b.gap(24, -2);
-      b.landing(20, -8, { w: 20 });
-      b.straight(36);
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c14', section: 3, name: 'Serpent',
-    blurb: 'Three tight hairpins, the last one slippery, with a jump, a speed strip and a quick flick between them.',
-    build() {
-      const b = new TrackBuilder({ width: 16, fine: true });
-      b.pad(22, 20);
-      b.straight(46);
-      b.curve(18, 170, { bank: 10, w: 18, chev: 1 });
-      b.straight(48);
-      b.ramp(10, 7);
-      b.gap(12, -2);
-      b.landing(12, -6, { w: 18 });
-      b.straight(24, { w: 18 });
-      b.curve(18, -170, { bank: 10, w: 18, chev: 1 });
+      b.curve(60, -80, { bank: 24, chev: 1 });
       b.straight(40);
-      b.strip(16);
-      b.straight(14);
-      b.curve(70, 30, { bank: 10 });
-      b.straight(14);
-      b.curve(70, -30, { bank: 10 });
-      b.straight(46);
-      b.curve(20, 160, { bank: 10, w: 18, grip: 0.75, chev: 1 });
-      b.straight(40);
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
-    }
-  },
-  {
-    id: 's3c15', section: 3, name: 'Avalanche',
-    blurb: 'From the summit down: a giant jump, a descending wall, an icy run, a second giant jump and a hairpin at the bottom.',
-    build() {
-      const b = new TrackBuilder({ width: 15, y: 110, fine: true });
-      b.pad(22, 19);
-      b.slope(36, -5);
-      b.straight(14);
-      b.ramp(16, 5);
-      b.skiJump(20, 6, 46, 22, 36, { w: 21 });
-      b.landing(44, -22, { w: 21 });
-      b.slope(24, -4);
-      b.curve(64, 140, { bank: 56, rise: -8, ramp: 0.5, chev: 1 });
-      b.slope(24, -5);
-      b.straight(22, { grip: 0.7 });
-      b.curve(50, -60, { bank: 18, grip: 0.7, chev: 1 });
-      b.slope(30, -4);
-      b.straight(16);
-      b.ramp(16, 6);
-      b.skiJump(24, 8, 52, 24, 40, { w: 22 });
-      b.landing(48, -24, { w: 22 });
-      b.slope(30, -6);
-      b.straight(10);
-      b.curve(26, -120, { bank: 12, w: 18, chev: 1 });
-      b.straight(16);
-      b.strip(20);
-      b.straight(20);
+      b.rollers(2, 22, 0.6);
+      b.straight(50);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
     }
   },
   {
-    id: 's3c16', section: 3, name: 'Grand Finale',
-    blurb: 'Everything at once: a steep wall, a hairpin, a hop, an icy sweeper and one last huge jump off a hill.',
+    id: 's4c14', section: 3, name: 'Steep Wall',
+    blurb: 'A speed strip, then a U-turn banked so steep it is nearly a wall. Commit to it.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
-      const hop = () => { b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: 16 }); };
       b.pad(24, 19);
-      b.straight(40);
+      b.straight(80);
       b.strip(24);
       b.straight(30);
       b.curve(66, 170, { bank: 68, ramp: 0.5, chev: 1 });
-      b.straight(46);
-      b.curve(24, -160, { bank: 10, w: 18, chev: 1 });
-      b.straight(34);
-      hop(); b.straight(10);
-      b.curve(70, 60, { bank: 26, grip: 0.75, chev: 1 });
+      b.straight(100);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c15', section: 3, name: 'Long Jump',
+    blurb: 'Down a hill and off the biggest kicker of the season, then one quick bend to the line.',
+    build() {
+      const b = new TrackBuilder({ width: 18, y: 50, fine: true });
+      b.pad(22, 22);
       b.straight(30);
-      b.strip(24);
-      b.slope(40, 8);
-      b.straight(16);
-      b.ramp(14, 5);
-      b.skiJump(22, 3, 50, 22, 30, { w: 20 });
-      b.landing(40, -22, { w: 20 });
-      b.straight(30);
+      b.strip(20);
+      b.straight(12);
+      b.ramp(18, 7);
+      b.skiJump(22, 8, 52, 24, 40, { w: 32 });
+      b.landing(48, -24, { w: 30 });
+      b.slope(40, -6, { w: 22 });
+      b.straight(40, { w: 20 });
+      b.curve(70, 50, { bank: 20, chev: 1 });
+      b.straight(60);
+      b.gate('finish');
+      b.straight(34, { w: 22 });
+      return b.build();
+    }
+  },
+  {
+    id: 's4c16', section: 3, name: 'Last Call',
+    blurb: 'The finale, kept simple: a hairpin, a jump and one banked right.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(70);
+      b.curve(24, 160, { bank: 10, w: 18, chev: 1 });
+      b.straight(50);
+      b.strip(20);
+      b.slope(24, 2.5);
+      b.ramp(14, 9);
+      b.gap(20, -2);
+      b.landing(18, -8, { w: 18 });
+      b.straight(40);
+      b.curve(60, -90, { bank: 26, chev: 1 });
+      b.straight(50);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
@@ -7065,9 +6881,10 @@ const COURSE_IDS = LEVELS.map((l) => l.id);
    LEVELS, the server has no rules for them (so no time on them can be
    saved), and players never see them. Releasing = moving them into LEVELS.
    Empty between seasons. */
-const NEXT_SEASON = 3;
+const NEXT_SEASON = 4;
 const NEXT_LEVELS = [
 /*NEXT_LEVELS*/
+
 
 ];
 // Season 2 maps that were replaced by new ones (new ids, so their old times
@@ -9354,18 +9171,13 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
  * remembered in this browser. index.html#whatsnew shows it any time.
  */
 const WhatsNew = {
-  SEASON: 2, KEY: 'whatsNew',
+  SEASON: 3, KEY: 'whatsNew',
   ITEMS: [
-    ['map', 'Sixteen new maps', 'Steep walls, ski jumps, tight hairpins, bridges in the sky and a new finale. Every time starts from zero.'],
-    ['flag', 'Race friends live', 'Make a room, share the four-letter code and race up to eight friends at once on the same GO.'],
-    ['crown', 'Season 1 champions', 'Last season\'s podium keeps its glory: titles and shiny icons next to their names, and the champion on the menu.'],
-    ['target', 'Perfection score', 'Your time against #1 on every map, averaged, to the thousandth. Finish all sixteen to get one.'],
-    ['coach', 'A smarter Coach', 'A live briefing on the menu, the closest battles, everyone\'s stats and your Perfection worked out on screen.'],
-    ['photo', 'Photo finish', 'The newest record on the menu as a photo finish: both cars and the gap measured to the line.'],
-    ['gem', 'More credits', '+100 the first time you finish each map, and +300 for 300 finished runs in a day.'],
-    ['card', 'Profile cards', 'Click any name for their card, their car and their trophy room.'],
-    ['key', 'Your controls', 'Set your own keys in Settings.'],
-    ['friend', 'Invite friends', 'Send your link: friends can join without an invite code.']
+    ['map', 'Sixteen new maps', 'Minimalist: most have one or two turns, and one is just a straight line with a jump. Every time starts from zero.'],
+    ['crown', 'Season 2 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
+    ['clock', 'Opening hours', 'aiPolytrack is open on school days: 8:30 AM to 3:30 PM, and until 2:30 PM on Wednesdays (Pacific time).'],
+    ['target', 'Thousandths everywhere', 'Every time and every gap is shown to the thousandth of a second.'],
+    ['gem', 'Quicker credits', 'Big payouts land in under two seconds.']
   ],
   ICON: {
     map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/>',
@@ -9377,7 +9189,8 @@ const WhatsNew = {
     gem: '<path d="M6 4h12l3 5-9 11L3 9z M3 9h18"/>',
     card: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M14 10h4 M14 14h4 M6 16h6"/>',
     key: '<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h1 M11 11h1 M15 11h2 M7 14h10"/>',
-    friend: '<circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5 M17 8v6 M14 11h6"/>'
+    friend: '<circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5 M17 8v6 M14 11h6"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
   },
   /** from the menu: show once, the first time after the season goes live */
   maybe() {

@@ -5,7 +5,7 @@
 const h = require('./harness.js');
 const m = h.load();
 const B = require('./bot.js');
-const want = process.argv.slice(2).filter((a) => /^s3c\d+$/.test(a));
+const want = process.argv.slice(2).filter((a) => /^s\d+c\d+$/.test(a));
 const quick = process.argv.includes('quick');
 const levels = (m.NEXT_LEVELS || []).filter((lv) => !want.length || want.includes(lv.id));
 const GY = m.GROUND_Y;
