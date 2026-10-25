@@ -7824,6 +7824,56 @@ class SkidMarks {
 }
 
 /* ------------------------------------------------------------- 10. scene */
+/**
+ * The look of each section: sky, light, fog, ground, embankments, mountains,
+ * trees and rocks. Purely cosmetic: the road, the car and every surface the
+ * car touches are the same in all of them. The shared materials are
+ * recoloured, so every view of a map follows the look of the map loaded.
+ * Dailies and player tracks use the first look.
+ */
+const Looks = {
+  cur: -1,
+  LIST: [
+    { name: 'Meadow', zenith: 0x2e86d8, band: 0xcfe6f6, nadir: 0xb9d8c6, glow: 0xfff4d8, sun: [52, 70, 36], sunCol: 0xfffaf0, sunI: 2.05,
+      hemiSky: 0xcfe6f6, hemiGround: 0x86ab72, hemiI: 0.95, fog: 0xcfe6f6, floor: 0x8fc177, bank: 0x7fb968,
+      peaks: 0x74b45c, peaksFar: 0x9cc48c, tree: 0x4f8f46, rock: 0x9aa0a6, exposure: 1.12 },
+    { name: 'Canyon', zenith: 0x4f7fbf, band: 0xf5d2a8, nadir: 0xe2b98e, glow: 0xffe0b0, sun: [60, 55, 20], sunCol: 0xffe2bd, sunI: 2.2,
+      hemiSky: 0xffe6c8, hemiGround: 0xb98458, hemiI: 0.9, fog: 0xf0d4b0, floor: 0xd8ab78, bank: 0xc99561,
+      peaks: 0xb4673f, peaksFar: 0xd39a70, tree: 0x7b8a3e, rock: 0xa9714f, exposure: 1.08 },
+    { name: 'Snowfield', zenith: 0x3f86cc, band: 0xe8f1f8, nadir: 0xe3ecf3, glow: 0xffffff, sun: [40, 75, 50], sunCol: 0xffffff, sunI: 1.85,
+      hemiSky: 0xf0f6ff, hemiGround: 0xc9d7e3, hemiI: 1.0, fog: 0xe6eff6, floor: 0xedf2f6, bank: 0xe1e9ef,
+      peaks: 0xcad8e5, peaksFar: 0xdee8f0, tree: 0x2c5a48, rock: 0x7b8795, exposure: 1.0 },
+    { name: 'Dusk', zenith: 0x1f2558, band: 0xf3956a, nadir: 0x6b4766, glow: 0xffb070, sun: [70, 22, -30], sunCol: 0xffb27a, sunI: 1.9,
+      hemiSky: 0xffb592, hemiGround: 0x3f3a5a, hemiI: 0.85, fog: 0xb07a86, floor: 0x5d7a55, bank: 0x6a8a58,
+      peaks: 0x4a4670, peaksFar: 0x6e5a82, tree: 0x2f4d3d, rock: 0x77728c, exposure: 1.15 }
+  ],
+  /** the look for level i: its section's, or the first */
+  of(i) { const lv = levelAt(i); return lv && lv.section >= 0 ? lv.section % this.LIST.length : 0; },
+  apply(k) {
+    k = k >= 0 && k < this.LIST.length ? k : 0;
+    if (k === this.cur || !App.sky) return;
+    this.cur = k;
+    const L = this.LIST[k], u = App.sky.material.uniforms;
+    u.zenith.value.setHex(L.zenith); u.band.value.setHex(L.band); u.nadir.value.setHex(L.nadir); u.glow.value.setHex(L.glow);
+    App.sunOff.set(L.sun[0], L.sun[1], L.sun[2]);
+    u.sunDir.value.copy(App.sunOff).normalize();
+    App.light.color.setHex(L.sunCol); App.light.intensity = L.sunI;
+    App.hemi.color.setHex(L.hemiSky); App.hemi.groundColor.setHex(L.hemiGround); App.hemi.intensity = L.hemiI;
+    App.scene.fog.color.setHex(L.fog);
+    App.renderer.toneMappingExposure = L.exposure;
+    MAT.floor.color.setHex(L.floor); MAT.bank.color.setHex(L.bank);
+    MAT.scenery.color.setHex(L.peaks); MAT.sceneryFar.color.setHex(L.peaksFar);
+    MAT.tree.color.setHex(L.tree); MAT.rock.color.setHex(L.rock);
+  },
+  /** the same look on another scene's own lights and fog (the builder's 3D view, the section views) */
+  dress(scene, sun, hemi) {
+    const L = this.LIST[Math.max(this.cur, 0)];
+    if (scene.fog) scene.fog.color.setHex(L.fog);
+    if (sun) { sun.color.setHex(L.sunCol); sun.intensity = L.sunI; sun.position.set(L.sun[0], L.sun[1], L.sun[2]); }
+    if (hemi) { hemi.color.setHex(L.hemiSky); hemi.groundColor.setHex(L.hemiGround); hemi.intensity = L.hemiI; }
+  }
+};
+
 const App = {
   renderer: null, scene: null, camera: null, light: null, lightTarget: null,
   init() {
@@ -7875,7 +7925,8 @@ const App = {
     this.sky = sky;
 
     this.light = new THREE.DirectionalLight(0xfffaf0, 2.05);
-    this.light.position.set(52, 70, 36);
+    this.sunOff = new THREE.Vector3(52, 70, 36);       // where the sun sits from the car (each look its own)
+    this.light.position.copy(this.sunOff);
     this.light.castShadow = true;
     this.light.shadow.mapSize.set(1024, 1024);   // ample for a +-22 m frustum
     const sc = this.light.shadow.camera;
@@ -7887,7 +7938,8 @@ const App = {
     this.lightTarget = new THREE.Object3D();
     this.scene.add(this.lightTarget);
     this.light.target = this.lightTarget;
-    this.scene.add(new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95));
+    this.hemi = new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95);
+    this.scene.add(this.hemi);
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), MAT.floor);
     floor.rotation.x = -Math.PI / 2;
@@ -7938,7 +7990,7 @@ const App = {
   aimLight(t) {
     const gx = Math.round(t.x), gy = Math.round(t.y), gz = Math.round(t.z);
     this.lightTarget.position.set(gx, gy, gz);
-    this.light.position.set(gx + 52, gy + 70, gz + 36);
+    this.light.position.set(gx + this.sunOff.x, gy + this.sunOff.y, gz + this.sunOff.z);
   },
   /**
    * Places both peak rings around (cx, cz) with every peak's base clear of
@@ -9015,8 +9067,9 @@ const Builder3D = {
     this.sky = sky;
     const sun = new THREE.DirectionalLight(0xfffaf0, 2.05);
     sun.position.set(52, 70, 36);
-    scene.add(sun, sun.target);
-    scene.add(new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95));
+    const hemi = new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95);
+    scene.add(sun, sun.target, hemi);
+    this.sun = sun; this.hemi = hemi;
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), MAT.floor);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = GROUND_Y;
@@ -9037,6 +9090,8 @@ const Builder3D = {
   /** show this built course (key: what it was built from, so an unchanged road isn't rebuilt) */
   show(data, key) {
     if (!this.ensure()) return;
+    Looks.apply(0);
+    Looks.dress(this.scene, this.sun, this.hemi);
     if (key !== this.key) {
       if (this.course) disposeCourse(this.course, this.scene);
       this.course = buildCourse(data, this.scene, new PhysicsWorld());
@@ -13871,7 +13926,7 @@ const UI = {
   course(i, name) {
     const lv = levelAt(i);
     $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : i === UTRACK_I ? (lv.draft ? 'TEST DRIVE · NOT SAVED' : 'PLAYER TRACK' + (lv.author ? ' · BY ' + lv.author.toUpperCase() : '')) : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
-      : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase();
+      : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase() + ' · ' + Looks.LIST[Looks.of(i)].name.toUpperCase();
     $('hName').textContent = name;
   },
   clock(t, stopped) {
@@ -14237,7 +14292,7 @@ const UI = {
   mapView(i) {
     const lv = LEVELS[i];
     const id = lv.id;
-    $('cdSection').textContent = SECTIONS[lv.section] + ' · ' + courseTag(i);
+    $('cdSection').textContent = SECTIONS[lv.section] + ' · ' + Looks.LIST[Looks.of(i)].name + ' · ' + courseTag(i);
     $('cdName').textContent = lv.name;
     $('cdBlurb').textContent = lv.blurb;
     const list = Records.board(id);
@@ -14664,8 +14719,10 @@ const SectionView = {
     scene.add(sky);
     const sun = new THREE.DirectionalLight(0xfffaf0, 2.05);
     sun.position.set(52, 70, 36);
-    scene.add(sun, sun.target);
-    scene.add(new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95));
+    const hemi = new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95);
+    scene.add(sun, sun.target, hemi);
+    Looks.apply(Looks.of(i));
+    Looks.dress(scene, sun, hemi);
     const floor = new THREE.Mesh(this.floorGeo || (this.floorGeo = new THREE.PlaneGeometry(6000, 6000)), MAT.floor);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = GROUND_Y;
@@ -15987,6 +16044,7 @@ const Game = {
     }
     App.layoutBackdrop(this.course.center.x, this.course.center.z, this.course.extent);
     this.levelIndex = i;
+    Looks.apply(Looks.of(i));
     this.rec = [];
     this.ghostData = this.ghostOverride || Records.ghost(levelAt(i).id);
     if (!this.ghostOverride) this.ghostOverrideName = null;
