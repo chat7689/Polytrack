@@ -1080,6 +1080,15 @@ td .pIcon{margin-right:7px}
 .bdRoad{margin-top:20px}
 .bdPub{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);margin-top:10px;cursor:pointer}
 .miniMap.bdMap{margin-top:0;max-height:none;aspect-ratio:4/3}
+.bdMap[hidden],.bd3dWrap[hidden],.bdReset[hidden]{display:none}
+.bdViews{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.bdViews .tab{font-family:inherit;font-size:12.5px;padding:6px 11px}
+.bdReset{margin-left:auto}
+.bd3dWrap{position:relative;aspect-ratio:4/3;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:#cfe6f6}
+.bd3dWrap canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.bd3dWrap canvas.grab{cursor:grabbing}
+.bd3dWrap.stale canvas{opacity:.35}
+.bd3dHint{position:absolute;left:8px;bottom:7px;font-size:11px;color:#14243a;background:rgba(255,255,255,.65);padding:2px 7px;border-radius:999px;pointer-events:none}
 .bdMap.stale{opacity:.35}
 .bdStats{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;font-size:12.5px;color:var(--dim)}
 .bdStats b{font-family:var(--mono);color:var(--ink);font-size:15px}
@@ -1888,7 +1897,13 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
           <label class="bdPub"><input type="checkbox" id="bdPublic"> Public: everyone can drive it</label>
         </section>
         <section class="dCard bdView">
-          <div class="miniMap bdMap" id="bdMap"></div>
+          <div class="bdViews" id="bdViews">
+            <button class="tab on" data-view="3d">3D view</button><button class="tab" data-view="map">Map from above</button>
+            <button class="small ghost bdReset" id="bd3dReset">Reset view</button>
+          </div>
+          <div class="bd3dWrap" id="bd3dWrap"><canvas id="bd3d" aria-label="Your track in 3D"></canvas>
+            <span class="bd3dHint">drag: turn · scroll: zoom · right-drag: move</span></div>
+          <div class="miniMap bdMap" id="bdMap" hidden></div>
           <div class="bdStats" id="bdStats"></div>
           <div class="err" id="bdErr"></div>
         </section>
@@ -8867,6 +8882,155 @@ const Preview = {
 };
 
 /**
+ * The track builder's 3D view: the road exactly as the game builds it, in
+ * the game's own scenery, on a small renderer of its own. Drag to turn the
+ * camera around the track, scroll or pinch to zoom, right-drag (or
+ * shift-drag) to move it. It turns slowly by itself until touched, and
+ * draws only while it is on screen.
+ */
+const Builder3D = {
+  renderer: null, scene: null, camera: null, course: null, peaks: null, raf: 0, last: 0, key: '',
+  yaw: 0.9, pitch: 0.5, dist: 300, fit: 300, target: null, auto: true, zoomed: false, pts: new Map(), pinch: 0,
+  ensure() {
+    if (this.renderer) return true;
+    try {
+      this.renderer = new THREE.WebGLRenderer({ canvas: $('bd3d'), antialias: true });
+    } catch (e) { return false; }
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.12;
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xcfe6f6, 400, 1600);
+    const sky = new THREE.Mesh(App.sky.geometry, App.sky.material);
+    sky.frustumCulled = false;
+    scene.add(sky);
+    this.sky = sky;
+    const sun = new THREE.DirectionalLight(0xfffaf0, 2.05);
+    sun.position.set(52, 70, 36);
+    scene.add(sun, sun.target);
+    scene.add(new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), MAT.floor);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = GROUND_Y;
+    scene.add(floor);
+    const ring = (count, mat) => {
+      const im = new THREE.InstancedMesh(GEO.peak, mat, count);
+      im.frustumCulled = false;
+      scene.add(im);
+      return im;
+    };
+    this.peaks = { peaksNear: ring(22, MAT.scenery), peaksFar: ring(18, MAT.sceneryFar) };
+    this.scene = scene;
+    this.camera = new THREE.PerspectiveCamera(50, 4 / 3, 0.5, 6000);
+    this.target = new THREE.Vector3();
+    this.wire();
+    return true;
+  },
+  /** show this built course (key: what it was built from, so an unchanged road isn't rebuilt) */
+  show(data, key) {
+    if (!this.ensure()) return;
+    if (key !== this.key) {
+      if (this.course) disposeCourse(this.course, this.scene);
+      this.course = buildCourse(data, this.scene, new PhysicsWorld());
+      App.layoutBackdrop.call(this.peaks, this.course.center.x, this.course.center.z, this.course.extent);
+      let y = 0, n = 0;
+      for (const st of data.strips) for (const f of st.frames) { y += f.p[1]; n++; }
+      this.target.set(this.course.center.x, n ? y / n : 0, this.course.center.z);
+      this.fit = clamp(this.course.extent * 1.05, 60, 2000);
+      if (!this.zoomed) this.dist = this.fit;
+      this.key = key;
+    }
+    this.start();
+  },
+  reset() {
+    this.zoomed = false; this.auto = true;
+    this.yaw = 0.9; this.pitch = 0.5; this.dist = this.fit;
+    if (this.course) this.target.set(this.course.center.x, this.target.y, this.course.center.z);
+    this.start();
+  },
+  start() {
+    if (this.raf || !this.renderer) return;
+    this.last = performance.now();
+    const step = (now) => {
+      // only while the builder's 3D view is on screen
+      if (Game.state !== 'builder' || Tracks.view !== '3d' || $('builder').hidden) { this.raf = 0; return; }
+      const dt = Math.min(0.1, (now - this.last) / 1000);
+      this.last = now;
+      if (this.auto) this.yaw += dt * 0.15;
+      this.draw();
+      this.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  },
+  draw() {
+    const c = $('bd3d'), w = c.clientWidth, h = c.clientHeight;
+    if (!w || !h) return;
+    if (c.width !== Math.round(w * this.renderer.getPixelRatio()) || c.height !== Math.round(h * this.renderer.getPixelRatio())) {
+      this.renderer.setSize(w, h, false);
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+    }
+    const cp = Math.cos(this.pitch), t = this.target;
+    this.camera.position.set(t.x + Math.sin(this.yaw) * cp * this.dist, t.y + Math.sin(this.pitch) * this.dist, t.z + Math.cos(this.yaw) * cp * this.dist);
+    if (this.camera.position.y < GROUND_Y + 2) this.camera.position.y = GROUND_Y + 2;
+    this.camera.lookAt(t);
+    this.sky.position.copy(this.camera.position);
+    this.scene.fog.near = this.dist * 1.2;
+    this.scene.fog.far = this.dist * 4 + 400;
+    this.renderer.render(this.scene, this.camera);
+  },
+  /** move the point the camera circles, along the ground, by a drag of dx, dy pixels */
+  pan(dx, dy) {
+    const k = this.dist / Math.max(200, $('bd3d').clientHeight) * 1.2;
+    const sx = Math.cos(this.yaw), sz = -Math.sin(this.yaw);       // the screen's right, on the ground
+    const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw);      // into the screen, on the ground
+    this.target.x += (-dx * sx + dy * fx) * k;
+    this.target.z += (-dx * sz + dy * fz) * k;
+  },
+  zoom(f) {
+    this.dist = clamp(this.dist * f, 25, 3000);
+    this.zoomed = true;
+  },
+  wire() {
+    const c = $('bd3d');
+    c.addEventListener('contextmenu', (e) => e.preventDefault());
+    c.addEventListener('pointerdown', (e) => {
+      this.auto = false;
+      c.setPointerCapture(e.pointerId);
+      this.pts.set(e.pointerId, { x: e.clientX, y: e.clientY, pan: e.button === 2 || e.shiftKey });
+      if (this.pts.size === 2) { const [a, b] = [...this.pts.values()]; this.pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+      c.classList.add('grab');
+    });
+    c.addEventListener('pointermove', (e) => {
+      const p = this.pts.get(e.pointerId);
+      if (!p) return;
+      const dx = e.clientX - p.x, dy = e.clientY - p.y;
+      p.x = e.clientX; p.y = e.clientY;
+      if (this.pts.size >= 2) {
+        const [a, b] = [...this.pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (this.pinch > 0 && d > 0) this.zoom(this.pinch / d);
+        this.pinch = d;
+        return;
+      }
+      if (p.pan) this.pan(dx, dy);
+      else {
+        this.yaw -= dx * 0.008;
+        this.pitch = clamp(this.pitch + dy * 0.006, 0.06, 1.5);
+      }
+    });
+    const up = (e) => {
+      this.pts.delete(e.pointerId);
+      this.pinch = 0;
+      if (!this.pts.size) c.classList.remove('grab');
+    };
+    c.addEventListener('pointerup', up);
+    c.addEventListener('pointercancel', up);
+    c.addEventListener('wheel', (e) => { e.preventDefault(); this.auto = false; this.zoom(Math.exp(e.deltaY * 0.0012)); }, { passive: false });
+  }
+};
+
+/**
  * Player tracks: the list (your own, up to 3, and everyone's public ones),
  * the builder, and driving them. A saved track has its own leaderboard
  * (map id 'u' + id) and is checked by the server like any map; the
@@ -8874,7 +9038,7 @@ const Preview = {
  */
 const Tracks = {
   mine: [], pub: [], loaded: false, level: null, draft: null, orig: '', sel: -1, kind: 'S', busy: false,
-  testRev: '', testBest: 0, testedRev: '', savedRev: '', seen: new Set(), shown: 48,
+  testRev: '', testBest: 0, testedRev: '', savedRev: '', seen: new Set(), shown: 48, view: '3d', t3d: 0,
   opt: { S: 60, R: 60, A: 90, dir: 1, bank: 10, ice: 0, B: 30, H: 6, up: 1, N: 3, J: 2 },
   TYPES: [['S', 'Straight'], ['T', 'Turn'], ['B', 'Speed strip'], ['H', 'Hill'], ['C', 'Crest'], ['R', 'Rollers'], ['J', 'Jump']],
   /** a player track's board is part of the live leaderboard once it has been opened */
@@ -9055,6 +9219,11 @@ const Tracks = {
     if (c.ok) this.lastMap = MiniMap.fromData(c.data, d.name || 'Your track', true, null);
     $('bdMap').innerHTML = this.lastMap || '';
     $('bdMap').classList.toggle('stale', !c.ok);
+    $('bd3dWrap').classList.toggle('stale', !c.ok);
+    // the 3D road, rebuilt a moment after the last change (building it takes a little while)
+    clearTimeout(this.t3d);
+    if (c.ok) { const rev = this.rev(); this.t3d = setTimeout(() => Builder3D.show(c.data, rev), 120); }
+    this.setView(this.view);
     $('bdStats').innerHTML = c.ok ? '<span><b>' + (c.len / 1000).toFixed(2) + '</b> km</span><span><b>' + d.pieces.length + '</b> ' +
       (d.pieces.length === 1 ? 'piece' : 'pieces') + '</span><span><b>' + d.w + '</b> m wide</span>' : '';
     $('bdTest').disabled = !c.ok;
@@ -9065,6 +9234,14 @@ const Tracks = {
     $('bdDel').disabled = this.sel < 0;
     $('bdReplace').disabled = this.sel < 0;
     $('bdAdd').disabled = d.pieces.length >= TrackKit.MAX;
+  },
+  setView(v) {
+    this.view = v;
+    $('bd3dWrap').hidden = v !== '3d';
+    $('bdMap').hidden = v !== 'map';
+    $('bd3dReset').hidden = v !== '3d';
+    document.querySelectorAll('#bdViews .tab').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
+    if (v === '3d') Builder3D.start();
   },
   addPiece(replace) {
     const d = this.draft, p = this.piece();
@@ -9175,6 +9352,8 @@ const Tracks = {
     $('bdWidth').innerHTML = TrackKit.WIDTHS.map((w) => '<option value="' + w + '">' + w + ' m</option>').join('');
     $('bdWidth').addEventListener('change', () => { if (this.draft) { this.draft.w = +$('bdWidth').value; this.renderBuilder(); } });
     $('bdTest').addEventListener('click', () => this.testDrive());
+    $('bdViews').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-view]'); if (b) this.setView(b.dataset.view); });
+    $('bd3dReset').addEventListener('click', () => Builder3D.reset());
     $('bdSave').addEventListener('click', () => this.save());
   }
 };
