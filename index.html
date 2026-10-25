@@ -815,6 +815,26 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .pfBox .pfCard{width:min(820px,100%);background:#0d1424;box-shadow:0 30px 80px rgba(0,0,0,.55)}
 .pfBox .pfCard .row{padding-right:10px}
 @media(max-width:900px){.menuGrid{grid-template-columns:minmax(0,1fr)}}
+/* ---------- closed hours ---------- */
+.closedPanel{width:min(1100px,96vw);padding:18px 24px 22px}
+.clGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:22px;margin-top:16px;align-items:stretch}
+@media(max-width:860px){.clGrid{grid-template-columns:minmax(0,1fr)}}
+.clTitle{font-size:22px;font-weight:600;margin:4px 0 6px}
+.clCount{font-family:var(--mono);font-size:clamp(44px,7vw,72px);font-weight:700;letter-spacing:.02em;color:#ffcf5c;line-height:1.05;
+  text-shadow:0 0 24px rgba(255,207,92,.35);font-variant-numeric:tabular-nums}
+.clWhen{color:var(--dim);font-size:13.5px;margin:6px 0 14px}
+.clHours{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-direction:column;gap:6px}
+.clHours li{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;padding:8px 12px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+.clHours li span{font-family:var(--mono);color:var(--dim)}
+.clNote{font-size:12px;color:var(--dimmer);margin:4px 0 16px}
+.clCode .row{gap:8px}
+#clCodeIn{flex:1;min-width:0;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.clCoach{display:flex;flex-direction:column;min-height:420px;padding:14px;border-radius:12px;border:1px solid rgba(61,219,184,.28);
+  background:linear-gradient(160deg,rgba(61,219,184,.06),rgba(255,255,255,.01) 60%)}
+.clLog{flex:1;min-height:0;max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin:12px 0 10px;padding-right:4px}
+.clMsg{font-size:14px;line-height:1.55;padding:10px 13px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}
+.clMsg p{margin:0 0 6px}.clMsg p:last-child{margin:0}
+.clLog .cMe{align-self:flex-end;max-width:85%}
 /* ---------- what's new ---------- */
 .wnBox{position:fixed;inset:0;z-index:88;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.7);padding:16px;
   animation:wnFade .3s ease}
@@ -1762,6 +1782,48 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
         <button class="ghost" id="bPreviewBack">&larr; Menu</button>
       </div>
       <div id="pvList"></div>
+    </div>
+  </div>
+
+  <!-- outside opening hours: a countdown, an access code box, and Coach -->
+  <div class="layer" id="closed" hidden>
+    <div class="scrim"></div>
+    <div class="panel closedPanel">
+      <header class="menuTop">
+        <div class="brand">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M1 25 L12 25 L21 7 L31 7" fill="none" stroke="#f2733f" stroke-width="3"/>
+            <rect x="7.5" y="18.5" width="9" height="4.5" fill="#3ddbb8"/>
+            <circle cx="10" cy="24" r="1.8" fill="#f4f1ea"/><circle cx="15.5" cy="24" r="1.8" fill="#f4f1ea"/>
+          </svg>
+          <h1>ai<span>Polytrack</span></h1>
+        </div>
+        <button class="ghost small" id="bClosedOut">Sign out</button>
+      </header>
+      <div class="clGrid">
+        <section class="clLeft">
+          <div class="kick">CLOSED RIGHT NOW</div>
+          <h2 class="clTitle">aiPolytrack opens in</h2>
+          <div class="clCount" id="clCount">--:--:--</div>
+          <p class="clWhen" id="clWhen"></p>
+          <ul class="clHours">
+            <li><b>Monday, Tuesday, Thursday, Friday</b><span>8:30 AM – 3:30 PM</span></li>
+            <li><b>Wednesday</b><span>8:30 AM – 2:30 PM</span></li>
+            <li><b>Saturday, Sunday</b><span>closed</span></li>
+          </ul>
+          <p class="clNote">Pacific time.</p>
+          <div class="clCode">
+            <label class="fld" for="clCodeIn">Have an access code?</label>
+            <div class="row"><input type="text" id="clCodeIn" maxlength="12" placeholder="ABCD-2345" autocomplete="off" spellcheck="false"><button class="primary" id="bClCode">Unlock</button></div>
+            <div class="err" id="clCodeMsg"></div>
+          </div>
+        </section>
+        <section class="clCoach">
+          <div class="cbHead"><span class="cbAvatar"><svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg></span><div class="cbWho"><b>Coach</b><small>Here while the track is closed</small></div></div>
+          <div class="clLog" id="clLog" aria-live="polite"></div>
+          <div class="cpComposer"><textarea id="clIn" rows="1" maxlength="400" placeholder="Message Coach"></textarea><button class="cpSend" id="bClSend" aria-label="Send">&#10148;</button></div>
+        </section>
+      </div>
     </div>
   </div>
 
@@ -9115,6 +9177,174 @@ function ordinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+/**
+ * Opening hours. Players can drive Monday, Tuesday, Thursday and Friday 8:30 AM
+ * to 3:30 PM and Wednesday 8:30 AM to 2:30 PM, Pacific time; outside them the
+ * game shows the closed screen (a countdown, an access code box and Coach)
+ * unless the player has entered an access code from the admin page. The
+ * server's rule (public._open_at) decides and refuses runs outside the hours;
+ * this is the same rule on the server's clock, for the screen.
+ */
+const Hours = {
+  open: true, closes: 0, opens: 0, granted: 0, offset: 0, at: 0, timer: 0, checked: false,
+  PT: new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hourCycle: 'h23', weekday: 'short', hour: '2-digit', minute: '2-digit' }),
+  now() { return Date.now() + this.offset; },
+  /** the rule, for any moment (ms) */
+  openAt(ms) {
+    const o = {};
+    for (const x of this.PT.formatToParts(new Date(ms))) o[x.type] = x.value;
+    const mins = (+o.hour % 24) * 60 + +o.minute;
+    const dow = o.weekday;
+    if (dow === 'Wed') return mins >= 510 && mins < 870;
+    if (dow === 'Mon' || dow === 'Tue' || dow === 'Thu' || dow === 'Fri') return mins >= 510 && mins < 930;
+    return false;
+  },
+  /** next opening after ms: openings are on a half hour, so step through half hours */
+  nextOpen(ms) {
+    let t = Math.ceil((ms + 1) / 1800000) * 1800000;
+    for (let k = 0; k < 400; k++, t += 1800000) if (this.openAt(t) && !this.openAt(t - 60000)) return t;
+    return ms + 86400000;
+  },
+  /** this player may drive now */
+  canPlay() {
+    const n = this.now();
+    return this.openAt(n) || this.granted > n;
+  },
+  /** the server's view: its clock, the next opening and any access code grant */
+  async refresh() {
+    if (!Cloud.on || !Cloud.user) return;
+    try {
+      const t0 = Date.now(), j = await Cloud.rpc('play_status'), t1 = Date.now();
+      this.offset = j.now - (t0 + t1) / 2;
+      this.granted = j.granted || 0;
+      this.checked = true;
+    } catch (e) { /* the browser's own clock, until the server answers */ }
+  },
+  /** call where the game would go to a playable screen: false (and the closed screen) when closed */
+  guard() {
+    if (this.canPlay()) return true;
+    this.show();
+    return false;
+  },
+  show() {
+    Game.state = 'closed'; Game.running = false;
+    Sound.stopEngine();
+    UI.show('closed');
+    $('clCodeMsg').textContent = '';
+    this.tick();
+    if (!$('clLog').children.length) ClosedCoach.greet();
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.tick(), 1000);
+  },
+  tick() {
+    if (Game.state !== 'closed') { clearInterval(this.timer); return; }
+    const n = this.now();
+    if (this.canPlay()) { clearInterval(this.timer); Game.toMenu(); return; }
+    const to = this.nextOpen(n), left = Math.max(0, Math.floor((to - n) / 1000));
+    const hh = Math.floor(left / 3600), mm = Math.floor((left % 3600) / 60), ss = left % 60;
+    $('clCount').textContent = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+    $('clWhen').textContent = 'Opens ' + new Date(to).toLocaleString(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'America/Los_Angeles' }) + ' Pacific';
+    // the server's word every minute (codes, clock)
+    if (Date.now() - this.at > 60000) { this.at = Date.now(); this.refresh(); }
+  },
+  /** while driving or on the menu, closing time sends players to the closed screen at their next stop */
+  watch() {
+    setInterval(() => {
+      if (!Cloud.user || this.canPlay()) return;
+      if (Game.state === 'menu' || Game.state === 'select' || Game.state === 'multi' || Game.state === 'daily') this.show();
+    }, 15000);
+  },
+  async redeem() {
+    const code = $('clCodeIn').value.trim();
+    if (!code) return;
+    $('clCodeMsg').textContent = 'Checking…';
+    try {
+      const r = await Cloud.rpc('redeem_access', { p_code: code });
+      if (!r || !r.ok) { $('clCodeMsg').textContent = (r && r.error) || 'That code didn\'t work.'; return; }
+      this.granted = r.until;
+      $('clCodeIn').value = '';
+      UI.toast('Unlocked until ' + new Date(r.until).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }) + '.');
+      Game.toMenu();
+    } catch (e) { $('clCodeMsg').textContent = Cloud.errText(e); }
+  }
+};
+
+/**
+ * Coach on the closed screen: says why the game is closed, keeps the
+ * countdown honest, and points the player at something better to do. With
+ * the browser's on-device model it can chat about anything; without it,
+ * Coach still answers maths, times and the like (General) and sticks to
+ * the point.
+ */
+const ClosedCoach = {
+  busy: false, session: null,
+  IDEAS: [
+    'get ahead on homework or study for a test',
+    'read a few chapters of a book',
+    'go outside: a walk, a bike ride or a game with friends',
+    'help out at home',
+    'practise an instrument or learn something new',
+    'get some exercise: even ten minutes helps',
+    'call or hang out with a friend',
+    'get a proper night\'s sleep, so you\'re sharp when the track opens'
+  ],
+  idea() { return this.IDEAS[Math.floor(Math.random() * this.IDEAS.length)]; },
+  left() { return $('clCount').textContent; },
+  greet() {
+    const name = Cloud.user ? Cloud.name() : 'there';
+    this.post('Hi ' + name + '. The track is closed right now: aiPolytrack is open on school days, 8:30 AM to 3:30 PM ' +
+      '(Wednesdays until 2:30 PM), Pacific time. It opens again in ' + this.left() + '.\n\nThis is a good time to step away from the screen. ' +
+      'You could ' + this.idea() + ', or ' + this.idea() + '. The best drivers rest too. Ask me anything in the meantime.');
+  },
+  post(text, who) {
+    const d = document.createElement('div');
+    d.className = who === 'me' ? 'cMe' : 'clMsg';
+    if (who === 'me') d.textContent = text;
+    else d.innerHTML = Coach.format(text);
+    $('clLog').appendChild(d);
+    $('clLog').scrollTop = $('clLog').scrollHeight;
+    return d;
+  },
+  /** the answer without the on-device model */
+  quick(q) {
+    const low = q.toLowerCase();
+    if (/\b(when|what time|how long|open|opens|countdown)\b/.test(low)) return 'aiPolytrack opens again in ' + this.left() + ' (' + $('clWhen').textContent.replace(/^Opens /, '') + '). Until then, why not ' + this.idea() + '?';
+    if (/\b(why|closed|can'?t (i )?play|let me play|unlock|code)\b/.test(low)) return 'The game is only open during school days so it doesn\'t eat into the rest of your day. If a teacher or the admin gives you an access code, type it on the left. Otherwise, it\'s a great time to ' + this.idea() + '.';
+    if (/\b(bored|nothing to do|what (should|can) i do|ideas?)\b/.test(low)) return 'A few ideas: ' + this.idea() + ', ' + this.idea() + ', or ' + this.idea() + '. Come back fresh in ' + this.left() + '.';
+    if (/^(hi|hey|hello|yo|sup)\b/.test(low)) return 'Hey! The track\'s closed, but I\'m here. Opens in ' + this.left() + '.';
+    const g = General.answer(q, low);
+    if (g) return g + '\n\nAnd once you\'re done, maybe ' + this.idea() + '.';
+    return 'I can\'t get you on the track until it opens (' + this.left() + '), but I can still help with maths, units and racing words. Or take the break: ' + this.idea() + '.';
+  },
+  async send() {
+    const box = $('clIn'), q = box.value.trim().slice(0, 400);
+    if (!q || this.busy) return;
+    box.value = '';
+    this.post(q, 'me');
+    this.busy = true;
+    const out = this.post('…');
+    let text = '';
+    try {
+      if (Coach.api() && (await Coach.availability()) === 'available') {
+        if (!this.session) {
+          const sys = 'You are Coach, the coach inside the racing game aiPolytrack. Your only name is Coach, part of aiPolytrack; never name the company, model or technology behind you. ' +
+            'The game is CLOSED right now: it is only open on school days, Monday, Tuesday, Thursday and Friday 8:30 AM to 3:30 PM and Wednesday 8:30 AM to 2:30 PM, Pacific time. ' +
+            'Be kind, upbeat and brief (at most 4 sentences). Answer any question properly (school work, facts, advice), but do not help the player find a way to play now ' +
+            '(an access code from the admin is the only way) and gently encourage them to do something else instead: homework, reading, going outside, exercise, friends, family or sleep.';
+          this.session = Coach.api() === 'new'
+            ? await self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: sys }], expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] })
+            : await self.ai.languageModel.create({ systemPrompt: sys });
+        }
+        text = Coach.scrub(String(await this.session.prompt(q + '\n[The game opens again in ' + this.left() + ']')));
+      }
+    } catch (e) { text = ''; }
+    if (!text.trim()) text = this.quick(q);
+    out.innerHTML = Coach.format(text);
+    $('clLog').scrollTop = $('clLog').scrollHeight;
+    this.busy = false;
+  }
+};
+
 /** Coach's picture: a race engineer's headset */
 const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg>';
 
@@ -12723,7 +12953,7 @@ const UI = {
   toastT: 0,
   show(id) {
     ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'preview', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'garage', 'trophies', 'multi']
+     'garage', 'trophies', 'multi', 'closed']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
     if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
@@ -14490,6 +14720,9 @@ const Game = {
     // Straight to the menu; leaderboards, credits and colours arrive in the
     // background and every screen redraws when they do (the sign-in page
     // used to sit there, looking stuck, until all of it had loaded).
+    // Only the opening hours are asked first (one small call), so a player
+    // holding an access code doesn't flash through the closed screen.
+    if (!Hours.canPlay()) await Hours.refresh();
     this.toMenu();
     this.loadCloudData(user.uid, fresh);
   },
@@ -14585,6 +14818,12 @@ const Game = {
       if (a && !e.target.closest('input')) { e.preventDefault(); e.stopPropagation(); Profiles.open(a.dataset.uid || null, a.dataset.n); }
     }, true);
     $('bPcClose').addEventListener('click', () => Profiles.close());
+    $('bClCode').addEventListener('click', () => Hours.redeem());
+    $('clCodeIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') Hours.redeem(); });
+    $('bClSend').addEventListener('click', () => ClosedCoach.send());
+    $('clIn').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ClosedCoach.send(); } });
+    $('bClosedOut').addEventListener('click', () => Cloud.signOut());
+    Hours.watch();
     $('bPhoto').addEventListener('click', () => { $('pfBox').hidden = false; });
     $('bPfClose').addEventListener('click', () => { $('pfBox').hidden = true; });
     $('pfBox').addEventListener('click', (e) => { if (e.target.id === 'pfBox') $('pfBox').hidden = true; });
@@ -15002,6 +15241,7 @@ const Game = {
   },
 
   startLevel(i) {
+    if (Cloud.user && !Hours.guard()) return;
     if (!this.loadLevel(i)) { this.toSelect(); return; }
     this.ticket = null;
     this.cpNext = 0; this.cpMissRun = 0; this.cpWarned = false;
@@ -15494,6 +15734,7 @@ const Game = {
     $('tileTrophies').textContent = n ? n + (n === 1 ? ' trophy' : ' trophies') : 'your awards';
   },
   toMenu() {
+    if (Cloud.user && !Hours.guard()) return;
     this.state = 'menu'; this.running = false;
     Sound.stopEngine();
     // Leaving to the menu ends any "racing so-and-so" session — otherwise

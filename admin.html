@@ -80,6 +80,7 @@ tr.click{cursor:pointer}
 .msg{font-size:13px;margin-top:10px;min-height:1.3em}
 .msg.err{color:var(--ember)} .msg.ok{color:var(--aqua)}
 .hide{display:none!important}
+.accNew{margin-top:12px;padding:10px 12px;border:1px solid var(--aqua);border-radius:8px;font-size:15px}
 small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-height:1.5}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
 .nav{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:24px;border-bottom:1px solid var(--rule2)}
@@ -157,6 +158,7 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
       <a href="#times" data-page="times">Times</a>
       <a href="#seasons" data-page="seasons">Standings</a>
       <a href="#security" data-page="security">Security</a>
+      <a href="#access" data-page="access">Access codes</a>
       <a href="#settings" data-page="settings">Settings</a>
     </nav>
 
@@ -320,6 +322,41 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
           <button class="danger" id="btnBan">Block</button>
         </div>
         <small class="hint">A network block stops everyone on it, including a whole school. Use it only for a network that isn't a school's.</small>
+      </div>
+    </section>
+
+    <section class="page hide" id="page-access">
+      <div class="spread" style="margin-bottom:12px">
+        <p class="note" style="margin:0">aiPolytrack is open Monday, Tuesday, Thursday and Friday 8:30 AM to 3:30 PM and
+          Wednesday 8:30 AM to 2:30 PM (Pacific). Outside those hours only a player who types an access code can drive.</p>
+        <button id="btnAccReload">Reload</button>
+      </div>
+      <div class="msg" id="accMsg"></div>
+      <h2>Make a code</h2>
+      <div class="card">
+        <p class="note">A code works for anyone who types it, until the time you pick. Deleting a code stops it at once,
+          for everyone who used it.</p>
+        <div class="row">
+          <div><label for="accLabel">Note</label><input type="text" id="accLabel" maxlength="60" placeholder="who it's for"></div>
+          <div><label for="accUntil">Works until</label><input type="datetime-local" id="accUntil"></div>
+          <button class="primary" id="btnAccMake">Make code</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="small" data-until="1h">1 hour</button>
+          <button class="small" data-until="3h">3 hours</button>
+          <button class="small" data-until="tonight">Until midnight</button>
+          <button class="small" data-until="weekend">Until Monday 8:30 AM</button>
+          <button class="small" data-until="7d">1 week</button>
+        </div>
+        <small class="hint">The time is this computer's own time zone.</small>
+        <div id="accNew" class="accNew hide"></div>
+      </div>
+      <h2>Codes</h2>
+      <div class="card tableWrap">
+        <table>
+          <thead><tr><th>Code</th><th>Note</th><th>Works until</th><th class="r">Players</th><th>Made</th><th></th></tr></thead>
+          <tbody id="accList"></tbody>
+        </table>
       </div>
     </section>
 
@@ -577,13 +614,14 @@ if (storedToken()) useToken(storedToken()).then((ok) => { if (!ok) showSignIn('T
 else showSignIn('');
 
 /* --------------------------------------------------------------- pages */
-const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'security', 'settings'];
+const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'security', 'access', 'settings'];
 function route() {
   const page = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
   PAGES.forEach((p) => $('page-' + p).classList.toggle('hide', p !== page));
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.page === page));
   if (page === 'settings') loadSettings();
   if (page === 'security') loadSecurity();
+  if (page === 'access') loadAccess();
 }
 addEventListener('hashchange', route);
 
@@ -1271,6 +1309,56 @@ function renderDevices() {
     (d.fp && !d.fp_banned ? ' <button class="small" data-act="block" data-kind="fp" data-value="' + esc(d.fp) + '">Block fingerprint</button>' : '') +
     '</td></tr>').join('') || '<tr><td colspan="8" class="empty">No computers yet.</td></tr>';
 }
+/* --------------------------------------------------------- access codes */
+const dtLocal = (d) => { const z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); };
+const whenText = (ms) => new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+async function loadAccess() {
+  say('accMsg', 'Loading…');
+  try {
+    const list = await rpc('admin_access_codes');
+    say('accMsg', '');
+    $('accList').innerHTML = (list || []).map((c) =>
+      '<tr><td class="mono"><b>' + esc(c.code.slice(0, 4) + '-' + c.code.slice(4)) + '</b></td><td>' + esc(c.label || '') + '</td><td class="mono">' +
+      esc(whenText(c.until)) + (c.live ? '' : ' <span class="pill trm">ended</span>') + '</td><td class="mono r">' + esc(c.players) +
+      '</td><td class="mono">' + ago(c.made) + '</td><td class="r"><button class="small danger" data-act="accdel" data-code="' + esc(c.code) + '">Delete</button></td></tr>').join('') ||
+      '<tr><td colspan="6" class="empty">No codes yet.</td></tr>';
+  } catch (e) {
+    say('accMsg', /admin_access_codes|PGRST202|function/i.test(e.message) ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message, 'err');
+  }
+}
+$('btnAccReload').addEventListener('click', loadAccess);
+$('page-access').addEventListener('click', async (ev) => {
+  const pre = ev.target.closest('button[data-until]');
+  if (pre) {
+    const d = new Date(), k = pre.dataset.until;
+    if (k === '1h') d.setHours(d.getHours() + 1);
+    else if (k === '3h') d.setHours(d.getHours() + 3);
+    else if (k === 'tonight') d.setHours(23, 59, 0, 0);
+    else if (k === '7d') d.setDate(d.getDate() + 7);
+    else if (k === 'weekend') { do d.setDate(d.getDate() + 1); while (d.getDay() !== 1); d.setHours(8, 30, 0, 0); }
+    $('accUntil').value = dtLocal(d);
+    return;
+  }
+  const b = ev.target.closest('button[data-act="accdel"]');
+  if (!b) return;
+  if (!confirm('Delete code ' + b.dataset.code + '? Everyone using it is stopped at once.')) return;
+  try { await rpc('admin_delete_access_code', { p_code: b.dataset.code }); await loadAccess(); say('accMsg', 'Deleted.', 'ok'); }
+  catch (e) { say('accMsg', e.message, 'err'); }
+});
+$('btnAccMake').addEventListener('click', async () => {
+  const v = $('accUntil').value;
+  if (!v) { say('accMsg', 'Pick when the code stops working.', 'err'); return; }
+  const until = new Date(v);
+  if (!(until > new Date())) { say('accMsg', 'Pick a time in the future.', 'err'); return; }
+  try {
+    const r = await rpc('admin_make_access_code', { p_label: $('accLabel').value, p_until: until.toISOString() });
+    $('accNew').classList.remove('hide');
+    $('accNew').innerHTML = 'New code: <b class="mono">' + esc(r.code.slice(0, 4) + '-' + r.code.slice(4)) + '</b> &nbsp;works until ' + esc(whenText(r.until));
+    $('accLabel').value = '';
+    await loadAccess();
+  } catch (e) { say('accMsg', e.message, 'err'); }
+});
+
 $('secFind').addEventListener('input', () => { if (sec) renderDevices(); });
 $('btnSecReload').addEventListener('click', loadSecurity);
 $('btnBan').addEventListener('click', async () => {

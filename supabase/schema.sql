@@ -119,6 +119,29 @@ create table if not exists public.season_awards (
   data jsonb not null default '{}'
 );
 
+-- Opening hours (see _open_at): outside them only a player holding an access
+-- code from the admin page may start runs. A code works for anyone who
+-- enters it until it expires; entering one gives that player a grant until
+-- then. Deleting a code ends its grants at once.
+create table if not exists public.access_codes (
+  code text primary key,
+  label text not null default '',
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.access_grants (
+  uid uuid primary key,
+  code text not null,
+  until timestamptz not null,
+  at timestamptz not null default now()
+);
+-- wrong codes typed, so nobody can guess at them
+create table if not exists public.access_tries (
+  uid uuid not null,
+  at timestamptz not null default now()
+);
+create index if not exists access_tries_uid on public.access_tries (uid, at);
+
 -- who brought whom: a player who signed up from a friend's link
 create table if not exists public.referrals (
   uid uuid primary key,
@@ -1107,6 +1130,9 @@ begin
     return jsonb_build_object('ok', false, 'error', 'device', 'message', 'Reload the game to set times.');
   end if;
   perform pg_advisory_xact_lock(hashtext('run:' || p.id::text));
+  if not public._may_play(p.id) then
+    return jsonb_build_object('ok', false, 'error', 'closed', 'message', 'aiPolytrack is closed right now, so times can''t be set.');
+  end if;
   if coalesce(p_course, '') ~ '^d[0-9]{8}$' then
     dd := substr(p_course, 2);
     if not public._daily_open(dd) then
@@ -1430,6 +1456,111 @@ begin
     out := out || jsonb_build_object(u::text, public._balance(u));
   end loop;
   return out;
+end $$;
+
+-- ------------------------------------------------------------ opening hours
+-- Open (Pacific time, daylight saving included) Monday, Tuesday, Thursday and
+-- Friday 8:30 AM to 3:30 PM, Wednesday 8:30 AM to 2:30 PM; closed at weekends.
+-- The game's own copy of this rule is Hours in index.html: keep them the same.
+create or replace function public._open_at(p_t timestamptz) returns boolean
+language sql stable set search_path = public, pg_temp as $$
+  select case extract(isodow from l)::int
+    when 3 then l::time >= time '08:30' and l::time < time '14:30'
+    when 1 then l::time >= time '08:30' and l::time < time '15:30'
+    when 2 then l::time >= time '08:30' and l::time < time '15:30'
+    when 4 then l::time >= time '08:30' and l::time < time '15:30'
+    when 5 then l::time >= time '08:30' and l::time < time '15:30'
+    else false end
+  from (select p_t at time zone 'America/Los_Angeles' as l) x
+$$;
+-- the next opening after p_t
+create or replace function public._next_open(p_t timestamptz) returns timestamptz
+language plpgsql stable set search_path = public, pg_temp as $$
+declare l timestamp := p_t at time zone 'America/Los_Angeles'; d date := (p_t at time zone 'America/Los_Angeles')::date; k integer; o timestamp;
+begin
+  for k in 0..8 loop
+    if extract(isodow from (d + k))::int between 1 and 5 then
+      o := (d + k) + time '08:30';
+      if o > l then return o at time zone 'America/Los_Angeles'; end if;
+    end if;
+  end loop;
+  return null;
+end $$;
+-- today's closing time while open (null when closed)
+create or replace function public._closes_at(p_t timestamptz) returns timestamptz
+language sql stable set search_path = public, pg_temp as $$
+  select case when public._open_at(p_t) then
+    ((p_t at time zone 'America/Los_Angeles')::date + case when extract(isodow from p_t at time zone 'America/Los_Angeles')::int = 3 then time '14:30' else time '15:30' end)
+      at time zone 'America/Los_Angeles' end
+$$;
+-- may this player start a run now: open, or a grant from an access code
+create or replace function public._may_play(p_uid uuid) returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select public._open_at(now()) or exists (
+    select 1 from public.access_grants g join public.access_codes c on c.code = g.code
+    where g.uid = p_uid and g.until > now() and c.expires_at > now())
+$$;
+-- for the game: open now?, when it closes or opens next, and the player's grant
+create or replace function public.play_status() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); g timestamptz;
+begin
+  select least(a.until, c.expires_at) into g from public.access_grants a join public.access_codes c on c.code = a.code
+  where a.uid = p.id and a.until > now() and c.expires_at > now();
+  return jsonb_build_object('now', (extract(epoch from now()) * 1000)::bigint, 'open', public._open_at(now()),
+    'closes', (extract(epoch from public._closes_at(now())) * 1000)::bigint,
+    'opens', (extract(epoch from public._next_open(now())) * 1000)::bigint,
+    'granted', (extract(epoch from g) * 1000)::bigint);
+end $$;
+-- a player types an access code: a grant until the code expires
+create or replace function public.redeem_access(p_code text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); c public.access_codes; k text := upper(regexp_replace(coalesce(p_code, ''), '[^A-Za-z0-9]', '', 'g'));
+begin
+  if (select count(*) from public.access_tries where uid = p.id and at > now() - interval '10 minutes') >= 8 then
+    return jsonb_build_object('ok', false, 'error', 'Too many wrong codes. Wait 10 minutes and try again.');
+  end if;
+  select * into c from public.access_codes where code = k and expires_at > now();
+  if not found then
+    insert into public.access_tries (uid) values (p.id);
+    delete from public.access_tries where at < now() - interval '1 day';
+    return jsonb_build_object('ok', false, 'error', 'That code isn''t valid (or it has expired).');
+  end if;
+  insert into public.access_grants (uid, code, until) values (p.id, c.code, c.expires_at)
+  on conflict (uid) do update set code = excluded.code, until = excluded.until, at = now();
+  return jsonb_build_object('ok', true, 'until', (extract(epoch from c.expires_at) * 1000)::bigint, 'label', c.label);
+end $$;
+-- the admin page: make a code that works until p_until
+create or replace function public.admin_make_access_code(p_label text, p_until timestamptz) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare a text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; b bytea; k text := ''; i integer;
+begin
+  perform public._require_admin();
+  if p_until is null or p_until <= now() then raise exception 'Pick an end time in the future.' using errcode = 'P0001'; end if;
+  if p_until > now() + interval '366 days' then raise exception 'A code can last a year at most.' using errcode = 'P0001'; end if;
+  loop
+    b := extensions.gen_random_bytes(8); k := '';
+    for i in 0..7 loop k := k || substr(a, (get_byte(b, i) % length(a)) + 1, 1); end loop;
+    exit when not exists (select 1 from public.access_codes where code = k);
+  end loop;
+  insert into public.access_codes (code, label, expires_at) values (k, left(coalesce(btrim(p_label), ''), 60), p_until);
+  return jsonb_build_object('code', k, 'until', (extract(epoch from p_until) * 1000)::bigint);
+end $$;
+create or replace function public.admin_access_codes() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(jsonb_build_object('code', c.code, 'label', c.label,
+      'until', (extract(epoch from c.expires_at) * 1000)::bigint, 'made', (extract(epoch from c.created_at) * 1000)::bigint,
+      'live', c.expires_at > now(), 'players', (select count(*) from public.access_grants g where g.code = c.code)) order by c.created_at desc)
+    from public.access_codes c), '[]'::jsonb);
+end $$;
+create or replace function public.admin_delete_access_code(p_code text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  delete from public.access_grants where code = p_code;
+  delete from public.access_codes where code = p_code;
 end $$;
 
 -- how many friends signed up from the calling player's link
@@ -1827,6 +1958,9 @@ alter table public.car_customization enable row level security;
 alter table public.run_log enable row level security;
 alter table public.season_awards enable row level security;
 alter table public.referrals enable row level security;
+alter table public.access_codes enable row level security;
+alter table public.access_grants enable row level security;
+alter table public.access_tries enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -1841,6 +1975,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
+                          'access_codes', 'access_grants', 'access_tries',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -1905,7 +2040,8 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
   public.admin_set_banned(uuid, boolean), public.admin_set_password(uuid, text), public.admin_delete_player(uuid),
   public.admin_import(jsonb), public.admin_security(), public.admin_ban(text, text, text), public.admin_unban(text, text),
   public.admin_clear_flags(uuid, text), public.admin_remove_best(uuid, text), public.admin_release_daily(text, boolean),
-  public.admin_set_captcha(text), public._client_ip() to anon;
+  public.admin_set_captcha(text), public._client_ip(), public.admin_make_access_code(text, timestamptz),
+  public.admin_access_codes(), public.admin_delete_access_code(text) to anon;
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
