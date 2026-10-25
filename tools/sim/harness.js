@@ -22,7 +22,7 @@ function load() {
   `;
   const exportsList = ['Vehicle', 'PhysicsWorld', 'buildCourse', 'LEVELS', 'validateCourse', 'CAR',
     'GROUND_Y', 'buildMaterials', 'buildGeometry', 'TrackBuilder', 'MAT', 'GEO'];
-  const extra = ['SECTIONS', 'courseCenterAndExtent', 'layoutBackdropPeaks', 'densePath', 'DailyGen', 'courseCheckpoints', 'passesCheckpoint', 'NEXT_LEVELS'];
+  const extra = ['SECTIONS', 'courseCenterAndExtent', 'layoutBackdropPeaks', 'densePath', 'DailyGen', 'courseCheckpoints', 'passesCheckpoint', 'NEXT_LEVELS', 'TrackKit'];
   const ret = 'return {' + exportsList.join(',') + ',' +
     extra.map((k) => k + ': (typeof ' + k + " !== 'undefined' ? " + k + ' : undefined)').join(',') + '};';
   const fn = new Function('THREE', utils + chunk + '\n' + ret);

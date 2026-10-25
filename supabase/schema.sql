@@ -1163,6 +1163,9 @@ begin
     if not found then
       return jsonb_build_object('ok', false, 'error', 'unpaid', 'message', 'Each daily attempt costs 1 credit: start it from the Daily screen.');
     end if;
+  elsif p_course ~ '^u[0-9]{1,15}$' and not exists (select 1 from public.user_tracks
+          where id = substr(p_course, 2)::bigint and (is_public or uid = p.id)) then
+    return jsonb_build_object('ok', false, 'error', 'course', 'message', 'That track is private or was deleted.');
   elsif not exists (select 1 from public.course_rules where course_id = p_course) then
     return jsonb_build_object('ok', false, 'error', 'course', 'message', 'That map doesn''t take times.');
   end if;
@@ -1218,7 +1221,7 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Not counted: the game window wasn''t in focus for the run.');
   end if;
   update public.runs set status = 'done', counted = true, ended_at = now(), time_ms = p_time_ms, focus = p_focus where id = r.id;
-  if r.course_id !~ '^d[0-9]{8}$' then
+  if r.course_id !~ '^d[0-9]{8}$' and r.course_id !~ '^u[0-9]+$' then
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
     if not exists (select 1 from public.credit_events where uid = p.id and kind = 'grind' and created_at > now() - interval '10 seconds') then
       insert into public.credit_events (uid, delta, kind, note) values (p.id, 1, 'grind', 'run ' || r.id::text);
@@ -1355,6 +1358,7 @@ begin
   g := public._ghost_check(p_course, p_time_ms, p_samples);
   if not (g ->> 'ok')::boolean then raise exception '%', g ->> 'error' using errcode = 'P0001'; end if;
   flags := array(select jsonb_array_elements_text(g -> 'flags'));
+  if p_course ~ '^u[0-9]+$' then flags := '{}'; end if;
   update public.runs set best_used = true where id = r.id;
   select time_ms into cur from public.bests where uid = p.id and course_id = p_course for update;
   if cur is not null and cur <= p_time_ms then
@@ -1362,7 +1366,7 @@ begin
   end if;
   -- a new record by a wide margin is worth a look (not on dailies: the
   -- first good time of the day beats nothing)
-  if p_course !~ '^d[0-9]{8}$' then
+  if p_course !~ '^d[0-9]{8}$' and p_course !~ '^u[0-9]+$' then
     select min(time_ms) into top from public.bests where course_id = p_course and uid <> p.id and not banned;
     if top is not null and p_time_ms < top * 0.98 then flags := array_append(flags, 'record'); end if;
   end if;
@@ -1454,7 +1458,7 @@ end $$;
 create or replace function public._day_runs(p_uid uuid) returns integer
 language sql stable security definer set search_path = public, pg_temp as $$
   select count(*)::int from public.runs
-  where uid = p_uid and counted
+  where uid = p_uid and counted and course_id !~ '^u[0-9]+$'
     and ended_at >= ((now() at time zone 'America/Los_Angeles')::date)::timestamp at time zone 'America/Los_Angeles'
 $$;
 -- the daily challenge for the calling player: finishes today, and whether today's 300 is paid
@@ -1582,6 +1586,242 @@ begin
   perform public._require_admin();
   delete from public.access_grants where code = p_code;
   delete from public.access_codes where code = p_code;
+end $$;
+
+-- ------------------------------------------------------------ player tracks
+-- Anyone can build tracks in the game's track builder and keep up to 3.
+-- A track is a road width and a list of pieces (see TrackKit in index.html);
+-- a public one can be driven by everyone and has its own leaderboard, under
+-- the map id 'u' || id. The server works out the road's start, finish and
+-- checkpoints from the pieces itself (_track_geo), so a time on a player
+-- track is checked exactly like one on a season map. Player tracks pay no
+-- credits and are not part of the season.
+create table if not exists public.user_tracks (
+  id bigserial primary key,
+  uid uuid not null,
+  name text not null,
+  is_public boolean not null default false,
+  width smallint not null,
+  pieces jsonb not null,
+  len_m integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists user_tracks_uid on public.user_tracks (uid);
+create index if not exists user_tracks_public on public.user_tracks (is_public, updated_at desc);
+
+-- The road a track's pieces make, walked the way TrackBuilder walks it (keep
+-- the two the same): {ok, fx, fy, fz, len, gate_r, cps} or {ok:false, error}.
+-- Pieces: ['S', length] straight; ['T', radius, degrees (+ left, - right),
+-- bank, ice] turn; ['B', length] speed strip; ['H', rise] hill (40 m long);
+-- ['C'] crest; ['R', count] rollers; ['J', kind] jump (1 hop, 2 medium,
+-- 3 big, 4 tabletop).
+create or replace function public._track_geo(p_w integer, p_pieces jsonb) returns jsonb
+language plpgsql immutable set search_path = public, pg_temp as $$
+declare
+  mk text[] := '{}'; ma float8[] := '{}'; mb float8[] := '{}'; mw float8[] := '{}';
+  pc jsonb; t text; n integer := 0; i integer; k integer; segs integer; sa float8; ch float8; r float8; a float8;
+  run float8; wv float8; y1 float8; prev float8;
+  x float8 := 0; y float8 := 0; z float8 := 0; h float8 := 0; cum float8 := 0; nextcp float8 := 0; cps float8[] := '{}';
+begin
+  if p_w is null or p_w not between 13 and 18 then return jsonb_build_object('ok', false, 'error', 'The road width must be 13 to 18 m.'); end if;
+  if p_pieces is null or jsonb_typeof(p_pieces) <> 'array' or jsonb_array_length(p_pieces) < 1 then
+    return jsonb_build_object('ok', false, 'error', 'Add at least one piece.');
+  end if;
+  if jsonb_array_length(p_pieces) > 40 then return jsonb_build_object('ok', false, 'error', 'A track has 40 pieces at most.'); end if;
+  -- the start: a pad and a short straight
+  mk := mk || 's'::text; ma := ma || 24::float8; mb := mb || 0::float8; mw := mw || (p_w + 4)::float8;
+  mk := mk || 's'::text; ma := ma || 20::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
+  for pc in select value from jsonb_array_elements(p_pieces) loop
+    n := n + 1;
+    if jsonb_typeof(pc) <> 'array' then return jsonb_build_object('ok', false, 'error', 'Piece ' || n || ' isn''t a piece.'); end if;
+    t := pc ->> 0;
+    begin
+      if t = 'S' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int between 10 and 200 and (pc ->> 1)::int % 10 = 0 then
+        mk := mk || 's'::text; ma := ma || (pc ->> 1)::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
+      elsif t = 'T' and jsonb_array_length(pc) = 5 and (pc ->> 1)::int in (24, 40, 60, 90)
+            and abs((pc ->> 2)::int) in (30, 45, 60, 90, 120, 150, 180) and (pc ->> 3)::int in (0, 10, 25, 40) and (pc ->> 4)::int in (0, 1) then
+        r := (pc ->> 1)::int; a := radians((pc ->> 2)::int);
+        segs := greatest(5, floor(abs(a) * r / 3.2 + 0.5)::int); sa := a / segs; ch := 2 * r * abs(sin(sa / 2));
+        wv := case when r = 24 then p_w + 3 else p_w end;
+        for i in 1..segs loop
+          mk := mk || 'h'::text; ma := ma || (sa / 2); mb := mb || 0::float8; mw := mw || 0::float8;
+          mk := mk || 's'::text; ma := ma || ch; mb := mb || 0::float8; mw := mw || wv;
+          mk := mk || 'h'::text; ma := ma || (sa / 2); mb := mb || 0::float8; mw := mw || 0::float8;
+        end loop;
+      elsif t = 'B' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (20, 30, 40) then
+        mk := mk || 's'::text; ma := ma || (pc ->> 1)::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
+      elsif t = 'H' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (-10, -6, -3, 3, 6, 10) then
+        mk := mk || 's'::text; ma := ma || 40::float8; mb := mb || (pc ->> 1)::float8; mw := mw || p_w::float8;
+      elsif t = 'C' and jsonb_array_length(pc) = 1 then
+        -- ramp(13, 5) then landing(13, -5)
+        for i in 1..3 loop mk := mk || 's'::text; ma := ma || (13 / 3.0); mb := mb || (13 / 3.0 * tan(radians(5.0 * i / 3))); mw := mw || p_w::float8; end loop;
+        for i in reverse 3..1 loop mk := mk || 's'::text; ma := ma || (13 / 3.0); mb := mb || (13 / 3.0 * tan(radians(-5.0 * i / 3))); mw := mw || p_w::float8; end loop;
+      elsif t = 'R' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (2, 3, 4) then
+        -- rollers(n, 22, 0.6): 7 steps a wave
+        prev := 0;
+        for k in 1..(pc ->> 1)::int loop
+          for i in 1..7 loop
+            y1 := 0.3 * (1 - cos(2 * pi() * i / 7));
+            mk := mk || 's'::text; ma := ma || (22 / 7.0); mb := mb || (y1 - prev); mw := mw || p_w::float8;
+            prev := y1;
+          end loop;
+        end loop;
+      elsif t = 'J' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (1, 2, 3, 4) then
+        k := (pc ->> 1)::int;
+        -- the run-up slope, the kicker (ramp), the gap, then what it lands on
+        if k = 1 then mk := mk || 's'::text; ma := ma || 10::float8; mb := mb || 0.7::float8; mw := mw || p_w::float8; run := 6; a := 6;
+        elsif k = 2 then mk := mk || 's'::text; ma := ma || 20::float8; mb := mb || 2::float8; mw := mw || p_w::float8; run := 12; a := 7;
+        elsif k = 3 then mk := mk || 's'::text; ma := ma || 24::float8; mb := mb || 2.5::float8; mw := mw || p_w::float8; run := 14; a := 9;
+        else mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 4::float8; mw := mw || p_w::float8; run := 14; a := 8;
+        end if;
+        for i in 1..3 loop mk := mk || 's'::text; ma := ma || (run / 3); mb := mb || (run / 3 * tan(radians(a * i / 3))); mw := mw || p_w::float8; end loop;
+        if k = 1 then
+          mk := mk || 'g'::text; ma := ma || 7::float8; mb := mb || (-0.6)::float8; mw := mw || 0::float8;
+          mk := mk || 's'::text; ma := ma || 14::float8; mb := mb || 0::float8; mw := mw || (p_w + 1)::float8;
+        elsif k = 2 or k = 3 then
+          mk := mk || 'g'::text; ma := ma || (case when k = 2 then 16 else 22 end)::float8; mb := mb || (case when k = 2 then -1.5 else -2 end)::float8; mw := mw || 0::float8;
+          run := case when k = 2 then 14 else 18 end; a := case when k = 2 then -6 else -8 end;
+          for i in reverse 3..1 loop mk := mk || 's'::text; ma := ma || (run / 3); mb := mb || (run / 3 * tan(radians(a * i / 3))); mw := mw || (p_w + 3)::float8; end loop;
+        else
+          mk := mk || 'g'::text; ma := ma || 20::float8; mb := mb || (-2)::float8; mw := mw || 0::float8;
+          mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 0::float8; mw := mw || (p_w + 4)::float8;
+          mk := mk || 's'::text; ma := ma || 34::float8; mb := mb || (-3.3)::float8; mw := mw || p_w::float8;
+        end if;
+      else
+        return jsonb_build_object('ok', false, 'error', 'Piece ' || n || ' isn''t a piece the builder makes.');
+      end if;
+    exception when others then
+      return jsonb_build_object('ok', false, 'error', 'Piece ' || n || ' isn''t a piece the builder makes.');
+    end;
+  end loop;
+  -- the last straight to the finish gate
+  mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
+  for i in 1..array_length(mk, 1) loop
+    if mk[i] = 'h' then h := h + ma[i];
+    else
+      x := x + sin(h) * ma[i]; z := z + cos(h) * ma[i]; y := y + mb[i];
+      if y < -0.75 then return jsonb_build_object('ok', false, 'error', 'The road goes under the grass: put a hill up before going down.'); end if;
+      if y > 80 then return jsonb_build_object('ok', false, 'error', 'The road climbs too high (80 m at most).'); end if;
+      if mk[i] = 's' and cum >= nextcp then cps := cps || array[round(x::numeric, 1)::float8, round(z::numeric, 1)::float8, mw[i] / 2]; nextcp := cum + 40; end if;
+      cum := cum + sqrt(ma[i] * ma[i] + mb[i] * mb[i]);
+    end if;
+  end loop;
+  if cum > 3000 then return jsonb_build_object('ok', false, 'error', 'A track is 3 km long at most.'); end if;
+  return jsonb_build_object('ok', true, 'fx', round(x::numeric, 1), 'fy', round(y::numeric, 1), 'fz', round(z::numeric, 1),
+    'len', round(cum)::int, 'gate_r', p_w / 2.0 + 5, 'cps', to_jsonb(cps));
+end $$;
+
+-- a track's map id, its leaderboard and rules go when it changes or goes
+create or replace function public._track_reset(p_course text, p_rules boolean) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  delete from public.bests where course_id = p_course;
+  delete from public.ghosts where course_id = p_course;
+  delete from public.best_flags where course_id = p_course;
+  if p_rules then delete from public.course_rules where course_id = p_course; end if;
+end $$;
+
+-- save a new track (p_id null) or change one of the player's own; a changed
+-- road clears its leaderboard (the old times were set on another road)
+create or replace function public.save_track(p_id bigint, p_name text, p_public boolean, p_width integer, p_pieces jsonb) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); g jsonb; t public.user_tracks; nm text := btrim(regexp_replace(coalesce(p_name, ''), '\s+', ' ', 'g'));
+  changed boolean := true; cid text; cps float8[];
+begin
+  if nm !~ '^[A-Za-z0-9][A-Za-z0-9 ''!?.,&-]{1,28}[A-Za-z0-9!?.'']$' then
+    return jsonb_build_object('ok', false, 'error', 'Give the track a name: 3 to 30 letters, numbers and spaces.');
+  end if;
+  g := public._track_geo(p_width, p_pieces);
+  if not (g ->> 'ok')::boolean then return jsonb_build_object('ok', false, 'error', g ->> 'error'); end if;
+  perform pg_advisory_xact_lock(hashtext('tracks:' || p.id::text));
+  if p_id is null then
+    if (select count(*) from public.user_tracks where uid = p.id) >= 3 then
+      return jsonb_build_object('ok', false, 'error', 'You have 3 tracks already. Delete one to make another.');
+    end if;
+    insert into public.user_tracks (uid, name, is_public, width, pieces, len_m)
+      values (p.id, nm, coalesce(p_public, false), p_width, p_pieces, (g ->> 'len')::int) returning * into t;
+  else
+    select * into t from public.user_tracks where id = p_id and uid = p.id for update;
+    if not found then return jsonb_build_object('ok', false, 'error', 'That track isn''t yours (or it was deleted).'); end if;
+    changed := t.width <> p_width or t.pieces <> p_pieces;
+    update public.user_tracks set name = nm, is_public = coalesce(p_public, false), width = p_width, pieces = p_pieces,
+      len_m = (g ->> 'len')::int, updated_at = now() where id = t.id returning * into t;
+  end if;
+  cid := 'u' || t.id;
+  if changed then
+    perform public._track_reset(cid, false);
+    select array(select jsonb_array_elements_text(g -> 'cps')::float8) into cps;
+    insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floor_ms, ref_ms, len_m, cps)
+    values (cid, 0, 0, 7, (g ->> 'fx')::float8, (g ->> 'fy')::float8, (g ->> 'fz')::float8, (g ->> 'gate_r')::float8,
+            -- nothing averages 60 m/s from a standing start
+            round((g ->> 'len')::numeric / 60 * 1000)::int, null, (g ->> 'len')::int, cps)
+    on conflict (course_id) do update set sx = excluded.sx, sy = excluded.sy, sz = excluded.sz, fx = excluded.fx, fy = excluded.fy,
+      fz = excluded.fz, gate_r = excluded.gate_r, floor_ms = excluded.floor_ms, ref_ms = excluded.ref_ms, len_m = excluded.len_m, cps = excluded.cps;
+  end if;
+  return jsonb_build_object('ok', true, 'id', t.id, 'course', cid, 'reset', changed and p_id is not null);
+end $$;
+
+create or replace function public.delete_track(p_id bigint) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  delete from public.user_tracks where id = p_id and uid = p.id;
+  if not found then return jsonb_build_object('ok', false, 'error', 'That track isn''t yours (or it was already deleted).'); end if;
+  perform public._track_reset('u' || p_id, true);
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- tracks as the game lists them: the road, who made it, how many drivers
+-- and the record
+create or replace function public._track_json(t public.user_tracks) returns jsonb
+language sql stable security definer set search_path = public, pg_temp as $$
+  select jsonb_build_object('id', t.id, 'uid', t.uid, 'name', t.name, 'pub', t.is_public, 'w', t.width, 'pieces', t.pieces, 'len', t.len_m,
+    'updated', (extract(epoch from t.updated_at) * 1000)::bigint,
+    'author', (select display_name from public.profiles where id = t.uid),
+    'drivers', (select count(*) from public.bests b where b.course_id = 'u' || t.id and not b.banned),
+    'record', (select jsonb_build_object('n', b.display_name, 't', b.time_ms) from public.bests b
+               where b.course_id = 'u' || t.id and not b.banned order by b.time_ms, b.updated_ms limit 1))
+$$;
+create or replace function public.my_tracks() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  return coalesce((select jsonb_agg(public._track_json(t) order by t.created_at) from public.user_tracks t where t.uid = p.id), '[]'::jsonb);
+end $$;
+-- everyone's public tracks: most driven first
+create or replace function public.public_tracks() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  return coalesce((select jsonb_agg(j order by (j ->> 'drivers')::int desc, (j ->> 'updated')::bigint desc) from (
+    select public._track_json(t) j from public.user_tracks t
+    where t.is_public and not exists (select 1 from public.profiles q where q.id = t.uid and q.banned)
+    order by t.updated_at desc limit 300) x), '[]'::jsonb);
+end $$;
+-- one track by id (public, or the player's own)
+create or replace function public.get_track(p_id bigint) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); t public.user_tracks;
+begin
+  select * into t from public.user_tracks where id = p_id and (is_public or uid = p.id);
+  if not found then return null; end if;
+  return public._track_json(t);
+end $$;
+
+-- the admin page: every track, and removing one (a bad name, say)
+create or replace function public.admin_tracks() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(public._track_json(t) order by t.updated_at desc) from public.user_tracks t), '[]'::jsonb);
+end $$;
+create or replace function public.admin_delete_track(p_id bigint) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  delete from public.user_tracks where id = p_id;
+  perform public._track_reset('u' || p_id, true);
 end $$;
 
 -- how many friends signed up from the calling player's link
@@ -1791,6 +2031,8 @@ begin
   delete from public.race_entries where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.car_customization where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admin_notes where uid = p_uid; get diagnostics added = row_count; n := n + added;
+  perform public._track_reset('u' || t.id, true) from public.user_tracks t where t.uid = p_uid;
+  delete from public.user_tracks where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admins where user_id = p_uid;
   -- (Supabase refuses any UPDATE or DELETE without a WHERE of its own)
   update public.season_awards set data = (
@@ -1982,6 +2224,7 @@ alter table public.referrals enable row level security;
 alter table public.access_codes enable row level security;
 alter table public.access_grants enable row level security;
 alter table public.access_tries enable row level security;
+alter table public.user_tracks enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -1996,7 +2239,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -2062,12 +2305,14 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
   public.admin_import(jsonb), public.admin_security(), public.admin_ban(text, text, text), public.admin_unban(text, text),
   public.admin_clear_flags(uuid, text), public.admin_remove_best(uuid, text), public.admin_release_daily(text, boolean),
   public.admin_set_captcha(text), public._client_ip(), public.admin_make_access_code(text, timestamptz),
-  public.admin_access_codes(), public.admin_delete_access_code(text) to anon;
+  public.admin_access_codes(), public.admin_delete_access_code(text), public.admin_tracks(), public.admin_delete_track(bigint),
+  public._track_json(public.user_tracks) to anon;
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
 revoke execute on function public.close_season(text, text[], text[]) from public, anon, authenticated;
 revoke execute on function public._day_runs(uuid) from public, anon, authenticated;
+revoke execute on function public._track_reset(text, boolean) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- season 1, closed

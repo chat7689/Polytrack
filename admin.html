@@ -159,6 +159,7 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
       <a href="#seasons" data-page="seasons">Standings</a>
       <a href="#security" data-page="security">Security</a>
       <a href="#access" data-page="access">Access codes</a>
+      <a href="#tracks" data-page="tracks">Player tracks</a>
       <a href="#settings" data-page="settings">Settings</a>
     </nav>
 
@@ -360,6 +361,22 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
       </div>
     </section>
 
+    <section class="page hide" id="page-tracks">
+      <div class="spread" style="margin-bottom:12px">
+        <p class="note" style="margin:0">Tracks players made in the track builder (each player can keep 3). A public one
+          can be driven by everyone and has its own leaderboard. Delete one with a bad name or a bad idea: its times go too.</p>
+        <button id="btnTrkReload">Reload</button>
+      </div>
+      <div class="msg" id="trkMsg"></div>
+      <div class="card tableWrap">
+        <div class="row" style="margin-bottom:10px"><input type="text" id="trkFind" placeholder="Find a track or a player"></div>
+        <table>
+          <thead><tr><th>Track</th><th>Made by</th><th></th><th class="r">Length</th><th class="r">Pieces</th><th class="r">Drivers</th><th>Record</th><th>Changed</th><th></th></tr></thead>
+          <tbody id="trkList"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="page hide" id="page-settings">
       <h2>Messages</h2>
       <div class="card">
@@ -527,7 +544,7 @@ async function all(make) {
 const say = (el, text, kind) => { $(el).textContent = text; $(el).className = 'msg ' + (kind || ''); };
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const courseName = (id) => COURSE_NAME[id] || id || '—';
+const courseName = (id) => COURSE_NAME[id] || (/^u\d+$/.test(id || '') ? 'Player track ' + id : id || '—');
 // the admin's private note of who a player really is, shown beside their username
 const realOf = (uid) => (byUid[uid] && byUid[uid].realName) || '';
 const realTag = (uid) => (realOf(uid) ? ' <span class="real">' + esc(realOf(uid)) + '</span>' : '');
@@ -621,7 +638,7 @@ if (storedToken()) useToken(storedToken()).then((ok) => { if (!ok) showSignIn('T
 else showSignIn('');
 
 /* --------------------------------------------------------------- pages */
-const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'security', 'access', 'settings'];
+const PAGES = ['overview', 'players', 'runs', 'times', 'seasons', 'security', 'access', 'tracks', 'settings'];
 function route() {
   const page = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
   PAGES.forEach((p) => $('page-' + p).classList.toggle('hide', p !== page));
@@ -629,6 +646,7 @@ function route() {
   if (page === 'settings') loadSettings();
   if (page === 'security') loadSecurity();
   if (page === 'access') loadAccess();
+  if (page === 'tracks') loadTracks();
 }
 addEventListener('hashchange', route);
 
@@ -1366,6 +1384,38 @@ $('btnAccMake').addEventListener('click', async () => {
     $('accLabel').value = '';
     await loadAccess();
   } catch (e) { say('accMsg', e.message, 'err'); }
+});
+
+/* -------------------------------------------------------- player tracks */
+let trackList = [];
+async function loadTracks() {
+  say('trkMsg', 'Loading…');
+  try {
+    trackList = await rpc('admin_tracks') || [];
+    say('trkMsg', '');
+    renderTracks();
+  } catch (e) {
+    say('trkMsg', /admin_tracks|PGRST202|function/i.test(e.message) ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message, 'err');
+  }
+}
+function renderTracks() {
+  const f = $('trkFind').value.trim().toLowerCase();
+  const list = trackList.filter((t) => !f || (t.name + ' ' + (t.author || '')).toLowerCase().includes(f));
+  $('trkList').innerHTML = list.map((t) =>
+    '<tr><td class="name"><b>' + esc(t.name) + '</b> <span class="mono" style="color:var(--dim)">u' + esc(t.id) + '</span></td><td>' + esc(t.author || '—') + realTag(t.uid) +
+    '</td><td>' + (t.pub ? '<span class="pill fin">public</span>' : '<span class="pill">private</span>') + '</td><td class="mono r">' + (t.len / 1000).toFixed(2) + ' km</td><td class="mono r">' +
+    t.pieces.length + '</td><td class="mono r">' + t.drivers + '</td><td>' + (t.record ? esc(t.record.n) + ' <span class="mono">' + fmt(t.record.t) + '</span>' : '—') +
+    '</td><td class="mono">' + ago(t.updated) + '</td><td class="r"><button class="small danger" data-act="trkdel" data-id="' + esc(t.id) + '" data-name="' + esc(t.name) + '">Delete</button></td></tr>').join('') ||
+    '<tr><td colspan="9" class="empty">' + (trackList.length ? 'No track matches.' : 'No player tracks yet.') + '</td></tr>';
+}
+$('btnTrkReload').addEventListener('click', loadTracks);
+$('trkFind').addEventListener('input', renderTracks);
+$('page-tracks').addEventListener('click', async (ev) => {
+  const b = ev.target.closest('button[data-act="trkdel"]');
+  if (!b) return;
+  if (!confirm('Delete the track "' + b.dataset.name + '"? Its leaderboard goes too.')) return;
+  try { await rpc('admin_delete_track', { p_id: Number(b.dataset.id) }); await loadTracks(); say('trkMsg', 'Deleted.', 'ok'); }
+  catch (e) { say('trkMsg', e.message, 'err'); }
 });
 
 $('secFind').addEventListener('input', () => { if (sec) renderDevices(); });
