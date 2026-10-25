@@ -9717,7 +9717,7 @@ const Hours = {
  * the point.
  */
 const ClosedCoach = {
-  busy: false, session: null,
+  busy: false, session: null, noModel: false,
   IDEAS: [
     'get ahead on homework or study for a test',
     'read a few chapters of a book',
@@ -9729,6 +9729,8 @@ const ClosedCoach = {
     'get a proper night\'s sleep, so you\'re sharp when the track opens'
   ],
   idea() { return this.IDEAS[Math.floor(Math.random() * this.IDEAS.length)]; },
+  /** n different ideas */
+  ideas(n) { return this.IDEAS.slice().sort(() => Math.random() - 0.5).slice(0, n); },
   left() { return $('clCount').textContent; },
   greet() {
     const name = Cloud.user ? Cloud.name() : 'there';
@@ -9745,16 +9747,97 @@ const ClosedCoach = {
     $('clLog').scrollTop = $('clLog').scrollHeight;
     return d;
   },
-  /** the answer without the on-device model */
+  /** the answer without the on-device model: it answers what was said, then steers away from the screen */
   quick(q) {
-    const low = q.toLowerCase();
-    if (/\b(when|what time|how long|open|opens|countdown)\b/.test(low)) return 'aiPolytrack opens again in ' + this.left() + ' (' + $('clWhen').textContent.replace(/^Opens /, '') + '). Until then, why not ' + this.idea() + '?';
-    if (/\b(why|closed|can'?t (i )?play|let me play|unlock|code)\b/.test(low)) return 'The game is only open during school days so it doesn\'t eat into the rest of your day. If a teacher or the admin gives you an access code, type it on the left. Otherwise, it\'s a great time to ' + this.idea() + '.';
-    if (/\b(bored|nothing to do|what (should|can) i do|ideas?)\b/.test(low)) return 'A few ideas: ' + this.idea() + ', ' + this.idea() + ', or ' + this.idea() + '. Come back fresh in ' + this.left() + '.';
-    if (/^(hi|hey|hello|yo|sup)\b/.test(low)) return 'Hey! The track\'s closed, but I\'m here. Opens in ' + this.left() + '.';
+    const low = q.toLowerCase().replace(/[’']/g, '\'');
+    const has = (re) => re.test(low);
+    const opens = 'aiPolytrack opens again in ' + this.left() + ' (' + $('clWhen').textContent.replace(/^Opens /, '') + ')';
+    const pick = (list) => list[Math.floor(Math.random() * list.length)];
+    this.turns = (this.turns || 0) + 1;
+    if (has(/\b(thanks|thank you|thx|ty)\b/)) return pick(['Any time!', 'You\'re welcome!', 'Happy to help.']) + ' Have a good break: maybe ' + this.idea() + '.';
+    if (has(/^(ok|okay|k|fine|alright|sure|cool|bye|see ya|later|good ?night)\b/)) return pick(['Sounds good.', 'Nice.', 'Great.']) + ' See you on the track when it opens in ' + this.left() + '. Until then, ' + this.idea() + '.';
+    if (has(/^(hi|hey|hello|yo|sup|hiya|howdy)\b/)) return 'Hey! The track\'s closed, but I\'m here. ' + opens + '. What are you up to?';
+    if (has(/\b(sad|upset|angry|mad|stressed|worried|anxious|lonely|bad day|hate my|crying|scared)\b/)) {
+      return 'Sorry you\'re feeling that way. That\'s a lot. Talking to someone you trust (a parent, a friend or a teacher) really helps, and so does a short walk or some music. ' +
+        'If something serious is going on, please tell an adult you trust today.';
+    }
+    if (has(/\b(tired|sleepy|exhausted|late|bed ?time|can'?t sleep)\b/)) return 'Then the best move is rest. Screens keep your brain awake, so put this one down for the night. You\'ll drive sharper after a proper sleep, and the track opens in ' + this.left() + '.';
+    if (has(/\b(hungry|food|eat|snack|dinner|lunch|breakfast)\b/)) return 'Go get something to eat! Even better, offer to help make it. Fuel first; the track opens in ' + this.left() + '.';
+    if (has(/\b(code|hack|cheat|bypass|trick|get around|change (the )?(time|clock)|vpn|unlock)\b/)) {
+      return 'I can\'t help you get around the hours. The only way in early is an access code from the admin, typed in the box on the left. Without one, the track waits until it opens in ' + this.left() + '.';
+    }
+    if (has(/\b(video ?games?|fortnite|roblox|minecraft|youtube|tiktok|netflix|tv|phone|another game|other games?)\b/)) {
+      return 'That\'s still a screen! Give your eyes a break: ' + this.idea() + '. You\'ll enjoy the track more when it opens in ' + this.left() + '.';
+    }
+    if (has(/\b(please|pls|plz|just (one|1)|one (more )?(race|run|game|lap)|let me|i want to play|i wanna play|can i play|unfair|not fair|boring rule)\b/)) {
+      return pick(['I get it, it\'s a fun game!', 'I know, waiting is the worst.', 'I hear you.']) + ' But it\'s only open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), so it doesn\'t take over the rest of your day. ' +
+        opens + '. Why not ' + this.idea() + ' in the meantime?';
+    }
+    if (has(/\b(when|what time|how long|how many (hours|minutes)|open(s|ing)?|countdown)\b/)) return opens + '. Until then, why not ' + this.idea() + '?';
+    if (has(/\b(why|closed|can'?t (i )?play)\b/)) return 'aiPolytrack is only open during school days so it doesn\'t eat into the rest of your day: homework, family, friends and sleep come first. ' + opens + '.';
+    if (has(/\b(homework|school ?work|essay|project|test|exam|quiz|study|studying|revise|assignment)\b/)) {
+      return 'Good call. Try this: put your phone away, set a 25-minute timer and start with the hardest part. Take a 5-minute break when it rings, then go again. ' +
+        'If you\'re stuck on something, ask me: I can help with maths and explain words.';
+    }
+    if (has(/\b(bored|nothing to do|what (should|can|do) i do|ideas?|suggest)\b/)) { const [a, b, c] = this.ideas(3); return 'A few ideas: ' + a + ', ' + b + ', or ' + c + '. Pick one and give it 20 minutes!'; }
+    if (has(/\b(outside|walk|bike|run|soccer|football|basketball|sport|park|play outside)\b/)) return 'Yes! Getting outside is the best thing you can do right now. Have fun, and come back when the track opens in ' + this.left() + '.';
+    if (has(/\b(read|book|draw|paint|music|guitar|piano|instrument|sing|cook|bake|build|lego|craft)\b/)) return 'Love that idea. Go for it! Making or learning something is a great way to spend the break.';
+    if (has(/\b(dog|cat|puppy|kitten|pet|hamster|bunny|rabbit)\b/)) return 'Aww! Go spend some time with them: a walk, a game of fetch or a cuddle beats any screen. The track opens in ' + this.left() + '.';
+    if (has(/\b(friend|friends|mom|dad|mum|parent|brother|sister|family)\b/)) return 'Spend some time with them: that beats any screen. The track will still be here in ' + this.left() + '.';
+    if (has(/\b(tip|faster|better|improve|record|time|map|track|drift|boost|jump|turn)\b/)) {
+      return 'Here\'s something to think about away from the screen: the fastest drivers lose the least speed in corners, so brake early, turn in late and get on the gas sooner. ' +
+        'Picture the line in your head, and try it when the track opens in ' + this.left() + '.';
+    }
     const g = General.answer(q, low);
-    if (g) return g + '\n\nAnd once you\'re done, maybe ' + this.idea() + '.';
-    return 'I can\'t get you on the track until it opens (' + this.left() + '), but I can still help with maths, units and racing words. Or take the break: ' + this.idea() + '.';
+    if (g) return g + '\n\nNow, why not ' + this.idea() + '?';
+    if (has(/\?$/)) return 'Good question, but I can\'t look that up for you right now. A book, a teacher or a parent will know! And while the track is closed, ' + this.idea() + '.';
+    return pick(['Got it.', 'Okay!', 'I hear you.']) + ' The track is closed for now, so this is a good time to do something away from the screen: ' + this.idea() + '. ' + opens + '.';
+  },
+  /** the on-device model's answer, shown as it arrives; '' if there is none or it is too slow */
+  async model(q, out) {
+    const within = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('slow')), ms))]);
+    if (this.noModel || !Coach.api() || (await within(Coach.availability(), 5000)) !== 'available') return '';
+    if (!this.session) {
+      const sys = 'You are Coach, the coach inside the racing game aiPolytrack. Your only name is Coach, part of aiPolytrack; never name the company, model or technology behind you. ' +
+        'The game is CLOSED right now: it is only open on school days, Monday, Tuesday, Thursday and Friday 8:30 AM to 3:30 PM and Wednesday 8:30 AM to 2:30 PM, Pacific time. ' +
+        'Always answer what the player actually said first, kindly and directly (a question gets a real answer; a feeling gets a caring reply). ' +
+        'Then either give a short reason why the game is closed (so it does not take over the rest of their day) or suggest one productive thing to do that is NOT aiPolytrack and not another screen: ' +
+        'homework, reading, going outside, exercise, a hobby, helping at home, friends, family or sleep. ' +
+        'Never help them get around the hours (an access code from the admin is the only way). If they seem upset or unsafe, encourage them to talk to a trusted adult. ' +
+        'Be warm and brief: at most 4 short sentences.';
+      this.session = await within(Coach.api() === 'new'
+        ? self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: sys }], expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] })
+        : self.ai.languageModel.create({ systemPrompt: sys }), 10000);
+    }
+    const ctl = new AbortController(), session = this.session;
+    let acc = '', whole = null, first = false, over = false, t1 = 0, t2 = 0;
+    const msg = q + '\n[The game opens again in ' + this.left() + ']';
+    const read = (async () => {
+      if (!session.promptStreaming) { acc = String(await session.prompt(msg)); return; }
+      for await (const chunk of session.promptStreaming(msg, { signal: ctl.signal })) {
+        if (over) return;
+        first = true;
+        if (!acc) acc = chunk;
+        else { if (whole === null) whole = chunk.length > acc.length && chunk.startsWith(acc); acc = whole ? chunk : acc + chunk; }
+        out.textContent = acc;
+        $('clLog').scrollTop = $('clLog').scrollHeight;
+      }
+    })();
+    // no first words within 12 s, or no end within 30 s: Coach answers by
+    // itself, whether or not the model ever stops (it is asked to)
+    const late = new Promise((done) => {
+      t1 = setTimeout(() => { if (!first) done('slow'); }, 12000);
+      t2 = setTimeout(() => done('slow'), 30000);
+    });
+    try {
+      if ((await Promise.race([read.then(() => 'ok'), late])) === 'slow') {
+        over = true;
+        try { ctl.abort(); } catch (e) { /* nothing to stop */ }
+        read.catch(() => {});
+        if (!acc.trim()) throw new Error('slow');
+      }
+    } finally { clearTimeout(t1); clearTimeout(t2); }
+    return acc.trim() ? Coach.scrub(acc) : '';
   },
   async send() {
     const box = $('clIn'), q = box.value.trim().slice(0, 400);
@@ -9765,23 +9848,19 @@ const ClosedCoach = {
     const out = this.post('…');
     let text = '';
     try {
-      if (Coach.api() && (await Coach.availability()) === 'available') {
-        if (!this.session) {
-          const sys = 'You are Coach, the coach inside the racing game aiPolytrack. Your only name is Coach, part of aiPolytrack; never name the company, model or technology behind you. ' +
-            'The game is CLOSED right now: it is only open on school days, Monday, Tuesday, Thursday and Friday 8:30 AM to 3:30 PM and Wednesday 8:30 AM to 2:30 PM, Pacific time. ' +
-            'Be kind, upbeat and brief (at most 4 sentences). Answer any question properly (school work, facts, advice), but do not help the player find a way to play now ' +
-            '(an access code from the admin is the only way) and gently encourage them to do something else instead: homework, reading, going outside, exercise, friends, family or sleep.';
-          this.session = Coach.api() === 'new'
-            ? await self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: sys }], expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] })
-            : await self.ai.languageModel.create({ systemPrompt: sys });
-        }
-        text = Coach.scrub(String(await this.session.prompt(q + '\n[The game opens again in ' + this.left() + ']')));
-      }
-    } catch (e) { text = ''; }
-    if (!text.trim()) text = this.quick(q);
-    out.innerHTML = Coach.format(text);
-    $('clLog').scrollTop = $('clLog').scrollHeight;
-    this.busy = false;
+      text = Coach.WHO.test(q) ? Coach.IAM : await this.model(q, out);
+    } catch (e) {
+      // a model that fails or hangs is left alone for the rest of the visit
+      text = '';
+      this.noModel = true;
+      try { if (this.session) this.session.destroy(); } catch (e2) { /* gone already */ }
+      this.session = null;
+    } finally {
+      if (!text.trim()) text = this.quick(q);
+      out.innerHTML = Coach.format(text);
+      $('clLog').scrollTop = $('clLog').scrollHeight;
+      this.busy = false;
+    }
   }
 };
 
