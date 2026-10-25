@@ -125,6 +125,38 @@ small.hint{display:block;color:var(--dimmer);font-size:12px;margin-top:8px;line-
 .modal h3{font-size:16px;font-weight:600;margin-bottom:8px}
 .bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;min-width:60px}
 .bar i{display:block;height:100%;background:var(--dim)}
+/* ---------------------------------------------------------- Season 3
+   The game's calm charcoal look: a sidebar instead of a row of tabs,
+   hairline sections instead of boxes. Later rules replace the ones above. */
+:root{--bg:#121417;--panel:#16191d;--panel2:#16191d;--ink:#ebedf0;--dim:#9aa1aa;--dimmer:#666d77;
+  --aqua:#62c9a2;--signal:#e8c26a;--rule:rgba(255,255,255,.1);--rule2:rgba(255,255,255,.06)}
+.wrap{max-width:1440px;padding:26px 36px 64px}
+.topbar{padding-bottom:16px;border-bottom:1px solid var(--rule2);margin-bottom:28px}
+h1{font-size:16px}
+h2{font-size:15px;margin:34px 0 10px}
+.card{background:none;border:0;border-top:1px solid var(--rule2);border-radius:0;padding:16px 0 4px;margin-bottom:10px}
+#cardAuth{border:1px solid var(--rule2);border-radius:8px;padding:22px 24px;background:var(--panel)}
+#panel:not(.hide){display:grid;grid-template-columns:184px minmax(0,1fr);column-gap:44px;align-items:start}
+#panel > section.page{grid-column:2;min-width:0}
+.nav{grid-column:1;grid-row:1 / span 2;flex-direction:column;gap:1px;border:0;margin:0;position:sticky;top:24px}
+.nav a{border:0;border-left:2px solid transparent;margin:0;padding:7px 12px;border-radius:0}
+.nav a.on{border-left-color:var(--ember);color:var(--ink);background:rgba(255,255,255,.03)}
+@media(max-width:820px){
+  #panel:not(.hide){grid-template-columns:minmax(0,1fr)}
+  #panel > section.page{grid-column:1}
+  .nav{grid-row:auto;flex-direction:row;overflow-x:auto;position:static;border-bottom:1px solid var(--rule2);margin-bottom:20px}
+  .nav a{border-left:0;border-bottom:2px solid transparent;white-space:nowrap}
+  .nav a.on{border-bottom-color:var(--ember);background:none}
+}
+.statGrid{gap:0 28px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));border-bottom:1px solid var(--rule2);padding-bottom:18px}
+.statTile{border:0;border-radius:0;padding:4px 0}
+.statTile .n{font-size:26px;font-weight:600}
+.chartBox{border:0;border-top:1px solid var(--rule2);border-radius:0;padding:16px 0}
+.detail{background:none;border:0;border-left:2px solid var(--rule);border-radius:0;padding:4px 0 4px 16px}
+.modal{background:var(--panel);border-radius:8px}
+.pill.fin{color:var(--ink);border-color:var(--rule)}
+.accNew{border-color:var(--rule);border-left:2px solid var(--ember);border-radius:0}
+button.primary{background:var(--ink);color:#121417}
 </style>
 </head>
 <body>
