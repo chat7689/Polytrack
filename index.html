@@ -5037,6 +5037,12 @@ class Vehicle {
     const built = buildCarMesh();
     this.mesh = built.group;
     this.wheels = built.wheels;
+    // the tyres are worked one after another, and each one's push changes
+    // what the next one feels: always left before right made the car pull
+    // to one side (about 3 m over 10 s of a straight, no steering). The
+    // order flips every step, left first then right first, so it cancels.
+    this.wheelsMirror = [this.wheels[1], this.wheels[0], this.wheels[3], this.wheels[2]];
+    this.flipWheels = false;
     this.flame = built.flame;
     this.flameLights = built.flameLights;
     if (scene) scene.add(this.mesh);
@@ -5180,6 +5186,7 @@ class Vehicle {
     this.airTime = 0;
     this.stuckTime = 0;
     this.drift = 0; this.slipAngle = 0; this.onStrip = false;
+    this.flipWheels = false;
     this.heading = heading;
     for (const w of this.wheels) {
       w.comp = 0; w.load = 0; w.contact = false; w.slip = 0; w.onTrack = true; w.strip = 0;
@@ -5475,7 +5482,8 @@ class Vehicle {
     }
     const share = 1 / loaded;
 
-    for (const w of this.wheels) {
+    this.flipWheels = !this.flipWheels;
+    for (const w of this.flipWheels ? this.wheels : this.wheelsMirror) {
       if (w.load <= 1) {
         w.slip = 0;
         w.spinVel *= Math.exp(-1.2 * dt);
