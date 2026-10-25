@@ -23,9 +23,13 @@ for (const k of list) {
 }
 console.log(built + ' built, worst finish ' + worst.toFixed(3) + ' m');
 ok(!(await t.owner(`select public._track_geo(15, '[["S", 15]]'::jsonb) as g`)).rows[0].g.ok, 'a straight that is not a multiple of 10 m is refused');
-ok(!(await t.owner(`select public._track_geo(15, '[["T", 30, 90, 0, 0]]'::jsonb) as g`)).rows[0].g.ok, 'a turn radius the builder does not make is refused');
+ok(!(await t.owner(`select public._track_geo(15, '[["T", 33, 90, 0, 0, 15]]'::jsonb) as g`)).rows[0].g.ok, 'a turn radius the builder does not make is refused');
+ok(!(await t.owner(`select public._track_geo(15, '[["T", 20, 90, 0, 0, 30]]'::jsonb) as g`)).rows[0].g.ok, 'a road too wide for its turn is refused');
+ok(!(await t.owner(`select public._track_geo(15, '[["H", 20, 20, 15]]'::jsonb) as g`)).rows[0].g.ok, 'a hill steeper than the builder makes is refused');
+ok((await t.owner(`select public._track_geo(15, '[["X", 40, 15], ["N", 40, 6], ["W", 40, 40], ["T", 60, -90, -15, 0, 18]]'::jsonb) as g`)).rows[0].g.ok, 'super strips, bottlenecks, wide areas and off-camber turns are taken');
 ok(!(await t.owner(`select public._track_geo(15, '[["H", -6]]'::jsonb) as g`)).rows[0].g.ok, 'a hill down from the ground is refused');
-ok(!(await t.owner(`select public._track_geo(20, '[["S", 40]]'::jsonb) as g`)).rows[0].g.ok, 'a road 20 m wide is refused');
+ok(!(await t.owner(`select public._track_geo(35, '[["S", 40]]'::jsonb) as g`)).rows[0].g.ok, 'a road 35 m wide is refused');
+ok(!(await t.owner(`select public._track_geo(15, '[["S", 40, 45]]'::jsonb) as g`)).rows[0].g.ok, 'a straight 45 m wide is refused (wide areas go to 60)');
 
 // saving
 await t.mkUser('Builder'); await t.mkUser('Other');

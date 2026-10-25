@@ -1892,8 +1892,7 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
             <button class="primary small" id="bdAdd">Add after selected</button>
             <button class="small" id="bdReplace">Replace selected</button>
           </div>
-          <h3 class="bdRoad">Road</h3>
-          <label class="bdOpt"><span>Width</span><select id="bdWidth"></select></label>
+          <h3 class="bdRoad">Sharing</h3>
           <label class="bdPub"><input type="checkbox" id="bdPublic"> Public: everyone can drive it</label>
         </section>
         <section class="dCard bdView">
@@ -4364,7 +4363,7 @@ class Tri {
     // — the dusty decking on one course is deliberately low-grip.
     this.track = track !== false;
     // a speed strip painted on the deck (see CAR.stripAccel)
-    this.boost = boost ? 1 : 0;
+    this.boost = boost ? +boost : 0;
     // cached dot products for the barycentric test
     this.d00 = this.e1.dot(this.e1);
     this.d01 = this.e1.dot(this.e2);
@@ -4588,6 +4587,9 @@ function buildMaterials() {
   MAT.dash = std(0xffffff, { roughness: 0.7 });
   MAT.strip = std(0x0f4a5c, { roughness: 0.5, emissive: 0x0a7fa0, emissiveIntensity: 0.55, flatShading: false });
   MAT.stripArrow = std(0xbff4ff, { roughness: 0.4, emissive: 0x5fe0ff, emissiveIntensity: 0.9 });
+  // the super strip: a darker blue
+  MAT.strip2 = std(0x071548, { roughness: 0.5, emissive: 0x0b2a8c, emissiveIntensity: 0.45, flatShading: false });
+  MAT.stripArrow2 = std(0x7d98ff, { roughness: 0.4, emissive: 0x2747d8, emissiveIntensity: 0.9 });
   MAT.chev = std(0xffc628, { roughness: 0.7 });
   MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
   MAT.finish = std(0xffc628, { emissive: 0xc9930d, emissiveIntensity: 0.45 });
@@ -4815,7 +4817,7 @@ const CAR = {
   driftRearMu: 0.74, driftSteer: 0.3, steerLock: 0.7,
   // speed strips (a track element): push in m/s^2 with all four wheels
   // on, fading out as the car nears stripTop m/s
-  stripAccel: 12, stripTop: 62,
+  stripAccel: 12, stripTop: 62, stripTopSuper: 12,
   // Six-speed gearbox with a real torque curve rather than a flat force. Top
   // speed comes out of the balance between drive and drag, not a cap.
   gears: [3.6, 2.4, 1.75, 1.35, 1.10, 0.92],
@@ -5421,7 +5423,11 @@ class Vehicle {
     this.onStrip = on > 0;
     if (!on) return;
     const vF = this.vel.dot(this.fwd);
-    const fade = clamp((CAR.stripTop - vF) / 12, 0, 1);
+    // a super strip (strength 3) pushes three times as hard, up to a higher top
+    let n = 0;
+    for (const w of this.wheels) if (w.strip) n++;
+    const k = on / n, top = CAR.stripTop + CAR.stripTopSuper * (k - 1) / 2;
+    const fade = clamp((top - vF) / 12, 0, 1);
     this.vel.addScaledVector(this.fwd, CAR.stripAccel * (on / 4) * fade * dt);
   }
 
@@ -5788,6 +5794,7 @@ class TrackBuilder {
     this.n = 0;
     this.pierEvery = o.pierEvery || 5;
     this.fine = !!o.fine;
+    this.relift = !!o.relift;     // (player tracks) lift banked edges again after the smoothing
     this.start = { pos: [0, y0, 7], heading: this.h };
     this.lastTurn = null;       // { dir, arc } of the previous big curve
     this.sinceTurn = Infinity;  // metres driven since that curve ended
@@ -5840,7 +5847,7 @@ class TrackBuilder {
         chev: (o.chev && i % 2 === 0) ? o.chev : 0,
         pier: this.n % this.pierEvery === 0,
         pad: !!o.pad,
-        boost: !!o.boost,
+        boost: o.boost ? +o.boost : 0,        // push strength: 1 a speed strip, 3 a super strip
         noBank: !!o.bridge
       });
     }
@@ -5856,7 +5863,7 @@ class TrackBuilder {
   slope(run, rise, o) { return this.slab(run, rise, o); }
   pad(len, w) { return this.slab(len, 0, { w: w, pad: true, dash: false }); }
   /** a speed strip: glowing deck that pushes the car forward */
-  strip(len, o) { return this.slab(len, 0, Object.assign({ dash: false }, o, { boost: true })); }
+  strip(len, o) { return this.slab(len, 0, Object.assign({ dash: false }, o, { boost: (o && o.boost) || 1 })); }
   table(len, w) { return this.slab(len, 0, { w: w || this.w + 4, pad: true }); }
 
   /** launch kicker, easing into the angle so the crease is never abrupt */
@@ -6000,6 +6007,20 @@ class TrackBuilder {
     easeBanking(this.strips);
     liftBankedTurns(this.strips);
     smoothProfile(this.strips, 7);
+    // The smoothing rounds the lift off a little, which can let a steep bank
+    // on a short turn dip its edge into the grass again. Player tracks get
+    // lifted again until it is clear (the season's maps are built as they
+    // always were).
+    for (let k = 0; this.relift && k < 4; k++) {
+      let dips = false;
+      for (const st of this.strips) for (const f of st.frames) {
+        f.sink = (f.w / 2) * Math.abs(Math.sin(f.r));
+        if (f.sink - f.p[1] - BANK_EDGE_ALLOW > 0.02) dips = true;
+      }
+      if (!dips) { for (const st of this.strips) for (const f of st.frames) delete f.sink; break; }
+      liftBankedTurns(this.strips);
+      smoothProfile(this.strips, 0, false);     // pitch from the new heights
+    }
     // and the road exactly as now but without the rollers, for ghosts
     // recorded before they were added (only courses that have rollers)
     const flatSurface = this.strips.some((st) => st.frames.some((fr) => fr.roller))
@@ -6380,7 +6401,7 @@ function buildCourse(data, scene, world) {
     deck: new MeshBuilder(), alt: new MeshBuilder(), pad: new MeshBuilder(),
     curb: new MeshBuilder(), curbAlt: new MeshBuilder(),
     side: new MeshBuilder(), dash: new MeshBuilder(), girder: new MeshBuilder(),
-    bank: new MeshBuilder(), strip: new MeshBuilder(), arrow: new MeshBuilder()
+    bank: new MeshBuilder(), strip: new MeshBuilder(), arrow: new MeshBuilder(), strip2: new MeshBuilder(), arrow2: new MeshBuilder()
   };
   const chevs = [];
   const pillarAt = [];
@@ -6428,7 +6449,7 @@ function buildCourse(data, scene, world) {
 
       // visible top: painted curbs either side of the running surface
       const low = s.grip !== undefined && s.grip < 0.95;
-      const deckMesh = s.boost ? M.strip : s.pad ? M.pad : (low ? M.alt : M.deck);
+      const deckMesh = s.boost ? (s.boost > 1 ? M.strip2 : M.strip) : s.pad ? M.pad : (low ? M.alt : M.deck);
       if (s.curb) {
         const li0 = edge(p0, x0, u0, hw0 - CURB_W), li1 = edge(p1, x1, u1, hw1 - CURB_W);
         const ri0 = edge(p0, x0, u0, -(hw0 - CURB_W)), ri1 = edge(p1, x1, u1, -(hw1 - CURB_W));
@@ -6494,8 +6515,9 @@ function buildCourse(data, scene, world) {
         // a forward-pointing arrow painted on the strip every other quad
         const lift = 0.025, aw = Math.min(hw0 * 0.55, 3), t0 = 0.1, t1 = 0.9;
         const at = (t, off) => V().lerpVectors(edge(p0, x0, u0, off, lift), edge(p1, x1, u1, off, lift), t);
-        M.arrow.quad(at(t0, aw), at(t0, aw - 0.9), at(t1, 0.45), at(t1, 1.35));
-        M.arrow.quad(at(t0, -aw + 0.9), at(t0, -aw), at(t1, -1.35), at(t1, -0.45));
+        const am = s.boost > 1 ? M.arrow2 : M.arrow;
+        am.quad(at(t0, aw), at(t0, aw - 0.9), at(t1, 0.45), at(t1, 1.35));
+        am.quad(at(t0, -aw + 0.9), at(t0, -aw), at(t1, -1.35), at(t1, -0.45));
       }
       if (s.dash && i % 2 === 0) {
         const lift = 0.02;
@@ -6546,6 +6568,8 @@ function buildCourse(data, scene, world) {
   addMesh(M.dash, MAT.dash, false);
   addMesh(M.strip, MAT.strip, true);
   addMesh(M.arrow, MAT.stripArrow, false);
+  addMesh(M.strip2, MAT.strip2, true);
+  addMesh(M.arrow2, MAT.stripArrow2, false);
 
   const inst = (list, mat) => {
     if (!list.length) return;
@@ -7173,118 +7197,184 @@ const DailyGen = {
   }
 };
 /**
- * Player-made tracks (the track builder). A track is a road width and a
- * list of pieces, each a short array:
- *   ['S', length]                     straight, 10-200 m
- *   ['T', radius, degrees, bank, ice] turn (+ degrees left, - right)
- *   ['B', length]                     speed strip
- *   ['H', rise]                       hill, 40 m long, up (+) or down (-)
- *   ['C']                             crest
- *   ['R', count]                      rollers
- *   ['J', kind]                       jump: 1 hop, 2 medium, 3 big, 4 tabletop
- * Every track starts with a pad and a short straight and ends with a
- * straight to the finish. walk() is the server's own reckoning of the same
- * road (_track_geo in supabase/schema.sql), which gives the finish and the
+ * Player-made tracks (the track builder). A track is a list of pieces, each
+ * a short array ending in that piece's road width (m):
+ *   ['S', length, w]                       straight
+ *   ['T', radius, degrees, bank, ice, w]   turn (+ degrees left, - right;
+ *                                          a negative bank is off-camber)
+ *   ['B', length, w]  speed strip          ['X', length, w]  super strip (3x)
+ *   ['H', rise, length, w]                 hill up (+) or down (-)
+ *   ['C', angle, w]   crest                ['R', count, height, w]  rollers
+ *   ['J', kind, w]    jump: 1 hop, 2 medium, 3 big, 4 tabletop
+ *   ['N', length, w]  bottleneck           ['W', length, w]  wide area
+ * Tracks saved before widths existed have shorter pieces (no width, and
+ * fewer settings); norm() reads both. Widths blend into each other over a
+ * few metres, so pieces of different widths join smoothly. Every track
+ * starts with a pad and a short straight and ends with a straight to the
+ * finish. walk() is the server's own reckoning of the same road
+ * (_track_geo in supabase/schema.sql), which gives the finish and the
  * checkpoints times are checked against: keep the two the same.
  */
 const TrackKit = {
-  MAX: 40, MAX_LEN: 3000,
-  WIDTHS: [13, 14, 15, 16, 17, 18],
-  RADII: [[24, 'Hairpin'], [40, 'Tight'], [60, 'Medium'], [90, 'Wide']],
-  ANGLES: [30, 45, 60, 90, 120, 150, 180],
-  BANKS: [[0, 'Flat'], [10, 'A little bank'], [25, 'Banked'], [40, 'Steep bank']],
-  STRIPS: [20, 30, 40],
-  RISES: [[3, 'Gentle'], [6, 'Medium'], [10, 'Steep']],
-  ROLLERS: [2, 3, 4],
+  MAX: 40, MAX_LEN: 4000,
+  LENGTHS: [10, 20, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300],
+  WIDTHS: [8, 10, 12, 13, 14, 15, 16, 17, 18, 20, 22, 25, 30],
+  NARROW: [4, 5, 6, 7, 8, 10],
+  WIDE: [20, 25, 30, 40, 50, 60],
+  RADII: [[20, 'Hairpin'], [24, 'Hairpin+'], [30, 'Very tight'], [40, 'Tight'], [50, 'Snug'], [60, 'Medium'], [75, 'Open'], [90, 'Wide'], [120, 'Sweeping'], [150, 'Huge']],
+  ANGLES: [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180],
+  BANKS: [-20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
+  STRIPS: [10, 20, 30, 40, 50, 60],
+  RISES: [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20],
+  RUNS: [20, 30, 40, 50, 60, 80, 100],
+  CRESTS: [[3, 'Gentle'], [5, 'Medium'], [7, 'Sharp'], [9, 'Very sharp']],
+  ROLLERS: [1, 2, 3, 4, 5, 6],
+  ROLLER_H: [[0.3, 'Small'], [0.6, 'Medium'], [0.9, 'Big'], [1.2, 'Huge']],
   JUMPS: [[1, 'Hop'], [2, 'Medium jump'], [3, 'Big jump'], [4, 'Tabletop']],
+  SPAN: 6,                                   // width blend: sigma in metres
+  has(list, x) { return list.some((e) => (Array.isArray(e) ? e[0] : e) === x); },
+  /** a piece in its full form, whichever way it was saved (W: the track's width, for old pieces) */
+  norm(p, W) {
+    const L = p.length;
+    switch (p[0]) {
+      case 'S': return L === 3 ? p : ['S', p[1], W];
+      case 'T': return L === 6 ? p : ['T', p[1], p[2], p[3], p[4], p[1] === 24 ? W + 3 : W];
+      case 'B': return L === 3 ? p : ['B', p[1], W];
+      case 'H': return L === 4 ? p : ['H', p[1], 40, W];
+      case 'C': return L === 3 ? p : ['C', 5, W];
+      case 'R': return L === 4 ? p : ['R', p[1], 0.6, W];
+      case 'J': return L === 3 ? p : ['J', p[1], W];
+      default: return p;
+    }
+  },
   /** a piece the builder makes (the server checks the same) */
   valid(p) {
     if (!Array.isArray(p)) return false;
-    const n = p.length, v = p[1], has = (list, x) => list.some((e) => (Array.isArray(e) ? e[0] : e) === x);
+    const L = p.length, v = p[1], w = p[L - 1], int = Number.isInteger;
+    const W = (lo, hi) => int(w) && w >= lo && w <= hi;
     switch (p[0]) {
-      case 'S': return n === 2 && Number.isInteger(v) && v >= 10 && v <= 200 && v % 10 === 0;
-      case 'T': return n === 5 && has(this.RADII, v) && has(this.ANGLES, Math.abs(p[2])) && has(this.BANKS, p[3]) && (p[4] === 0 || p[4] === 1);
-      case 'B': return n === 2 && has(this.STRIPS, v);
-      case 'H': return n === 2 && has(this.RISES, Math.abs(v)) && Number.isInteger(v);
-      case 'C': return n === 1;
-      case 'R': return n === 2 && has(this.ROLLERS, v);
-      case 'J': return n === 2 && has(this.JUMPS, v);
+      case 'S': return (L === 2 || (L === 3 && W(6, 30))) && int(v) && v >= 10 && v <= 300 && v % 10 === 0;
+      case 'T': return (L === 5 || (L === 6 && W(6, 30) && w / 2 <= p[1] - 8)) && this.has(this.RADII, v) && this.has(this.ANGLES, Math.abs(p[2])) &&
+        this.BANKS.includes(p[3]) && (p[4] === 0 || p[4] === 1);
+      case 'B': return (L === 2 || (L === 3 && W(6, 30))) && this.STRIPS.includes(v);
+      case 'X': return L === 3 && W(6, 30) && this.STRIPS.includes(v);
+      case 'H': return (L === 2 ? [3, 6, 10].includes(Math.abs(v)) : L === 4 && W(6, 30) && this.RUNS.includes(p[2]) && Math.abs(v) / p[2] <= 0.36) &&
+        int(v) && this.RISES.includes(Math.abs(v));
+      case 'C': return L === 1 || (L === 3 && W(6, 30) && this.has(this.CRESTS, v));
+      case 'R': return (L === 2 ? [2, 3, 4].includes(v) : L === 4 && W(6, 30) && this.has(this.ROLLER_H, p[2])) && this.ROLLERS.includes(v);
+      case 'J': return (L === 2 || (L === 3 && W(6, 30))) && this.has(this.JUMPS, v);
+      case 'N': return L === 3 && this.NARROW.includes(w) && int(v) && v >= 10 && v <= 200 && v % 10 === 0;
+      case 'W': return L === 3 && this.WIDE.includes(w) && int(v) && v >= 10 && v <= 200 && v % 10 === 0;
     }
     return false;
   },
   /** a piece in words, for the builder's list */
   label(p) {
-    const name = (list, x) => (list.find((e) => e[0] === x) || [x, String(x)])[1];
+    const name = (list, x) => (list.find((e) => e[0] === x) || [x, String(x)])[1], w = ' · ' + p[p.length - 1] + ' m wide';
     switch (p[0]) {
-      case 'S': return 'Straight · ' + p[1] + ' m';
+      case 'S': return 'Straight · ' + p[1] + ' m' + w;
       case 'T': return (p[2] > 0 ? 'Left' : 'Right') + ' turn · ' + Math.abs(p[2]) + '° · ' + name(this.RADII, p[1]).toLowerCase() +
-        (p[3] ? ' · ' + name(this.BANKS, p[3]).toLowerCase() : '') + (p[4] ? ' · icy' : '');
-      case 'B': return 'Speed strip · ' + p[1] + ' m';
-      case 'H': return 'Hill ' + (p[1] > 0 ? 'up' : 'down') + ' · ' + name(this.RISES, Math.abs(p[1])).toLowerCase() + ' (' + Math.abs(p[1]) + ' m)';
-      case 'C': return 'Crest';
-      case 'R': return p[1] + ' rollers';
-      case 'J': return name(this.JUMPS, p[1]);
+        (p[3] > 0 ? ' · bank ' + p[3] + '°' : p[3] < 0 ? ' · off-camber ' + -p[3] + '°' : '') + (p[4] ? ' · icy' : '') + w;
+      case 'B': return 'Speed strip · ' + p[1] + ' m' + w;
+      case 'X': return 'Super strip · ' + p[1] + ' m' + w;
+      case 'H': return 'Hill ' + (p[1] > 0 ? 'up ' : 'down ') + Math.abs(p[1]) + ' m over ' + p[2] + ' m' + w;
+      case 'C': return name(this.CRESTS, p[1]) + ' crest' + w;
+      case 'R': return p[1] + ' ' + name(this.ROLLER_H, p[2]).toLowerCase() + (p[1] === 1 ? ' roller' : ' rollers') + w;
+      case 'J': return name(this.JUMPS, p[1]) + w;
+      case 'N': return 'Bottleneck · ' + p[1] + ' m' + w;
+      case 'W': return 'Wide area · ' + p[1] + ' m' + w;
     }
     return '?';
   },
-  /** one piece onto a TrackBuilder */
-  add(b, p, W) {
+  /** one piece (in full form) onto a TrackBuilder */
+  add(b, p) {
+    const w = p[p.length - 1], o = { w };
     switch (p[0]) {
-      case 'S': b.straight(p[1]); break;
-      case 'T': b.curve(p[1], p[2], { bank: p[3], grip: p[4] ? 0.7 : undefined, chev: 1, w: p[1] === 24 ? W + 3 : undefined }); break;
-      case 'B': b.strip(p[1]); break;
-      case 'H': b.slope(40, p[1]); break;
-      case 'C': b.crest(26, 5); break;
-      case 'R': b.rollers(p[1], 22, 0.6); break;
+      case 'S': case 'N': case 'W': b.straight(p[1], o); break;
+      case 'T': b.curve(p[1], p[2], { bank: p[3], grip: p[4] ? 0.7 : undefined, chev: 1, w }); break;
+      case 'B': b.strip(p[1], o); break;
+      case 'X': b.strip(p[1], { w, boost: 3 }); break;
+      case 'H': b.slope(p[2], p[1], o); break;
+      case 'C': b.crest(26, p[1], o); break;
+      case 'R': b.rollers(p[1], 22, p[2], o); break;
       case 'J':
-        if (p[1] === 1) { b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: W + 1 }); }
-        else if (p[1] === 2) { b.slope(20, 2); b.ramp(12, 7); b.gap(16, -1.5); b.landing(14, -6, { w: W + 3 }); }
-        else if (p[1] === 3) { b.slope(24, 2.5); b.ramp(14, 9); b.gap(22, -2); b.landing(18, -8, { w: W + 3 }); }
-        else { b.slope(30, 4); b.ramp(14, 8); b.gap(20, -2); b.table(30, W + 4); b.slope(34, -3.3); }
+        if (p[1] === 1) { b.slope(10, 0.7, o); b.ramp(6, 6, o); b.gap(7, -0.6); b.straight(14, { w: w + 1 }); }
+        else if (p[1] === 2) { b.slope(20, 2, o); b.ramp(12, 7, o); b.gap(16, -1.5); b.landing(14, -6, { w: w + 3 }); }
+        else if (p[1] === 3) { b.slope(24, 2.5, o); b.ramp(14, 9, o); b.gap(22, -2); b.landing(18, -8, { w: w + 3 }); }
+        else { b.slope(30, 4, o); b.ramp(14, 8, o); b.gap(20, -2); b.table(30, w + 4); b.slope(34, -3.3, o); }
         break;
     }
   },
+  /** every piece in full form */
+  full(t) { return t.pieces.map((p) => this.norm(p, t.w)); },
   build(t) {
-    const W = t.w, b = new TrackBuilder({ width: W, fine: true });
-    b.pad(24, W + 4);
-    b.straight(20);
-    for (const p of t.pieces) this.add(b, p, W);
-    b.straight(30);
-    b.gate('finish');
-    b.straight(34, { w: W + 4 });
+    const P = this.full(t), W = t.w, last = P.length ? P[P.length - 1] : null, Wend = last ? last[last.length - 1] : W;
+    const b = new TrackBuilder({ width: W, fine: true, relift: true });
+    b.pad(24, Math.max(W + 4, P.length ? P[0][P[0].length - 1] : 0));
+    b.straight(20, { w: P.length ? P[0][P[0].length - 1] : W });
+    for (const p of P) this.add(b, p);
+    b.straight(30, { w: Wend });
+    b.gate('finish', { w: Wend });
+    b.straight(34, { w: Wend + 4 });
+    this.blendWidths(b.strips);
     return b.build();
+  },
+  /** widths change smoothly along each ribbon (a Gaussian blend over the distance travelled) */
+  blendWidths(strips) {
+    const S = this.SPAN;
+    for (const st of strips) {
+      const F = st.frames, n = F.length;
+      if (n < 3 || F.every((f) => f.w === F[0].w)) continue;
+      const d = [0];
+      for (let i = 1; i < n; i++) d.push(d[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2]));
+      const w0 = F.map((f) => f.w);
+      for (let i = 0; i < n; i++) {
+        let sw = 0, sv = 0;
+        for (let j = 0; j < n; j++) {
+          const x = d[j] - d[i];
+          if (Math.abs(x) > 3 * S) continue;
+          const g = Math.exp(-0.5 * (x / S) * (x / S));
+          sw += g; sv += g * w0[j];
+        }
+        F[i].w = sv / sw;
+        F[i].sink = (F[i].w / 2) * Math.abs(Math.sin(F[i].r));
+        F[i].sink0 = F[i].sink;
+      }
+    }
   },
   /** the road the way the server works it out: finish, length, height range, checkpoints */
   walk(t) {
-    const W = t.w, mv = [];                  // ['s', run, rise, width] | ['h', turn] | ['g', run, rise]
-    const s = (run, rise, w) => mv.push(['s', run, rise, w || W]);
+    const P = this.full(t), W = t.w, mv = [];           // ['s', run, rise, width] | ['h', turn] | ['g', run, rise]
+    const s = (run, rise, w) => mv.push(['s', run, rise, w]);
     const tan = (d) => Math.tan(deg(d));
-    s(24, 0, W + 4); s(20, 0);
-    for (const p of t.pieces) {
-      if (p[0] === 'S' || p[0] === 'B') s(p[1], 0);
+    const w0 = P.length ? P[0][P[0].length - 1] : W;
+    s(24, 0, Math.max(W + 4, w0)); s(20, 0, w0);
+    for (const p of P) {
+      const w = p[p.length - 1];
+      if (p[0] === 'S' || p[0] === 'B' || p[0] === 'X' || p[0] === 'N' || p[0] === 'W') s(p[1], 0, w);
       else if (p[0] === 'T') {
         const r = p[1], a = deg(p[2]), n = Math.max(5, Math.floor(Math.abs(a) * r / SEG + 0.5)), sa = a / n, ch = 2 * r * Math.abs(Math.sin(sa / 2));
-        for (let i = 0; i < n; i++) { mv.push(['h', sa / 2]); s(ch, 0, r === 24 ? W + 3 : W); mv.push(['h', sa / 2]); }
-      } else if (p[0] === 'H') s(40, p[1]);
+        for (let i = 0; i < n; i++) { mv.push(['h', sa / 2]); s(ch, 0, w); mv.push(['h', sa / 2]); }
+      } else if (p[0] === 'H') s(p[2], p[1], w);
       else if (p[0] === 'C') {
-        for (let i = 1; i <= 3; i++) s(13 / 3, 13 / 3 * tan(5 * i / 3));
-        for (let i = 3; i >= 1; i--) s(13 / 3, 13 / 3 * tan(-5 * i / 3));
+        for (let i = 1; i <= 3; i++) s(13 / 3, 13 / 3 * tan(p[1] * i / 3), w);
+        for (let i = 3; i >= 1; i--) s(13 / 3, 13 / 3 * tan(-p[1] * i / 3), w);
       } else if (p[0] === 'R') {
         let prev = 0;
-        for (let k = 0; k < p[1]; k++) for (let i = 1; i <= 7; i++) { const y = 0.3 * (1 - Math.cos(2 * Math.PI * i / 7)); s(22 / 7, y - prev); prev = y; }
+        for (let k = 0; k < p[1]; k++) for (let i = 1; i <= 7; i++) { const y = p[2] / 2 * (1 - Math.cos(2 * Math.PI * i / 7)); s(22 / 7, y - prev, w); prev = y; }
       } else if (p[0] === 'J') {
         const [up, rise, run, ang] = [[10, 0.7, 6, 6], [20, 2, 12, 7], [24, 2.5, 14, 9], [30, 4, 14, 8]][p[1] - 1];
-        s(up, rise);
-        for (let i = 1; i <= 3; i++) s(run / 3, run / 3 * tan(ang * i / 3));
-        if (p[1] === 1) { mv.push(['g', 7, -0.6]); s(14, 0, W + 1); }
+        s(up, rise, w);
+        for (let i = 1; i <= 3; i++) s(run / 3, run / 3 * tan(ang * i / 3), w);
+        if (p[1] === 1) { mv.push(['g', 7, -0.6]); s(14, 0, w + 1); }
         else if (p[1] < 4) {
           const [gl, gr, lr, la] = p[1] === 2 ? [16, -1.5, 14, -6] : [22, -2, 18, -8];
           mv.push(['g', gl, gr]);
-          for (let i = 3; i >= 1; i--) s(lr / 3, lr / 3 * tan(la * i / 3), W + 3);
-        } else { mv.push(['g', 20, -2]); s(30, 0, W + 4); s(34, -3.3); }
+          for (let i = 3; i >= 1; i--) s(lr / 3, lr / 3 * tan(la * i / 3), w + 3);
+        } else { mv.push(['g', 20, -2]); s(30, 0, w + 4); s(34, -3.3, w); }
       }
     }
-    s(30, 0);
+    s(30, 0, P.length ? P[P.length - 1][P[P.length - 1].length - 1] : W);
     let x = 0, y = 0, z = 0, h = 0, cum = 0, next = 0, lo = 0, hi = 0;
     const cps = [];
     for (const m of mv) {
@@ -7299,18 +7389,27 @@ const TrackKit = {
   /** can it be built and driven: { ok, data, len } or { ok: false, error } */
   check(t) {
     const no = (error) => ({ ok: false, error });
-    if (!t || !this.WIDTHS.includes(t.w)) return no('Pick a road width.');
+    if (!t || !Number.isInteger(t.w) || t.w < 6 || t.w > 30) return no('Pick a road width.');
     if (!Array.isArray(t.pieces) || !t.pieces.length) return no('Add some pieces: start with a straight or a turn.');
     if (t.pieces.length > this.MAX) return no('A track has ' + this.MAX + ' pieces at most.');
     const bad = t.pieces.findIndex((p) => !this.valid(p));
-    if (bad >= 0) return no('Piece ' + (bad + 1) + ' isn\'t a piece the builder makes.');
-    // a steep bank needs room to twist in and out (shorter ones dip into the grass)
-    const steep = t.pieces.findIndex((p) => p[0] === 'T' && p[3] >= 40 && p[1] * Math.abs(deg(p[2])) < 70);
-    if (steep >= 0) return no('Piece ' + (steep + 1) + ': a steep bank needs a longer turn. Make it wider or bigger, or use less bank.');
+    if (bad >= 0) {
+      const p = t.pieces[bad];
+      return no('Piece ' + (bad + 1) + (p && p[0] === 'T' ? ' is too wide for that turn: make it tighter-walled or pick a wider turn.'
+        : p && p[0] === 'H' ? ' is too steep: make the hill longer.' : ' isn\'t a piece the builder makes.'));
+    }
+    // combinations the test drivers can't get through cleanly
+    const P = this.full(t);
+    for (let k = 0; k < P.length; k++) {
+      const p = P[k];
+      if (p[0] !== 'T') continue;
+      if (p[3] < -10 && p[1] < 40) return no('Piece ' + (k + 1) + ': an off-camber turn that tight throws the car off. Use less off-camber or a wider turn.');
+      if (p[3] > 50 && p[1] * Math.abs(deg(p[2])) < 30) return no('Piece ' + (k + 1) + ': a bank that steep needs a longer turn. Make the turn bigger or use less bank.');
+    }
     const g = this.walk(t);
     if (g.lo < -0.75) return no('The road goes under the grass: put a hill up before going down.');
-    if (g.hi > 80) return no('The road climbs too high (80 m at most).');
-    if (g.len > this.MAX_LEN) return no('A track is 3 km long at most.');
+    if (g.hi > 120) return no('The road climbs too high (120 m at most).');
+    if (g.len > this.MAX_LEN) return no('A track is 4 km long at most.');
     let data;
     try { data = validateCourse(this.build(t)); } catch (e) {
       return no(/opposite/.test(e.message || '') ? 'Two big turns the opposite way need at least 45 m of road between them: put a straight in between.'
@@ -9047,8 +9146,9 @@ const Builder3D = {
 const Tracks = {
   mine: [], pub: [], loaded: false, level: null, draft: null, orig: '', sel: -1, kind: 'S', busy: false,
   testRev: '', testBest: 0, testedRev: '', savedRev: '', seen: new Set(), shown: 48, view: '3d', t3d: 0,
-  opt: { S: 60, R: 60, A: 90, dir: 1, bank: 10, ice: 0, B: 30, H: 6, up: 1, N: 3, J: 2 },
-  TYPES: [['S', 'Straight'], ['T', 'Turn'], ['B', 'Speed strip'], ['H', 'Hill'], ['C', 'Crest'], ['R', 'Rollers'], ['J', 'Jump']],
+  opt: { S: 60, R: 60, A: 90, dir: 1, bank: 10, ice: 0, B: 30, X: 30, H: 6, run: 40, up: 1, C: 5, N: 3, RH: 0.6, J: 2, w: 15, nw: 6, ww: 30, NL: 40, WL: 40 },
+  TYPES: [['S', 'Straight'], ['T', 'Turn'], ['B', 'Speed strip'], ['X', 'Super strip'], ['H', 'Hill'], ['C', 'Crest'], ['R', 'Rollers'],
+    ['J', 'Jump'], ['N', 'Bottleneck'], ['W', 'Wide area']],
   /** a player track's board is part of the live leaderboard once it has been opened */
   isId(id) { return this.seen.has(id); },
 
@@ -9156,19 +9256,28 @@ const Tracks = {
   /* ------------------------------------------------------- the builder */
   edit(t) {
     if (!t && this.mine.length >= 3) { UI.toast('You have 3 tracks already. Delete one to make another.'); return; }
-    this.draft = t ? { id: t.id, name: t.name, pub: !!t.pub, w: t.w, pieces: t.pieces.map((p) => p.slice()) }
-      : { id: null, name: '', pub: true, w: 15, pieces: [['S', 80]] };
+    // pieces in full form (older tracks were saved without widths); the
+    // saved form is kept to send back unchanged when only the name changes
+    this.origPieces = t ? t.pieces : null;
+    this.origW = t ? t.w : 15;
+    this.draft = t ? { id: t.id, name: t.name, pub: !!t.pub, w: t.w, pieces: t.pieces.map((p) => TrackKit.norm(p, t.w).slice()) }
+      : { id: null, name: '', pub: true, w: 15, pieces: [['S', 80, 15]] };
+    this.origNorm = JSON.stringify(this.draft.pieces);
     this.orig = this.stamp();
     this.savedRev = t ? this.rev() : '';
     this.sel = this.draft.pieces.length - 1;
     this.testRev = ''; this.testedRev = '';
     $('bdName').value = this.draft.name;
     $('bdPublic').checked = this.draft.pub;
-    $('bdWidth').value = String(this.draft.w);
     $('bdMsg').textContent = '';
     this.showBuilder();
   },
-  stamp() { const d = this.draft; return JSON.stringify([d.name, d.pub, d.w, d.pieces]); },
+  stamp() { const d = this.draft; return JSON.stringify([d.name, d.pub, d.pieces]); },
+  /** the track's own width (the start pad's): its first piece's, unless the road is the one it was saved with */
+  syncW() {
+    const d = this.draft, f = d.pieces[0];
+    d.w = JSON.stringify(d.pieces) === this.origNorm ? this.origW : f ? clamp(f[f.length - 1], 6, 30) : 15;
+  },
   rev() { const d = this.draft; return JSON.stringify([d.w, d.pieces]); },
   /** a road may be saved once a test drive of exactly it has reached the finish (a saved road needs none to rename it) */
   driven() { const r = this.rev(); return r === this.savedRev || r === this.testedRev; },
@@ -9183,15 +9292,20 @@ const Tracks = {
   piece() {
     const o = this.opt;
     switch (this.kind) {
-      case 'S': return ['S', o.S];
-      case 'T': return ['T', o.R, o.A * o.dir, o.bank, o.ice];
-      case 'B': return ['B', o.B];
-      case 'H': return ['H', o.H * o.up];
-      case 'C': return ['C'];
-      case 'R': return ['R', o.N];
-      default: return ['J', o.J];
+      case 'S': return ['S', o.S, o.w];
+      case 'T': return ['T', o.R, o.A * o.dir, o.bank, o.ice, Math.min(o.w, this.turnMax())];
+      case 'B': return ['B', o.B, o.w];
+      case 'X': return ['X', o.X, o.w];
+      case 'H': return ['H', o.H * o.up, o.run, o.w];
+      case 'C': return ['C', o.C, o.w];
+      case 'R': return ['R', o.N, o.RH, o.w];
+      case 'N': return ['N', o.NL, o.nw];
+      case 'W': return ['W', o.WL, o.ww];
+      default: return ['J', o.J, o.w];
     }
   },
+  /** the widest road a turn of the chosen radius takes (its inside edge keeps an 8 m radius) */
+  turnMax() { return 2 * (this.opt.R - 8); },
   renderForm() {
     const o = this.opt, K = TrackKit;
     const sel = (key, list, fmt) => '<select data-o="' + key + '">' + list.map((e) => {
@@ -9201,21 +9315,37 @@ const Tracks = {
     const lab = (t, c) => '<label class="bdOpt"><span>' + t + '</span>' + c + '</label>';
     $('bdTypes').innerHTML = this.TYPES.map(([k, n]) => '<button class="tab' + (k === this.kind ? ' on' : '') + '" data-kind="' + k + '">' + n + '</button>').join('');
     let h = '';
-    if (this.kind === 'S') h = lab('Length', sel('S', Array.from({ length: 20 }, (_, i) => (i + 1) * 10), (v) => v + ' m'));
-    else if (this.kind === 'T') {
+    const m = (v) => v + ' m', note = (t) => '<p class="dNote">' + t + '</p>';
+    const width = (list) => {
+      if (!list.includes(o.w)) o.w = list.reduce((a, b) => (Math.abs(b - o.w) < Math.abs(a - o.w) ? b : a));
+      return lab('Width', sel('w', list, m));
+    };
+    const k = this.kind;
+    if (k === 'S') h = lab('Length', sel('S', K.LENGTHS, m)) + width(K.WIDTHS);
+    else if (k === 'T') {
       h = lab('Direction', sel('dir', [[1, 'Left'], [-1, 'Right']])) + lab('How sharp', sel('R', K.RADII.map(([r, n]) => [r, n + ' (' + r + ' m)']))) +
-        lab('Angle', sel('A', K.ANGLES, (v) => v + '°')) + lab('Bank', sel('bank', K.BANKS)) + lab('Surface', sel('ice', [[0, 'Grippy'], [1, 'Icy']]));
-    } else if (this.kind === 'B') h = lab('Length', sel('B', K.STRIPS, (v) => v + ' m'));
-    else if (this.kind === 'H') h = lab('Way', sel('up', [[1, 'Up'], [-1, 'Down']])) + lab('How much', sel('H', K.RISES.map(([r, n]) => [r, n + ' (' + r + ' m)'])));
-    else if (this.kind === 'C') h = '<p class="dNote">A bump in the road: fast over it and the car goes light.</p>';
-    else if (this.kind === 'R') h = lab('How many', sel('N', K.ROLLERS));
-    else h = lab('Kind', sel('J', K.JUMPS)) + '<p class="dNote">Jumps need speed: put a long straight or a speed strip before a big one.</p>';
+        lab('Angle', sel('A', K.ANGLES, (v) => v + '°')) +
+        lab('Bank', sel('bank', K.BANKS.map((b) => [b, b < 0 ? 'Off-camber ' + -b + '°' : b === 0 ? 'Flat' : b + '°']))) +
+        lab('Surface', sel('ice', [[0, 'Grippy'], [1, 'Icy']])) + width(K.WIDTHS.filter((w) => w <= this.turnMax())) +
+        (o.bank < 0 ? note('Off-camber: the road leans away from the turn, so it holds you less. Brake earlier.') : '');
+    } else if (k === 'B') h = lab('Length', sel('B', K.STRIPS, m)) + width(K.WIDTHS);
+    else if (k === 'X') h = lab('Length', sel('X', K.STRIPS, m)) + width(K.WIDTHS) + note('Pushes three times as hard as a speed strip.');
+    else if (k === 'H') {
+      const rises = K.RISES.filter((r) => r / o.run <= 0.36);
+      if (!rises.includes(o.H)) o.H = rises[rises.length - 1];
+      h = lab('Way', sel('up', [[1, 'Up'], [-1, 'Down']])) + lab('Height', sel('H', rises, m)) + lab('Over', sel('run', K.RUNS, m)) + width(K.WIDTHS);
+    } else if (k === 'C') h = lab('Size', sel('C', K.CRESTS)) + width(K.WIDTHS) + note('A bump in the road: fast over it and the car goes light.');
+    else if (k === 'R') h = lab('How many', sel('N', K.ROLLERS)) + lab('Size', sel('RH', K.ROLLER_H)) + width(K.WIDTHS);
+    else if (k === 'N') h = lab('Length', sel('NL', [20, 30, 40, 60, 80, 100], m)) + lab('Width', sel('nw', K.NARROW, m)) + note('The road squeezes down and opens out again on its own.');
+    else if (k === 'W') h = lab('Length', sel('WL', [20, 30, 40, 60, 80, 100, 150, 200], m)) + lab('Width', sel('ww', K.WIDE, m)) + note('A wide open area: pick your own line.');
+    else h = lab('Kind', sel('J', K.JUMPS)) + width(K.WIDTHS) + note('Jumps need speed: put a long straight or a speed strip before a big one.');
     $('bdOpts').innerHTML = h;
     $('bdPiece').textContent = K.label(this.piece());
   },
   renderBuilder() {
     const d = this.draft;
     if (!d) return;
+    this.syncW();
     this.renderForm();
     $('bdCount').textContent = d.pieces.length + ' / ' + TrackKit.MAX;
     $('bdList').innerHTML = '<li class="fix"><span class="p">▶</span><span class="n">Start</span></li>' +
@@ -9233,7 +9363,7 @@ const Tracks = {
     if (c.ok) { const rev = this.rev(); this.t3d = setTimeout(() => Builder3D.show(c.data, rev), 120); }
     this.setView(this.view);
     $('bdStats').innerHTML = c.ok ? '<span><b>' + (c.len / 1000).toFixed(2) + '</b> km</span><span><b>' + d.pieces.length + '</b> ' +
-      (d.pieces.length === 1 ? 'piece' : 'pieces') + '</span><span><b>' + d.w + '</b> m wide</span>' : '';
+      (d.pieces.length === 1 ? 'piece' : 'pieces') + '</span><span><b>' + this.widths() + '</b> m wide</span>' : '';
     $('bdTest').disabled = !c.ok;
     $('bdSave').disabled = !c.ok || this.busy || !this.driven();
     $('bdHint').textContent = c.ok && !this.driven() ? 'Finish a test drive of this version to save it.' : '';
@@ -9242,6 +9372,11 @@ const Tracks = {
     $('bdDel').disabled = this.sel < 0;
     $('bdReplace').disabled = this.sel < 0;
     $('bdAdd').disabled = d.pieces.length >= TrackKit.MAX;
+  },
+  /** the road's narrowest to widest, for the stats line */
+  widths() {
+    const ws = this.draft.pieces.map((p) => p[p.length - 1]), lo = Math.min(...ws), hi = Math.max(...ws);
+    return lo === hi ? String(lo) : lo + '–' + hi;
   },
   setView(v) {
     this.view = v;
@@ -9281,16 +9416,23 @@ const Tracks = {
     this.sel = k;
     if (p) {
       this.kind = p[0];
+      const w = p[p.length - 1];
+      if (p[0] === 'N') { o.NL = p[1]; o.nw = w; }
+      else if (p[0] === 'W') { o.WL = p[1]; o.ww = w; }
+      else o.w = w;
       if (p[0] === 'S') o.S = p[1];
       else if (p[0] === 'T') { o.R = p[1]; o.A = Math.abs(p[2]); o.dir = Math.sign(p[2]); o.bank = p[3]; o.ice = p[4]; }
       else if (p[0] === 'B') o.B = p[1];
-      else if (p[0] === 'H') { o.H = Math.abs(p[1]); o.up = Math.sign(p[1]); }
-      else if (p[0] === 'R') o.N = p[1];
+      else if (p[0] === 'X') o.X = p[1];
+      else if (p[0] === 'H') { o.H = Math.abs(p[1]); o.up = Math.sign(p[1]); o.run = p[2]; }
+      else if (p[0] === 'C') o.C = p[1];
+      else if (p[0] === 'R') { o.N = p[1]; o.RH = p[2]; }
       else if (p[0] === 'J') o.J = p[1];
     }
     this.renderBuilder();
   },
   testDrive() {
+    this.syncW();
     const d = this.draft, c = TrackKit.check(d);
     if (!c.ok) return;
     this.level = TrackKit.level(Object.assign({}, d, { name: d.name || 'Your track' }), true);
@@ -9300,20 +9442,23 @@ const Tracks = {
     Game.startLevel(UTRACK_I);
   },
   async save() {
+    this.syncW();
     const d = this.draft, c = TrackKit.check(d);
     if (!c.ok) { $('bdMsg').textContent = c.error; return; }
     if (!this.driven()) { $('bdMsg').textContent = 'Finish a test drive of this version first.'; return; }
-    const was = JSON.parse(this.orig);
-    if (d.id && JSON.stringify([was[2], was[3]]) !== JSON.stringify([d.w, d.pieces]) &&
-        !confirm('You changed the road, so this track\'s leaderboard starts again from zero. Save it?')) return;
+    const same = JSON.stringify(d.pieces) === this.origNorm;
+    if (d.id && !same && !confirm('You changed the road, so this track\'s leaderboard starts again from zero. Save it?')) return;
     this.busy = true;
     $('bdSave').disabled = true;
     $('bdMsg').textContent = 'Saving…';
     try {
-      const r = await Cloud.rpc('save_track', { p_id: d.id, p_name: d.name, p_public: d.pub, p_width: d.w, p_pieces: d.pieces });
+      // an unchanged road goes back exactly as it was saved, so its times stay
+      const r = await Cloud.rpc('save_track', { p_id: d.id, p_name: d.name, p_public: d.pub, p_width: same && this.origPieces ? this.origW : d.w,
+        p_pieces: same && this.origPieces ? this.origPieces : d.pieces });
       if (!r || !r.ok) { $('bdMsg').textContent = (r && r.error) || 'Couldn\'t save it.'; return; }
       if (r.reset) { delete Records.data.ghosts[r.course]; delete Records.data.boards[r.course]; delete Records.data.myBests[r.course]; }
       d.id = r.id;
+      if (!same || !this.origPieces) { this.origPieces = d.pieces.map((p) => p.slice()); this.origW = d.w; this.origNorm = JSON.stringify(d.pieces); }
       this.orig = this.stamp();
       this.savedRev = this.rev();
       $('bdMsg').textContent = '';
@@ -9344,7 +9489,7 @@ const Tracks = {
     });
     $('bdOpts').addEventListener('change', (ev) => {
       const s = ev.target.closest('select[data-o]');
-      if (s) { this.opt[s.dataset.o] = Number(s.value); $('bdPiece').textContent = TrackKit.label(this.piece()); }
+      if (s) { this.opt[s.dataset.o] = Number(s.value); this.renderForm(); }
     });
     $('bdAdd').addEventListener('click', () => this.addPiece(false));
     $('bdReplace').addEventListener('click', () => this.addPiece(true));
@@ -9357,8 +9502,6 @@ const Tracks = {
     });
     $('bdName').addEventListener('input', () => { if (this.draft) this.draft.name = $('bdName').value.trim(); });
     $('bdPublic').addEventListener('change', () => { if (this.draft) this.draft.pub = $('bdPublic').checked; });
-    $('bdWidth').innerHTML = TrackKit.WIDTHS.map((w) => '<option value="' + w + '">' + w + ' m</option>').join('');
-    $('bdWidth').addEventListener('change', () => { if (this.draft) { this.draft.w = +$('bdWidth').value; this.renderBuilder(); } });
     $('bdTest').addEventListener('click', () => this.testDrive());
     $('bdViews').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-view]'); if (b) this.setView(b.dataset.view); });
     $('bd3dReset').addEventListener('click', () => Builder3D.reset());

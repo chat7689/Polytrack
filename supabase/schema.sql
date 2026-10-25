@@ -1611,105 +1611,138 @@ create index if not exists user_tracks_uid on public.user_tracks (uid);
 create index if not exists user_tracks_public on public.user_tracks (is_public, updated_at desc);
 
 -- The road a track's pieces make, walked the way TrackBuilder walks it (keep
--- the two the same): {ok, fx, fy, fz, len, gate_r, cps} or {ok:false, error}.
--- Pieces: ['S', length] straight; ['T', radius, degrees (+ left, - right),
--- bank, ice] turn; ['B', length] speed strip; ['H', rise] hill (40 m long);
--- ['C'] crest; ['R', count] rollers; ['J', kind] jump (1 hop, 2 medium,
--- 3 big, 4 tabletop).
+-- the two the same; TrackKit.walk in index.html is the game's copy):
+-- {ok, fx, fy, fz, len, gate_r, cps} or {ok:false, error}. Each piece ends
+-- in its road width: ['S', length, w] straight; ['T', radius, degrees
+-- (+ left, - right), bank (negative: off-camber), ice, w] turn; ['B',
+-- length, w] speed strip; ['X', length, w] super strip; ['H', rise, length,
+-- w] hill; ['C', angle, w] crest; ['R', count, height, w] rollers; ['J',
+-- kind, w] jump (1 hop, 2 medium, 3 big, 4 tabletop); ['N', length, w]
+-- bottleneck; ['W', length, w] wide area. Tracks saved before widths
+-- existed have the shorter forms (no width, fewer settings), still read.
 create or replace function public._track_geo(p_w integer, p_pieces jsonb) returns jsonb
 language plpgsql immutable set search_path = public, pg_temp as $$
 declare
   mk text[] := '{}'; ma float8[] := '{}'; mb float8[] := '{}'; mw float8[] := '{}';
   pc jsonb; t text; n integer := 0; i integer; k integer; segs integer; sa float8; ch float8; r float8; a float8;
-  run float8; wv float8; y1 float8; prev float8;
+  run float8; y1 float8; prev float8; L integer; w float8; v float8; w0 float8; wl float8;
   x float8 := 0; y float8 := 0; z float8 := 0; h float8 := 0; cum float8 := 0; nextcp float8 := 0; cps float8[] := '{}';
+  bad constant text := ' isn''t a piece the builder makes.';
 begin
-  if p_w is null or p_w not between 13 and 18 then return jsonb_build_object('ok', false, 'error', 'The road width must be 13 to 18 m.'); end if;
+  if p_w is null or p_w not between 6 and 30 then return jsonb_build_object('ok', false, 'error', 'The road width must be 6 to 30 m.'); end if;
   if p_pieces is null or jsonb_typeof(p_pieces) <> 'array' or jsonb_array_length(p_pieces) < 1 then
     return jsonb_build_object('ok', false, 'error', 'Add at least one piece.');
   end if;
   if jsonb_array_length(p_pieces) > 40 then return jsonb_build_object('ok', false, 'error', 'A track has 40 pieces at most.'); end if;
-  -- the start: a pad and a short straight
-  mk := mk || 's'::text; ma := ma || 24::float8; mb := mb || 0::float8; mw := mw || (p_w + 4)::float8;
-  mk := mk || 's'::text; ma := ma || 20::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
   for pc in select value from jsonb_array_elements(p_pieces) loop
     n := n + 1;
-    if jsonb_typeof(pc) <> 'array' then return jsonb_build_object('ok', false, 'error', 'Piece ' || n || ' isn''t a piece.'); end if;
-    t := pc ->> 0;
+    if jsonb_typeof(pc) <> 'array' then return jsonb_build_object('ok', false, 'error', 'Piece ' || n || bad); end if;
+    t := pc ->> 0; L := jsonb_array_length(pc);
     begin
-      if t = 'S' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int between 10 and 200 and (pc ->> 1)::int % 10 = 0 then
-        mk := mk || 's'::text; ma := ma || (pc ->> 1)::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
-      elsif t = 'T' and jsonb_array_length(pc) = 5 and (pc ->> 1)::int in (24, 40, 60, 90)
-            and abs((pc ->> 2)::int) in (30, 45, 60, 90, 120, 150, 180) and (pc ->> 3)::int in (0, 10, 25, 40) and (pc ->> 4)::int in (0, 1) then
-        r := (pc ->> 1)::int; a := radians((pc ->> 2)::int);
+      -- the piece's width: its last value, or (saved before widths) the track's
+      if (t in ('S', 'B', 'J') and L = 3) or (t in ('X', 'N', 'W', 'C') and L = 3) or (t in ('H', 'R') and L = 4) or (t = 'T' and L = 6) then
+        if jsonb_typeof(pc -> (L - 1)) <> 'number' or (pc ->> (L - 1))::numeric <> trunc((pc ->> (L - 1))::numeric) then raise exception 'width'; end if;
+        w := (pc ->> (L - 1))::int;
+        if t = 'N' then if w::int not in (4, 5, 6, 7, 8, 10) then raise exception 'width'; end if;
+        elsif t = 'W' then if w::int not in (20, 25, 30, 40, 50, 60) then raise exception 'width'; end if;
+        elsif w not between 6 and 30 then raise exception 'width'; end if;
+      elsif t in ('S', 'B', 'J', 'R') and L = 2 or t = 'H' and L = 2 or t = 'C' and L = 1 or t = 'T' and L = 5 then
+        w := case when t = 'T' and (pc ->> 1)::int = 24 then p_w + 3 else p_w end;
+      else raise exception 'shape';
+      end if;
+      if n = 1 then w0 := w; end if;
+      wl := w;
+      if t in ('S', 'N', 'W') then
+        v := (pc ->> 1)::numeric;
+        if v <> trunc(v) or v::int % 10 <> 0 or v < 10 or v > (case when t = 'S' then 300 else 200 end) then raise exception 'len'; end if;
+        mk := mk || 's'::text; ma := ma || v; mb := mb || 0::float8; mw := mw || w;
+      elsif t in ('B', 'X') then
+        if (pc ->> 1)::numeric not in (10, 20, 30, 40, 50, 60) then raise exception 'len'; end if;
+        mk := mk || 's'::text; ma := ma || (pc ->> 1)::float8; mb := mb || 0::float8; mw := mw || w;
+      elsif t = 'T' then
+        r := (pc ->> 1)::numeric;
+        if r not in (20, 24, 30, 40, 50, 60, 75, 90, 120, 150) or abs((pc ->> 2)::numeric) not in (15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180)
+           or (pc ->> 3)::numeric not in (-20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70) or (pc ->> 4)::numeric not in (0, 1) then raise exception 'turn'; end if;
+        if L = 6 and w / 2 > r - 8 then
+          return jsonb_build_object('ok', false, 'error', 'Piece ' || n || ' is too wide for that turn.');
+        end if;
+        a := radians((pc ->> 2)::int);
         segs := greatest(5, floor(abs(a) * r / 3.2 + 0.5)::int); sa := a / segs; ch := 2 * r * abs(sin(sa / 2));
-        wv := case when r = 24 then p_w + 3 else p_w end;
         for i in 1..segs loop
           mk := mk || 'h'::text; ma := ma || (sa / 2); mb := mb || 0::float8; mw := mw || 0::float8;
-          mk := mk || 's'::text; ma := ma || ch; mb := mb || 0::float8; mw := mw || wv;
+          mk := mk || 's'::text; ma := ma || ch; mb := mb || 0::float8; mw := mw || w;
           mk := mk || 'h'::text; ma := ma || (sa / 2); mb := mb || 0::float8; mw := mw || 0::float8;
         end loop;
-      elsif t = 'B' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (20, 30, 40) then
-        mk := mk || 's'::text; ma := ma || (pc ->> 1)::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
-      elsif t = 'H' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (-10, -6, -3, 3, 6, 10) then
-        mk := mk || 's'::text; ma := ma || 40::float8; mb := mb || (pc ->> 1)::float8; mw := mw || p_w::float8;
-      elsif t = 'C' and jsonb_array_length(pc) = 1 then
-        -- ramp(13, 5) then landing(13, -5)
-        for i in 1..3 loop mk := mk || 's'::text; ma := ma || (13 / 3.0); mb := mb || (13 / 3.0 * tan(radians(5.0 * i / 3))); mw := mw || p_w::float8; end loop;
-        for i in reverse 3..1 loop mk := mk || 's'::text; ma := ma || (13 / 3.0); mb := mb || (13 / 3.0 * tan(radians(-5.0 * i / 3))); mw := mw || p_w::float8; end loop;
-      elsif t = 'R' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (2, 3, 4) then
-        -- rollers(n, 22, 0.6): 7 steps a wave
+      elsif t = 'H' then
+        v := (pc ->> 1)::numeric;
+        run := case when L = 4 then (pc ->> 2)::numeric else 40 end;
+        if v <> trunc(v) or abs(v) not in (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20) or run not in (20, 30, 40, 50, 60, 80, 100)
+           or (L = 4 and abs(v) / run > 0.36) or (L = 2 and abs(v) not in (3, 6, 10)) then raise exception 'hill'; end if;
+        mk := mk || 's'::text; ma := ma || run; mb := mb || v::float8; mw := mw || w;
+      elsif t = 'C' then
+        a := case when L = 3 then (pc ->> 1)::numeric else 5 end;
+        if a not in (3, 5, 7, 9) then raise exception 'crest'; end if;
+        -- ramp(13, a) then landing(13, -a)
+        for i in 1..3 loop mk := mk || 's'::text; ma := ma || (13 / 3.0); mb := mb || (13 / 3.0 * tan(radians(a * i / 3))); mw := mw || w; end loop;
+        for i in reverse 3..1 loop mk := mk || 's'::text; ma := ma || (13 / 3.0); mb := mb || (13 / 3.0 * tan(radians(-a * i / 3))); mw := mw || w; end loop;
+      elsif t = 'R' then
+        k := (pc ->> 1)::numeric;
+        v := case when L = 4 then (pc ->> 2)::numeric else 0.6 end;
+        if k not in (1, 2, 3, 4, 5, 6) or v not in (0.3, 0.6, 0.9, 1.2) or (L = 2 and k not in (2, 3, 4)) then raise exception 'rollers'; end if;
+        -- rollers(n, 22, height): 7 steps a wave
         prev := 0;
         for k in 1..(pc ->> 1)::int loop
           for i in 1..7 loop
-            y1 := 0.3 * (1 - cos(2 * pi() * i / 7));
-            mk := mk || 's'::text; ma := ma || (22 / 7.0); mb := mb || (y1 - prev); mw := mw || p_w::float8;
+            y1 := v / 2 * (1 - cos(2 * pi() * i / 7));
+            mk := mk || 's'::text; ma := ma || (22 / 7.0); mb := mb || (y1 - prev); mw := mw || w;
             prev := y1;
           end loop;
         end loop;
-      elsif t = 'J' and jsonb_array_length(pc) = 2 and (pc ->> 1)::int in (1, 2, 3, 4) then
-        k := (pc ->> 1)::int;
+      elsif t = 'J' then
+        k := (pc ->> 1)::numeric;
+        if k not in (1, 2, 3, 4) then raise exception 'jump'; end if;
         -- the run-up slope, the kicker (ramp), the gap, then what it lands on
-        if k = 1 then mk := mk || 's'::text; ma := ma || 10::float8; mb := mb || 0.7::float8; mw := mw || p_w::float8; run := 6; a := 6;
-        elsif k = 2 then mk := mk || 's'::text; ma := ma || 20::float8; mb := mb || 2::float8; mw := mw || p_w::float8; run := 12; a := 7;
-        elsif k = 3 then mk := mk || 's'::text; ma := ma || 24::float8; mb := mb || 2.5::float8; mw := mw || p_w::float8; run := 14; a := 9;
-        else mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 4::float8; mw := mw || p_w::float8; run := 14; a := 8;
+        if k = 1 then mk := mk || 's'::text; ma := ma || 10::float8; mb := mb || 0.7::float8; mw := mw || w; run := 6; a := 6;
+        elsif k = 2 then mk := mk || 's'::text; ma := ma || 20::float8; mb := mb || 2::float8; mw := mw || w; run := 12; a := 7;
+        elsif k = 3 then mk := mk || 's'::text; ma := ma || 24::float8; mb := mb || 2.5::float8; mw := mw || w; run := 14; a := 9;
+        else mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 4::float8; mw := mw || w; run := 14; a := 8;
         end if;
-        for i in 1..3 loop mk := mk || 's'::text; ma := ma || (run / 3); mb := mb || (run / 3 * tan(radians(a * i / 3))); mw := mw || p_w::float8; end loop;
+        for i in 1..3 loop mk := mk || 's'::text; ma := ma || (run / 3); mb := mb || (run / 3 * tan(radians(a * i / 3))); mw := mw || w; end loop;
         if k = 1 then
           mk := mk || 'g'::text; ma := ma || 7::float8; mb := mb || (-0.6)::float8; mw := mw || 0::float8;
-          mk := mk || 's'::text; ma := ma || 14::float8; mb := mb || 0::float8; mw := mw || (p_w + 1)::float8;
+          mk := mk || 's'::text; ma := ma || 14::float8; mb := mb || 0::float8; mw := mw || (w + 1);
         elsif k = 2 or k = 3 then
           mk := mk || 'g'::text; ma := ma || (case when k = 2 then 16 else 22 end)::float8; mb := mb || (case when k = 2 then -1.5 else -2 end)::float8; mw := mw || 0::float8;
           run := case when k = 2 then 14 else 18 end; a := case when k = 2 then -6 else -8 end;
-          for i in reverse 3..1 loop mk := mk || 's'::text; ma := ma || (run / 3); mb := mb || (run / 3 * tan(radians(a * i / 3))); mw := mw || (p_w + 3)::float8; end loop;
+          for i in reverse 3..1 loop mk := mk || 's'::text; ma := ma || (run / 3); mb := mb || (run / 3 * tan(radians(a * i / 3))); mw := mw || (w + 3); end loop;
         else
           mk := mk || 'g'::text; ma := ma || 20::float8; mb := mb || (-2)::float8; mw := mw || 0::float8;
-          mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 0::float8; mw := mw || (p_w + 4)::float8;
-          mk := mk || 's'::text; ma := ma || 34::float8; mb := mb || (-3.3)::float8; mw := mw || p_w::float8;
+          mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 0::float8; mw := mw || (w + 4);
+          mk := mk || 's'::text; ma := ma || 34::float8; mb := mb || (-3.3)::float8; mw := mw || w;
         end if;
       else
-        return jsonb_build_object('ok', false, 'error', 'Piece ' || n || ' isn''t a piece the builder makes.');
+        raise exception 'kind';
       end if;
     exception when others then
-      return jsonb_build_object('ok', false, 'error', 'Piece ' || n || ' isn''t a piece the builder makes.');
+      return jsonb_build_object('ok', false, 'error', 'Piece ' || n || bad);
     end;
   end loop;
-  -- the last straight to the finish gate
-  mk := mk || 's'::text; ma := ma || 30::float8; mb := mb || 0::float8; mw := mw || p_w::float8;
+  -- the start (a pad and a short straight) before the pieces, and the last straight to the finish gate
+  mk := array['s', 's']::text[] || mk || 's'::text; ma := array[24, 20]::float8[] || ma || 30::float8;
+  mb := array[0, 0]::float8[] || mb || 0::float8; mw := array[greatest(p_w + 4, w0), w0]::float8[] || mw || wl;
   for i in 1..array_length(mk, 1) loop
     if mk[i] = 'h' then h := h + ma[i];
     else
       x := x + sin(h) * ma[i]; z := z + cos(h) * ma[i]; y := y + mb[i];
       if y < -0.75 then return jsonb_build_object('ok', false, 'error', 'The road goes under the grass: put a hill up before going down.'); end if;
-      if y > 80 then return jsonb_build_object('ok', false, 'error', 'The road climbs too high (80 m at most).'); end if;
+      if y > 120 then return jsonb_build_object('ok', false, 'error', 'The road climbs too high (120 m at most).'); end if;
       if mk[i] = 's' and cum >= nextcp then cps := cps || array[round(x::numeric, 1)::float8, round(z::numeric, 1)::float8, mw[i] / 2]; nextcp := cum + 40; end if;
       cum := cum + sqrt(ma[i] * ma[i] + mb[i] * mb[i]);
     end if;
   end loop;
-  if cum > 3000 then return jsonb_build_object('ok', false, 'error', 'A track is 3 km long at most.'); end if;
+  if cum > 4000 then return jsonb_build_object('ok', false, 'error', 'A track is 4 km long at most.'); end if;
   return jsonb_build_object('ok', true, 'fx', round(x::numeric, 1), 'fy', round(y::numeric, 1), 'fz', round(z::numeric, 1),
-    'len', round(cum)::int, 'gate_r', p_w / 2.0 + 5, 'cps', to_jsonb(cps));
+    'len', round(cum)::int, 'gate_r', greatest(wl / 2.0 + 5, 9), 'cps', to_jsonb(cps));
 end $$;
 
 -- a track's map id, its leaderboard and rules go when it changes or goes
@@ -1754,8 +1787,8 @@ begin
     select array(select jsonb_array_elements_text(g -> 'cps')::float8) into cps;
     insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floor_ms, ref_ms, len_m, cps)
     values (cid, 0, 0, 7, (g ->> 'fx')::float8, (g ->> 'fy')::float8, (g ->> 'fz')::float8, (g ->> 'gate_r')::float8,
-            -- nothing averages 60 m/s from a standing start
-            round((g ->> 'len')::numeric / 60 * 1000)::int, null, (g ->> 'len')::int, cps)
+            -- nothing averages 85 m/s from a standing start, super strips and all
+            round((g ->> 'len')::numeric / 85 * 1000)::int, null, (g ->> 'len')::int, cps)
     on conflict (course_id) do update set sx = excluded.sx, sy = excluded.sy, sz = excluded.sz, fx = excluded.fx, fy = excluded.fy,
       fz = excluded.fz, gate_r = excluded.gate_r, floor_ms = excluded.floor_ms, ref_ms = excluded.ref_ms, len_m = excluded.len_m, cps = excluded.cps;
   end if;
