@@ -1745,6 +1745,60 @@ h2.big{font-size:28px;letter-spacing:-.025em}
 .podium .p1 .m,.podium .p1 b{color:var(--ink)} .podium .p1 .pt{color:var(--ink)}
 .podium .p2 .m,.podium .p3 .m{color:var(--dim)}
 .newTag{background:none!important;border:1px solid var(--rule)!important;color:var(--ember)!important;font-weight:600}
+
+/* ---------- Season 3: calmer, everything on one screen ---------- */
+/* one button style for the whole game: a quiet surface that sits in the
+   page; the ember fill only for the one main action on a screen */
+button{background:#1a1d21;border-color:rgba(255,255,255,.08);font-weight:500}
+button:hover{background:#202328;border-color:rgba(255,255,255,.16)}
+button.ghost,button.small.ghost{background:none;border-color:transparent}
+button.ghost:hover{background:none}
+button.primary{background:var(--ember);border-color:var(--ember);color:#1a0b03;font-weight:600}
+button.primary:hover{background:#f5844f;border-color:#f5844f}
+button.danger-outline{background:none}
+.tab{background:none}
+.tab.on{background:#202328;border-color:rgba(255,255,255,.16)}
+
+.menuPanel{width:min(1500px,97vw);max-height:96vh;padding:22px 30px 24px}
+.menuTop{padding-bottom:14px}
+.menuTop .who .refBtn,.menuTop .who #whoOut{background:#1a1d21!important;border:1px solid rgba(255,255,255,.08)!important;
+  padding:5px 11px!important;font-size:12.5px;color:var(--ink)!important;border-radius:6px}
+.mHello{margin:18px 0 14px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+.mGreet{font-size:clamp(22px,2.1vw,28px)}
+.mSub{margin:0}
+.noticeBox{margin:0 0 16px}
+.menuGrid{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,.85fr);gap:28px}
+@media(max-width:1180px){.menuGrid{gap:20px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,.8fr)}.menuPanel{padding:18px 22px 20px}
+  .mrM{font-size:11.5px}.menuMid .cbItems li{grid-template-columns:minmax(0,1fr);gap:0}.lcCar{height:96px}.youCard b{font-size:14px}}
+@media(max-width:900px){.menuGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.menuSide{grid-column:1/-1}}
+@media(max-width:760px){.menuGrid{grid-template-columns:minmax(0,1fr)}}
+.menuMid{min-width:0}
+.playBtn{padding:14px 18px}
+.playBtn .playText b{font-size:19px}
+.playBtn .playText small{font-size:13.5px}
+.mList{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:8px}
+.mRow{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;padding:10px 13px;min-height:54px;
+  background:#16181c;border:1px solid rgba(255,255,255,.06);border-radius:6px}
+.mRow:hover{background:#1c1f23;border-color:rgba(255,255,255,.14)}
+.mRow:hover .mrT{color:var(--ink)}
+.mrT{font-size:14px}
+.mrM{font-size:12px;max-width:100%}
+.mDaily{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.mDaily .mrT{grid-column:1}
+.mDaily .mrM{grid-column:1}
+.mDaily .mrR{grid-column:2;grid-row:1 / span 2}
+.dayCh{margin-top:12px}
+.menuMid .coachBrief{margin:0;padding:0;border:0}
+.menuMid .cbHeadline{font-size:15.5px}
+.menuMid .cbItems li{grid-template-columns:84px minmax(0,1fr);font-size:12.5px}
+.menuMid .cbItems li:nth-child(n+6){display:none}
+.lcCar{height:118px}
+.leaderCard{padding:10px 0 4px}
+.lcName{font-size:16px}
+.secLead{padding:6px 0!important}
+.youCard div{padding:9px 2px 8px}
+.youCard .perfRow{padding:9px 0 0}
+#driverRow{margin-top:12px}
 </style>
 </head>
 <body>
@@ -1939,14 +1993,14 @@ h2.big{font-size:28px;letter-spacing:-.025em}
               <span class="mrM"><b id="dailyTileName">—</b> <span id="dailyTileSub"></span><span class="dcPrize"></span></span>
               <span class="mrR dcTime" id="dailyTileTime"></span>
             </button>
-            <button class="mRow" id="bMulti"><span class="mrT">Race friends</span><span class="mrM">Live, up to 8 players</span><span class="mrR">&rarr;</span></button>
-            <button class="mRow" id="bTracks"><span class="mrT">Track builder</span><span class="mrM">Build your own, drive everyone's</span><span class="mrR">&rarr;</span></button>
-            <button class="mRow" id="bCourses"><span class="mrT">Courses</span><span class="mrM">16 maps and their leaderboards</span><span class="mrR">&rarr;</span></button>
-            <button class="mRow" id="bStats"><span class="mrT">Coach</span><span class="mrM">Your times, analysed</span><span class="mrR">&rarr;</span></button>
-            <button class="mRow" id="bTrophies"><span class="mrT">Trophy room</span><span class="mrM" id="tileTrophies">Your awards</span><span class="mrR">&rarr;</span></button>
-            <button class="mRow" id="bGarage"><span class="mrT">Garage</span><span class="mrM">Paint your car</span><span class="mrR">&rarr;</span></button>
-            <button class="mRow" id="bSettings"><span class="mrT">Settings</span><span class="mrM">Account and controls</span><span class="mrR">&rarr;</span></button>
-            <button class="mRow" id="bInfo"><span class="mrT">How it works</span><span class="mrM">The guide</span><span class="mrR">&rarr;</span></button>
+            <button class="mRow" id="bMulti"><span class="mrT">Race friends</span><span class="mrM">Live, up to 8 players</span></button>
+            <button class="mRow" id="bTracks"><span class="mrT">Track builder</span><span class="mrM">Build your own, drive everyone's</span></button>
+            <button class="mRow" id="bCourses"><span class="mrT">Courses</span><span class="mrM">16 maps and their leaderboards</span></button>
+            <button class="mRow" id="bStats"><span class="mrT">Coach</span><span class="mrM">Your times, analysed</span></button>
+            <button class="mRow" id="bTrophies"><span class="mrT">Trophy room</span><span class="mrM" id="tileTrophies">Your awards</span></button>
+            <button class="mRow" id="bGarage"><span class="mrT">Garage</span><span class="mrM">Paint your car</span></button>
+            <button class="mRow" id="bSettings"><span class="mrT">Settings</span><span class="mrM">Account and controls</span></button>
+            <button class="mRow" id="bInfo"><span class="mrT">How it works</span><span class="mrM">The guide</span></button>
           </nav>
           <div class="dayCh" id="dayCh" hidden title="Finish 300 runs today (any season maps, the daily included) for 300 credits on top of the usual 1 a run. Resets at midnight Pacific.">
             <span class="dayChK">Daily challenge</span>
@@ -1954,6 +2008,13 @@ h2.big{font-size:28px;letter-spacing:-.025em}
             <span class="dayChT">300 runs today earns <span class="gem2d"></span> 300</span>
             <span class="dayChBar"><i id="dayChBar"></i></span>
           </div>
+          <div id="driverRow">
+            <label class="fld" for="driver">Driver name</label>
+            <input type="text" id="driver" maxlength="14" placeholder="Driver">
+          </div>
+        </div>
+
+        <div class="menuMid">
           <section class="coachBrief" id="aiCard" hidden>
             <div class="cbHead"><span class="cbAvatar"><svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg></span><div class="cbWho"><b>Coach</b><small id="aiTime">Live briefing</small></div>
               <button class="ghost small" id="bPhoto" hidden>Photo finish</button><button class="ghost small" id="bAiCoach">Ask Coach &rarr;</button></div>
@@ -1961,12 +2022,7 @@ h2.big{font-size:28px;letter-spacing:-.025em}
             <ul class="cbItems" id="aiLines"></ul>
             <button class="small primary cbGo" id="bAiTarget" hidden></button>
           </section>
-          <div id="driverRow">
-            <label class="fld" for="driver">Driver name</label>
-            <input type="text" id="driver" maxlength="14" placeholder="Driver">
-          </div>
         </div>
-
         <aside class="menuSide">
           <button class="champStrip" id="champCard" hidden title="Last season's champion: open their card">
             <span id="champIcon"></span>
@@ -7985,12 +8041,12 @@ class SkidMarks {
  * trees and rocks. Purely cosmetic: the road, the car and every surface the
  * car touches are the same in all of them. The shared materials are
  * recoloured, so every view of a map follows the look of the map loaded.
- * Dailies and player tracks use the first look.
+ * Dailies and player tracks use the first look (Valley).
  */
 const Looks = {
   cur: -1,
   LIST: [
-    { name: 'Meadow', zenith: 0x2e86d8, band: 0xcfe6f6, nadir: 0xb9d8c6, glow: 0xfff4d8, sun: [52, 70, 36], sunCol: 0xfffaf0, sunI: 2.05,
+    { name: 'Valley', zenith: 0x2e86d8, band: 0xcfe6f6, nadir: 0xb9d8c6, glow: 0xfff4d8, sun: [52, 70, 36], sunCol: 0xfffaf0, sunI: 2.05,
       hemiSky: 0xcfe6f6, hemiGround: 0x86ab72, hemiI: 0.95, fog: 0xcfe6f6, floor: 0x8fc177, bank: 0x7fb968,
       peaks: 0x74b45c, peaksFar: 0x9cc48c, tree: 0x4f8f46, rock: 0x9aa0a6, exposure: 1.12 },
     { name: 'Canyon', zenith: 0x4f7fbf, band: 0xf5d2a8, nadir: 0xe2b98e, glow: 0xffe0b0, sun: [60, 55, 20], sunCol: 0xffe2bd, sunI: 2.2,
@@ -7999,9 +8055,9 @@ const Looks = {
     { name: 'Snowfield', zenith: 0x3f86cc, band: 0xe8f1f8, nadir: 0xe3ecf3, glow: 0xffffff, sun: [40, 75, 50], sunCol: 0xffffff, sunI: 1.85,
       hemiSky: 0xf0f6ff, hemiGround: 0xc9d7e3, hemiI: 1.0, fog: 0xe6eff6, floor: 0xedf2f6, bank: 0xe1e9ef,
       peaks: 0xcad8e5, peaksFar: 0xdee8f0, tree: 0x2c5a48, rock: 0x7b8795, exposure: 1.0 },
-    { name: 'Dusk', zenith: 0x1f2558, band: 0xf3956a, nadir: 0x6b4766, glow: 0xffb070, sun: [70, 22, -30], sunCol: 0xffb27a, sunI: 1.9,
-      hemiSky: 0xffb592, hemiGround: 0x3f3a5a, hemiI: 0.85, fog: 0xb07a86, floor: 0x5d7a55, bank: 0x6a8a58,
-      peaks: 0x4a4670, peaksFar: 0x6e5a82, tree: 0x2f4d3d, rock: 0x77728c, exposure: 1.15 }
+    { name: 'Sunset', zenith: 0x2f5a9a, band: 0xffc28e, nadir: 0xe0ae8c, glow: 0xffd59a, sun: [70, 30, -24], sunCol: 0xffd0a0, sunI: 2.0,
+      hemiSky: 0xffdcb8, hemiGround: 0x6d7a55, hemiI: 0.9, fog: 0xefc7a4, floor: 0x86a05e, bank: 0x8ea865,
+      peaks: 0x76809c, peaksFar: 0xa8a8bc, tree: 0x416b45, rock: 0x948c88, exposure: 1.08 }
   ],
   /** the look for level i: its section's, or the first */
   of(i) { const lv = levelAt(i); return lv && lv.section >= 0 ? lv.section % this.LIST.length : 0; },
