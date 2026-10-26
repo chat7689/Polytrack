@@ -1631,7 +1631,7 @@ language plpgsql immutable set search_path = public, pg_temp as $$
 declare
   mk text[] := '{}'; ma float8[] := '{}'; mb float8[] := '{}'; mw float8[] := '{}';
   pc jsonb; t text; n integer := 0; i integer; k integer; segs integer; sa float8; ch float8; r float8; a float8;
-  run float8; y1 float8; prev float8; L integer; w float8; v float8; w0 float8; wl float8;
+  run float8; y1 float8; prev float8; L integer; w float8; v float8; w0 float8; wl float8; lo float8 := 0; hi float8 := 0; off float8;
   x float8 := 0; y float8 := 0; z float8 := 0; h float8 := 0; cum float8 := 0; nextcp float8 := 0; cps float8[] := '{}';
   bad constant text := ' isn''t a piece the builder makes.';
 begin
@@ -1740,14 +1740,17 @@ begin
     if mk[i] = 'h' then h := h + ma[i];
     else
       x := x + sin(h) * ma[i]; z := z + cos(h) * ma[i]; y := y + mb[i];
-      if y < -0.75 then return jsonb_build_object('ok', false, 'error', 'The road goes under the grass: put a hill up before going down.'); end if;
-      if y > 120 then return jsonb_build_object('ok', false, 'error', 'The road climbs too high (120 m at most).'); end if;
+      lo := least(lo, y); hi := greatest(hi, y);
       if mk[i] = 's' and cum >= nextcp then cps := cps || array[round(x::numeric, 1)::float8, round(z::numeric, 1)::float8, mw[i] / 2]; nextcp := cum + 40; end if;
       cum := cum + sqrt(ma[i] * ma[i] + mb[i] * mb[i]);
     end if;
   end loop;
   if cum > 4000 then return jsonb_build_object('ok', false, 'error', 'A track is 4 km long at most.'); end if;
-  return jsonb_build_object('ok', true, 'fx', round(x::numeric, 1), 'fy', round(y::numeric, 1), 'fz', round(z::numeric, 1),
+  -- a road that goes down below where it started starts that much higher,
+  -- so its lowest point is at ground level
+  off := greatest(0, -lo);
+  if hi + off > 120 then return jsonb_build_object('ok', false, 'error', 'The road climbs too high (120 m from its lowest point at most).'); end if;
+  return jsonb_build_object('ok', true, 'sy', round(off::numeric, 2), 'fx', round(x::numeric, 1), 'fy', round((y + off)::numeric, 1), 'fz', round(z::numeric, 1),
     'len', round(cum)::int, 'gate_r', greatest(wl / 2.0 + 5, 9), 'cps', to_jsonb(cps));
 end $$;
 
@@ -1823,7 +1826,7 @@ begin
     perform public._track_reset(cid, false);
     select array(select jsonb_array_elements_text(g -> 'cps')::float8) into cps;
     insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floor_ms, ref_ms, len_m, cps)
-    values (cid, 0, 0, 7, (g ->> 'fx')::float8, (g ->> 'fy')::float8, (g ->> 'fz')::float8, (g ->> 'gate_r')::float8,
+    values (cid, 0, coalesce((g ->> 'sy')::float8, 0), 7, (g ->> 'fx')::float8, (g ->> 'fy')::float8, (g ->> 'fz')::float8, (g ->> 'gate_r')::float8,
             -- nothing averages 85 m/s from a standing start, super strips and all
             round((g ->> 'len')::numeric / 85 * 1000)::int, null, (g ->> 'len')::int, cps)
     on conflict (course_id) do update set sx = excluded.sx, sy = excluded.sy, sz = excluded.sz, fx = excluded.fx, fy = excluded.fy,

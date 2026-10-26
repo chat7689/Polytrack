@@ -2022,6 +2022,13 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--embe
 .keyGroup{font-size:12px;font-weight:600;color:var(--ember);margin:14px 0 4px}
 #bRetry[data-key]:not([data-key=""])::after,#bNext[data-key]:not([data-key=""])::after{content:attr(data-key);margin-left:8px;font-family:var(--mono);
   font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid currentColor;opacity:.7}
+
+/* the corner credits only while driving and on the finish screen: on every
+   other screen it sat on the panel's corner (the menu shows the balance in
+   its top bar, the garage and trophy room on the page) */
+.creditBadge{display:none!important}
+body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .creditBadge:not([hidden]){display:flex!important}
+@media(max-width:760px){body[data-screen=result] .creditBadge{display:none!important}}
 </style>
 </head>
 <body>
@@ -7804,7 +7811,8 @@ const TrackKit = {
   full(t) { return t.pieces.map((p) => this.norm(p, t.w)); },
   build(t) {
     const P = this.full(t), W = t.w, last = P.length ? P[P.length - 1] : null, Wend = last ? last[last.length - 1] : W;
-    const b = new TrackBuilder({ width: W, fine: true, relift: true });
+    // a road that goes down below its start starts that much higher (walk's y0)
+    const b = new TrackBuilder({ width: W, fine: true, relift: true, y: this.walk(t).y0 });
     b.pad(24, Math.max(W + 4, P.length ? P[0][P[0].length - 1] : 0));
     b.straight(20, { w: P.length ? P[0][P[0].length - 1] : W });
     // where each piece runs along the builder's path (for the builder's highlight)
@@ -7883,7 +7891,10 @@ const TrackKit = {
       if (m[0] === 's' && cum >= next) { cps.push(Math.round(x * 10) / 10, Math.round(z * 10) / 10, m[3] / 2); next = cum + 40; }
       cum += Math.hypot(m[1], m[2]);
     }
-    return { fx: x, fy: y, fz: z, len: cum, lo, hi, cps };
+    // the start goes up by however far the road would dip below it, so the
+    // lowest point is at ground level (the server does the same: sy)
+    const y0 = Math.max(0, -lo);
+    return { fx: x, fy: y + y0, fz: z, len: cum, lo: lo + y0, hi: hi + y0, cps, y0 };
   },
   /** can it be built and driven: { ok, data, len } or { ok: false, error } */
   check(t) {
@@ -7906,8 +7917,7 @@ const TrackKit = {
       if (p[3] > 50 && p[1] * Math.abs(deg(p[2])) < 30) return no('Piece ' + (k + 1) + ': a bank that steep needs a longer turn. Make the turn bigger or use less bank.');
     }
     const g = this.walk(t);
-    if (g.lo < -0.75) return no('The road goes under the grass: put a hill up before going down.');
-    if (g.hi > 120) return no('The road climbs too high (120 m at most).');
+    if (g.hi > 120) return no('The road climbs too high (120 m from its lowest point at most).');
     if (g.len > this.MAX_LEN) return no('A track is 4 km long at most.');
     let data, raw;
     try { raw = this.build(t); data = validateCourse(raw); } catch (e) {
@@ -7926,7 +7936,11 @@ const TrackKit = {
       for (let b = a + 1; b < D.length; b += 2) {
         const A = D[a], B = D[b];
         if (B.cum - A.cum < 90) continue;
-        if (Math.hypot(A.x - B.x, A.z - B.z) - Math.max(A.hw + 1 + B.reach, B.hw + 1 + A.reach) < 4) {
+        const gap = Math.hypot(A.x - B.x, A.z - B.z);
+        // a road running on more or less straight between them goes away from
+        // itself (a tall start's earth bank isn't the road coming back)
+        if (gap >= 0.9 * (B.cum - A.cum)) continue;
+        if (gap - Math.max(A.hw + 1 + B.reach, B.hw + 1 + A.reach) < 4) {
           return no('The road runs into itself. Change a turn so the road doesn\'t come back so close.');
         }
       }

@@ -9,11 +9,12 @@ const list = JSON.parse(readFileSync(new URL('./tracks.json', import.meta.url), 
 let built = 0, worst = 0;
 for (const k of list) {
   const g = (await t.owner('select public._track_geo($1, $2::jsonb) as g', [k.w, JSON.stringify(k.pieces)])).rows[0].g;
-  const lo = k.walk.lo < -0.75, hi = k.walk.hi > 80 || k.walk.len > 3000;
+  const lo = false, hi = k.walk.hi > 120 || k.walk.len > 4000;
   if (lo || hi) { ok(!g.ok, 'the server refuses what the game refuses (' + k.error + '): ' + JSON.stringify(g)); continue; }
   if (!g.ok) { ok(false, 'the server refused a track the game accepts: ' + g.error + ' ' + JSON.stringify(k.pieces)); continue; }
   const d = Math.hypot(g.fx - k.walk.fx, g.fz - k.walk.fz), dy = Math.abs(g.fy - k.walk.fy);
-  ok(d < 0.2 && dy < 0.2 && Math.abs(g.len - k.walk.len) < 1 && g.cps.length === k.walk.cps.length, 'server and game walk the same road (off by ' + d.toFixed(3) + ' m)');
+  ok(d < 0.2 && dy < 0.2 && Math.abs(g.sy - k.walk.y0) < 0.02 && Math.abs(g.len - k.walk.len) < 1 && g.cps.length === k.walk.cps.length,
+    'server and game walk the same road, start height included (off by ' + d.toFixed(3) + ' m)');
   if (k.gate) {
     built++;
     const e = Math.hypot(g.fx - k.gate[0], g.fz - k.gate[2]);
@@ -27,7 +28,8 @@ ok(!(await t.owner(`select public._track_geo(15, '[["T", 33, 90, 0, 0, 15]]'::js
 ok(!(await t.owner(`select public._track_geo(15, '[["T", 20, 90, 0, 0, 30]]'::jsonb) as g`)).rows[0].g.ok, 'a road too wide for its turn is refused');
 ok(!(await t.owner(`select public._track_geo(15, '[["H", 20, 20, 15]]'::jsonb) as g`)).rows[0].g.ok, 'a hill steeper than the builder makes is refused');
 ok((await t.owner(`select public._track_geo(15, '[["X", 40, 15], ["N", 40, 6], ["W", 40, 40], ["T", 60, -90, -15, 0, 18]]'::jsonb) as g`)).rows[0].g.ok, 'super strips, bottlenecks, wide areas and off-camber turns are taken');
-ok(!(await t.owner(`select public._track_geo(15, '[["H", -6]]'::jsonb) as g`)).rows[0].g.ok, 'a hill down from the ground is refused');
+{ const g = (await t.owner(`select public._track_geo(15, '[["H", -6]]'::jsonb) as g`)).rows[0].g;
+  ok(g.ok && g.sy === 6 && g.fy === 0, 'a hill down from the start: the start goes 6 m up and the finish is at ground level ' + JSON.stringify([g.sy, g.fy])); }
 ok(!(await t.owner(`select public._track_geo(35, '[["S", 40]]'::jsonb) as g`)).rows[0].g.ok, 'a road 35 m wide is refused');
 ok(!(await t.owner(`select public._track_geo(15, '[["S", 40, 45]]'::jsonb) as g`)).rows[0].g.ok, 'a straight 45 m wide is refused (wide areas go to 60)');
 
