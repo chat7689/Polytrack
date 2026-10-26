@@ -2033,6 +2033,57 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 /* a map a player made: their name under its description */
 .madeBy{font-size:12px;font-weight:600;color:var(--ember);margin:2px 0 4px}
 .madeBy[hidden]{display:none}
+
+/* ---------- practice a part ---------- */
+.practicePanel{width:min(1100px,95vw)}
+.prGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;margin-top:20px}
+@media(max-width:800px){.prGrid{grid-template-columns:minmax(0,1fr)}}
+.prWhen{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.prWhen span{font-size:13px;color:var(--dim)}
+.prWhen b{font-family:var(--mono);font-size:30px;font-weight:600;color:var(--ember)}
+.prWhen small{font-size:12.5px;color:var(--dim)}
+#prRange{width:100%;margin:14px 0 8px;accent-color:var(--ember)}
+.prStep,.prPresets{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.prPresets{margin-top:8px}
+.prPresets span{font-size:12.5px;color:var(--dim);margin-right:2px}
+.prHeld{margin-top:18px;padding:12px 14px;border:1px solid rgba(242,115,63,.3);border-radius:8px}
+.prLabel{font-size:13px;color:var(--dim)}
+.prLabel b{color:var(--ink);font-family:var(--mono)}
+.prKeys{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.prCap{display:inline-flex;flex-direction:column;align-items:center;min-width:54px;padding:6px 10px 5px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.18);background:#1a1d21;font-family:var(--mono);font-size:15px;font-weight:600;color:var(--ink)}
+.prCap small{font-family:var(--sans);font-size:10.5px;font-weight:500;color:var(--dim);margin-top:2px}
+.prCap.held{border-color:var(--ember);background:rgba(242,115,63,.18);color:var(--ember)}
+.prNone{font-size:13px;color:var(--dim)}
+.prGo{margin-top:16px;width:100%;padding:13px}
+.miniMap.prMap{margin-top:8px;max-height:none;aspect-ratio:4/3}
+.hPractice{position:absolute;top:53%;left:50%;transform:translateX(-50%);text-align:center;font-size:13px;color:var(--ink);
+  background:rgba(14,15,18,.82);border:1px solid rgba(242,115,63,.4);border-radius:10px;padding:10px 14px;text-shadow:none}
+.hPractice[hidden]{display:none}
+.hPractice .prKeys{justify-content:center}
+/* ---------- hidden runs ---------- */
+.eyeBtn{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;font-size:11.5px;border-radius:999px;background:none;
+  border:1px solid rgba(255,255,255,.14);color:var(--dim);vertical-align:middle;margin-left:6px}
+.eyeBtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.eyeBtn:hover{color:var(--ember);border-color:var(--ember);background:none}
+.eyeBtn.on{color:var(--ember);border-color:rgba(242,115,63,.5)}
+.eyeBtn.shut{margin:0;padding:2px 4px;border-color:transparent;color:var(--dimmer)}
+.eyeBtn.shut:hover{color:var(--ember)}
+.hidTag{color:var(--dimmer);font-size:11px;margin-left:4px}
+.hideBox{position:fixed;inset:0;z-index:87;display:flex;align-items:center;justify-content:center;background:rgba(10,11,13,.66);padding:16px}
+.hideBox[hidden]{display:none}
+.hidePanel{width:min(460px,100%);background:#16181c;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:20px 22px}
+.hidePanel h3{font-size:18px;margin-bottom:6px}
+.hideNow{font-size:13.5px;margin:12px 0 10px;color:var(--dim)}
+.hideNow b{color:var(--ink)} .hideNow .hideOn{color:var(--ember)}
+.hideRow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px}
+.hideRow span{color:var(--dim)}
+.hideStep{display:flex;align-items:center;gap:10px}
+.hideStep b{min-width:62px;text-align:center}
+.hideHave{font-size:12.5px;color:var(--dim);margin-top:8px}
+.hideBtns{display:flex;align-items:center;gap:8px;margin-top:14px}
+.hideBox:not([hidden]){animation:popBack .22s ease both}
+.hideBox:not([hidden]) .hidePanel{animation:popIn .32s cubic-bezier(.2,.8,.2,1) both}
 </style>
 </head>
 <body>
@@ -2095,6 +2146,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <div class="hud-br" id="hProg">0%</div>
       <div class="mpStand" id="mpStand" hidden></div>
       <div class="prompt" id="hPrompt">Hold W to launch</div>
+      <div class="hPractice" id="hPractice" hidden><span>Hold your keys now. At this moment your best run was holding:</span><div id="hPracticeKeys"></div></div>
       <div class="bar"><i id="hBar"></i></div>
     </div>
   </div>
@@ -2415,6 +2467,70 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
     </div>
   </div>
 
+  <!-- practice: drive part of a map from a moment of your best run -->
+  <div class="layer" id="practice" hidden>
+    <div class="scrim"></div>
+    <div class="panel practicePanel">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="kick">Practice a part</div>
+          <h2 class="big" id="prName">Map</h2>
+          <p class="lede" style="margin-bottom:0">Pick a moment of your best run and drive from there to the finish. You start exactly as
+            your best run was at that moment (same place, speed and boost), with its ghost beside you. Practice times aren't saved.</p>
+        </div>
+        <button class="ghost" id="bPrBack">&larr; Map</button>
+      </div>
+      <div class="prGrid">
+        <section>
+          <div class="prWhen"><span>Start at</span> <b id="prWhen">0:00.000</b> <small id="prLeft"></small></div>
+          <input type="range" id="prRange" min="0" max="10" step="0.05" value="0" aria-label="Where to start, in seconds of your best run">
+          <div class="prStep" id="prStep">
+            <button class="small" data-d="-1">&minus;1 s</button><button class="small" data-d="-0.1">&minus;0.1 s</button>
+            <button class="small" data-d="0.1">+0.1 s</button><button class="small" data-d="1">+1 s</button>
+          </div>
+          <div class="prPresets" id="prPresets">
+            <span>Jump to:</span>
+            <button class="small" data-at="start">The start</button><button class="small" data-at="half">Halfway</button>
+            <button class="small" data-at="10">Last 10 s</button><button class="small" data-at="5">Last 5 s</button>
+          </div>
+          <div class="prHeld">
+            <span class="prLabel">At that moment you were going <b id="prSpeed">0 km/h</b> and holding</span>
+            <div class="prKeys" id="prKeys"></div>
+          </div>
+          <p class="dNote">There's a 3, 2, 1 before you go: hold your keys during it so you're ready. R starts you again from the same point.</p>
+          <button class="primary prGo" id="bPrGo">Start practice</button>
+        </section>
+        <section>
+          <div class="kick">The part you'll drive</div>
+          <div class="miniMap prMap" id="prMap"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- hiding your run on a map (paid) -->
+  <div class="hideBox" id="hideBox" hidden>
+    <div class="hidePanel" role="dialog" aria-labelledby="hideTitle">
+      <h3 id="hideTitle">Hide your run</h3>
+      <p class="dNote">Other players won't be able to watch, race or compare your run on this map. Your time stays on the leaderboard.
+        It costs 100 credits for each school day; Saturdays and Sundays are free.</p>
+      <p class="hideNow" id="hideNow"></p>
+      <div class="hideRow"><span>Days</span>
+        <div class="hideStep"><button class="small" id="bHideMinus" aria-label="One day fewer">&minus;</button><b id="hideDays">1 day</b><button class="small" id="bHidePlus" aria-label="One day more">+</button></div>
+      </div>
+      <div class="hideRow"><span>Hidden until</span><b id="hideEnd"></b></div>
+      <div class="hideRow"><span>Cost</span><b id="hideCost"></b></div>
+      <p class="hideHave" id="hideHave"></p>
+      <div class="err" id="hideMsg"></div>
+      <div class="hideBtns">
+        <button class="ghost small" id="bHideShow" hidden>Show it again now</button>
+        <span style="flex:1"></span>
+        <button id="bHideClose">Cancel</button>
+        <button class="primary" id="bHideGo">Hide</button>
+      </div>
+    </div>
+  </div>
+
   <!-- outside opening hours: a countdown, an access code box, and Coach -->
   <div class="layer" id="closed" hidden>
     <div class="scrim"></div>
@@ -2638,6 +2754,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
             </div>
             <div class="row" style="margin-top:22px">
               <button class="primary" id="bCdDrive">▶ Drive this map</button>
+              <button id="bCdPractice" title="Drive any part of the map, starting from a moment of your best run">Practice a part</button>
             </div>
           </div>
           <div>
@@ -2848,7 +2965,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       </div>
       <nav class="infoNav" id="infoNav">
         <a href="#i-basics">Basics</a><a href="#i-keys">Controls</a><a href="#i-maps">Maps</a><a href="#i-boards">Leaderboards</a>
-        <a href="#i-replays">Replays</a><a href="#i-stats">Coach</a><a href="#i-credits">Credits</a><a href="#i-trophies">Trophies</a>
+        <a href="#i-replays">Replays</a><a href="#i-practice">Practice</a><a href="#i-hide">Hiding a run</a><a href="#i-stats">Coach</a><a href="#i-credits">Credits</a><a href="#i-trophies">Trophies</a>
         <a href="#i-garage">Garage</a><a href="#i-account">Account</a>
       </nav>
       <div class="infoBody" id="infoBody">
@@ -2903,6 +3020,22 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
             maps at once: a car finishing one map appears on the next, so the clock is their section total.
             On the Overall board the same works for the whole season: all 16 maps at once.</p>
           <p>Your own best on a map drives as a ghost beside you every time you retry it.</p>
+        </section>
+        <section id="i-practice">
+          <h3>Practice a part</h3>
+          <p>On a map's page, <b>Practice a part</b> lets you drive just a piece of the map, so you can work on the ending (or any
+            tricky bit) without driving the whole thing every time. Pick a moment of your best run with the slider. You start exactly as
+            that run was at that moment (same place, speed and boost), with its ghost beside you.</p>
+          <p>A 3, 2, 1 counts you in: hold your keys during it. The keys your best run was holding at that moment are shown, and light up
+            as you press them. <b>R</b> puts you back at the same point. Practice times are never saved and don't count anywhere; at
+            the finish you see how long you took from your point, next to your best run's time from there.</p>
+        </section>
+        <section id="i-hide">
+          <h3>Hiding your run</h3>
+          <p>Next to your own time on a map's leaderboard, <b>Hide my run</b> keeps your run private: nobody else can watch, race or
+            compare it. Your time stays on the leaderboard as usual. It costs <b>100 credits for each school day</b>; Saturdays and
+            Sundays are free and don't count. Paying again adds the days on to the end.</p>
+          <p>A run someone else has hidden shows a crossed-out eye: hover or click it to see until when.</p>
         </section>
         <section id="i-credits">
           <h3>Credits</h3>
@@ -4692,9 +4825,25 @@ const Cloud = {
     if (!this.on || !this.sb) { this.ghostError = 'offline'; return null; }
     try {
       const who = uid || (this.user && this.user.uid);
+      // a run its driver paid to hide: the server won't send it, so don't ask
+      if (RunHides.closed(who, courseId)) { this.ghostError = 'hidden'; this.ghostHidden = { uid: who, id: courseId }; return null; }
       const d = await this.q(this.sb.from('ghosts').select('time_ms, samples, v')
         .eq('uid', who).eq('course_id', courseId).maybeSingle());
-      if (!d) { this.ghostError = 'missing'; return null; }
+      if (!d) {
+        // hidden since the list was read? then say so
+        if (who !== (this.user && this.user.uid)) {
+          try {
+            const h = await this.q(this.sb.from('run_hides').select('until').eq('uid', who).eq('course_id', courseId).maybeSingle());
+            if (h && Date.parse(h.until) > Date.now()) {
+              RunHides.map.set(RunHides.key(who, courseId), Date.parse(h.until));
+              this.ghostError = 'hidden'; this.ghostHidden = { uid: who, id: courseId };
+              return null;
+            }
+          } catch (e) { /* fall through */ }
+        }
+        this.ghostError = 'missing';
+        return null;
+      }
       const s = String(d.samples || '').split(',').map(Number);
       if (s.length < GHOST_STRIDE * 2 || s.length % GHOST_STRIDE !== 0
         || s.some((v) => !isFinite(v))) { this.ghostError = 'damaged'; return null; }
@@ -4719,6 +4868,10 @@ const Cloud = {
   noteError(e) { /* no daily limits to warn about */ },
   /** what to tell the player when a ghost couldn't be used */
   ghostProblem() {
+    if (this.ghostError === 'hidden' && this.ghostHidden) {
+      const h = this.ghostHidden, e = (Records.board(h.id) || []).find((r) => r.uid === h.uid);
+      return RunHides.reason(h.uid, h.id, e && e.n);
+    }
     if (this.ghostError === 'load') return 'Could not load that run. ' + (this.ghostErrorText || '');
     if (this.ghostError === 'damaged') return 'That run\'s ghost is damaged, so it can\'t be raced or watched.';
     return 'That run was saved without a ghost (its upload failed), so it can\'t be raced or watched.';
@@ -10834,6 +10987,8 @@ const ClosedCoach = {
   }
 };
 
+/** a crossed-out eye: a hidden run */
+const EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
 /** Coach's picture: a race engineer's headset */
 const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg>';
 
@@ -14527,7 +14682,7 @@ const UI = {
   show(id) {
     const from = Morph.current();
     ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'preview', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'garage', 'trophies', 'multi', 'closed', 'tracks', 'builder']
+     'garage', 'trophies', 'multi', 'closed', 'tracks', 'builder', 'practice']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
     if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
@@ -14594,6 +14749,7 @@ const UI = {
   },
   course(i, name) {
     const lv = levelAt(i);
+    if (Game.practice) { $('hNum').textContent = 'PRACTICE · FROM ' + formatTime(Game.practice.t) + ' · NOT SAVED'; $('hName').textContent = name; return; }
     $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : i === UTRACK_I ? (lv.draft ? 'TEST DRIVE · NOT SAVED' : 'PLAYER TRACK' + (lv.author ? ' · BY ' + lv.author.toUpperCase() : '')) : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
       : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase() + ' · ' + Looks.LIST[Looks.of(i)].name.toUpperCase() +
         (LEVELS[i].by ? ' · MADE BY ' + LEVELS[i].by.toUpperCase() : '');
@@ -14973,11 +15129,14 @@ const UI = {
     const rank = this.myRank(list);
     $('cdBest').textContent = best ? 'Your best ' + formatTime(best) + (rank ? '  ·  #' + rank + ' of ' + list.length : '')
       : 'You have no time here yet';
+    $('bCdPractice').disabled = !best;
+    $('bCdPractice').title = best ? 'Drive any part of the map, starting from a moment of your best run' : 'Finish this map once first: practice starts from your best run';
     const show = Game.cdShow || 10;
     const actions = Cloud.on;
     const sel = Game.boardSel[id] || (Game.boardSel[id] = new Set());
-    // a uid can vanish from the board (an admin removing a time) — drop stale picks
-    const live = new Set(list.map((e) => e.uid).filter(Boolean));
+    // a uid can vanish from the board (an admin removing a time), or hide
+    // their run — drop those picks
+    const live = new Set(list.map((e) => e.uid).filter((u) => u && !RunHides.closed(u, id)));
     for (const uid of [...sel]) if (!live.has(uid)) sel.delete(uid);
     const board = $('cdBoard');
     if (!list.length) {
@@ -14990,12 +15149,20 @@ const UI = {
         const checked = e.uid && sel.has(e.uid);
         const mine = this.isMe(e);
         h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
+        const closed = e.uid && RunHides.closed(e.uid, id), hid = mine && e.uid && RunHides.until(e.uid, id);
         if (actions) {
-          h += '<td>' + (e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
+          h += '<td>' + (closed ? '<button class="eyeBtn shut" data-why="' + escapeHtml(e.uid) + '" title="' + escapeHtml(RunHides.reason(e.uid, id, e.n)) +
+            '" aria-label="Hidden run: why">' + EYE_OFF + '</button>'
+            : e.uid ? '<input type="checkbox" class="selBox" data-uid="' + escapeHtml(e.uid) + '"' +
             (checked ? ' checked' : '') + ' aria-label="Select ' + escapeHtml(e.n) + '">' : '') + '</td>';
         }
         h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + Profiles.name(e.uid, e.n, 18) +
-          (mine ? ' <small class="youTag">(you)</small>' : '') + freshTag(e) + '</td><td class="t">' + formatTime(e.t) +
+          (mine ? ' <small class="youTag">(you)</small>' : '') + freshTag(e) +
+          (closed ? ' <small class="hidTag">run hidden</small>' : '') +
+          (mine && actions ? ' <button class="eyeBtn' + (hid ? ' on' : '') + '" data-hide="1" title="' +
+            (hid ? 'Hidden until ' + escapeHtml(RunHides.when(hid)) + '. Click to add days or show it again.' : 'Hide your run from other players (100 credits a school day)') +
+            '" aria-label="Hide your run">' + EYE_OFF + (hid ? '<span>until ' + escapeHtml(RunHides.when(hid)) + '</span>' : '<span>Hide my run</span>') + '</button>' : '') +
+          '</td><td class="t">' + formatTime(e.t) +
           '</td><td class="d">' + (isFinite(when.getTime()) && e.d ? when.toLocaleDateString() : '') + '</td></tr>';
       });
       h += '</tbody></table>';
@@ -15008,6 +15175,12 @@ const UI = {
         cb.closest('tr').classList.toggle('sel', cb.checked);
         this.updateMapMultiBar(id);
       }));
+      board.querySelectorAll('.eyeBtn[data-why]').forEach((b) => b.addEventListener('click', () => {
+        const e = list.find((r) => r.uid === b.dataset.why);
+        UI.toast(RunHides.reason(b.dataset.why, id, e && e.n));
+      }));
+      const eye = board.querySelector('.eyeBtn[data-hide]');
+      if (eye) eye.addEventListener('click', () => RunHides.open(id, lv.name));
     }
     this.updateMapMultiBar(id);
     $('cdLeaderHeading').textContent = list.length ? 'PODIUM' : 'NO TIMES YET — BE THE FIRST';
@@ -15035,7 +15208,7 @@ const UI = {
     const rows = Records.overall(ids);
     const actions = Cloud.on;
     const sel = Game.boardSel[key] || (Game.boardSel[key] = new Set());
-    const whole = new Set(rows.filter((r) => r.uid && r.count === ids.length).map((r) => r.uid));
+    const whole = new Set(rows.filter((r) => r.uid && r.count === ids.length && !ids.some((x) => RunHides.closed(r.uid, x))).map((r) => r.uid));
     for (const uid of [...sel]) if (!whole.has(uid)) sel.delete(uid);
     $('secNote').textContent = actions
       ? 'Every driver\'s best on the four maps added up. Tick drivers with all four to watch their runs back to back — ' +
@@ -15054,7 +15227,7 @@ const UI = {
         h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
         if (actions) {
           h += ok ? '<td><input type="checkbox" class="selBox" data-uid="' + escapeHtml(r.uid) + '"' + (checked ? ' checked' : '') +
-            ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all four maps">—</td>';
+            ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all four maps, and none of them hidden">—</td>';
         }
         h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(r.n) +
           (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="d">' + r.count + ' / ' + ids.length +
@@ -15097,7 +15270,7 @@ const UI = {
     $('ovSeason').textContent = String(SEASON);
     const actions = Cloud.on;
     const sel = Game.boardSel.all || (Game.boardSel.all = new Set());
-    const whole = new Set(Records.overall(COURSE_IDS).filter((r) => r.uid && r.count === COURSE_IDS.length).map((r) => r.uid));
+    const whole = new Set(Records.overall(COURSE_IDS).filter((r) => r.uid && r.count === COURSE_IDS.length && !COURSE_IDS.some((x) => RunHides.closed(r.uid, x))).map((r) => r.uid));
     for (const uid of [...sel]) if (!whole.has(uid)) sel.delete(uid);
     $('ovNote').textContent = 'Most maps cleared first, then the lowest total of best times.' + (actions
       ? ' Tick drivers with all ' + COURSE_IDS.length + ' maps to watch the whole season back to back, every map on screen at once, or tick two to compare them.'
@@ -16080,6 +16253,326 @@ function packInputBits(inp, boosting) {
 const _gq1 = new THREE.Quaternion(), _gq2 = new THREE.Quaternion();
 const _gp = new THREE.Vector3();
 
+/**
+ * Practice: drive any part of a map, starting from a moment of your own
+ * best run. The car is put exactly where that run was at that moment (its
+ * place, direction, speed, spin, gear and the boost it had left), the best
+ * run's ghost carries on beside you from there, and a 3-2-1 lets you get
+ * your keys down first; the keys you were holding at that moment are
+ * shown. Nothing is saved or sent: practice never counts as a time.
+ */
+const Practice = {
+  i: -1, g: null, t: 0, count: 0, KEYS: [['gas', 1], ['brake', 2], ['left', 4], ['right', 8], ['boost', 16], ['handbrake', 32]],
+  /** the practice screen for map i (needs your best run's recording) */
+  async open(i) {
+    const lv = levelAt(i);
+    if (!lv) return;
+    let g = Records.ghost(lv.id);
+    const best = Records.best(lv.id);
+    if ((!g || (best && Math.abs(g.t - best) > 0.002)) && Cloud.on && Cloud.user) {
+      UI.toast('Loading your best run…');
+      const got = await Cloud.fetchGhost(lv.id);
+      if (got) { g = got; Records.data.ghosts[lv.id] = got; }
+    }
+    if (!g || !(g.t > 1)) { UI.toast('Practice starts from your best run on this map: finish it once first.'); return; }
+    if (this.i !== i || this.g !== g) this.t = Math.max(0, +(g.t * 0.6).toFixed(2));
+    this.i = i; this.g = g;
+    Game.practice = null;
+    Autopilot.on = false;
+    Game.state = 'practice'; Game.running = false;
+    Sound.stopEngine();
+    UI.show('practice');
+    if (!Game.data[i]) { try { Game.data[i] = validateCourse(lv.build()); } catch (e) { /* the map card shows it can't load */ } }
+    $('prName').textContent = lv.name;
+    $('prRange').max = String(Math.max(0, Math.floor((g.t - 1) * 20) / 20));
+    this.render();
+  },
+  /** the run at time t: place, rotation, velocity, spin, keys held and boost used so far */
+  at(t) {
+    const s = this.g.s, n = s.length / GHOST_STRIDE, H = GHOST_HZ;
+    const f = clamp(t * H, 0, n - 1.001), i = Math.floor(f), u = f - i;
+    const P = (k) => new THREE.Vector3(s[k * 8], s[k * 8 + 1], s[k * 8 + 2]);
+    const Q = (k) => new THREE.Quaternion(s[k * 8 + 3], s[k * 8 + 4], s[k * 8 + 5], s[k * 8 + 6]).normalize();
+    const pos = P(i).lerp(P(i + 1), u), quat = Q(i).slerp(Q(i + 1), u);
+    const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 2), span = (b - a) / H;
+    const vel = P(b).sub(P(a)).multiplyScalar(1 / span);
+    // spin: the turn from a to b, as an axis times an angle per second
+    const dq = Q(b).multiply(Q(a).invert());
+    if (dq.w < 0) { dq.x = -dq.x; dq.y = -dq.y; dq.z = -dq.z; dq.w = -dq.w; }
+    const ang = 2 * Math.acos(clamp(dq.w, -1, 1)), sn = Math.sqrt(Math.max(1 - dq.w * dq.w, 1e-12));
+    const omega = ang > 1e-5 ? new THREE.Vector3(dq.x / sn, dq.y / sn, dq.z / sn).multiplyScalar(ang / span) : new THREE.Vector3();
+    let boost = 0;
+    for (let k = 0; k < i; k++) if (s[k * 8 + 7] & 16) boost++;
+    return { pos, quat, vel, omega, bits: s[i * 8 + 7] | 0, boostUsed: boost / H };
+  },
+  /** the keys for an input state, as key caps */
+  caps(bits, live) {
+    const on = this.KEYS.filter(([, b]) => bits & b);
+    if (!on.length) return '<span class="prNone">no keys</span>';
+    return on.map(([a, b]) => '<span class="prCap' + (live && (live & b) ? ' held' : '') + '">' + escapeHtml(Keys.label(a).split(' / ')[0]) +
+      '<small>' + Keys.ACTIONS.find((x) => x[0] === a)[1].replace(' / reverse', '') + '</small></span>').join('');
+  },
+  render() {
+    const g = this.g, lv = levelAt(this.i), t = this.t, left = g.t - t;
+    $('prRange').value = String(t);
+    $('prWhen').textContent = formatTime(t);
+    $('prLeft').textContent = formatTime(left) + ' of your best run left to the finish';
+    const st = this.at(t);
+    $('prKeys').innerHTML = this.caps(st.bits);
+    $('prSpeed').textContent = Math.round(st.vel.length() * KMH) + ' km/h';
+    // the part you will drive, drawn on the map
+    const data = Game.data[this.i];
+    const pts = [];
+    for (let k = Math.floor(t * GHOST_HZ); k < g.s.length / GHOST_STRIDE; k += 2) pts.push([g.s[k * 8], g.s[k * 8 + 1], g.s[k * 8 + 2]]);
+    $('prMap').innerHTML = data ? MiniMap.fromData(data, lv.name, true, null, pts) : '';
+  },
+  set(t) { this.t = clamp(Math.round(t * 20) / 20, 0, Math.max(0, this.g.t - 1)); this.render(); },
+  /** off you go: the map, the car where the run was, then the countdown */
+  start() {
+    const i = this.i;
+    Game.startLevel(i);
+    if (Game.state !== 'play' || Game.levelIndex !== i) return;     // closed hours, or the map wouldn't load
+    Game.practice = { t: this.t, g: this.g };
+    Game.ghostOverride = null;
+    Game.ghostData = this.g;
+    Game.buildGhostProgress();
+    this.place();
+  },
+  /** put the car at the practice point and count down (also after R) */
+  place() {
+    const G = Game, pr = G.practice, car = G.car;
+    const st = this.at(pr.t);
+    st.pos.y = G.ghostY(pr.g, st.pos);
+    const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(st.quat);
+    car.place(st.pos, Math.atan2(fwd.x, fwd.z));
+    car.quat.copy(st.quat);
+    car.invQuat.copy(st.quat).conjugate();
+    car.heading = Math.atan2(fwd.x, fwd.z);
+    car.boostLeft = Math.max(0, CAR.boostTotal - st.boostUsed);
+    // the gear for this speed, so the engine is where it was
+    const v = Math.max(0, st.vel.dot(fwd));
+    let gear = 0;
+    while (gear < CAR.gears.length - 1 && v / CAR.wheelR * CAR.gears[gear] * CAR.finalDrive * 9.5493 > CAR.shiftUp) gear++;
+    car.gear = gear;
+    car.savePrev();
+    car.syncMesh(0);
+    G.chase.snap(car);
+    pr.st = st;
+    G.time = pr.t;
+    G.started = false;
+    G.accum = 0;
+    G.rec = [];
+    G.offTrack = 0; G.hungTime = 0;
+    G.cpWarned = false; G.cpMissRun = 0;
+    if (G.marks) G.marks.reset();
+    if (G.course) for (const gt of G.course.gates) gt.passed = false;
+    // where on the road this is: progress, and the next checkpoint
+    const path = G.course.path;
+    let best = 0, bd = Infinity;
+    for (let k = 0; k < path.length; k++) { const d = path[k].distanceToSquared(st.pos); if (d < bd) { bd = d; best = k; } }
+    G.pathIdx = best;
+    G.ghostCursor = 0;
+    const cps = G.course.cps || [];
+    const atCum = G.course.cum[best];
+    G.cpNext = 0;
+    for (let k = 0; k < cps.length; k++) {
+      let ci = 0, cd = Infinity;
+      for (let j = 0; j < path.length; j++) { const d = (path[j].x - cps[k].x) ** 2 + (path[j].z - cps[k].z) ** 2; if (d < cd) { cd = d; ci = j; } }
+      if (G.course.cum[ci] <= atCum + 1) G.cpNext = k + 1; else break;
+    }
+    this.count = 3;
+    UI.course(G.levelIndex, levelAt(G.levelIndex).name);
+    UI.clock(pr.t, false);
+    UI.delta(null);
+    UI.prompt('3');
+    $('hPractice').hidden = false;
+    this.showKeys();
+  },
+  /** during the countdown: the keys to hold, lit as you hold them */
+  showKeys() {
+    const pr = Game.practice;
+    if (!pr) { $('hPractice').hidden = true; return; }
+    const live = (Input.throttle ? 1 : 0) | (Input.brake ? 2 : 0) | (Input.steer < 0 ? 4 : 0) | (Input.steer > 0 ? 8 : 0) |
+      (Input.boost ? 16 : 0) | (Input.handbrake ? 32 : 0);
+    $('hPracticeKeys').innerHTML = this.caps(pr.st.bits, live);
+  },
+  /** one frame of the countdown; true while it is still counting */
+  tick(dt) {
+    if (!(this.count > 0)) return false;
+    this.count -= dt;
+    this.showKeys();
+    if (this.count > 1e-6) { UI.prompt(String(Math.ceil(this.count - 1e-6))); return true; }
+    // GO: the car carries on exactly as the run was moving
+    const G = Game, st = G.practice.st;
+    G.car.vel.copy(st.vel);
+    G.car.omega.copy(st.omega);
+    G.started = true;
+    G.recPrevPos.copy(G.car.pos);
+    G.recPrevQuat.copy(G.car.quat);
+    G.runT = 0; G.focusT = 0;
+    $('hPractice').hidden = true;
+    UI.prompt('GO!');
+    setTimeout(() => { if (Game.state === 'play' && Game.started) UI.prompt(''); }, 700);
+    return false;
+  },
+  /** the finish of a practice run */
+  finish() {
+    const G = Game, pr = G.practice, lv = levelAt(G.levelIndex);
+    G.running = false;
+    G.state = 'result';
+    Sound.stopEngine();
+    Sound.finish(false);
+    const mine = G.time - pr.t, theirs = pr.g.t - pr.t;
+    $('rKick').textContent = 'Practice · not saved';
+    $('rName').textContent = lv.name;
+    $('rTime').textContent = formatTime(mine);
+    const gap = formatGap(mine, theirs).replace(/^[+−-]/, '');
+    $('rSub').innerHTML = 'From ' + formatTime(pr.t) + ' to the finish. Your best run took ' + formatTime(theirs) + ' from there: ' +
+      (/^0\.000$/.test(gap) ? 'the same time.' : mine < theirs ? '<em>' + gap + ' s faster</em>.' : gap + ' s slower.');
+    $('rRaceResult').hidden = true;
+    $('rBoardHd').textContent = '';
+    $('rBoard').innerHTML = '';
+    $('bNext').hidden = true;
+    $('bResCourses').textContent = 'Pick another point';
+    $('bRetry').textContent = 'Again from ' + formatTime(pr.t);
+    $('rCampaignRow').hidden = false;
+    if (G.ghostMesh) G.ghostMesh.visible = false;
+    UI.show('result');
+    UI.clock(mine, true);
+  },
+  wire() {
+    $('prRange').addEventListener('input', () => this.set(+$('prRange').value));
+    $('prPresets').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-at]');
+      if (!b) return;
+      const T = this.g.t, k = b.dataset.at;
+      this.set(k === 'start' ? 0 : k === 'half' ? T / 2 : T - Number(k));
+    });
+    $('prStep').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-d]');
+      if (b) this.set(this.t + Number(b.dataset.d));
+    });
+    $('bPrGo').addEventListener('click', () => this.start());
+    $('bPrBack').addEventListener('click', () => Game.openMap(this.i));
+    $('bCdPractice').addEventListener('click', () => this.open(Game.courseDetailIndex));
+  }
+};
+
+/**
+ * Hidden runs. A player can pay 100 credits per school day to keep their
+ * run on a map private: nobody else can watch, race or compare it (the
+ * server won't hand out its recording), while the time stays on the
+ * leaderboard. Weekends are free and don't count; paying again adds days
+ * to the end. RunHides knows whose runs are hidden right now.
+ */
+const RunHides = {
+  map: new Map(), at: 0, PRICE: 100,
+  key(uid, id) { return uid + '|' + id; },
+  /** until when (ms) a run is hidden, or 0 */
+  until(uid, id) { const u = this.map.get(this.key(uid, id)) || 0; return u > Date.now() ? u : 0; },
+  hidden(uid, id) { return this.until(uid, id) > 0; },
+  /** hidden from me: someone else's hidden run */
+  closed(uid, id) { return !!uid && !(Cloud.user && uid === Cloud.user.uid) && this.hidden(uid, id); },
+  async load(force) {
+    if (!Cloud.on || !Cloud.user || (!force && Date.now() - this.at < 60000)) return;
+    this.at = Date.now();
+    try {
+      const rows = await Cloud.q(Cloud.sb.from('run_hides').select('uid, course_id, until').gt('until', new Date().toISOString()));
+      this.map.clear();
+      for (const r of rows || []) this.map.set(this.key(r.uid, r.course_id), Date.parse(r.until));
+      if (Game.state === 'select') Game.showSelView(Game.selView);
+    } catch (e) { /* a database from before hidden runs: nothing is hidden */ }
+  },
+  when(ms) { return new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); },
+  /** the server's school-day sum, for showing the end date before paying (it does the real one) */
+  addDays(from, n) {
+    const day = (ms) => Hours.PT.formatToParts(new Date(ms)).find((p) => p.type === 'weekday').value;
+    const weekend = (ms) => day(ms) === 'Sat' || day(ms) === 'Sun';
+    // whole days on the Pacific calendar, like the server (the same time of
+    // day even across the clocks changing)
+    const off = (ms) => {
+      const z = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', timeZoneName: 'shortOffset' }).formatToParts(new Date(ms))
+        .find((q) => q.type === 'timeZoneName');
+      const m = z && z.value.match(/GMT([+-]\d+)/);
+      return m ? +m[1] * 3600000 : 0;
+    };
+    let t = from;
+    const step = () => { const o = off(t); t += 86400000; t += o - off(t); };
+    for (;;) {
+      while (weekend(t)) step();
+      if (!n) return t;
+      step(); n--;
+    }
+  },
+  /** why a run can't be watched, in words */
+  reason(uid, id, name) {
+    return (name || 'This driver') + ' paid to keep this run private until ' + this.when(this.until(uid, id)) +
+      '. Nobody can watch, race or compare it until then; the time still counts on the leaderboard.';
+  },
+  /* -------------------------------------------- the dialog for your own run */
+  days: 1, id: '', name: '',
+  open(id, name) {
+    if (!Cloud.on || !Cloud.user) return;
+    this.id = id; this.name = name; this.days = 1;
+    $('hideMsg').textContent = '';
+    this.render();
+    $('hideBox').hidden = false;
+  },
+  close() { $('hideBox').hidden = true; },
+  render() {
+    const me = Cloud.user.uid, now = Date.now(), cur = this.until(me, this.id);
+    const end = this.addDays(Math.max(now, cur || now), this.days), cost = this.days * this.PRICE, have = Records.credits;
+    $('hideTitle').textContent = 'Hide your run on ' + this.name;
+    $('hideNow').innerHTML = cur ? '<b class="hideOn">Hidden</b> until ' + escapeHtml(this.when(cur)) + '. Add days below to keep it hidden longer.'
+      : '<b>Not hidden.</b> Anyone can watch, race or compare your run here.';
+    $('hideDays').textContent = this.days + (this.days === 1 ? ' day' : ' days');
+    $('hideEnd').textContent = this.when(end);
+    $('hideCost').textContent = fmtCredits(cost) + ' credits';
+    $('hideHave').textContent = 'You have ' + fmtCredits(have) + '.';
+    $('bHideGo').textContent = (cur ? 'Add ' : 'Hide for ') + this.days + (this.days === 1 ? ' day' : ' days') + ' · ' + fmtCredits(cost);
+    $('bHideGo').disabled = cost > have;
+    $('hideMsg').textContent = cost > have ? 'Not enough credits for that many days.' : '';
+    $('bHideMinus').disabled = this.days <= 1;
+    $('bHidePlus').disabled = this.days >= 30;
+    $('bHideShow').hidden = !cur;
+  },
+  async go() {
+    $('bHideGo').disabled = true;
+    try {
+      const r = await Cloud.rpc('hide_run', { p_course: this.id, p_days: this.days });
+      if (!r || !r.ok) { $('hideMsg').textContent = (r && r.error) || 'That didn\'t work.'; $('bHideGo').disabled = false; return; }
+      this.map.set(this.key(Cloud.user.uid, this.id), r.until);
+      Cloud.credits = r.balance; Records.credits = r.balance;
+      UI.who(Cloud.name(), Records.credits);
+      this.close();
+      UI.toast('Your run on ' + this.name + ' is hidden until ' + this.when(r.until) + '.');
+      if (Game.state === 'select') Game.showSelView(Game.selView);
+    } catch (e) {
+      $('hideMsg').textContent = /hide_run|PGRST202|function/i.test((e && e.message) || '') ? 'Hiding runs isn\'t switched on yet. Try again later.' : Cloud.errText(e);
+      $('bHideGo').disabled = false;
+    }
+  },
+  async show() {
+    if (!confirm('Show your run to everyone again now? The days you paid for aren\'t given back.')) return;
+    try {
+      await Cloud.rpc('show_run', { p_course: this.id });
+      this.map.delete(this.key(Cloud.user.uid, this.id));
+      this.close();
+      UI.toast('Your run on ' + this.name + ' can be watched again.');
+      if (Game.state === 'select') Game.showSelView(Game.selView);
+    } catch (e) { $('hideMsg').textContent = Cloud.errText(e); }
+  },
+  wire() {
+    $('bHideMinus').addEventListener('click', () => { this.days = Math.max(1, this.days - 1); this.render(); });
+    $('bHidePlus').addEventListener('click', () => { this.days = Math.min(30, this.days + 1); this.render(); });
+    $('bHideGo').addEventListener('click', () => this.go());
+    $('bHideShow').addEventListener('click', () => this.show());
+    $('bHideClose').addEventListener('click', () => this.close());
+    $('hideBox').addEventListener('click', (e) => { if (e.target === $('hideBox')) this.close(); });
+    setInterval(() => this.load(), 60000);
+  }
+};
+
 const Game = {
   ghostMesh: null, ghostData: null, rec: [],
   recPrevPos: new THREE.Vector3(), recPrevQuat: new THREE.Quaternion(),
@@ -16306,6 +16799,7 @@ const Game = {
     // holding an access code doesn't flash through the closed screen.
     if (!Hours.canPlay()) await Hours.refresh();
     this.toMenu();
+    RunHides.load(true);
     this.loadCloudData(user.uid, fresh);
   },
 
@@ -16407,6 +16901,8 @@ const Game = {
     $('bClosedOut').addEventListener('click', () => Cloud.signOut());
     Hours.watch();
     Tracks.wire();
+    Practice.wire();
+    RunHides.wire();
     // the finish screen's keys: drive again and next map (Settings, Controls)
     addEventListener('keydown', (e) => {
       if (this.state !== 'result' || e.repeat || Keys.listening || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
@@ -16592,8 +17088,8 @@ const Game = {
     scrub.addEventListener('change', endScrub);
     scrub.addEventListener('mouseup', endScrub);
     scrub.addEventListener('touchend', endScrub);
-    $('bRetry').addEventListener('click', () => { if (this.levelIndex === DAILY_I) Daily.play(); else this.startLevel(this.levelIndex); });
-    $('bResCourses').addEventListener('click', () => { if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toSelect(); });
+    $('bRetry').addEventListener('click', () => { if (this.practice) Practice.start(); else if (this.levelIndex === DAILY_I) Daily.play(); else this.startLevel(this.levelIndex); });
+    $('bResCourses').addEventListener('click', () => { if (this.practice) Practice.open(this.levelIndex); else if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toSelect(); });
     $('bPreview').addEventListener('click', () => Preview.open());
     $('bMulti').addEventListener('click', () => Multi.open());
     $('bMpBack').addEventListener('click', () => this.goBack());
@@ -16782,7 +17278,7 @@ const Game = {
    * every real attempt rather than every key press.
    */
   logAttempt(outcome, reason) {
-    if (!this.course || !this.started || noSave(this.levelIndex) || Autopilot.on || this.runKind === 'multi') return;
+    if (!this.course || !this.started || noSave(this.levelIndex) || this.practice || Autopilot.on || this.runKind === 'multi') return;
     if (outcome !== 'finished' && this.time < 0.8) return;
     const kind = this.runKind || 'campaign';
     const rs = this.runStats || { top: 0, grass: 0, air: 0, far: 0 };
@@ -16803,6 +17299,7 @@ const Game = {
   },
   restartRun(msg, reason) {
     if (Multi.racing) { Multi.respawn(msg); return; }
+    if (this.practice) { if (msg) UI.toast(msg + ' at your practice point'); Practice.place(); return; }
     this.logAttempt('restarted', reason || 'restart');
     this.ticket = null;
     this.cpNext = 0; this.cpMissRun = 0; this.cpWarned = false;
@@ -16832,6 +17329,8 @@ const Game = {
 
   startLevel(i) {
     if (Cloud.user && !Hours.guard()) return;
+    this.practice = null;                    // Practice.start sets it again after this
+    $('hPractice').hidden = true;
     if (!this.loadLevel(i)) { this.toSelect(); return; }
     this.ticket = null;
     this.cpNext = 0; this.cpMissRun = 0; this.cpWarned = false;
@@ -17416,6 +17915,7 @@ const Game = {
   },
   openMap(i) {
     if (!this.playable[i]) return;
+    RunHides.load();
     if (this.courseDetailIndex !== i) this.cdShow = 10;
     this.courseDetailIndex = i;
     if (this.state === 'select') this.showSelView('map', 'enter'); else this.toSelect('map');
@@ -17574,6 +18074,7 @@ const Game = {
   finishLevel() {
     if (this.runKind === 'multi') { Multi.myFinish(); return; }
     if (isPreview(this.levelIndex)) { this.finishPreview(); return; }
+    if (this.practice) { Practice.finish(); return; }
     if (noSave(this.levelIndex)) { this.finishTest(); return; }
     this.running = false;
     this.state = 'result';
@@ -18182,16 +18683,20 @@ const Game = {
     if (this.runKind === 'multi') { if (Multi.step(dt)) return; }
     else if (Input.tapped('Escape')) {
       if (isPreview(this.levelIndex)) { Preview.open(); return; }
+      if (this.practice) { Practice.open(this.levelIndex); return; }
       this.logAttempt('terminated', 'menu');
       if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toMenu();
       return;
     }
+    if (this.practice && Input.acted('restart')) { Practice.place(); return; }
     if (this.runKind !== 'multi' && Input.acted('restart')) {
       if (this.levelIndex === DAILY_I) { if (this.started) { this.logAttempt('restarted', 'restart'); this.running = false; Daily.play(); } }
       else this.restartRun('Restarted', 'restart');
     }
     if (this.runKind !== 'multi' && Input.acted('tele')) UI.toggleTele();
-    if (!this.started && Input.anyDrive && this.runKind !== 'multi') {
+    // practice: the car waits at its point through the 3, 2, 1
+    if (this.practice && Practice.tick(dt)) return;
+    if (!this.started && Input.anyDrive && this.runKind !== 'multi' && !this.practice) {
       this.started = true;
       this.recPrevPos.copy(this.car.pos);
       this.recPrevQuat.copy(this.car.quat);
@@ -18256,8 +18761,10 @@ const Game = {
       car.savePrev();
       car.setRenderAlpha(1);
       car.syncMesh(0);
-      this.recordGhost(Math.max(this.time - t0, 1e-6));
-      padGhost(this.rec, this.time, [car.pos.x, car.pos.y, car.pos.z]);
+      if (!this.practice) {
+        this.recordGhost(Math.max(this.time - t0, 1e-6));
+        padGhost(this.rec, this.time, [car.pos.x, car.pos.y, car.pos.z]);
+      }
       gate.passed = true;
       this.finishLevel();
       return;
@@ -18289,7 +18796,7 @@ const Game = {
     else if (this.car.stuckTime > 0.9 || this.hungTime > 1.5) { this.hungTime = 0; this.restartRun('Stuck — restarted', 'stuck'); }
     else if (this.offTrack > 4) this.restartRun('Off the track — restarted', 'offtrack');
 
-    if (this.started) {
+    if (this.started && !this.practice) {
       this.recordGhost(Math.max(stepDt, 1e-6));
       const rs = this.runStats;
       if (rs) {
@@ -18341,7 +18848,10 @@ const Game = {
         if (!this._garageRolling) this.toMenu();
         break;
       case 'result':
-        if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toMenu();
+        if (this.practice) Practice.open(this.levelIndex); else if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toMenu();
+        break;
+      case 'practice':
+        this.openMap(Practice.i);
         break;
       case 'preview':
         this.toMenu();

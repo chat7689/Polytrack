@@ -1630,6 +1630,14 @@ create table if not exists public.user_tracks (
   updated_at timestamptz not null default now()
 );
 create index if not exists user_tracks_uid on public.user_tracks (uid);
+-- runs a player paid to keep private: nobody else can watch, race or
+-- compare that run (its recording) until then; the time stays on the board
+create table if not exists public.run_hides (
+  uid uuid not null,
+  course_id text not null,
+  until timestamptz not null,
+  primary key (uid, course_id)
+);
 -- players the admin lets keep more (or fewer) than 3 tracks, up to 16
 create table if not exists public.track_limits (
   uid uuid primary key,
@@ -1774,6 +1782,55 @@ begin
   if hi + off > 120 then return jsonb_build_object('ok', false, 'error', 'The road climbs too high (120 m from its lowest point at most).'); end if;
   return jsonb_build_object('ok', true, 'sy', round(off::numeric, 2), 'fx', round(x::numeric, 1), 'fy', round((y + off)::numeric, 1), 'fz', round(z::numeric, 1),
     'len', round(cum)::int, 'gate_r', greatest(wl / 2.0 + 5, 9), 'cps', to_jsonb(cps));
+end $$;
+
+-- ------------------------------------------------------------ hidden runs
+-- p_days school days on from p_from: each day paid for is a Monday to
+-- Friday; Saturdays and Sundays are free and don't count (a hide that would
+-- end at a weekend carries on to the same time on Monday). Pacific time.
+create or replace function public._add_weekdays(p_from timestamptz, p_days integer) returns timestamptz
+language plpgsql immutable set search_path = public, pg_temp as $$
+declare l timestamp := p_from at time zone 'America/Los_Angeles'; n integer := greatest(p_days, 0);
+begin
+  loop
+    while extract(isodow from l) >= 6 loop l := l + interval '1 day'; end loop;
+    exit when n = 0;
+    l := l + interval '1 day';
+    n := n - 1;
+  end loop;
+  return l at time zone 'America/Los_Angeles';
+end $$;
+-- hide the calling player's run on a map for p_days more school days, at
+-- 100 credits a day; paying again adds to the end of the time already paid
+create or replace function public.hide_run(p_course text, p_days integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); cost integer; cur timestamptz; t timestamptz;
+begin
+  if p_days is null or p_days not between 1 and 30 then
+    return jsonb_build_object('ok', false, 'error', 'Pick 1 to 30 days.');
+  end if;
+  if not exists (select 1 from public.ghosts where uid = p.id and course_id = p_course) then
+    return jsonb_build_object('ok', false, 'error', 'You have no run on this map to hide.');
+  end if;
+  cost := 100 * p_days;
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  if public._balance(p.id) < cost then
+    return jsonb_build_object('ok', false, 'error', 'That costs ' || cost || ' credits and you have ' || public._balance(p.id) || '.');
+  end if;
+  select until into cur from public.run_hides where uid = p.id and course_id = p_course for update;
+  t := public._add_weekdays(greatest(now(), coalesce(cur, now())), p_days);
+  insert into public.credit_events (uid, delta, kind, note) values (p.id, -cost, 'hide_run', 'map ' || p_course || ', ' || p_days || ' days');
+  insert into public.run_hides (uid, course_id, until) values (p.id, p_course, t)
+  on conflict (uid, course_id) do update set until = excluded.until;
+  return jsonb_build_object('ok', true, 'until', (extract(epoch from t) * 1000)::bigint, 'cost', cost, 'balance', public._balance(p.id));
+end $$;
+-- show a hidden run again now (the days left aren't paid back)
+create or replace function public.show_run(p_course text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  delete from public.run_hides where uid = p.id and course_id = p_course;
+  return jsonb_build_object('ok', true);
 end $$;
 
 -- how many tracks a player may keep: 3, unless the admin set otherwise
@@ -2128,6 +2185,7 @@ begin
   delete from public.admin_notes where uid = p_uid; get diagnostics added = row_count; n := n + added;
   perform public._track_reset('u' || t.id, true) from public.user_tracks t where t.uid = p_uid;
   delete from public.track_limits where uid = p_uid;
+  delete from public.run_hides where uid = p_uid;
   delete from public.user_tracks where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admins where user_id = p_uid;
   -- (Supabase refuses any UPDATE or DELETE without a WHERE of its own)
@@ -2322,6 +2380,7 @@ alter table public.access_grants enable row level security;
 alter table public.access_tries enable row level security;
 alter table public.user_tracks enable row level security;
 alter table public.track_limits enable row level security;
+alter table public.run_hides enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -2336,18 +2395,23 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
     execute format('create policy admin_all on public.%I for all to anon, authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
   -- signed-in players may read the shared game data
-  foreach t in array array['profiles', 'bests', 'ghosts', 'car_customization', 'season_awards', 'races', 'race_entries', 'daily_results'] loop
+  foreach t in array array['profiles', 'bests', 'car_customization', 'season_awards', 'races', 'race_entries', 'daily_results', 'run_hides'] loop
     execute format('drop policy if exists player_read on public.%I', t);
     execute format('create policy player_read on public.%I for select to authenticated using (true)', t);
   end loop;
 end $$;
+
+-- recordings: everyone's, except a run someone paid to hide (its owner still sees it)
+drop policy if exists player_read on public.ghosts;
+create policy player_read on public.ghosts for select to authenticated
+  using (uid = auth.uid() or not exists (select 1 from public.run_hides h where h.uid = ghosts.uid and h.course_id = ghosts.course_id and h.until > now()));
 
 drop policy if exists own_admin_row on public.admins;
 create policy own_admin_row on public.admins for select to authenticated using (user_id = auth.uid());
