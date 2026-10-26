@@ -601,8 +601,9 @@ button.primary{background:var(--ink);color:#121417}
   <div class="modal">
     <h3>Unban <span id="unbanName"></span>?</h3>
     <p class="note" id="unbanWhy"></p>
-    <label class="opt"><input type="checkbox" id="unbanAll" checked><b>Also lift everything this ban blocked</b>
-      <small>Their computers, fingerprints and networks, and the other accounts banned with them.</small></label>
+    <label class="opt" id="unbanAllRow"><input type="checkbox" id="unbanAll" checked><b>Also unblock their computers</b>
+      <small>Every block on the computers, browsers and networks they use (whoever made it), and the other accounts banned with them.
+        Without this they stay locked out of setting times.</small></label>
     <div class="msg" id="unbanMsg"></div>
     <div class="row" style="margin-top:14px;justify-content:flex-end">
       <button id="btnUnbanCancel">Cancel</button>
@@ -874,11 +875,51 @@ async function loadAll() {
       const p = byUid[v.uid];
       if (p) { if (S2_IDS.has(v.courseId)) p.s2++; else if (/^c\d/.test(v.courseId)) p.s1++; }
     });
+    await markBlocked();
     renderPlayers();
     renderTimes();
     renderSeasons();
     say('pMsg', '');
   } catch (e) { say('pMsg', e.message, 'err'); }
+}
+
+/** Which players have their own computer, browser or network blocked:
+ *  their account may be fine, but they can't set times. */
+const KIND_WORD = { device: 'computer', fp: 'browser fingerprint', ip: 'network' };
+async function markBlocked() {
+  players.forEach((p) => { p.blocked = null; });
+  try {
+    for (const b of await rpc('admin_blocked_players')) if (byUid[b.uid]) byUid[b.uid].blocked = b.kinds;
+  } catch (e) {
+    // a database from before admin_blocked_players: the Security page's computer list says the same
+    try {
+      const s2 = await rpc('admin_security');
+      const byName = {};
+      players.forEach((p) => { byName[(p.displayName || '').toLowerCase()] = p; });
+      for (const d of s2.devices || []) {
+        if (!d.banned && !d.fp_banned) continue;
+        for (const n of d.names || []) {
+          const p = byName[String(n).toLowerCase()];
+          if (!p) continue;
+          const k = new Set(p.blocked || []);
+          if (d.banned) k.add('device');
+          if (d.fp_banned) k.add('fp');
+          p.blocked = [...k];
+        }
+      }
+    } catch (x) { /* no security data: nothing to mark */ }
+  }
+}
+/** the same, done by hand on a database from before admin_unblock_player */
+async function unblockByHand(p) {
+  const s2 = await rpc('admin_security');
+  let n = 0;
+  for (const d of s2.devices || []) {
+    if (!(d.names || []).some((x) => String(x).toLowerCase() === (p.displayName || '').toLowerCase())) continue;
+    if (d.banned) { await rpc('admin_unban', { p_kind: 'device', p_value: d.id }); n++; }
+    if (d.fp_banned && d.fp) { await rpc('admin_unban', { p_kind: 'fp', p_value: d.fp }); n++; }
+  }
+  return n;
 }
 
 /* After a single change, redraw from what is already loaded rather than
@@ -954,12 +995,14 @@ function renderPlayers() {
   for (const p of list) {
     const tr = document.createElement('tr');
     tr.className = 'click' + (p.banned ? ' banned' : '');
+    const blockedTxt = p.blocked ? 'Their ' + p.blocked.map((k) => KIND_WORD[k] || k).join(' and ') + (p.blocked.length > 1 ? ' are' : ' is') +
+      ' blocked, so their times don\'t count' : '';
     tr.innerHTML = '<td class="name"><b>' + esc(p.displayName || '—') + '</b>' +
       (p.realName ? ' <span class="real">' + esc(p.realName) + '</span>' : '') +
       '<br><span class="mono">' + esc(p.uid) + '</span></td>' +
-      '<td><span class="pill' + (p.banned ? ' on' : '') + '"' + (p.legacy && !p.banned ? ' title="Moved over from Firebase; ' +
-        'becomes theirs when they sign up again with this username"' : '') + '>' +
-        (p.banned ? 'banned' : p.legacy ? 'not back yet' : 'active') + '</span></td>' +
+      '<td><span class="pill' + (p.banned ? ' on' : p.blocked ? ' trm' : '') + '"' + (p.banned ? '' : p.blocked ? ' title="' + esc(blockedTxt) + '"'
+        : p.legacy ? ' title="Moved over from Firebase; becomes theirs when they sign up again with this username"' : '') + '>' +
+        (p.banned ? 'banned' : p.blocked ? 'computer blocked' : p.legacy ? 'not back yet' : 'active') + '</span></td>' +
       '<td class="mono r">' + fmtCredits(p.credits) + '</td><td class="mono r">' + p.s2 + ' / ' + S2.length + '</td>' +
       '<td class="mono r">' + p.runs + '</td><td class="mono" title="' + fmtWhen(p.lastMs) + '">' + ago(p.lastMs) + '</td>' +
       '<td>' + (trophyText(p.uid) || '<span class="mono">—</span>') + '</td><td class="r" style="white-space:nowrap"></td>';
@@ -973,7 +1016,11 @@ function renderPlayers() {
     btn('Name', '', () => setRealName(p));
     btn('Credits', '', () => setCredits(p));
     if (!p.legacy) btn('Password', '', () => setPassword(p));
-    btn(p.banned ? 'Unban…' : 'Ban…', p.banned ? '' : 'danger', () => (p.banned ? openUnban(p) : openBan(p)));
+    if (p.banned) btn('Unban…', '', () => openUnban(p));
+    else {
+      if (p.blocked) btn('Unblock…', 'primary', () => openUnban(p));
+      btn('Ban…', 'danger', () => openBan(p));
+    }
     btn('Delete', 'danger', () => openDelete(p));
     tr.addEventListener('click', () => showPlayer(p));
     tb.appendChild(tr);
@@ -998,15 +1045,17 @@ function showPlayer(p) {
     '<div><span>uid</span><b>' + esc(p.uid) + '</b></div><div><span>credits</span><b>' + fmtCredits(p.credits) + '</b></div>' +
     '<div><span>maps cleared</span><b>' + p.s2 + ' / ' + S2.length + '</b></div>' +
     '<div><span>attempts loaded</span><b>' + myRuns.length + '</b></div><div><span>finished</span><b>' + fin + '</b></div>' +
-    '<div><span>last seen</span><b>' + fmtWhen(p.lastMs) + '</b></div><div><span>status</span><b>' + (p.banned ? 'banned' : 'active') + '</b></div>' +
+    '<div><span>last seen</span><b>' + fmtWhen(p.lastMs) + '</b></div><div><span>status</span><b>' + (p.banned ? 'banned' : p.blocked ? 'computer blocked' : 'active') + '</b></div>' +
     '</div><div class="tableWrap"><table><thead><tr><th>Map</th><th class="r">Best</th><th class="r">Rank</th></tr></thead><tbody>' +
     rows + '</tbody></table></div>' +
     '<div class="row" style="margin-top:12px"><button class="small" id="pdRuns">See their runs</button>' +
-    (p.banned ? '<button class="small" id="pdBan">Unban…</button>' : '<button class="small danger" id="pdBan">Ban…</button>') + '</div>' +
+    (p.banned ? '<button class="small" id="pdBan">Unban…</button>' : (p.blocked ? '<button class="small primary" id="pdUnblock">Unblock…</button>' : '') +
+      '<button class="small danger" id="pdBan">Ban…</button>') + '</div>' +
     '<h2>Security</h2><div id="pdSec" class="mono">Loading their computers…</div>';
   el.classList.remove('hide');
   $('pdClose').addEventListener('click', () => el.classList.add('hide'));
   $('pdBan').addEventListener('click', () => (p.banned ? openUnban(p) : openBan(p)));
+  if ($('pdUnblock')) $('pdUnblock').addEventListener('click', () => openUnban(p));
   showLinks(p);
   $('pdRuns').addEventListener('click', () => { $('rfDriver').value = p.displayName || ''; location.hash = '#runs'; renderRuns(); });
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1137,11 +1186,20 @@ $('btnBanGo').addEventListener('click', async () => {
 let unbanTarget = null;
 async function openUnban(p) {
   unbanTarget = p;
+  const only = !p.banned;                       // the account is fine: just their computer
+  $('unbanModal').querySelector('h3').firstChild.textContent = only ? 'Unblock ' : 'Unban ';
+  $('btnUnbanGo').textContent = only ? 'Unblock' : 'Unban';
   $('unbanName').textContent = p.displayName || p.uid;
   $('unbanAll').checked = true;
-  $('unbanWhy').textContent = 'They can play again straight away.';
+  $('unbanAllRow').hidden = only;
+  $('unbanWhy').textContent = only
+    ? 'Their account isn\'t banned, but their ' + (p.blocked || ['device']).map((k) => KIND_WORD[k] || k).join(' and ') +
+      ((p.blocked || []).length > 1 ? ' are' : ' is') + ' blocked, so they can\'t set times there. Unblocking lifts every block on the ' +
+      'computers, browsers and networks they use. They can play again as soon as they reload the game.'
+    : 'They can play again straight away.';
   say('unbanMsg', '');
   $('unbanModal').classList.remove('hide');
+  if (only) return;
   try {
     const L = await rpc('admin_player_links', { p_uid: p.uid });
     if (unbanTarget === p && L.ban) $('unbanWhy').textContent = 'Banned ' + (L.ban.until ? 'until ' + whenText(L.ban.until) : 'for good') +
@@ -1153,13 +1211,24 @@ $('btnUnbanGo').addEventListener('click', async () => {
   const p = unbanTarget;
   if (!p) return;
   $('btnUnbanGo').disabled = true;
+  const only = !p.banned, all = only || $('unbanAll').checked;
+  const old = (e) => /PGRST202|admin_unban_player|admin_unblock_player|function/i.test(e.message);
   try {
-    try { await rpc('admin_unban_player', { p_uid: p.uid, p_all: $('unbanAll').checked }); }
-    catch (e) { if (/PGRST202|admin_unban_player/i.test(e.message)) await rpc('admin_set_banned', { p_uid: p.uid, p_banned: false }); else throw e; }
+    if (!only) {
+      try { await rpc('admin_unban_player', { p_uid: p.uid, p_all: all }); }
+      catch (e) { if (old(e)) await rpc('admin_set_banned', { p_uid: p.uid, p_banned: false }); else throw e; }
+    }
+    // every block on their own computers, whoever made it
+    if (all) {
+      try { await rpc('admin_unblock_player', { p_uid: p.uid }); }
+      catch (e) { if (old(e)) await unblockByHand(p); else throw e; }
+    }
     $('unbanModal').classList.add('hide');
     unbanTarget = null;
     await loadAll();
-    say('pMsg', (p.displayName || 'Player') + ' is active again.', 'ok');
+    const now = byUid[p.uid];
+    say('pMsg', (p.displayName || 'Player') + (now && now.blocked ? ' is unbanned, but something they use is still blocked: see Security.'
+      : ' can set times again' + (only ? ' (once they reload the game).' : '.')), now && now.blocked ? 'err' : 'ok');
     if (!$('playerDetail').classList.contains('hide') && byUid[p.uid]) showPlayer(byUid[p.uid]);
     if (sec) loadSecurity();
   } catch (e) { say('unbanMsg', e.message, 'err'); }

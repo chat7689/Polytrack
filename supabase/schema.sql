@@ -1749,6 +1749,43 @@ begin
   return jsonb_build_object('devices', case when p_devices then cardinality(devs) else 0 end, 'fps', case when p_fps then cardinality(fps) else 0 end,
     'ips', case when p_ips then cardinality(ips) else 0 end, 'alts', case when p_alts then cardinality(alts) else 0 end);
 end $$;
+-- a player's own computers, browser fingerprints and networks, as the
+-- (kind, value) pairs a block is made of
+create or replace function public._player_keys(p_uid uuid) returns table (kind text, value text)
+language sql stable security definer set search_path = public, pg_temp as $$
+  with d as (
+    select device_id as id from public.device_accounts where uid = p_uid
+    union select device_id from public.signup_log where uid = p_uid and device_id is not null)
+  select 'device'::text, id from d
+  union select 'fp', fp from public.devices where id in (select id from d) and coalesce(fp, '') <> ''
+  union select 'fp', fp from public.signup_log where uid = p_uid and coalesce(fp, '') <> ''
+  union select 'ip', last_ip from public.devices where id in (select id from d) and coalesce(last_ip, '') <> ''
+$$;
+-- players whose own computer, browser or network is blocked right now
+-- (they can't set times even when their account isn't banned)
+create or replace function public.admin_blocked_players() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(jsonb_build_object('uid', x.id, 'kinds', x.kinds))
+    from (select p.id, (select jsonb_agg(distinct k.kind) from public._player_keys(p.id) k
+                        join public.bans b on b.kind = k.kind and b.value = k.value and (b.until is null or b.until > now())) as kinds
+          from public.profiles p) x
+    where x.kinds is not null), '[]'::jsonb);
+end $$;
+-- lift every block on a player's own computers, browsers and networks,
+-- whoever's ban (or hand) made it; returns how many were lifted
+create or replace function public.admin_unblock_player(p_uid uuid) returns integer
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare n integer;
+begin
+  perform public._require_admin();
+  delete from public.bans b using public._player_keys(p_uid) k where b.kind = k.kind and b.value = k.value;
+  get diagnostics n = row_count;
+  perform public._log('unblock', (select display_name from public.profiles where id = p_uid),
+    n || case when n = 1 then ' block' else ' blocks' end || ' on their computers lifted');
+  return n;
+end $$;
 -- undo a player's ban, and (p_all) every block and account ban it made
 create or replace function public.admin_unban_player(p_uid uuid, p_all boolean) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
@@ -1761,6 +1798,7 @@ begin
   delete from public.account_bans where uid = p_uid;
   if p_all then
     delete from public.bans where from_uid = p_uid;
+    delete from public.bans b using public._player_keys(p_uid) k where b.kind = k.kind and b.value = k.value;
     for u in select uid from public.account_bans where from_uid = p_uid loop
       update public.profiles set banned = false where id = u;
       update public.bests set banned = false where uid = u;
@@ -2797,7 +2835,7 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
   public._track_json(public.user_tracks) to anon;
 grant execute on function public.name_check(text), public.device_status(text, text), public.admin_ban_player(uuid, text, integer, boolean, boolean, boolean, boolean),
   public.admin_unban_player(uuid, boolean), public.admin_player_links(uuid), public.admin_actions(integer), public.admin_evaders(),
-  public.admin_security_events(integer), public.admin_set_signups(boolean) to anon;
+  public.admin_security_events(integer), public.admin_set_signups(boolean), public.admin_blocked_players(), public.admin_unblock_player(uuid) to anon;
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
@@ -2805,6 +2843,7 @@ revoke execute on function public.close_season(text, text[], text[]) from public
 revoke execute on function public._day_runs(uuid) from public, anon, authenticated;
 revoke execute on function public._track_reset(text, boolean) from public, anon, authenticated;
 revoke execute on function public._log(text, text, text) from public, anon, authenticated;
+revoke execute on function public._player_keys(uuid) from public, anon, authenticated;
 revoke execute on function public._sec_event(text, text, text, text, text, text) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 

@@ -94,6 +94,28 @@ await t.admin('select public.admin_delete_player($1)', [t.users.Golf]);
 ok(!(await profile('Golf')) && !(await login('Golf')), 'deleting an account removes the player and their login');
 ok((await signup('Hotel', DEV(4), 'fresh', '4.4.4.4')).error === 'blocked', 'and the computer it was on still can\'t make accounts');
 
+// a player whose account is fine but whose computer is blocked (by hand,
+// or by somebody else's ban): the admin sees it and can unblock them
+ok((await signup('Mike', DEV('c'), 'fp-mike', '12.0.0.1')).ok, 'a player signs up');
+await open('Mike');
+await t.admin("select public.admin_ban('device', $1, 'by hand')", [DEV('c')]);
+await t.admin("select public.admin_ban('fp', 'fp-mike', 'by hand')");
+ok((await run('Mike', DEV('c'), 'fp-mike', '12.0.0.1')).error === 'blocked', 'their computer is blocked, so their times don\'t count');
+const bl = (await t.admin('select public.admin_blocked_players() as j')).rows[0].j;
+const mine = bl.find((x) => x.uid === t.users.Mike);
+ok(mine && mine.kinds.includes('device') && mine.kinds.includes('fp'), 'the admin\'s player list knows they are blocked, and how: ' + JSON.stringify(mine));
+ok(t.users.Charlie && !bl.some((x) => x.uid === t.users.Charlie), 'players who aren\'t blocked aren\'t listed');
+ok((await t.admin('select public.admin_unblock_player($1) as n', [t.users.Mike])).rows[0].n === 2, 'Unblock lifts both blocks on their computer');
+ok((await run('Mike', DEV('c'), 'fp-mike', '12.0.0.1')).ok, 'and their times count again');
+ok(!(await t.admin('select public.admin_blocked_players() as j')).rows[0].j.some((x) => x.uid === t.users.Mike), 'and they are off the blocked list');
+// unban everything also lifts blocks on their own computer that another ban made
+await t.admin("select public.admin_ban('device', $1, 'by hand again')", [DEV('c')]);
+await t.admin('select public.admin_set_banned($1, true)', [t.users.Mike]);
+await t.admin('select public.admin_unban_player($1, true)', [t.users.Mike]);
+ok((await run('Mike', DEV('c'), 'fp-mike', '12.0.0.1')).ok, 'Unban with "everything" frees their computer too, whoever blocked it');
+ok(/admin/i.test(await t.err('Mike', 'select public.admin_unblock_player($1)', [t.users.Mike])), 'players can\'t unblock themselves');
+ok(/permission denied/.test(await t.err('Mike', 'select * from public._player_keys($1)', [t.users.Mike])), 'nor list anyone\'s computers');
+
 // the security feed: what blocked computers tried, and look-alikes
 const evs = (await t.admin('select public.admin_security_events(100) as j')).rows[0].j;
 const kinds = new Set(evs.map((e) => e.kind));
