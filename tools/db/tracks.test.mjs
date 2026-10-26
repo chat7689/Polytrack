@@ -81,4 +81,26 @@ const e = await save('Builder', null, 'Room again', true, [['S', 40]]);
 ok(e.ok, 'which makes room for another');
 await t.admin('select public.admin_delete_track($1)', [e.id]);
 ok((await t.one('Builder', 'select public.my_tracks() as j')).j.length === 2, 'the admin can delete any track');
+
+// today's pieces (a width on each) save too
+const v2 = await save('Builder', null, "Malon's track", true, [['S', 80, 15], ['X', 30, 15], ['N', 40, 6], ['W', 40, 40], ['T', 60, -90, -15, 0, 18], ['S', 60, 15]]);
+ok(v2.ok, 'a track with super strips, a bottleneck, a wide area and an off-camber turn saves ' + JSON.stringify(v2));
+
+// the admin can let a player keep more tracks
+await t.mkUser('Big');
+for (let k = 0; k < 3; k++) await save('Big', null, 'Big ' + (k + 1), false, [['S', 50, 15]]);
+ok(!(await save('Big', null, 'Big 4', false, [['S', 50, 15]])).ok, 'three tracks is the usual most');
+ok(/admins only|permission denied/i.test(await t.err('Big', "select public.admin_set_track_limit(auth.uid(), 16)")), 'players cannot raise their own limit');
+const bigId = (await t.owner("select id from public.profiles where display_name = 'Big'")).rows[0].id;
+await t.admin('select public.admin_set_track_limit($1, 16)', [bigId]);
+ok((await t.one('Big', 'select public.my_track_limit() as j')).j === 16, 'the admin set Big to 16');
+for (let k = 4; k <= 16; k++) await save('Big', null, 'Big ' + k, false, [['S', 50, 15]]);
+ok((await t.one('Big', 'select public.my_tracks() as j')).j.length === 16, 'Big keeps 16 tracks');
+const over = await save('Big', null, 'Big 17', false, [['S', 50, 15]]);
+ok(!over.ok && /16 tracks/.test(over.error), 'but not 17: ' + over.error);
+const lim = (await t.admin('select public.admin_track_limits() as j')).rows[0].j;
+ok(lim.length === 1 && lim[0].name === 'Big' && lim[0].max === 16 && lim[0].tracks === 16, 'the admin page lists it ' + JSON.stringify(lim));
+await t.admin('select public.admin_set_track_limit($1, 3)', [bigId]);
+ok((await t.admin('select public.admin_track_limits() as j')).rows[0].j.length === 0 && (await t.one('Big', 'select public.my_track_limit() as j')).j === 3,
+  'setting 3 puts them back to normal (their tracks stay)');
 done();

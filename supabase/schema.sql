@@ -1608,6 +1608,12 @@ create table if not exists public.user_tracks (
   updated_at timestamptz not null default now()
 );
 create index if not exists user_tracks_uid on public.user_tracks (uid);
+-- players the admin lets keep more (or fewer) than 3 tracks, up to 16
+create table if not exists public.track_limits (
+  uid uuid primary key,
+  max_tracks integer not null check (max_tracks between 1 and 16),
+  set_at timestamptz not null default now()
+);
 create index if not exists user_tracks_public on public.user_tracks (is_public, updated_at desc);
 
 -- The road a track's pieces make, walked the way TrackBuilder walks it (keep
@@ -1745,6 +1751,37 @@ begin
     'len', round(cum)::int, 'gate_r', greatest(wl / 2.0 + 5, 9), 'cps', to_jsonb(cps));
 end $$;
 
+-- how many tracks a player may keep: 3, unless the admin set otherwise
+create or replace function public._track_limit(p_uid uuid) returns integer
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select max_tracks from public.track_limits where uid = p_uid), 3)
+$$;
+create or replace function public.my_track_limit() returns integer
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  return public._track_limit(p.id);
+end $$;
+-- the admin page: who has a different limit, and setting one (3 clears it)
+create or replace function public.admin_track_limits() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(jsonb_build_object('uid', l.uid, 'name', pr.display_name, 'max', l.max_tracks,
+      'tracks', (select count(*) from public.user_tracks t where t.uid = l.uid)) order by pr.display_name)
+    from public.track_limits l left join public.profiles pr on pr.id = l.uid), '[]'::jsonb);
+end $$;
+create or replace function public.admin_set_track_limit(p_uid uuid, p_max integer) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  if p_max is null or p_max = 3 then delete from public.track_limits where uid = p_uid; return; end if;
+  if p_max not between 1 and 16 then raise exception 'A player can keep 1 to 16 tracks.' using errcode = 'P0001'; end if;
+  if not exists (select 1 from public.profiles where id = p_uid) then raise exception 'No such player.' using errcode = 'P0001'; end if;
+  insert into public.track_limits (uid, max_tracks) values (p_uid, p_max)
+  on conflict (uid) do update set max_tracks = excluded.max_tracks, set_at = now();
+end $$;
+
 -- a track's map id, its leaderboard and rules go when it changes or goes
 create or replace function public._track_reset(p_course text, p_rules boolean) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
@@ -1769,8 +1806,8 @@ begin
   if not (g ->> 'ok')::boolean then return jsonb_build_object('ok', false, 'error', g ->> 'error'); end if;
   perform pg_advisory_xact_lock(hashtext('tracks:' || p.id::text));
   if p_id is null then
-    if (select count(*) from public.user_tracks where uid = p.id) >= 3 then
-      return jsonb_build_object('ok', false, 'error', 'You have 3 tracks already. Delete one to make another.');
+    if (select count(*) from public.user_tracks where uid = p.id) >= public._track_limit(p.id) then
+      return jsonb_build_object('ok', false, 'error', 'You have ' || public._track_limit(p.id) || ' tracks already, the most you can keep. Delete one to make another.');
     end if;
     insert into public.user_tracks (uid, name, is_public, width, pieces, len_m)
       values (p.id, nm, coalesce(p_public, false), p_width, p_pieces, (g ->> 'len')::int) returning * into t;
@@ -2065,6 +2102,7 @@ begin
   delete from public.car_customization where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admin_notes where uid = p_uid; get diagnostics added = row_count; n := n + added;
   perform public._track_reset('u' || t.id, true) from public.user_tracks t where t.uid = p_uid;
+  delete from public.track_limits where uid = p_uid;
   delete from public.user_tracks where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admins where user_id = p_uid;
   -- (Supabase refuses any UPDATE or DELETE without a WHERE of its own)
@@ -2258,6 +2296,7 @@ alter table public.access_codes enable row level security;
 alter table public.access_grants enable row level security;
 alter table public.access_tries enable row level security;
 alter table public.user_tracks enable row level security;
+alter table public.track_limits enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -2272,7 +2311,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -2338,7 +2377,7 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
   public.admin_import(jsonb), public.admin_security(), public.admin_ban(text, text, text), public.admin_unban(text, text),
   public.admin_clear_flags(uuid, text), public.admin_remove_best(uuid, text), public.admin_release_daily(text, boolean),
   public.admin_set_captcha(text), public._client_ip(), public.admin_make_access_code(text, timestamptz),
-  public.admin_access_codes(), public.admin_delete_access_code(text), public.admin_tracks(), public.admin_delete_track(bigint),
+  public.admin_access_codes(), public.admin_delete_access_code(text), public.admin_tracks(), public.admin_delete_track(bigint), public.admin_track_limits(), public.admin_set_track_limit(uuid, integer),
   public._track_json(public.user_tracks) to anon;
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly

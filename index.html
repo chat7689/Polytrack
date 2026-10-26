@@ -9698,7 +9698,7 @@ const Builder3D = {
  */
 const Tracks = {
   mine: [], pub: [], loaded: false, level: null, draft: null, orig: '', sel: -1, kind: 'S', busy: false,
-  testRev: '', testBest: 0, testedRev: '', savedRev: '', seen: new Set(), shown: 48, view: '3d', t3d: 0,
+  testRev: '', testBest: 0, testedRev: '', savedRev: '', seen: new Set(), shown: 48, view: '3d', t3d: 0, limit: 3,
   opt: { S: 60, R: 60, A: 90, dir: 1, bank: 10, ice: 0, B: 30, X: 30, H: 6, run: 40, up: 1, C: 5, N: 3, RH: 0.6, J: 2, w: 15, nw: 6, ww: 30, NL: 40, WL: 40 },
   TYPES: [['S', 'Straight'], ['T', 'Turn'], ['B', 'Speed strip'], ['X', 'Super strip'], ['H', 'Hill'], ['C', 'Crest'], ['R', 'Rollers'],
     ['J', 'Jump'], ['N', 'Bottleneck'], ['W', 'Wide area']],
@@ -9718,8 +9718,9 @@ const Tracks = {
   async load() {
     $('tkMsg').textContent = '';
     try {
-      const [m, p] = await Promise.all([Cloud.rpc('my_tracks'), Cloud.rpc('public_tracks')]);
+      const [m, p, lim] = await Promise.all([Cloud.rpc('my_tracks'), Cloud.rpc('public_tracks'), Cloud.rpc('my_track_limit').catch(() => 3)]);
       this.mine = m || []; this.pub = p || [];
+      this.limit = Number(lim) || 3;              // 3, unless the admin gave this player more
     } catch (e) {
       $('tkMsg').textContent = /my_tracks|public_tracks|PGRST202|function/i.test((e && e.message) || '')
         ? 'Player tracks aren\'t switched on yet. Try again later.' : Cloud.errText(e);
@@ -9750,9 +9751,9 @@ const Tracks = {
   },
   render() {
     const f = ($('tkFind').value || '').trim().toLowerCase(), me = Cloud.user && Cloud.user.uid;
-    $('tkMineN').textContent = this.loaded ? this.mine.length + ' of 3' : '';
+    $('tkMineN').textContent = this.loaded ? this.mine.length + ' of ' + this.limit : '';
     $('tkMine').innerHTML = this.mine.map((t) => this.card(t, true)).join('') +
-      (this.loaded && this.mine.length < 3 ? '<button class="tkNew" id="bTkNew"><b>+</b><span>Build a new track</span></button>' : '');
+      (this.loaded && this.mine.length < this.limit ? '<button class="tkNew" id="bTkNew"><b>+</b><span>Build a new track</span></button>' : '');
     const list = this.pub.filter((t) => t.uid !== me && (!f || (t.name + ' ' + (t.author || '')).toLowerCase().includes(f)));
     $('tkPublic').innerHTML = list.slice(0, this.shown).map((t) => this.card(t, false)).join('') ||
       '<p class="dNote">' + (!this.loaded ? 'Loading…' : f ? 'No public track matches.' : 'No public tracks from anyone else yet. Build one and make it public!') + '</p>';
@@ -9824,7 +9825,7 @@ const Tracks = {
   HINTS: { S: 'Flat, straight road', T: 'Left or right, any size', B: 'A push forward', X: 'Three times the push', H: 'Up or down',
     C: 'A bump to get light on', R: 'A row of bumps', J: 'Fly a gap', N: 'The road squeezes in', W: 'A wide open area' },
   edit(t) {
-    if (!t && this.mine.length >= 3) { UI.toast('You have 3 tracks already. Delete one to make another.'); return; }
+    if (!t && this.mine.length >= this.limit) { UI.toast('You have ' + this.limit + ' tracks already. Delete one to make another.'); return; }
     // pieces in full form (older tracks were saved without widths); the
     // saved form is kept to send back unchanged when only the name changes
     this.origPieces = t && t.id ? t.pieces : null;
@@ -9833,7 +9834,7 @@ const Tracks = {
       : { id: null, name: '', pub: true, w: 15, pieces: [['S', 80, 15]] };
     this.origNorm = this.origPieces ? JSON.stringify(this.draft.pieces) : '';
     this.orig = this.stamp();
-    this.savedRev = t && t.id ? this.rev() : '';
+    this.savedRev = t && t.id && t.pub ? this.rev() : '';
     this.sel = this.draft.pieces.length - 1;
     this.testRev = ''; this.testedRev = '';
     this.past = []; this.future = [];
@@ -9962,8 +9963,8 @@ const Tracks = {
     $('bdStats').innerHTML = c.ok ? '<span><b>' + (c.len / 1000).toFixed(2) + '</b> km</span><span><b>' + n + '</b> ' +
       (n === 1 ? 'piece' : 'pieces') + '</span><span><b>' + this.widths() + '</b> m wide</span>' : '';
     $('bdTest').disabled = !c.ok;
-    $('bdSave').disabled = !c.ok || this.busy || !this.driven();
-    $('bdHint').textContent = c.ok && !this.driven() ? 'Finish a test drive of this version to save it.' : '';
+    $('bdSave').disabled = !c.ok || this.busy;
+    $('bdHint').textContent = c.ok && !this.driven() && this.draft.pub ? 'Not test-driven yet: it saves as private until a test drive reaches the finish.' : '';
     $('bdUp').disabled = this.sel <= 0;
     $('bdDown').disabled = this.sel < 0 || this.sel >= n - 1;
     $('bdDel').disabled = $('bdDup').disabled = $('bdReplace').disabled = this.sel < 0;
@@ -10067,7 +10068,17 @@ const Tracks = {
     this.syncW();
     const d = this.draft, c = TrackKit.check(d);
     if (!c.ok) { $('bdMsg').textContent = c.error; return; }
-    if (!this.driven()) { $('bdMsg').textContent = 'Finish a test drive of this version first.'; return; }
+    // no name yet: one is made up (the server wants 3 to 30 letters, numbers and spaces)
+    if (!d.name) {
+      d.name = ((Cloud.name() || 'My') + '\'s track ' + (this.mine.length + 1)).replace(/[^A-Za-z0-9 '!?.,&-]/g, '').slice(0, 30);
+      $('bdName').value = d.name;
+    }
+    if (!/^[A-Za-z0-9][A-Za-z0-9 '!?.,&-]{1,28}[A-Za-z0-9!?.']$/.test(d.name)) {
+      $('bdMsg').textContent = 'The name needs 3 to 30 letters, numbers and spaces (and \' ! ? . , & -).';
+      return;
+    }
+    // a road nobody has driven to the finish yet saves as private
+    const driven = this.driven(), pub = d.pub && driven;
     const same = !!this.origNorm && JSON.stringify(d.pieces) === this.origNorm;
     if (d.id && !same && !confirm('You changed the road, so this track\'s leaderboard starts again from zero. Save it?')) return;
     this.busy = true;
@@ -10075,19 +10086,21 @@ const Tracks = {
     $('bdMsg').textContent = 'Saving…';
     try {
       // an unchanged road goes back exactly as it was saved, so its times stay
-      const r = await Cloud.rpc('save_track', { p_id: d.id, p_name: d.name, p_public: d.pub, p_width: same && this.origPieces ? this.origW : d.w,
+      const r = await Cloud.rpc('save_track', { p_id: d.id, p_name: d.name, p_public: pub, p_width: same && this.origPieces ? this.origW : d.w,
         p_pieces: same && this.origPieces ? this.origPieces : d.pieces });
       if (!r || !r.ok) { $('bdMsg').textContent = (r && r.error) || 'Couldn\'t save it.'; return; }
       if (r.reset) { delete Records.data.ghosts[r.course]; delete Records.data.boards[r.course]; delete Records.data.myBests[r.course]; }
       d.id = r.id;
       if (!same || !this.origPieces) { this.origPieces = d.pieces.map((p) => p.slice()); this.origW = d.w; this.origNorm = JSON.stringify(d.pieces); }
       this.orig = this.stamp();
-      this.savedRev = this.rev();
+      if (driven) this.savedRev = this.rev();
       $('bdMsg').textContent = '';
-      UI.toast('Saved "' + d.name + '"' + (d.pub ? ': everyone can drive it now.' : '. It\'s private: only you can see it.'));
+      UI.toast('Saved "' + d.name + '"' + (pub ? ': everyone can drive it now.'
+        : d.pub ? ' as private. Finish a test drive and save again to make it public.' : '. It\'s private: only you can see it.'));
       this.load();
     } catch (e) {
-      $('bdMsg').textContent = /save_track|PGRST202|function/i.test((e && e.message) || '') ? 'Player tracks aren\'t switched on yet. Try again later.' : Cloud.errText(e);
+      $('bdMsg').textContent = /save_track|PGRST202|function/i.test((e && e.message) || '') ? 'Saving tracks isn\'t switched on yet (the game\'s database needs updating). Try again later.'
+        : 'Couldn\'t save: ' + Cloud.errText(e);
     } finally {
       this.busy = false;
       this.renderBuilder();
@@ -10135,7 +10148,7 @@ const Tracks = {
   },
   /** from the track list: a new track from track data */
   importNew() {
-    if (this.mine.length >= 3) { UI.toast('You have 3 tracks already. Delete one to make another.'); return; }
+    if (this.mine.length >= this.limit) { UI.toast('You have ' + this.limit + ' tracks already. Delete one to make another.'); return; }
     this.edit(null);
     this.io('import');
   },

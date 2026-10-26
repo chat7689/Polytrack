@@ -400,6 +400,22 @@ button.primary{background:var(--ink);color:#121417}
         <button id="btnTrkReload">Reload</button>
       </div>
       <div class="msg" id="trkMsg"></div>
+      <h2>Extra track slots</h2>
+      <div class="card">
+        <p class="note">Every player can keep 3 tracks. Give someone more (up to 16), or fewer. Setting 3 puts them back to normal;
+          their tracks are never deleted by this.</p>
+        <div class="row">
+          <div><label for="limName">Player</label><input type="text" id="limName" list="limPlayers" placeholder="Their game name" autocomplete="off"></div>
+          <div><label for="limMax">Tracks they can keep</label><select id="limMax"></select></div>
+          <button class="primary" id="btnLimSet">Set</button>
+        </div>
+        <datalist id="limPlayers"></datalist>
+        <table style="margin-top:14px">
+          <thead><tr><th>Player</th><th class="r">Can keep</th><th class="r">Has</th><th></th></tr></thead>
+          <tbody id="limList"></tbody>
+        </table>
+      </div>
+      <h2>Every track</h2>
       <div class="card tableWrap">
         <div class="row" style="margin-bottom:10px"><input type="text" id="trkFind" placeholder="Find a track or a player"></div>
         <table>
@@ -1426,6 +1442,7 @@ async function loadTracks() {
     trackList = await rpc('admin_tracks') || [];
     say('trkMsg', '');
     renderTracks();
+    await loadLimits();
   } catch (e) {
     say('trkMsg', /admin_tracks|PGRST202|function/i.test(e.message) ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message, 'err');
   }
@@ -1441,8 +1458,39 @@ function renderTracks() {
     '<tr><td colspan="9" class="empty">' + (trackList.length ? 'No track matches.' : 'No player tracks yet.') + '</td></tr>';
 }
 $('btnTrkReload').addEventListener('click', loadTracks);
+/* players allowed more (or fewer) than 3 tracks */
+$('limMax').innerHTML = Array.from({ length: 16 }, (_, i) => '<option value="' + (i + 1) + '"' + (i === 15 ? ' selected' : '') + '>' + (i + 1) + (i === 2 ? ' (normal)' : '') + '</option>').join('');
+async function loadLimits() {
+  $('limPlayers').innerHTML = players.map((p) => '<option value="' + esc(p.displayName) + '">').join('');
+  try {
+    const list = await rpc('admin_track_limits') || [];
+    $('limList').innerHTML = list.map((l) => '<tr><td class="name"><b>' + esc(l.name || '—') + '</b>' + realTag(l.uid) + '</td><td class="mono r">' + l.max +
+      '</td><td class="mono r">' + l.tracks + '</td><td class="r"><button class="small" data-act="limreset" data-uid="' + esc(l.uid) + '" data-name="' + esc(l.name || '') +
+      '">Back to 3</button></td></tr>').join('') || '<tr><td colspan="4" class="empty">Everyone has the normal 3.</td></tr>';
+  } catch (e) {
+    $('limList').innerHTML = '<tr><td colspan="4" class="empty">' + esc(/admin_track_limits|PGRST202|function/i.test(e.message)
+      ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message) + '</td></tr>';
+  }
+}
+$('btnLimSet').addEventListener('click', async () => {
+  const name = $('limName').value.trim().toLowerCase();
+  const p = players.find((x) => (x.displayName || '').toLowerCase() === name);
+  if (!p) { say('trkMsg', 'No player called "' + $('limName').value.trim() + '". Pick one from the list.', 'err'); return; }
+  try {
+    await rpc('admin_set_track_limit', { p_uid: p.uid, p_max: Number($('limMax').value) });
+    $('limName').value = '';
+    say('trkMsg', p.displayName + ' can now keep ' + $('limMax').value + ' tracks.', 'ok');
+    await loadLimits();
+  } catch (e) { say('trkMsg', e.message, 'err'); }
+});
 $('trkFind').addEventListener('input', renderTracks);
 $('page-tracks').addEventListener('click', async (ev) => {
+  const lr = ev.target.closest('button[data-act="limreset"]');
+  if (lr) {
+    try { await rpc('admin_set_track_limit', { p_uid: lr.dataset.uid, p_max: 3 }); say('trkMsg', (lr.dataset.name || 'They') + ' is back to 3 tracks.', 'ok'); await loadLimits(); }
+    catch (e) { say('trkMsg', e.message, 'err'); }
+    return;
+  }
   const b = ev.target.closest('button[data-act="trkdel"]');
   if (!b) return;
   if (!confirm('Delete the track "' + b.dataset.name + '"? Its leaderboard goes too.')) return;
