@@ -7720,6 +7720,7 @@ const TrackKit = {
   RISES: [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20],
   RUNS: [20, 30, 40, 50, 60, 80, 100],
   CRESTS: [[3, 'Gentle'], [5, 'Medium'], [7, 'Sharp'], [9, 'Very sharp']],
+  CREST_H: { 3: 0.6, 5: 1, 7: 1.5, 9: 2 },     // each crest's height in metres
   ROLLERS: [1, 2, 3, 4, 5, 6],
   ROLLER_H: [[0.3, 'Small'], [0.6, 'Medium'], [0.9, 'Big'], [1.2, 'Huge']],
   JUMPS: [[1, 'Hop'], [2, 'Medium jump'], [3, 'Big jump'], [4, 'Tabletop']],
@@ -7787,7 +7788,9 @@ const TrackKit = {
       case 'B': b.strip(p[1], o); break;
       case 'X': b.strip(p[1], { w, boost: 3 }); break;
       case 'H': b.slope(p[2], p[1], o); break;
-      case 'C': b.crest(26, p[1], o); break;
+      // a crest is one smooth wave 26 m long, kept out of the road smoothing
+      // (which used to flatten it to a few centimetres): fast over it, the car flies
+      case 'C': b.rollers(1, 26, this.CREST_H[p[1]] || 1, o); break;
       case 'R': b.rollers(p[1], 22, p[2], o); break;
       case 'J':
         if (p[1] === 1) { b.slope(10, 0.7, o); b.ramp(6, 6, o); b.gap(7, -0.6); b.straight(14, { w: w + 1 }); }
@@ -9870,7 +9873,7 @@ const Tracks = {
   },
   icon(k) { return '<svg class="pcIc" viewBox="0 0 48 32" aria-hidden="true">' + (this.ICONS[k] || '') + '</svg>'; },
   HINTS: { S: 'Flat, straight road', T: 'Left or right, any size', B: 'A push forward', X: 'Three times the push', H: 'Up or down',
-    C: 'A bump to get light on', R: 'A row of bumps', J: 'Fly a gap', N: 'The road squeezes in', W: 'A wide open area' },
+    C: 'A hump: fast over it and you fly', R: 'A row of bumps', J: 'Fly a gap', N: 'The road squeezes in', W: 'A wide open area' },
   edit(t) {
     if (!t && this.mine.length >= this.limit) { UI.toast('You have ' + this.limit + ' tracks already. Delete one to make another.'); return; }
     // pieces in full form (older tracks were saved without widths); the
