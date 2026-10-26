@@ -1799,6 +1799,59 @@ button.danger-outline{background:none}
 .youCard div{padding:9px 2px 8px}
 .youCard .perfRow{padding:9px 0 0}
 #driverRow{margin-top:12px}
+
+/* ---------- the track builder ---------- */
+.builderPanel{width:min(1500px,97vw);max-height:96vh;padding:20px 26px 18px}
+.bdTop{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--rule-2)}
+.bdTop .bdName input{font-size:18px;margin-top:4px;max-width:440px;background:none;border-color:transparent;padding-left:0}
+.bdTop .bdName input:hover,.bdTop .bdName input:focus{border-color:var(--rule);padding-left:10px}
+.bdTools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bdGrid{grid-template-columns:minmax(0,1.05fr) minmax(0,1.45fr) minmax(0,.95fr);gap:22px;margin-top:16px}
+@media(max-width:1180px){.bdGrid{gap:14px;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,.9fr)}.bdCards{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .bdOpt{flex-wrap:wrap}.bdOpt select{flex:1 1 120px}.builderPanel{padding:16px 18px 14px}}
+@media(max-height:820px){.pcCard{padding:5px 3px 5px;gap:2px}.pcIc{width:34px;height:22px}.bdCards{margin-bottom:10px}
+  .bdOpts{gap:5px}.bdOpt select{padding:5px 8px}.bdPiece{margin:10px 0 8px}.bdTop{padding-bottom:10px}.bdGrid{margin-top:12px}
+  .bdFoot{margin-top:10px;padding-top:10px}.bd3dWrap,.miniMap.bdMap{height:min(48vh,500px)}.bdOpts .dNote{display:none}}
+@media(max-width:900px){.bdGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.bdView{grid-column:1/-1;order:-1}}
+@media(max-width:640px){.bdGrid{grid-template-columns:minmax(0,1fr)}}
+.bdGrid h3{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:10px}
+.bdCards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:14px}
+@media(max-width:1300px){.bdCards{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.pcCard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 7px;min-width:0;background:#16181c;
+  border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--dim)}
+.pcCard b{font-size:11.5px;font-weight:500;line-height:1.15;text-align:center;color:var(--ink)}
+.pcCard:hover{background:#1c1f23;border-color:rgba(255,255,255,.14)}
+.pcCard.on{border-color:var(--ember);background:#1d1a18;color:var(--ink)}
+.pcIc{width:42px;height:28px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pcIc .i2{stroke-width:1.4;opacity:.45}
+.pcIc .iB{stroke:#4fc6e6}
+.pcIc .iX{stroke:#4c6fe8;stroke-width:2.4}
+.bdOpts{gap:7px}
+.bdOpt select{flex:0 1 190px}
+.bdPiece{margin:14px 0 10px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bdAddRow{display:flex;gap:6px;flex-wrap:wrap}
+.bdAddRow button{flex:1 1 0}
+.bd3dWrap{aspect-ratio:auto;height:min(52vh,520px);border-radius:6px}
+.miniMap.bdMap{aspect-ratio:auto;height:min(52vh,520px)}
+.mmHi{fill:none;stroke:var(--ember);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.bdList{max-height:min(48vh,480px)}
+.bdList li{align-items:center;gap:8px;padding:5px 8px}
+.bdList li .pcIc{width:30px;height:20px;color:var(--dim)}
+.bdList li.on{border-color:var(--ember);background:#1d1a18}
+.bdList li.on .pcIc{color:var(--ink)}
+.bdList li.fix{padding:5px 8px;font-size:12.5px}
+.bdMove{display:flex;gap:6px;margin-top:10px}
+.bdFoot{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--rule-2);flex-wrap:wrap}
+.bdFoot .bdPub{margin:0 auto 0 0}
+.bdFoot .err{flex:0 1 auto;min-height:0}
+.bdIO{position:absolute;inset:0;background:rgba(10,11,13,.7);display:flex;align-items:center;justify-content:center;z-index:5;border-radius:8px}
+.bdIO[hidden]{display:none}
+.bdIOBox{width:min(620px,92%);background:#16181c;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:20px 22px}
+.bdIOBox h3{font-size:16px;margin-bottom:4px}
+.bdIOBox textarea{width:100%;margin-top:10px;font:12.5px/1.5 var(--mono);color:var(--ink);background:#0d0f11;border:1px solid var(--rule);
+  border-radius:6px;padding:10px;resize:vertical}
+.bdIORow{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.tkImport{margin-left:auto}
 </style>
 </head>
 <body>
@@ -2074,7 +2127,7 @@ button.danger-outline{background:none}
         <button class="ghost" id="bTracksBack">&larr; Menu</button>
       </div>
       <div class="err" id="tkMsg"></div>
-      <h3 class="tkHd">Your tracks <small id="tkMineN"></small></h3>
+      <h3 class="tkHd">Your tracks <small id="tkMineN"></small><button class="small tkImport" id="bTkImport">Import track data</button></h3>
       <div class="tkGrid" id="tkMine"></div>
       <h3 class="tkHd">Everyone's public tracks</h3>
       <div class="tkFind"><input type="text" id="tkFind" placeholder="Find a track or a builder" maxlength="40"></div>
@@ -2087,27 +2140,32 @@ button.danger-outline{background:none}
   <div class="layer" id="builder" hidden>
     <div class="scrim"></div>
     <div class="panel builderPanel">
-      <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px">
+      <div class="bdTop">
         <div class="bdName">
-          <div class="kick">TRACK BUILDER</div>
+          <div class="kick">Track builder</div>
           <input type="text" id="bdName" maxlength="30" placeholder="Name your track" aria-label="Track name">
         </div>
-        <button class="ghost" id="bBuilderBack">&larr; Tracks</button>
+        <div class="bdTools">
+          <button class="small" id="bdUndo" title="Undo (Ctrl+Z)">Undo</button>
+          <button class="small" id="bdRedo" title="Redo (Ctrl+Y)">Redo</button>
+          <button class="small" id="bdCopy" title="The whole track as text, to keep or to share">Copy track data</button>
+          <button class="small" id="bdImport" title="Load a track from its text">Import</button>
+          <button class="ghost" id="bBuilderBack">&larr; Tracks</button>
+        </div>
       </div>
       <div class="bdGrid">
-        <section class="dCard bdAdd">
-          <h3>Add a piece</h3>
-          <div class="bdTypes" id="bdTypes"></div>
+        <section class="bdAdd">
+          <h3>Pieces</h3>
+          <div class="bdCards" id="bdTypes"></div>
           <div class="bdOpts" id="bdOpts"></div>
           <div class="bdPiece" id="bdPiece"></div>
-          <div class="row bdAddRow">
-            <button class="primary small" id="bdAdd">Add after selected</button>
-            <button class="small" id="bdReplace">Replace selected</button>
+          <div class="bdAddRow">
+            <button class="small" id="bdAddBefore" title="Put it in front of the selected piece">Add before</button>
+            <button class="primary small" id="bdAdd" title="Put it after the selected piece">Add after</button>
+            <button class="small" id="bdReplace" title="Swap the selected piece for this one">Replace</button>
           </div>
-          <h3 class="bdRoad">Sharing</h3>
-          <label class="bdPub"><input type="checkbox" id="bdPublic"> Public: everyone can drive it</label>
         </section>
-        <section class="dCard bdView">
+        <section class="bdView">
           <div class="bdViews" id="bdViews">
             <button class="tab on" data-view="3d">3D view</button><button class="tab" data-view="map">Map from above</button>
             <button class="small ghost bdReset" id="bd3dReset">Reset view</button>
@@ -2118,21 +2176,33 @@ button.danger-outline{background:none}
           <div class="bdStats" id="bdStats"></div>
           <div class="err" id="bdErr"></div>
         </section>
-        <section class="dCard bdListCard">
-          <h3>Pieces <small id="bdCount"></small></h3>
+        <section class="bdListCard">
+          <h3>Your track <small id="bdCount"></small></h3>
           <ol class="bdList" id="bdList"></ol>
-          <div class="row bdMove">
-            <button class="small" id="bdUp" title="Move up">&uarr; Up</button>
-            <button class="small" id="bdDown" title="Move down">&darr; Down</button>
-            <button class="small danger-outline" id="bdDel">Remove</button>
+          <div class="bdMove">
+            <button class="small" id="bdUp" title="Move up">&uarr;</button>
+            <button class="small" id="bdDown" title="Move down">&darr;</button>
+            <button class="small" id="bdDup" title="Copy the selected piece">Duplicate</button>
+            <button class="small danger-outline" id="bdDel" title="Remove (Delete)">Remove</button>
           </div>
         </section>
       </div>
-      <div class="row bdFoot">
+      <div class="bdFoot">
+        <label class="bdPub"><input type="checkbox" id="bdPublic"> Public: everyone can drive it</label>
         <span class="err" id="bdMsg"></span>
         <span class="bdHint" id="bdHint"></span>
         <button id="bdTest">Test drive</button>
         <button class="primary" id="bdSave">Save track</button>
+      </div>
+      <!-- track data in and out -->
+      <div class="bdIO" id="bdIO" hidden>
+        <div class="bdIOBox">
+          <h3 id="bdIOTitle">Track data</h3>
+          <p class="dNote" id="bdIONote"></p>
+          <textarea id="bdIOText" rows="7" spellcheck="false"></textarea>
+          <div class="err" id="bdIOMsg"></div>
+          <div class="bdIORow"><button id="bdIOClose">Close</button><button class="primary" id="bdIOGo">Copy</button></div>
+        </div>
       </div>
     </div>
   </div>
@@ -7524,12 +7594,16 @@ const TrackKit = {
     const b = new TrackBuilder({ width: W, fine: true, relift: true });
     b.pad(24, Math.max(W + 4, P.length ? P[0][P[0].length - 1] : 0));
     b.straight(20, { w: P.length ? P[0][P[0].length - 1] : W });
-    for (const p of P) this.add(b, p);
+    // where each piece runs along the builder's path (for the builder's highlight)
+    const ranges = [];
+    for (const p of P) { const a = b.path.length - 1; this.add(b, p); ranges.push([a, b.path.length - 1]); }
     b.straight(30, { w: Wend });
     b.gate('finish', { w: Wend });
     b.straight(34, { w: Wend + 4 });
     this.blendWidths(b.strips);
-    return b.build();
+    const out = b.build();
+    out.pieceRanges = ranges;
+    return out;
   },
   /** widths change smoothly along each ribbon (a Gaussian blend over the distance travelled) */
   blendWidths(strips) {
@@ -7622,8 +7696,8 @@ const TrackKit = {
     if (g.lo < -0.75) return no('The road goes under the grass: put a hill up before going down.');
     if (g.hi > 120) return no('The road climbs too high (120 m at most).');
     if (g.len > this.MAX_LEN) return no('A track is 4 km long at most.');
-    let data;
-    try { data = validateCourse(this.build(t)); } catch (e) {
+    let data, raw;
+    try { raw = this.build(t); data = validateCourse(raw); } catch (e) {
       return no(/opposite/.test(e.message || '') ? 'Two big turns the opposite way need at least 45 m of road between them: put a straight in between.'
         : 'This track can\'t be built. Try changing the last piece.');
     }
@@ -7644,7 +7718,25 @@ const TrackKit = {
         }
       }
     }
-    return { ok: true, data, len: g.len };
+    return { ok: true, data, len: g.len, ranges: raw.pieceRanges };
+  },
+  /** a track as text, to keep, share or import (and to turn into a season map) */
+  encode(t) {
+    return 'aiPolytrack-track:' + JSON.stringify({ v: 2, name: t.name || '', w: t.w, pieces: t.pieces });
+  },
+  /** text from encode() back to { name, w, pieces }, or { error } */
+  decode(text) {
+    const s = String(text || '').trim();
+    const i = s.indexOf('{');
+    if (i < 0) return { error: 'That isn\'t track data. It starts with "aiPolytrack-track:".' };
+    let o;
+    try { o = JSON.parse(s.slice(i, s.lastIndexOf('}') + 1)); } catch (e) { return { error: 'That track data is damaged: copy all of it and try again.' }; }
+    if (!o || !Array.isArray(o.pieces)) return { error: 'That track data has no pieces.' };
+    const w = Number.isInteger(o.w) && o.w >= 6 && o.w <= 30 ? o.w : 15;
+    const pieces = o.pieces.map((p) => (Array.isArray(p) ? this.norm(p, w) : p));
+    const bad = pieces.findIndex((p) => !this.valid(p));
+    if (bad >= 0) return { error: 'Piece ' + (bad + 1) + ' in that track data isn\'t one the builder makes.' };
+    return { name: String(o.name || '').slice(0, 30), w, pieces };
   },
   /** a track as a level the game can drive (a draft is the builder's test drive) */
   level(t, draft) {
@@ -9317,6 +9409,37 @@ const Builder3D = {
     }
     this.start();
   },
+  /** the selected piece, drawn over the road in the accent colour (range: its stretch of data.path) */
+  mark(data, range) {
+    if (!this.scene) return;
+    if (this.hi) { this.scene.remove(this.hi); this.hi.geometry.dispose(); this.hi = null; }
+    if (!range) return;
+    const P = data.path.slice(range[0], range[1] + 1);
+    if (P.length < 2) return;
+    // each point at the finished road's height (the path is the builder's cursor, before smoothing)
+    const F = [];
+    for (const st of data.strips) for (const f of st.frames) F.push(f);
+    const pts = P.map((q) => {
+      let best = null, bd = Infinity;
+      for (const f of F) { const dd = (f.p[0] - q[0]) ** 2 + (f.p[2] - q[2]) ** 2; if (dd < bd) { bd = dd; best = f; } }
+      const v = new THREE.Vector3(q[0], (best && bd < 400 ? best.p[1] : q[1]) + 0.3, q[2]);
+      v.hw = best && bd < 400 ? best.w * 0.46 : 6;
+      return v;
+    });
+    const pos = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1], dx = b.x - a.x, dz = b.z - a.z, l = Math.hypot(dx, dz) || 1, ux = -dz / l, uz = dx / l;
+      const ax = ux * a.hw, az = uz * a.hw, bx = ux * b.hw, bz = uz * b.hw;
+      pos.push(a.x + ax, a.y, a.z + az, a.x - ax, a.y, a.z - az, b.x - bx, b.y, b.z - bz,
+        a.x + ax, a.y, a.z + az, b.x - bx, b.y, b.z - bz, b.x + bx, b.y, b.z + bz);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    this.hiMat = this.hiMat || new THREE.MeshBasicMaterial({ color: 0xff7a3d, side: THREE.DoubleSide, depthTest: false, transparent: true, opacity: 0.55, toneMapped: false });
+    this.hi = new THREE.Mesh(g, this.hiMat);
+    this.hi.renderOrder = 999;
+    this.scene.add(this.hi);
+  },
   reset() {
     this.zoomed = false; this.auto = true;
     this.yaw = 0.9; this.pitch = 0.5; this.dist = this.fit;
@@ -9521,19 +9644,36 @@ const Tracks = {
   back() { if (this.level && this.level.draft && this.draft) this.showBuilder(); else this.open(); },
 
   /* ------------------------------------------------------- the builder */
+  /** a little drawing of each kind of piece, for the cards and the list */
+  ICONS: {
+    S: '<path d="M4 11h40M4 21h40"/><path class="i2" d="M9 16h6M21 16h6M33 16h6"/>',
+    T: '<path d="M6 29V19A13 13 0 0 1 19 6h23"/><path d="M16 29v-8a5 5 0 0 1 5-5h21"/>',
+    B: '<path d="M4 11h40M4 21h40"/><path class="iB" d="M11 13l4 3-4 3M21 13l4 3-4 3M31 13l4 3-4 3"/>',
+    X: '<path d="M4 11h40M4 21h40"/><path class="iX" d="M9 13l4 3-4 3M14 13l4 3-4 3M25 13l4 3-4 3M30 13l4 3-4 3"/>',
+    H: '<path d="M4 25h12l18-14h10"/><path class="i2" d="M4 28h40"/>',
+    C: '<path d="M4 24h9c6 0 6-13 11-13s5 13 11 13h9"/><path class="i2" d="M4 28h40"/>',
+    R: '<path d="M4 21c4 0 4-7 8-7s4 7 8 7 4-7 8-7 4 7 8 7 4-7 8-7"/><path class="i2" d="M4 26h40"/>',
+    J: '<path d="M4 24h9l9-8"/><path d="M28 18l7 6h9"/><path class="i2" d="M4 28h40"/>',
+    N: '<path d="M4 7h12l8 7 8-7h12M4 25h12l8-7 8 7h12"/>',
+    W: '<path d="M4 13h10l6-8h24M4 19h10l6 8h24"/>'
+  },
+  icon(k) { return '<svg class="pcIc" viewBox="0 0 48 32" aria-hidden="true">' + (this.ICONS[k] || '') + '</svg>'; },
+  HINTS: { S: 'Flat, straight road', T: 'Left or right, any size', B: 'A push forward', X: 'Three times the push', H: 'Up or down',
+    C: 'A bump to get light on', R: 'A row of bumps', J: 'Fly a gap', N: 'The road squeezes in', W: 'A wide open area' },
   edit(t) {
     if (!t && this.mine.length >= 3) { UI.toast('You have 3 tracks already. Delete one to make another.'); return; }
     // pieces in full form (older tracks were saved without widths); the
     // saved form is kept to send back unchanged when only the name changes
-    this.origPieces = t ? t.pieces : null;
+    this.origPieces = t && t.id ? t.pieces : null;
     this.origW = t ? t.w : 15;
-    this.draft = t ? { id: t.id, name: t.name, pub: !!t.pub, w: t.w, pieces: t.pieces.map((p) => TrackKit.norm(p, t.w).slice()) }
+    this.draft = t ? { id: t.id || null, name: t.name || '', pub: t.pub !== false, w: t.w, pieces: t.pieces.map((p) => TrackKit.norm(p, t.w).slice()) }
       : { id: null, name: '', pub: true, w: 15, pieces: [['S', 80, 15]] };
-    this.origNorm = JSON.stringify(this.draft.pieces);
+    this.origNorm = this.origPieces ? JSON.stringify(this.draft.pieces) : '';
     this.orig = this.stamp();
-    this.savedRev = t ? this.rev() : '';
+    this.savedRev = t && t.id ? this.rev() : '';
     this.sel = this.draft.pieces.length - 1;
     this.testRev = ''; this.testedRev = '';
+    this.past = []; this.future = [];
     $('bdName').value = this.draft.name;
     $('bdPublic').checked = this.draft.pub;
     $('bdMsg').textContent = '';
@@ -9543,7 +9683,7 @@ const Tracks = {
   /** the track's own width (the start pad's): its first piece's, unless the road is the one it was saved with */
   syncW() {
     const d = this.draft, f = d.pieces[0];
-    d.w = JSON.stringify(d.pieces) === this.origNorm ? this.origW : f ? clamp(f[f.length - 1], 6, 30) : 15;
+    d.w = this.origNorm && JSON.stringify(d.pieces) === this.origNorm ? this.origW : f ? clamp(f[f.length - 1], 6, 30) : 15;
   },
   rev() { const d = this.draft; return JSON.stringify([d.w, d.pieces]); },
   /** a road may be saved once a test drive of exactly it has reached the finish (a saved road needs none to rename it) */
@@ -9555,7 +9695,25 @@ const Tracks = {
     UI.show('builder');
     this.renderBuilder();
   },
-  /** the piece the "add a piece" form describes */
+  /* undo / redo: every change to the pieces is remembered (100 steps) */
+  remember() {
+    this.past.push(JSON.stringify([this.draft.pieces, this.sel]));
+    if (this.past.length > 100) this.past.shift();
+    this.future = [];
+  },
+  undo() {
+    if (!this.past.length) return;
+    this.future.push(JSON.stringify([this.draft.pieces, this.sel]));
+    [this.draft.pieces, this.sel] = JSON.parse(this.past.pop());
+    this.renderBuilder();
+  },
+  redo() {
+    if (!this.future.length) return;
+    this.past.push(JSON.stringify([this.draft.pieces, this.sel]));
+    [this.draft.pieces, this.sel] = JSON.parse(this.future.pop());
+    this.renderBuilder();
+  },
+  /** the piece the form describes */
   piece() {
     const o = this.opt;
     switch (this.kind) {
@@ -9580,7 +9738,8 @@ const Tracks = {
       return '<option value="' + v + '"' + (v === o[key] ? ' selected' : '') + '>' + l + '</option>';
     }).join('') + '</select>';
     const lab = (t, c) => '<label class="bdOpt"><span>' + t + '</span>' + c + '</label>';
-    $('bdTypes').innerHTML = this.TYPES.map(([k, n]) => '<button class="tab' + (k === this.kind ? ' on' : '') + '" data-kind="' + k + '">' + n + '</button>').join('');
+    $('bdTypes').innerHTML = this.TYPES.map(([k, n]) => '<button class="pcCard' + (k === this.kind ? ' on' : '') + '" data-kind="' + k + '" title="' +
+      this.HINTS[k] + '">' + this.icon(k) + '<b>' + n + '</b></button>').join('');
     let h = '';
     const m = (v) => v + ' m', note = (t) => '<p class="dNote">' + t + '</p>';
     const width = (list) => {
@@ -9601,48 +9760,65 @@ const Tracks = {
       const rises = K.RISES.filter((r) => r / o.run <= 0.36);
       if (!rises.includes(o.H)) o.H = rises[rises.length - 1];
       h = lab('Way', sel('up', [[1, 'Up'], [-1, 'Down']])) + lab('Height', sel('H', rises, m)) + lab('Over', sel('run', K.RUNS, m)) + width(K.WIDTHS);
-    } else if (k === 'C') h = lab('Size', sel('C', K.CRESTS)) + width(K.WIDTHS) + note('A bump in the road: fast over it and the car goes light.');
+    } else if (k === 'C') h = lab('Size', sel('C', K.CRESTS)) + width(K.WIDTHS);
     else if (k === 'R') h = lab('How many', sel('N', K.ROLLERS)) + lab('Size', sel('RH', K.ROLLER_H)) + width(K.WIDTHS);
     else if (k === 'N') h = lab('Length', sel('NL', [20, 30, 40, 60, 80, 100], m)) + lab('Width', sel('nw', K.NARROW, m)) + note('The road squeezes down and opens out again on its own.');
     else if (k === 'W') h = lab('Length', sel('WL', [20, 30, 40, 60, 80, 100, 150, 200], m)) + lab('Width', sel('ww', K.WIDE, m)) + note('A wide open area: pick your own line.');
     else h = lab('Kind', sel('J', K.JUMPS)) + width(K.WIDTHS) + note('Jumps need speed: put a long straight or a speed strip before a big one.');
     $('bdOpts').innerHTML = h;
     $('bdPiece').textContent = K.label(this.piece());
+    // the notes go in a tooltip too (short screens hide them in the form)
+    $('bdPiece').title = Array.from($('bdOpts').querySelectorAll('.dNote')).map((n) => n.textContent).join(' ');
   },
   renderBuilder() {
     const d = this.draft;
     if (!d) return;
     this.syncW();
     this.renderForm();
-    $('bdCount').textContent = d.pieces.length + ' / ' + TrackKit.MAX;
-    $('bdList').innerHTML = '<li class="fix"><span class="p">▶</span><span class="n">Start</span></li>' +
-      d.pieces.map((p, k) => '<li class="' + (k === this.sel ? 'on' : '') + '" data-k="' + k + '"><span class="p">' + (k + 1) + '</span><span class="n">' +
-        escapeHtml(TrackKit.label(p)) + '</span></li>').join('') +
-      '<li class="fix"><span class="p">■</span><span class="n">Finish</span></li>';
+    const n = d.pieces.length;
+    $('bdCount').textContent = n + ' / ' + TrackKit.MAX;
+    $('bdList').innerHTML = '<li class="fix"><span class="p"></span><span class="n">Start</span></li>' +
+      d.pieces.map((p, k) => '<li class="' + (k === this.sel ? 'on' : '') + '" data-k="' + k + '"><span class="p">' + (k + 1) + '</span>' +
+        this.icon(p[0]) + '<span class="n">' + escapeHtml(TrackKit.label(p)) + '</span></li>').join('') +
+      '<li class="fix"><span class="p"></span><span class="n">Finish</span></li>';
+    const on = $('bdList').querySelector('li.on');
+    if (on) on.scrollIntoView({ block: 'nearest' });
     const c = TrackKit.check(d);
+    this.checked = c;
     $('bdErr').textContent = c.ok ? '' : c.error;
-    if (c.ok) this.lastMap = MiniMap.fromData(c.data, d.name || 'Your track', true, null);
-    $('bdMap').innerHTML = this.lastMap || '';
     $('bdMap').classList.toggle('stale', !c.ok);
     $('bd3dWrap').classList.toggle('stale', !c.ok);
+    if (c.ok) this.drawMap(c);
     // the 3D road, rebuilt a moment after the last change (building it takes a little while)
     clearTimeout(this.t3d);
-    if (c.ok) { const rev = this.rev(); this.t3d = setTimeout(() => Builder3D.show(c.data, rev), 120); }
+    if (c.ok) {
+      const rev = this.rev(), range = c.ranges && c.ranges[this.sel];
+      this.t3d = setTimeout(() => { Builder3D.show(c.data, rev); Builder3D.mark(c.data, range); }, 120);
+    }
     this.setView(this.view);
-    $('bdStats').innerHTML = c.ok ? '<span><b>' + (c.len / 1000).toFixed(2) + '</b> km</span><span><b>' + d.pieces.length + '</b> ' +
-      (d.pieces.length === 1 ? 'piece' : 'pieces') + '</span><span><b>' + this.widths() + '</b> m wide</span>' : '';
+    $('bdStats').innerHTML = c.ok ? '<span><b>' + (c.len / 1000).toFixed(2) + '</b> km</span><span><b>' + n + '</b> ' +
+      (n === 1 ? 'piece' : 'pieces') + '</span><span><b>' + this.widths() + '</b> m wide</span>' : '';
     $('bdTest').disabled = !c.ok;
     $('bdSave').disabled = !c.ok || this.busy || !this.driven();
     $('bdHint').textContent = c.ok && !this.driven() ? 'Finish a test drive of this version to save it.' : '';
     $('bdUp').disabled = this.sel <= 0;
-    $('bdDown').disabled = this.sel < 0 || this.sel >= d.pieces.length - 1;
-    $('bdDel').disabled = this.sel < 0;
-    $('bdReplace').disabled = this.sel < 0;
-    $('bdAdd').disabled = d.pieces.length >= TrackKit.MAX;
+    $('bdDown').disabled = this.sel < 0 || this.sel >= n - 1;
+    $('bdDel').disabled = $('bdDup').disabled = $('bdReplace').disabled = this.sel < 0;
+    $('bdAdd').disabled = $('bdAddBefore').disabled = n >= TrackKit.MAX;
+    $('bdUndo').disabled = !this.past.length;
+    $('bdRedo').disabled = !this.future.length;
+  },
+  /** the map from above, with the selected piece drawn in the accent colour */
+  drawMap(c) {
+    const r = c.ranges && c.ranges[this.sel], P = c.data.path;
+    const hi = r ? P.slice(r[0], r[1] + 1) : null;
+    $('bdMap').innerHTML = MiniMap.fromData(c.data, this.draft.name || 'Your track', true, null, hi);
   },
   /** the road's narrowest to widest, for the stats line */
   widths() {
-    const ws = this.draft.pieces.map((p) => p[p.length - 1]), lo = Math.min(...ws), hi = Math.max(...ws);
+    const ws = this.draft.pieces.map((p) => p[p.length - 1]);
+    if (!ws.length) return '0';
+    const lo = Math.min(...ws), hi = Math.max(...ws);
     return lo === hi ? String(lo) : lo + '–' + hi;
   },
   setView(v) {
@@ -9653,26 +9829,42 @@ const Tracks = {
     document.querySelectorAll('#bdViews .tab').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
     if (v === '3d') Builder3D.start();
   },
-  addPiece(replace) {
+  /** where: 'before' or 'after' the selected piece, or 'replace' it */
+  addPiece(where) {
     const d = this.draft, p = this.piece();
-    if (replace) { if (this.sel < 0) return; d.pieces[this.sel] = p; }
-    else {
+    if (where === 'replace') {
+      if (this.sel < 0) return;
+      this.remember();
+      d.pieces[this.sel] = p;
+    } else {
       if (d.pieces.length >= TrackKit.MAX) return;
-      d.pieces.splice(this.sel + 1, 0, p);
-      this.sel++;
+      this.remember();
+      if (where === 'before') d.pieces.splice(Math.max(this.sel, 0), 0, p);
+      else { d.pieces.splice(this.sel + 1, 0, p); this.sel++; }
+      if (this.sel < 0) this.sel = 0;
     }
     this.renderBuilder();
   },
   move(dk) {
     const d = this.draft, k = this.sel, j = k + dk;
     if (k < 0 || j < 0 || j >= d.pieces.length) return;
+    this.remember();
     [d.pieces[k], d.pieces[j]] = [d.pieces[j], d.pieces[k]];
     this.sel = j;
+    this.renderBuilder();
+  },
+  dup() {
+    const d = this.draft;
+    if (this.sel < 0 || d.pieces.length >= TrackKit.MAX) return;
+    this.remember();
+    d.pieces.splice(this.sel + 1, 0, d.pieces[this.sel].slice());
+    this.sel++;
     this.renderBuilder();
   },
   remove() {
     const d = this.draft;
     if (this.sel < 0) return;
+    this.remember();
     d.pieces.splice(this.sel, 1);
     this.sel = Math.min(this.sel, d.pieces.length - 1);
     this.renderBuilder();
@@ -9682,11 +9874,11 @@ const Tracks = {
     const p = this.draft.pieces[k], o = this.opt;
     this.sel = k;
     if (p) {
-      this.kind = p[0];
       const w = p[p.length - 1];
       if (p[0] === 'N') { o.NL = p[1]; o.nw = w; }
       else if (p[0] === 'W') { o.WL = p[1]; o.ww = w; }
       else o.w = w;
+      this.kind = p[0];
       if (p[0] === 'S') o.S = p[1];
       else if (p[0] === 'T') { o.R = p[1]; o.A = Math.abs(p[2]); o.dir = Math.sign(p[2]); o.bank = p[3]; o.ice = p[4]; }
       else if (p[0] === 'B') o.B = p[1];
@@ -9713,7 +9905,7 @@ const Tracks = {
     const d = this.draft, c = TrackKit.check(d);
     if (!c.ok) { $('bdMsg').textContent = c.error; return; }
     if (!this.driven()) { $('bdMsg').textContent = 'Finish a test drive of this version first.'; return; }
-    const same = JSON.stringify(d.pieces) === this.origNorm;
+    const same = !!this.origNorm && JSON.stringify(d.pieces) === this.origNorm;
     if (d.id && !same && !confirm('You changed the road, so this track\'s leaderboard starts again from zero. Save it?')) return;
     this.busy = true;
     $('bdSave').disabled = true;
@@ -9741,7 +9933,48 @@ const Tracks = {
   leaveBuilder() {
     if (this.draft && this.stamp() !== this.orig && !confirm('Leave the builder without saving your changes?')) return;
     this.draft = null;
+    $('bdIO').hidden = true;
     this.open();
+  },
+  /* ------------------------------------------------- track data in and out */
+  io(mode) {
+    this.ioMode = mode;
+    const copy = mode === 'copy';
+    $('bdIOTitle').textContent = copy ? 'Copy track data' : 'Import track data';
+    $('bdIONote').textContent = copy
+      ? 'This text is the whole track. Keep it, send it to a friend, or import it later to build from it again.'
+      : 'Paste track data (it starts with "aiPolytrack-track:"). It replaces the road you are building now; Undo brings yours back.';
+    $('bdIOText').value = copy ? TrackKit.encode(Object.assign({}, this.draft, { name: $('bdName').value.trim() })) : '';
+    $('bdIOText').readOnly = copy;
+    $('bdIOMsg').textContent = '';
+    $('bdIOGo').textContent = copy ? 'Copy' : 'Import';
+    $('bdIO').hidden = false;
+    if (copy) $('bdIOText').select(); else $('bdIOText').focus();
+  },
+  async ioGo() {
+    const text = $('bdIOText').value;
+    if (this.ioMode === 'copy') {
+      try { await navigator.clipboard.writeText(text); UI.toast('Track data copied.'); $('bdIO').hidden = true; }
+      catch (e) { $('bdIOText').select(); $('bdIOMsg').textContent = 'Press Ctrl+C to copy it.'; }
+      return;
+    }
+    const t = TrackKit.decode(text);
+    if (t.error) { $('bdIOMsg').textContent = t.error; return; }
+    if (!t.pieces.length) { $('bdIOMsg').textContent = 'That track data has no pieces.'; return; }
+    if (t.pieces.length > TrackKit.MAX) { $('bdIOMsg').textContent = 'A track has ' + TrackKit.MAX + ' pieces at most.'; return; }
+    this.remember();
+    this.draft.pieces = t.pieces;
+    if (!$('bdName').value.trim() && t.name) { $('bdName').value = t.name; this.draft.name = t.name; }
+    this.sel = this.draft.pieces.length - 1;
+    $('bdIO').hidden = true;
+    UI.toast('Track loaded: test drive it, then save.');
+    this.renderBuilder();
+  },
+  /** from the track list: a new track from track data */
+  importNew() {
+    if (this.mine.length >= 3) { UI.toast('You have 3 tracks already. Delete one to make another.'); return; }
+    this.edit(null);
+    this.io('import');
   },
   wire() {
     $('bTracks').addEventListener('click', () => this.open());
@@ -9749,6 +9982,7 @@ const Tracks = {
     $('tracks').addEventListener('click', (ev) => this.onClick(ev));
     $('tkFind').addEventListener('input', () => { this.shown = 48; this.render(); });
     $('bTkMore').addEventListener('click', () => { this.shown += 48; this.render(); });
+    $('bTkImport').addEventListener('click', () => this.importNew());
     $('bBuilderBack').addEventListener('click', () => this.leaveBuilder());
     $('bdTypes').addEventListener('click', (ev) => {
       const b = ev.target.closest('button[data-kind]');
@@ -9758,14 +9992,32 @@ const Tracks = {
       const s = ev.target.closest('select[data-o]');
       if (s) { this.opt[s.dataset.o] = Number(s.value); this.renderForm(); }
     });
-    $('bdAdd').addEventListener('click', () => this.addPiece(false));
-    $('bdReplace').addEventListener('click', () => this.addPiece(true));
+    $('bdAdd').addEventListener('click', () => this.addPiece('after'));
+    $('bdAddBefore').addEventListener('click', () => this.addPiece('before'));
+    $('bdReplace').addEventListener('click', () => this.addPiece('replace'));
     $('bdUp').addEventListener('click', () => this.move(-1));
     $('bdDown').addEventListener('click', () => this.move(1));
+    $('bdDup').addEventListener('click', () => this.dup());
     $('bdDel').addEventListener('click', () => this.remove());
+    $('bdUndo').addEventListener('click', () => this.undo());
+    $('bdRedo').addEventListener('click', () => this.redo());
+    $('bdCopy').addEventListener('click', () => this.io('copy'));
+    $('bdImport').addEventListener('click', () => this.io('import'));
+    $('bdIOGo').addEventListener('click', () => this.ioGo());
+    $('bdIOClose').addEventListener('click', () => { $('bdIO').hidden = true; });
     $('bdList').addEventListener('click', (ev) => {
       const li = ev.target.closest('li[data-k]');
       if (li) this.select(+li.dataset.k);
+    });
+    // keys, while the builder is up and no box is being typed in
+    addEventListener('keydown', (e) => {
+      if (Game.state !== 'builder' || !$('bdIO').hidden || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
+      const k = e.key.toLowerCase(), mod = e.ctrlKey || e.metaKey;
+      if (mod && k === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); }
+      else if (mod && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); this.redo(); }
+      else if (k === 'delete' || k === 'backspace') { e.preventDefault(); this.remove(); }
+      else if (k === 'arrowup' && this.sel > 0) { e.preventDefault(); this.select(this.sel - 1); }
+      else if (k === 'arrowdown' && this.sel < this.draft.pieces.length - 1) { e.preventDefault(); this.select(this.sel + 1); }
     });
     $('bdName').addEventListener('input', () => { if (this.draft) this.draft.name = $('bdName').value.trim(); });
     $('bdPublic').addEventListener('change', () => { if (this.draft) this.draft.pub = $('bdPublic').checked; });
@@ -12890,7 +13142,7 @@ const MiniMap = {
     return this.fromData(data, lvl.name, labels, key);
   },
   /** the drawing itself, for any built course (kept under key, when there is one) */
-  fromData(data, name, labels, key) {
+  fromData(data, name, labels, key, hi) {
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     for (const st of data.strips) for (const f of st.frames) {
       x0 = Math.min(x0, f.p[0]); x1 = Math.max(x1, f.p[0]); z0 = Math.min(z0, f.p[2]); z1 = Math.max(z1, f.p[2]);
@@ -12917,6 +13169,7 @@ const MiniMap = {
     let h = '<svg viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="' + escapeHtml(name) + ' from above">' + deck + line +
       '<polygon class="mmArrow" points="' + tip.join(',') + ' ' + l.join(',') + ' ' + r.join(',') + '"/>' +
       '<circle class="mmStart" cx="' + sx + '" cy="' + sz + '" r="3.2"/>';
+    if (hi && hi.length > 1) h += '<path class="mmHi" d="' + hi.map((q, k) => (k ? 'L' : 'M') + X(q[0]) + ',' + Z(q[2])).join(' ') + '"/>';
     if (fin) h += '<circle class="mmFin" cx="' + X(fin.pos[0]) + '" cy="' + Z(fin.pos[2]) + '" r="4"/>';
     if (labels) {
       h += '<text class="mmLabel" x="' + (sx + 7) + '" y="' + (sz - 6) + '">START</text>';
