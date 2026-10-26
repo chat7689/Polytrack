@@ -157,6 +157,27 @@ h2{font-size:15px;margin:34px 0 10px}
 .pill.fin{color:var(--ink);border-color:var(--rule)}
 .accNew{border-color:var(--rule);border-left:2px solid var(--ember);border-radius:0}
 button.primary{background:var(--ink);color:#121417}
+/* bans */
+.modal.wide{width:min(620px,94vw);max-height:92vh;overflow:auto}
+.opt{display:grid;grid-template-columns:20px 1fr;gap:4px 10px;padding:11px 0;border-top:1px solid var(--rule2);cursor:pointer}
+.opt input{width:auto;margin-top:3px}
+.opt b{font-weight:600;font-size:13.5px}
+.opt small{grid-column:2;color:var(--dim);font-size:12.5px;line-height:1.5}
+.opt small.warn{color:var(--signal)}
+.opt .tag{font-size:11px;margin-left:6px;padding:1px 7px;border-radius:999px;border:1px solid var(--rule);color:var(--dim);font-weight:500}
+.opt .tag.rec{color:var(--aqua);border-color:rgba(98,201,162,.4)}
+.opt .tag.care{color:var(--signal);border-color:rgba(232,194,106,.4)}
+.lens{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+.lens button.on{background:var(--ink);color:#121417;border-color:var(--ink)}
+.banSum{font-size:13px;line-height:1.55;border-left:2px solid var(--ember);padding:6px 0 6px 12px;margin-top:12px;color:var(--ink)}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 24px;margin:6px 0 4px}
+.how div{font-size:13px;line-height:1.55;color:var(--dim)}
+.how div b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:2px}
+.how div i{font-style:normal;color:var(--signal)}
+.lock{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.lock .state{font-weight:600}
+.lock .state.paused{color:var(--ember)}
+.secTitle{display:flex;align-items:center;gap:10px}
 </style>
 </head>
 <body>
@@ -309,6 +330,46 @@ button.primary{background:var(--ink);color:#121417}
       </div>
       <div class="statGrid" id="secTiles"></div>
       <div class="msg" id="secMsg"></div>
+      <h2>How banning works</h2>
+      <div class="card">
+        <div class="how">
+          <div><b>1. Ban the account</b>Players &rarr; <b style="display:inline">Ban</b>. The account can't play, set times or earn
+            credits, and its times leave the leaderboards. They see "This account is suspended", the reason and when it ends.</div>
+          <div><b>2. Block their computers</b>Ticked for you in the Ban window. No account can sign in, play or be made on any
+            computer they used: the game shows "This computer is blocked". This is what stops them coming back.</div>
+          <div><b>3. Fingerprint, if they come back</b>If they clear their browser to get a new computer id, they show up under
+            <b style="display:inline">Possible ban evaders</b> below. Blocking the fingerprint catches that, <i>but identical
+            school laptops share one</i>, so it can block classmates.</div>
+          <div><b>4. Delete, for good</b>Deleting an account blocks its computers first (ticked for you), so whoever used it
+            can never make another account there. <b style="display:inline">Unban</b> undoes a ban and, if you choose,
+            everything it blocked.</div>
+        </div>
+      </div>
+      <h2>New accounts</h2>
+      <div class="card">
+        <div class="lock"><span>Sign-ups are <span class="state" id="suState">…</span></span>
+          <button id="btnSignups">Pause sign-ups</button></div>
+        <small class="hint">Pause them if lots of fake accounts appear at once. Players who already have an account still sign
+          in and play; anyone trying to make one is told new accounts are paused.</small>
+      </div>
+      <h2 class="secTitle">Blocked computers trying to get back in</h2>
+      <div class="card tableWrap">
+        <p class="note">Every time a blocked computer tries to sign in or make an account (it is turned away), a new computer
+          id turns up with a blocked computer's fingerprint, or Coach refuses a username. One line per computer an hour.</p>
+        <table>
+          <thead><tr><th>When</th><th>What</th><th>Name</th><th>Computer</th><th>Network</th><th></th></tr></thead>
+          <tbody id="secEvents"></tbody>
+        </table>
+      </div>
+      <h2>Possible ban evaders</h2>
+      <div class="card tableWrap">
+        <p class="note">Accounts made in the last 60 days from the same browser fingerprint, or the same network, as a blocked
+          computer. Often someone getting round a block, but a classmate on an identical laptop looks the same: check before banning.</p>
+        <table>
+          <thead><tr><th>Account</th><th>Why it's here</th><th>Made</th><th></th></tr></thead>
+          <tbody id="secEvaders"></tbody>
+        </table>
+      </div>
       <h2>Times to check</h2>
       <div class="card tableWrap">
         <p class="note">Every time already passed the server's checks (a real run ticket, a recording that starts at the
@@ -344,7 +405,7 @@ button.primary{background:var(--ink);color:#121417}
       <h2>Blocks</h2>
       <div class="card tableWrap">
         <table>
-          <thead><tr><th>Kind</th><th>Value</th><th>Note</th><th>Since</th><th></th></tr></thead>
+          <thead><tr><th>Kind</th><th>Value</th><th>Note</th><th>Since</th><th>Until</th><th></th></tr></thead>
           <tbody id="secBans"></tbody>
         </table>
         <div class="row" style="margin-top:14px">
@@ -354,7 +415,15 @@ button.primary{background:var(--ink);color:#121417}
           <div><label for="banNote">Note</label><input type="text" id="banNote" placeholder="why"></div>
           <button class="danger" id="btnBan">Block</button>
         </div>
-        <small class="hint">A network block stops everyone on it, including a whole school. Use it only for a network that isn't a school's.</small>
+        <small class="hint">A network block stops everyone on it, including a whole school. Use it only for a network that isn't a school's.
+          Usually you won't need this form: the Ban window blocks a player's computers for you.</small>
+      </div>
+      <h2>Recent admin actions</h2>
+      <div class="card tableWrap">
+        <table>
+          <thead><tr><th>When</th><th>Action</th><th>Who / what</th><th>Details</th></tr></thead>
+          <tbody id="secActions"></tbody>
+        </table>
       </div>
     </section>
 
@@ -496,12 +565,62 @@ button.primary{background:var(--ink);color:#121417}
 </div>
 
 <div class="chartTip" id="chartTip" hidden></div>
+<div class="modalBack hide" id="banModal">
+  <div class="modal wide">
+    <h3>Ban <span id="banName"></span></h3>
+    <p class="note">The account can't play, set times or earn credits, and its times leave the leaderboards. They see
+      that they are suspended, why, and until when.</p>
+    <label for="banReason">Reason (they see this)</label>
+    <input type="text" id="banReason" maxlength="200" style="width:100%" placeholder="e.g. cheating, rude username">
+    <label style="margin-top:12px">How long</label>
+    <div class="lens" id="banLens">
+      <button class="small" data-days="1">1 day</button><button class="small" data-days="3">3 days</button>
+      <button class="small" data-days="7">1 week</button><button class="small" data-days="30">30 days</button>
+      <button class="small on" data-days="0">Forever</button>
+    </div>
+    <div style="margin-top:10px">
+      <label class="opt"><input type="checkbox" id="banDev" checked><b>Block every computer they've used<span class="tag rec">recommended</span></b>
+        <small id="banDevTxt">No account can sign in, play or be made on those computers. This is what stops them making a new account.</small></label>
+      <label class="opt"><input type="checkbox" id="banAlts"><b>Also ban the other accounts on those computers</b>
+        <small id="banAltsTxt">Their other accounts, or anyone who shares the computer.</small></label>
+      <label class="opt"><input type="checkbox" id="banFp"><b>Block their browser fingerprints<span class="tag care">careful</span></b>
+        <small class="warn" id="banFpTxt">Catches them even after they clear their browser. But identical school laptops share a fingerprint, so this can block classmates too.</small></label>
+      <label class="opt"><input type="checkbox" id="banIp"><b>Block their networks<span class="tag care">careful</span></b>
+        <small class="warn" id="banIpTxt">Stops everyone on the same Wi-Fi. Never use this on a school or library network.</small></label>
+    </div>
+    <div class="banSum" id="banSum"></div>
+    <div class="msg" id="banMsg"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button id="btnBanCancel">Cancel</button>
+      <button class="danger" id="btnBanGo">Ban</button>
+    </div>
+  </div>
+</div>
+
+<div class="modalBack hide" id="unbanModal">
+  <div class="modal">
+    <h3>Unban <span id="unbanName"></span>?</h3>
+    <p class="note" id="unbanWhy"></p>
+    <label class="opt"><input type="checkbox" id="unbanAll" checked><b>Also lift everything this ban blocked</b>
+      <small>Their computers, fingerprints and networks, and the other accounts banned with them.</small></label>
+    <div class="msg" id="unbanMsg"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button id="btnUnbanCancel">Cancel</button>
+      <button class="primary" id="btnUnbanGo">Unban</button>
+    </div>
+  </div>
+</div>
+
 <div class="modalBack hide" id="delModal">
   <div class="modal">
     <h3>Delete <span id="delName"></span>?</h3>
     <p class="note">Permanently erases the account and everything tied to it: profile, times, ghosts,
       credits, colors, run history, races and trophies. Its leaderboard places disappear everywhere, and if
       the login is ever used again it is removed too. This can't be undone.</p>
+    <label class="opt" style="margin-bottom:12px"><input type="checkbox" id="delBlock" checked>
+      <b>Block their computers first<span class="tag rec">recommended</span></b>
+      <small>So whoever used this account can never make a new account or play on those computers again.
+        Without this, they can simply sign up again.</small></label>
     <label for="delPass">Admin passcode</label>
     <input type="password" id="delPass" style="width:100%">
     <div class="msg" id="delMsg"></div>
@@ -529,10 +648,10 @@ const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Steppi
 // This season's maps (Season 3, live since 2026-10-25) in play order: must
 // match LEVELS in index.html. Replaced maps get new ids, so old times on
 // retired maps never show up on the new ones.
-const S2 = [['s4m1', 'Afterburner'], ['s4m2', 'Goat Path'], ['s4m3', 'Off Kilter'], ['s4m4', 'Guacamole'],
-  ['s4m5', 'Velodrome'], ['s4m6', 'Hourglass'], ['s4c1', 'Straight Shot'], ['s4m7', 'Snapback'],
+const S2 = [['s4m1', 'Afterburner'], ['s4m2', 'Ledgerunner'], ['s4m3', 'Off Kilter'], ['s4m4', 'Guacamole'],
+  ['s4m5', 'Velodrome'], ['s4m16', 'Hourglass'], ['s4c1', 'Straight Shot'], ['s4m7', 'Snapback'],
   ['s4m8', 'Pinball'], ['s4m9', 'Ridgeback'], ['s4m10', 'Big Dipper'], ['s4m11', 'Long Table'],
-  ['s4m12', 'coil'], ['s4m13', 'Kicker'], ['s4m14', 'cornfield'], ['s4m15', 'Needle Drop']]
+  ['s4m12', 'Coil'], ['s4m13', 'Kicker'], ['s4m14', 'Cornfield'], ['s4m17', 'Black Diamond']]
   .map(([id, name], i) => ({ id, name, sec: Math.floor(i / 4), tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
 // last season (Season 2, closed 2026-10-25): its times stay readable
 const PREV = [['s3c1', 'Ignition'], ['s3c2', 'Skip Rope'], ['s3c3', 'Rattler'], ['s3c4', 'Ramp Rush'],
@@ -561,7 +680,9 @@ PREV1.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (Season 1)'; });
   // Season 3's first maps, replaced by the players' maps on 2026-10-26
   ['s4c2', 'Quarter Turn'], ['s4c3', 'U-Turn'], ['s4c4', 'Dogleg'], ['s4c5', 'Cliff Drop'], ['s4c6', 'Horseshoe'], ['s4c7', 'Double Dip'],
   ['s4c8', 'Kink'], ['s4c9', 'Tabletop'], ['s4c10', 'Black Ice'], ['s4c11', 'Speed Trap'], ['s4c12', 'Elbow'], ['s4c13', 'Ripples'],
-  ['s4c14', 'Steep Wall'], ['s4c15', 'Long Jump'], ['s4c16', 'Last Call']]
+  ['s4c14', 'Steep Wall'], ['s4c15', 'Long Jump'], ['s4c16', 'Last Call'],
+  // replaced on 2026-10-26
+  ['s4m6', 'Hourglass (first)'], ['s4m15', 'Needle Drop']]
   .forEach(([id, name]) => { COURSE_NAME[id] = name + ' (retired)'; });
 
 const { createClient } = await import(SUPABASE.sdk);
@@ -852,7 +973,7 @@ function renderPlayers() {
     btn('Name', '', () => setRealName(p));
     btn('Credits', '', () => setCredits(p));
     if (!p.legacy) btn('Password', '', () => setPassword(p));
-    btn(p.banned ? 'Unban' : 'Ban', p.banned ? '' : 'danger', () => setBanned(p, !p.banned));
+    btn(p.banned ? 'Unban…' : 'Ban…', p.banned ? '' : 'danger', () => (p.banned ? openUnban(p) : openBan(p)));
     btn('Delete', 'danger', () => openDelete(p));
     tr.addEventListener('click', () => showPlayer(p));
     tb.appendChild(tr);
@@ -880,12 +1001,170 @@ function showPlayer(p) {
     '<div><span>last seen</span><b>' + fmtWhen(p.lastMs) + '</b></div><div><span>status</span><b>' + (p.banned ? 'banned' : 'active') + '</b></div>' +
     '</div><div class="tableWrap"><table><thead><tr><th>Map</th><th class="r">Best</th><th class="r">Rank</th></tr></thead><tbody>' +
     rows + '</tbody></table></div>' +
-    '<div class="row" style="margin-top:12px"><button class="small" id="pdRuns">See their runs</button></div>';
+    '<div class="row" style="margin-top:12px"><button class="small" id="pdRuns">See their runs</button>' +
+    (p.banned ? '<button class="small" id="pdBan">Unban…</button>' : '<button class="small danger" id="pdBan">Ban…</button>') + '</div>' +
+    '<h2>Security</h2><div id="pdSec" class="mono">Loading their computers…</div>';
   el.classList.remove('hide');
   $('pdClose').addEventListener('click', () => el.classList.add('hide'));
+  $('pdBan').addEventListener('click', () => (p.banned ? openUnban(p) : openBan(p)));
+  showLinks(p);
   $('pdRuns').addEventListener('click', () => { $('rfDriver').value = p.displayName || ''; location.hash = '#runs'; renderRuns(); });
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+/** The Security part of a player's details: their ban, how they signed up,
+ *  every computer they've used and the other accounts on those computers. */
+async function showLinks(p) {
+  let L;
+  try { L = await rpc('admin_player_links', { p_uid: p.uid }); } catch (e) {
+    if ($('pdSec')) $('pdSec').textContent = /PGRST202|function/i.test(e.message) ? 'Run supabase/schema.sql to see this.' : e.message;
+    return;
+  }
+  const box = $('pdSec');
+  if (!box) return;
+  const until = (ms) => (ms ? 'until ' + whenText(ms) : 'for good');
+  const parts = [];
+  if (L.ban) parts.push('<p class="note" style="color:var(--ember)">Banned ' + until(L.ban.until) + ': ' + esc(L.ban.reason || '') + '</p>');
+  if (L.signup) parts.push('<p class="note">Made ' + esc(whenText(L.signup.at)) + ' on computer ' + esc(shortId(L.signup.device)) +
+    ', network ' + esc(L.signup.ip || '—') + (L.signup.flag ? ' <span class="pill trm">' + esc(L.signup.flag) + '</span>' : '') + '</p>');
+  parts.push('<table><thead><tr><th>Computer</th><th>Fingerprint</th><th class="r">Other computers with it</th><th>Network</th><th>Last seen</th><th></th></tr></thead><tbody>' +
+    (L.devices.map((d) => '<tr><td class="mono" title="' + esc(d.id) + '">' + esc(shortId(d.id)) + (d.blocked ? ' <span class="pill trm">blocked</span>' : '') +
+      '</td><td class="mono" title="' + esc(d.fp || '') + '">' + esc(shortId(d.fp)) + (d.fpBlocked ? ' <span class="pill trm">blocked</span>' : '') +
+      '</td><td class="mono r">' + (d.sameFp || 0) + '</td><td class="mono">' + esc(d.ip || '—') + '</td><td class="mono">' + ago(d.seen) +
+      '</td><td class="r" style="white-space:nowrap">' + (d.blocked
+        ? '<button class="small" data-pd="unblock" data-kind="device" data-value="' + esc(d.id) + '">Unblock</button>'
+        : '<button class="small danger" data-pd="block" data-kind="device" data-value="' + esc(d.id) + '">Block computer</button>') + '</td></tr>').join('') ||
+      '<tr><td colspan="6" class="empty">No computers recorded yet (they haven\'t signed in since computers were tracked).</td></tr>') + '</tbody></table>');
+  parts.push('<p class="note" style="margin-top:12px">Other accounts used on these computers: ' + (L.alts.length
+    ? L.alts.map((a) => '<b>' + esc(a.name) + '</b>' + realTag(a.uid) + (a.banned ? ' <span class="pill trm">banned</span>' : '')).join(', ')
+    : 'none') + '</p>');
+  box.className = '';
+  box.innerHTML = parts.join('');
+  box.onclick = async (ev) => {
+    const b = ev.target.closest('button[data-pd]');
+    if (!b) return;
+    try {
+      if (b.dataset.pd === 'block') {
+        const note = prompt('Block this computer? No account will be able to sign in, play or be made on it. Note (why):', 'with ' + (p.displayName || ''));
+        if (note === null) return;
+        await rpc('admin_ban', { p_kind: 'device', p_value: b.dataset.value, p_note: note });
+      } else await rpc('admin_unban', { p_kind: 'device', p_value: b.dataset.value });
+      showLinks(p);
+    } catch (e) { say('pMsg', e.message, 'err'); }
+  };
+}
+
+/* ------------------------------------------------------------------ bans */
+let banTarget = null, banDays = 0, banLinks = null;
+async function openBan(p) {
+  banTarget = p; banDays = 0; banLinks = null;
+  $('banName').textContent = p.displayName || p.uid;
+  $('banReason').value = '';
+  $('banDev').checked = true; $('banAlts').checked = false; $('banFp').checked = false; $('banIp').checked = false;
+  document.querySelectorAll('#banLens button').forEach((b) => b.classList.toggle('on', b.dataset.days === '0'));
+  say('banMsg', '');
+  $('banModal').classList.remove('hide');
+  $('banReason').focus();
+  banSummary();
+  try { banLinks = await rpc('admin_player_links', { p_uid: p.uid }); } catch (e) { banLinks = null; }
+  if (banTarget !== p) return;
+  if (banLinks) {
+    const n = banLinks.devices.length, fps = new Set(banLinks.devices.map((d) => d.fp).filter(Boolean));
+    const ips = new Set(banLinks.devices.map((d) => d.ip).filter(Boolean));
+    // other people's computers with one of their fingerprints (their own computers don't count)
+    let share = 0;
+    for (const f of fps) {
+      const mine = banLinks.devices.filter((d) => d.fp === f);
+      share += Math.max(0, (mine[0].sameFp || 0) - (mine.length - 1));
+    }
+    $('banDevTxt').textContent = (n ? n + (n === 1 ? ' computer' : ' computers') + '. ' : 'No computers recorded for them yet. ') +
+      'No account can sign in, play or be made on ' + (n === 1 ? 'it' : 'them') + '. This is what stops them making a new account.';
+    $('banAltsTxt').textContent = banLinks.alts.length
+      ? banLinks.alts.length + ': ' + banLinks.alts.map((a) => a.name).join(', ') + '. Their other accounts, or someone who shares the computer.'
+      : 'No other accounts have used their computers.';
+    $('banFpTxt').textContent = fps.size + (fps.size === 1 ? ' fingerprint' : ' fingerprints') + '. Catches them even after they clear their browser. ' +
+      (share ? share + ' other ' + (share === 1 ? 'computer has' : 'computers have') + ' the same fingerprint (likely identical laptops): they would be blocked too.'
+        : 'No other computer has the same fingerprint right now.');
+    $('banIpTxt').textContent = ips.size + (ips.size === 1 ? ' network' : ' networks') + ' (' + [...ips].slice(0, 3).join(', ') +
+      '). Stops everyone on the same Wi-Fi. Never use this on a school or library network.';
+  }
+  banSummary();
+}
+function banSummary() {
+  if (!banTarget) return;
+  const L = banLinks, bits = ['ban ' + (banTarget.displayName || 'this player') + ' ' + (banDays ? 'for ' + banDays + (banDays === 1 ? ' day' : ' days') : 'for good')];
+  if ($('banDev').checked) bits.push('block ' + (L ? L.devices.length + (L.devices.length === 1 ? ' computer' : ' computers') : 'their computers'));
+  if ($('banAlts').checked) bits.push('ban ' + (L ? L.alts.length + ' other ' + (L.alts.length === 1 ? 'account' : 'accounts') : 'their other accounts'));
+  if ($('banFp').checked) bits.push('block their fingerprints');
+  if ($('banIp').checked) bits.push('block their networks');
+  $('banSum').textContent = 'This will ' + bits.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.';
+}
+['banDev', 'banAlts', 'banFp', 'banIp'].forEach((id) => $(id).addEventListener('change', banSummary));
+$('banLens').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-days]');
+  if (!b) return;
+  banDays = Number(b.dataset.days);
+  document.querySelectorAll('#banLens button').forEach((x) => x.classList.toggle('on', x === b));
+  banSummary();
+});
+$('btnBanCancel').addEventListener('click', () => { $('banModal').classList.add('hide'); banTarget = null; });
+$('btnBanGo').addEventListener('click', async () => {
+  const p = banTarget;
+  if (!p) return;
+  if ($('banIp').checked && !confirm('Blocking their networks stops EVERYONE on the same Wi-Fi, a whole school included. Block them?')) return;
+  if ($('banFp').checked && !confirm('Blocking fingerprints can block classmates on identical laptops. Block them?')) return;
+  $('btnBanGo').disabled = true;
+  say('banMsg', 'Banning…');
+  try {
+    const r = await rpc('admin_ban_player', { p_uid: p.uid, p_reason: $('banReason').value, p_days: banDays,
+      p_devices: $('banDev').checked, p_fps: $('banFp').checked, p_ips: $('banIp').checked, p_alts: $('banAlts').checked });
+    $('banModal').classList.add('hide');
+    banTarget = null;
+    await loadAll();
+    const what = [];
+    if (r.devices) what.push(r.devices + (r.devices === 1 ? ' computer' : ' computers') + ' blocked');
+    if (r.fps) what.push(r.fps + (r.fps === 1 ? ' fingerprint' : ' fingerprints') + ' blocked');
+    if (r.ips) what.push(r.ips + (r.ips === 1 ? ' network' : ' networks') + ' blocked');
+    if (r.alts) what.push(r.alts + ' other ' + (r.alts === 1 ? 'account' : 'accounts') + ' banned');
+    say('pMsg', (p.displayName || 'Player') + ' is banned' + (what.length ? ': ' + what.join(', ') : '') + '.', 'ok');
+    if (!$('playerDetail').classList.contains('hide') && byUid[p.uid]) showPlayer(byUid[p.uid]);
+    if (sec) loadSecurity();
+  } catch (e) {
+    say('banMsg', /PGRST202|admin_ban_player/i.test(e.message) ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message, 'err');
+  }
+  $('btnBanGo').disabled = false;
+});
+let unbanTarget = null;
+async function openUnban(p) {
+  unbanTarget = p;
+  $('unbanName').textContent = p.displayName || p.uid;
+  $('unbanAll').checked = true;
+  $('unbanWhy').textContent = 'They can play again straight away.';
+  say('unbanMsg', '');
+  $('unbanModal').classList.remove('hide');
+  try {
+    const L = await rpc('admin_player_links', { p_uid: p.uid });
+    if (unbanTarget === p && L.ban) $('unbanWhy').textContent = 'Banned ' + (L.ban.until ? 'until ' + whenText(L.ban.until) : 'for good') +
+      ': ' + (L.ban.reason || 'no reason given') + '. They can play again straight away.';
+  } catch (e) { /* the plain text will do */ }
+}
+$('btnUnbanCancel').addEventListener('click', () => { $('unbanModal').classList.add('hide'); unbanTarget = null; });
+$('btnUnbanGo').addEventListener('click', async () => {
+  const p = unbanTarget;
+  if (!p) return;
+  $('btnUnbanGo').disabled = true;
+  try {
+    try { await rpc('admin_unban_player', { p_uid: p.uid, p_all: $('unbanAll').checked }); }
+    catch (e) { if (/PGRST202|admin_unban_player/i.test(e.message)) await rpc('admin_set_banned', { p_uid: p.uid, p_banned: false }); else throw e; }
+    $('unbanModal').classList.add('hide');
+    unbanTarget = null;
+    await loadAll();
+    say('pMsg', (p.displayName || 'Player') + ' is active again.', 'ok');
+    if (!$('playerDetail').classList.contains('hide') && byUid[p.uid]) showPlayer(byUid[p.uid]);
+    if (sec) loadSecurity();
+  } catch (e) { say('unbanMsg', e.message, 'err'); }
+  $('btnUnbanGo').disabled = false;
+});
 
 /** The admin's private note of who a player really is. Stored in
  *  admin_notes, which only admins can read or write. */
@@ -900,18 +1179,6 @@ async function setRealName(p) {
     // the name shows everywhere that player appears
     renderPlayers(); renderTimes(); renderSeasons(); if (runs.length) renderRuns();
     say('pMsg', realName ? 'Saved: ' + (p.displayName || '') + ' is ' + realName + '.' : 'Real name cleared.', 'ok');
-  } catch (e) { say('pMsg', e.message, 'err'); }
-}
-
-/** Banning flips the profile flag and the copy on every leaderboard row. */
-async function setBanned(p, banned) {
-  say('pMsg', banned ? 'Banning…' : 'Unbanning…');
-  try {
-    await rpc('admin_set_banned', { p_uid: p.uid, p_banned: banned });
-    p.banned = banned;
-    bests.forEach((b) => { if (b.uid === p.uid) b.banned = banned; });
-    redrawAll();
-    say('pMsg', (p.displayName || 'Player') + (banned ? ' is banned.' : ' is active again.'), 'ok');
   } catch (e) { say('pMsg', e.message, 'err'); }
 }
 
@@ -956,6 +1223,7 @@ function openDelete(p) {
   delTarget = p;
   $('delName').textContent = p.displayName || p.uid;
   $('delPass').value = '';
+  $('delBlock').checked = true;
   say('delMsg', '');
   $('delModal').classList.remove('hide');
   $('delPass').focus();
@@ -983,6 +1251,10 @@ $('btnDelGo').addEventListener('click', async () => {
 /** Removes everything tied to a player, their login included (done by the
  *  server in one step). Races still running keep going for everyone else. */
 async function deleteAccount(p, progress) {
+  if ($('delBlock').checked) {
+    progress('Blocking their computers…');
+    await rpc('admin_ban_player', { p_uid: p.uid, p_reason: 'Account deleted', p_days: 0, p_devices: true, p_fps: false, p_ips: false, p_alts: false });
+  }
   progress('Deleting…');
   return Number(await rpc('admin_delete_player', { p_uid: p.uid })) || 0;
 }
@@ -1345,6 +1617,7 @@ async function loadSecurity() {
     sec = await rpc('admin_security');
     say('secMsg', '');
     renderSecurity();
+    loadSecurityExtra();
   } catch (e) {
     say('secMsg', /admin_security|PGRST202|function/i.test(e.message) ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message, 'err');
   }
@@ -1361,7 +1634,7 @@ function renderSecurity() {
     '</td><td class="mono">' + ago(Date.parse(f.at)) + '</td><td class="r" style="white-space:nowrap">' +
     '<button class="small" data-act="ok" data-uid="' + esc(f.uid) + '" data-course="' + esc(f.course) + '">Looks fine</button> ' +
     '<button class="small danger" data-act="remove" data-uid="' + esc(f.uid) + '" data-course="' + esc(f.course) + '">Remove time</button> ' +
-    (f.banned ? '' : '<button class="small danger" data-act="banplayer" data-uid="' + esc(f.uid) + '">Ban player</button> ') +
+    (f.banned ? '' : '<button class="small danger" data-act="openban" data-uid="' + esc(f.uid) + '">Ban…</button> ') +
     (f.device ? '<button class="small danger" data-act="block" data-kind="device" data-value="' + esc(f.device) + '">Block computer</button>' : '') +
     '</td></tr>').join('') || '<tr><td colspan="7" class="empty">Nothing unusual.</td></tr>';
   $('secHeld').innerHTML = (sec.held || []).map((h) =>
@@ -1372,9 +1645,57 @@ function renderSecurity() {
   renderDevices();
   $('secBans').innerHTML = (sec.bans || []).map((b) =>
     '<tr><td>' + esc({ device: 'computer', fp: 'browser fingerprint', ip: 'network' }[b.kind] || b.kind) + '</td><td class="mono">' + esc(b.value) +
-    '</td><td>' + esc(b.note || '') + '</td><td class="mono">' + ago(Date.parse(b.created_at)) + '</td><td class="r"><button class="small" data-act="unblock" data-kind="' +
-    esc(b.kind) + '" data-value="' + esc(b.value) + '">Remove</button></td></tr>').join('') || '<tr><td colspan="5" class="empty">No blocks.</td></tr>';
+    '</td><td>' + esc(b.note || '') + '</td><td class="mono">' + ago(Date.parse(b.created_at)) + '</td><td class="mono">' +
+    (b.until ? (Date.parse(b.until) > Date.now() ? whenText(Date.parse(b.until)) : 'ended') : 'for good') + '</td><td class="r"><button class="small" data-act="unblock" data-kind="' +
+    esc(b.kind) + '" data-value="' + esc(b.value) + '">Remove</button></td></tr>').join('') || '<tr><td colspan="6" class="empty">No blocks.</td></tr>';
 }
+/** the feed, possible evaders, the log and the sign-up switch (each fine on its own if missing) */
+async function loadSecurityExtra() {
+  const none = (n, t) => '<tr><td colspan="' + n + '" class="empty">' + t + '</td></tr>';
+  const old = (e) => /PGRST202|function/i.test(e.message);
+  const KIND_TXT = { 'blocked sign-in': 'Blocked computer signed in', 'blocked sign-up': 'Blocked computer tried to make an account',
+    'look-alike': 'New id, blocked fingerprint', 'bad name': 'Coach refused a username' };
+  try {
+    const ev = await rpc('admin_security_events', { p_limit: 100 });
+    $('secEvents').innerHTML = ev.map((e) => {
+      const p = players.find((x) => (x.displayName || '').toLowerCase() === String(e.name || '').toLowerCase());
+      return '<tr><td class="mono" title="' + esc(fmtWhen(e.at)) + '">' + ago(e.at) + '</td><td>' +
+        '<span class="pill' + (e.kind === 'bad name' ? '' : ' trm') + '" title="' + esc(e.detail || '') + '">' + esc(KIND_TXT[e.kind] || e.kind) + '</span></td><td><b>' +
+        esc(e.name || '—') + '</b>' + (p ? realTag(p.uid) + (p.banned ? ' <span class="pill trm">banned</span>' : '') : '') + '</td><td class="mono" title="' + esc(e.device || '') + '">' +
+        esc(shortId(e.device)) + '</td><td class="mono">' + esc(e.ip || '—') + '</td><td class="r" style="white-space:nowrap">' +
+        (p && !p.banned && e.kind !== 'bad name' ? '<button class="small danger" data-act="openban" data-uid="' + esc(p.uid) + '">Ban…</button> ' : '') +
+        (e.kind === 'look-alike' && e.device ? '<button class="small danger" data-act="block" data-kind="device" data-value="' + esc(e.device) + '">Block computer</button>' : '') +
+        '</td></tr>';
+    }).join('') || none(6, 'Nothing yet: no blocked computer has tried to get back in.');
+  } catch (e) { $('secEvents').innerHTML = none(6, old(e) ? 'Run supabase/schema.sql to see this.' : esc(e.message)); }
+  try {
+    const ev = await rpc('admin_evaders');
+    $('secEvaders').innerHTML = ev.map((e) => '<tr><td><b>' + esc(e.name || '(deleted)') + '</b>' + realTag(e.uid) + (e.banned ? ' <span class="pill trm">banned</span>' : '') +
+      '</td><td>' + esc(e.flag) + '</td><td class="mono">' + ago(e.at) + '</td><td class="r" style="white-space:nowrap">' +
+      (e.name && !e.banned ? '<button class="small danger" data-act="openban" data-uid="' + esc(e.uid) + '">Ban…</button>' : '') + '</td></tr>').join('') ||
+      none(4, 'None: nobody has signed up looking like a blocked computer.');
+  } catch (e) { $('secEvaders').innerHTML = none(4, old(e) ? 'Run supabase/schema.sql to see this.' : esc(e.message)); }
+  try {
+    const log = await rpc('admin_actions', { p_limit: 60 });
+    $('secActions').innerHTML = log.map((a) => '<tr><td class="mono" title="' + esc(fmtWhen(a.at)) + '">' + ago(a.at) + '</td><td>' + esc(a.action) +
+      '</td><td><b>' + esc(a.target || '') + '</b></td><td>' + esc(a.detail || '') + '</td></tr>').join('') || none(4, 'Nothing yet.');
+  } catch (e) { $('secActions').innerHTML = none(4, old(e) ? 'Run supabase/schema.sql to see this.' : esc(e.message)); }
+  try {
+    const r = await q(sb.from('settings').select('value').eq('key', 'signups').maybeSingle());
+    const paused = !!(r && r.value && r.value.on === false);
+    $('suState').textContent = paused ? 'paused' : 'open';
+    $('suState').classList.toggle('paused', paused);
+    $('btnSignups').textContent = paused ? 'Reopen sign-ups' : 'Pause sign-ups';
+    $('btnSignups').className = paused ? 'primary' : 'danger';
+    $('btnSignups').dataset.paused = paused ? '1' : '';
+  } catch (e) { $('suState').textContent = 'unknown'; }
+}
+$('btnSignups').addEventListener('click', async () => {
+  const reopen = !!$('btnSignups').dataset.paused;
+  if (!reopen && !confirm('Pause sign-ups? Nobody can make a new account until you reopen them.')) return;
+  try { await rpc('admin_set_signups', { p_on: reopen }); await loadSecurityExtra(); say('secMsg', reopen ? 'Sign-ups are open again.' : 'Sign-ups are paused.', 'ok'); }
+  catch (e) { say('secMsg', /PGRST202|function/i.test(e.message) ? 'The database is not updated yet: run supabase/schema.sql in the Supabase SQL Editor.' : e.message, 'err'); }
+});
 function renderDevices() {
   const find = $('secFind').value.trim().toLowerCase();
   const list = (sec.devices || []).filter((d) => !find || [d.id, d.fp, d.last_ip, d.first_ip].concat(d.names || []).some((v) => String(v || '').toLowerCase().includes(find)));
@@ -1515,14 +1836,16 @@ $('page-security').addEventListener('click', async (ev) => {
   const b = ev.target.closest('button[data-act]');
   if (!b) return;
   const a = b.dataset.act;
+  if (a === 'openban') {
+    const p = byUid[b.dataset.uid];
+    if (p) openBan(p); else say('secMsg', 'That player isn\'t loaded: open Players and reload.', 'err');
+    return;
+  }
   try {
     if (a === 'ok') await rpc('admin_clear_flags', { p_uid: b.dataset.uid, p_course: b.dataset.course });
     else if (a === 'remove') {
       if (!confirm('Remove this time and its recording?')) return;
       await rpc('admin_remove_best', { p_uid: b.dataset.uid, p_course: b.dataset.course });
-    } else if (a === 'banplayer') {
-      if (!confirm('Ban this player? Their times leave the leaderboards.')) return;
-      await rpc('admin_set_banned', { p_uid: b.dataset.uid, p_banned: true });
     } else if (a === 'block') {
       const fpw = b.dataset.kind === 'fp' ? ' Every computer with this exact browser and screen (on identical school laptops, possibly many people) will be blocked.' : '';
       const note = prompt('Block this ' + (b.dataset.kind === 'fp' ? 'browser fingerprint' : 'computer') + '?' + fpw + ' Note (why):', '');

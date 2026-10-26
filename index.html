@@ -519,6 +519,11 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .gate .err{font-size:12.5px;color:var(--ember);min-height:1.4em;margin-top:12px;line-height:1.45}
 .gate .row{margin-top:20px}
 .gate .switch{font-size:12.5px;color:var(--dim);margin-top:16px}
+.gate .coachHint{font-size:12.5px;color:var(--ember);margin-top:7px;line-height:1.45}
+.gate .coachHint b{font-weight:600}
+.gate .bnFacts{font-size:13px;line-height:1.6;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:-8px 0 4px}
+.gate .bnFacts div{display:flex;gap:12px}
+.gate .bnFacts span{color:var(--dim);min-width:58px}
 .gate .switch b{color:var(--aqua);cursor:pointer;font-weight:500}
 .who{display:flex;gap:14px;align-items:baseline;font-family:var(--mono);font-size:12px;
   color:var(--dim);margin-bottom:18px}
@@ -834,6 +839,10 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .clLog{flex:1;min-height:0;max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin:12px 0 10px;padding-right:4px}
 .clMsg{font-size:14px;line-height:1.55;padding:10px 13px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}
 .clMsg p{margin:0 0 6px}.clMsg p:last-child{margin:0}
+.clMsg.typing .dots{display:inline-flex;gap:4px;padding:4px 0}
+.clMsg.typing .dots i{width:6px;height:6px;border-radius:50%;background:var(--dim);opacity:.35;animation:clDot 1s infinite}
+.clMsg.typing .dots i:nth-child(2){animation-delay:.15s}.clMsg.typing .dots i:nth-child(3){animation-delay:.3s}
+@keyframes clDot{0%,100%{opacity:.25;transform:translateY(0)}40%{opacity:.9;transform:translateY(-2px)}}
 .clLog .cMe{align-self:flex-end;max-width:85%}
 /* ---------- what's new ---------- */
 .wnBox{position:fixed;inset:0;z-index:88;display:flex;align-items:center;justify-content:center;background:rgba(3,7,18,.7);padding:16px;
@@ -1549,6 +1558,39 @@ td.nope{color:var(--dimmer);font-size:11px;font-family:var(--mono)}
 .svDist[hidden]{display:none}
 .svPanel .row2{cursor:pointer}
 .svPanel .row2.on .n{color:var(--ember)}
+/* the big map in focus view: bigger tags and labels */
+.svTag.big{font-size:14px;padding:4px 11px;gap:7px}
+.svTag.big i{width:9px;height:9px}
+.svLabel.big{font-size:12.5px;padding:8px 11px}
+.svLabel.big .h{font-size:15px}
+.svLabel .r .hid{color:var(--dimmer);font-style:italic}
+.svFrame.main{border-color:rgba(234,240,248,.22)}
+.svFrame.thumb{cursor:pointer;pointer-events:auto}
+.svFrame.thumb:hover{border-color:rgba(242,115,63,.6)}
+.svHidNote{position:absolute;pointer-events:none;transform:translate(-50%,-50%);padding:6px 12px;border-radius:6px;
+  background:rgba(7,11,24,.8);border:1px solid var(--rule);font-size:12px;color:var(--dim);white-space:nowrap}
+.svHidNote[hidden]{display:none}
+#secview .svTopBtns{justify-self:end;display:flex;gap:8px;pointer-events:auto}
+/* where everyone is: a lane per driver across every map */
+.svProg{position:absolute;pointer-events:auto;background:rgba(7,11,24,.78);border:1px solid var(--rule);border-radius:8px;padding:7px 10px 8px}
+.svProg .pgHead{display:flex;align-items:center;gap:10px;margin-bottom:4px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer)}
+.svProg .pgHead button{margin-left:auto;font-size:11px;padding:2px 9px;letter-spacing:0;text-transform:none}
+.svProg .pgGrid{display:grid;align-items:center;column-gap:0;row-gap:3px}
+.svProg .pgMap{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;padding:2px 0;border:0;background:none;
+  border-left:1px solid rgba(255,255,255,.07);cursor:pointer;border-radius:0;min-width:0;overflow:hidden;white-space:nowrap}
+.svProg .pgMap:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+.svProg .pgMap.on{color:var(--ember);font-weight:700;background:rgba(242,115,63,.08)}
+.svProg .pgName{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px;cursor:pointer}
+.svProg .pgName.on{color:var(--ember)}
+.svProg .pgName i{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.svProg .pgLane{position:relative;height:12px;border-radius:6px;background:rgba(255,255,255,.04)}
+.svProg .pgLane .seg{position:absolute;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.08)}
+.svProg .pgLane .seg.hid{background:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 3px,transparent 3px 7px)}
+.svProg .pgLane .seg.cur{background:rgba(242,115,63,.07)}
+.svProg .pgDot{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%);
+  box-shadow:0 0 0 2px rgba(7,11,24,.9);transition:none}
+.svProg .pgDot.hid{background:transparent!important;border:2px solid currentColor}
+.watchTop{margin-bottom:14px}
 .svCmpTabs{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:14px 0 8px;font-size:11px;color:var(--dim)}
 .svCmpTabs .tab{padding:4px 10px}
 #svCmpWrap[hidden]{display:none}
@@ -2215,6 +2257,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <div class="noticeBox" id="gateNotice" hidden></div>
       <label class="fld" for="gUser">Username</label>
       <input type="text" id="gUser" maxlength="14" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="coachHint" id="gCoach" hidden></div>
       <label class="fld" for="gPass">Password</label>
       <input type="password" id="gPass" autocomplete="current-password">
       <div id="gNewFields" hidden>
@@ -2232,9 +2275,10 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   <div class="layer" id="banned" hidden>
     <div class="scrim"></div>
     <div class="panel gate">
-      <h2>This account is suspended</h2>
-      <p class="note">Your access to aiPolytrack has been withdrawn, so times and credits are
+      <h2 id="bnTitle">This account is suspended</h2>
+      <p class="note" id="bnText">Your access to aiPolytrack has been withdrawn, so times and credits are
         locked. If you think that is a mistake, speak to whoever runs this server.</p>
+      <div class="bnFacts" id="bnFacts" hidden></div>
       <div class="row"><button id="bnOut">Sign out</button></div>
     </div>
   </div>
@@ -2775,7 +2819,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           </div>
           <button class="ghost" id="bSecBack">← All courses</button>
         </div>
-        <p class="lede" style="margin-bottom:14px" id="secNote">Every driver's four best times added up.</p>
+        <p class="lede" style="margin-bottom:10px" id="secNote">Every driver's four best times added up.</p>
+        <button class="small cmpBtn watchTop" id="bSecTop" hidden>&#9654; Watch the top 3</button>
         <div class="cols">
           <div>
             <div id="secBoard"></div>
@@ -2800,7 +2845,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           </div>
           <button class="ghost" id="bOvBack">← All courses</button>
         </div>
-        <p class="lede" style="margin-bottom:14px" id="ovNote">Most maps cleared first, then the lowest total of best times.</p>
+        <p class="lede" style="margin-bottom:10px" id="ovNote">Most maps cleared first, then the lowest total of best times.</p>
+        <button class="small cmpBtn watchTop" id="bOvTop" hidden>&#9654; Watch the top 3</button>
         <div class="multiBar" id="ovMultiBar" hidden>
           <span class="multiBarCount" id="ovMultiCount">0 selected</span>
           <span class="multiBarSpacer"></span>
@@ -2822,9 +2868,13 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <div class="specWho"><span id="svTitle">Section</span>
           <small id="svSub"></small></div>
         <div class="clock" id="svClock">0:00.000</div>
-        <button class="ghost small" id="bSvBack">Back to leaderboard</button>
+        <div class="svTopBtns">
+          <button class="ghost small" id="bSvView" title="One big map with the action, or every map at once">Show every map</button>
+          <button class="ghost small" id="bSvBack">Back to leaderboard</button>
+        </div>
       </div>
       <div id="svLabels"></div>
+      <div class="svProg" id="svProg"></div>
       <div class="svPanel" id="svPanel">
         <div id="svPanelTop"></div>
         <div id="svCmpWrap" hidden>
@@ -4243,6 +4293,13 @@ const SUPABASE = {
  * accounts per computer and can block one. The fingerprint is the same on
  * identical school computers, so it is only ever a hint.
  */
+/** "Friday 30 October, 3:15 PM" */
+function fmtWhen(ms) {
+  try {
+    return new Date(ms).toLocaleString(undefined, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+  } catch (e) { return new Date(ms).toString(); }
+}
+
 const Device = {
   KEY: 'aipolytrack.device', _id: null, _fp: '',
   ok(v) { return /^[a-f0-9]{32}$/.test(v || ''); },
@@ -4289,6 +4346,8 @@ const Device = {
     this.id();
     try { this._fp = await this.fingerprint(); } catch (e) { this._fp = ''; }
   },
+  /** the id and fingerprint, worked out once */
+  ready() { return this._ready || (this._ready = this.init()); },
   fp() { return this._fp || ''; },
   async fingerprint() {
     const parts = [navigator.userAgent, navigator.language, (navigator.languages || []).join(','), navigator.platform,
@@ -4469,6 +4528,7 @@ const Cloud = {
 
   async signIn(username, pass) {
     this.error = '';
+    if (await this.deviceCheck(true)) throw this.blockedError();
     const captchaToken = await Captcha.token();
     const { data, error } = await this.sb.auth.signInWithPassword({ email: usernameToEmail(username), password: pass, options: { captchaToken } });
     if (error) {
@@ -4535,14 +4595,50 @@ const Cloud = {
     Records.forgetPlayer(this.user.uid);
   },
 
-  /** which computer this player is on (and whether it is blocked) */
+  /**
+   * Is this computer blocked? Asked before anything else at start-up, so a
+   * blocked computer never even reaches the sign-in page, and again just
+   * before signing in or up. {blocked, until (ms or null), signupsPaused}
+   */
+  deviceBlocked: false, deviceUntil: null, signupsPaused: false,
+  async deviceCheck(fresh) {
+    if (!this.on) return false;
+    if (!fresh && this._devCheck) return this._devCheck;
+    this._devCheck = (async () => {
+      await Device.ready();
+      try {
+        const r = await this.rpc('device_status', { p_device: Device.id(), p_fp: Device.fp() });
+        this.deviceBlocked = !!(r && r.blocked);
+        this.deviceUntil = (r && r.until) || null;
+        this.signupsPaused = !!(r && r.signupsPaused);
+      } catch (e) { /* a database from before this check (or no connection): the server still refuses */ }
+      return this.deviceBlocked;
+    })();
+    return this._devCheck;
+  },
+  /** which computer this player is on; a blocked one locks the game */
   async touchDevice() {
     if (!this.user || !this.on) return;
     try {
       const r = await this.rpc('touch_device', { p_device: Device.id(), p_fp: Device.fp() });
+      const was = this.deviceBlocked;
       this.deviceBlocked = !!(r && r.blocked);
-      if (this.deviceBlocked) UI.toast('This computer is blocked from setting times.');
+      this.deviceUntil = (r && r.until) || null;
+      if (this.deviceBlocked && !was) Game.onAuth(this.user, this.profile);
     } catch (e) { /* a database from before devices: nothing to say */ }
+  },
+  /** a blocked computer is told so, with how long for */
+  blockedError() {
+    return new Error('This computer is blocked from aiPolytrack' + (this.deviceUntil ? ' until ' + fmtWhen(this.deviceUntil) : '') +
+      ', so no account can sign in, play or be made on it.');
+  },
+  /** Coach reads a new username before the account is made: null, or what to say */
+  async nameProblem(username) {
+    try {
+      const r = await this.rpc('name_check', { p_name: username.trim() });
+      if (r && r.ok === false) return 'Coach detected an inappropriate word in that username ("' + r.word + '"). Pick a different one.';
+    } catch (e) { /* a database from before this check: the server checks again at sign-up */ }
+    return null;
   },
   /** a ticket for the run that just set off: {ok, run} or {ok:false, message} */
   async startRun(courseId) {
@@ -4569,6 +4665,11 @@ const Cloud = {
     if (!validUsername(username)) {
       throw new Error('Usernames are 3-14 characters: letters, numbers, _ and - only.');
     }
+    // nothing is made for a blocked computer or a name Coach won't allow
+    if (await this.deviceCheck(true)) throw this.blockedError();
+    if (this.signupsPaused) throw new Error('New accounts are paused right now. Try again later, or sign in to an account you already have.');
+    const bad = await this.nameProblem(username);
+    if (bad) throw new Error(bad);
     const email = usernameToEmail(username);
     let { data, error } = await this.sb.auth.signUp({ email, password: pass, options: { captchaToken: await Captcha.token() } });
     if (error && cloudError(error).code === 'auth/email-already-in-use') {
@@ -4594,7 +4695,9 @@ const Cloud = {
       this.user = null;
       if (res && res.error === 'invite') throw new Error(/^ref:/i.test(code || '') ? 'That invite link isn\'t working any more. Ask your friend for a new one, or use an invite code.' : 'That invite code is not valid.');
       if (res && res.error === 'device_limit') throw new Error('This computer already has 5 accounts, the most it can make. Sign in to one of them.');
-      if (res && res.error === 'blocked') throw new Error('This computer is blocked from making accounts.');
+      if (res && res.error === 'blocked') { this.deviceBlocked = true; throw this.blockedError(); }
+      if (res && res.error === 'badname') throw new Error('Coach detected an inappropriate word in that username ("' + (res.word || '') + '"). Pick a different one.');
+      if (res && res.error === 'paused') throw new Error('New accounts are paused right now. Try again later, or sign in to an account you already have.');
       if (res && res.error === 'busy') throw new Error('Lots of accounts are being made right now. Try again in an hour.');
       if (res && res.error === 'device') throw new Error('Reload the page and try again.');
       if (res && res.error === 'taken') { const e = new Error('taken'); e.code = 'auth/email-already-in-use'; throw e; }
@@ -4624,8 +4727,20 @@ const Cloud = {
       throw new Error('This account has no profile yet — it needs a valid invite code.');
     }
     this.profile = { displayName: row.display_name, banned: !!row.banned };
+    if (row.banned) {
+      let ban = null;
+      try { ban = await this.q(this.sb.from('account_bans').select('reason, until').eq('uid', this.user.uid).maybeSingle()); } catch (e) { /* a database from before reasons */ }
+      if (ban && ban.until && Date.parse(ban.until) <= Date.now()) {
+        // it has run out: signing in lifts it
+        await Device.ready(); await this.touchDevice();
+        this.profile.banned = false;
+      } else if (ban) {
+        this.profile.banReason = ban.reason || '';
+        this.profile.banUntil = ban.until ? Date.parse(ban.until) : null;
+      }
+    }
     try { localStorage.setItem(key, JSON.stringify(this.profile)); } catch (x) { /* storage blocked */ }
-    Device.init().then(() => this.touchDevice());
+    Device.ready().then(() => this.touchDevice());
     return this.profile;
   },
 
@@ -7462,7 +7577,7 @@ const LEVELS = [
     }
   },
   {
-    id: 's4m2', section: 0, name: 'Goat Path',
+    id: 's4m2', section: 0, name: 'Ledgerunner',
     blurb: 'Up onto a narrow ledge and through tight, narrow corners, with speed strips between them.',
     build() {
       return TrackKit.build({ w: 15, pieces: [['S', 80, 15], ['H', 12, 40, 10], ['T', 24, 60, 10, 0, 10], ['S', 50, 10], ['T', 24, -90, 10, 0, 10], ['S', 10, 10], ['B', 30, 10], ['T', 60, -105, 10, 0, 10], ['H', -4, 60, 10], ['B', 30, 10], ['T', 40, -30, 0, 0, 20]] });
@@ -7491,10 +7606,10 @@ const LEVELS = [
     }
   },
   {
-    id: 's4m6', section: 1, name: 'Hourglass',
-    blurb: 'A super strip into a wide open area that squeezes down to 6 m, then a banked left and a crest.',
+    id: 's4m16', section: 1, name: 'Hourglass',
+    blurb: 'Minimal: a wide bowl that pinches to 8 m and opens out again, one long sweeping left, then flat out to the line.',
     build() {
-      return TrackKit.build({ w: 18, pieces: [['S', 40, 18], ['X', 30, 18], ['W', 60, 40], ['N', 40, 6], ['S', 40, 15], ['T', 60, 90, 30, 0, 15], ['S', 60, 15], ['C', 7, 15], ['S', 80, 15]] });
+      return TrackKit.build({ w: 16, pieces: [['S', 50, 16], ['W', 60, 30], ['N', 30, 8], ['W', 60, 30], ['S', 40, 16], ['T', 120, 45, 10, 0, 16], ['S', 120, 16]] });
     }
   },
   {
@@ -7551,7 +7666,7 @@ const LEVELS = [
   },
   // ---------------------------------------------------------- Section D
   {
-    id: 's4m12', section: 3, name: 'coil', by: 'Julian Svoboda',
+    id: 's4m12', section: 3, name: 'Coil', by: 'Julian Svoboda',
     blurb: 'Banked turns that get steeper as the road gets narrower, with a speed strip after each one.',
     build() {
       return TrackKit.build({ w: 20, pieces: [['R', 2, 0.6, 20], ['B', 30, 17], ['H', 12, 40, 15], ['T', 60, -120, 55, 0, 13], ['B', 50, 12], ['T', 50, 90, 60, 0, 10], ['B', 50, 8], ['T', 40, 75, 65, 0, 8], ['B', 50, 8], ['T', 50, -60, 60, 0, 8], ['S', 10, 8]] });
@@ -7565,17 +7680,46 @@ const LEVELS = [
     }
   },
   {
-    id: 's4m14', section: 3, name: 'cornfield', by: 'Julian Svoboda',
+    id: 's4m14', section: 3, name: 'Cornfield', by: 'Julian Svoboda',
     blurb: 'Climbs, jumps and super strips on a road that narrows to 8 m, then a 60 degree banked left to finish.',
     build() {
       return TrackKit.build({ w: 20, pieces: [['X', 20, 20], ['H', 20, 60, 20], ['J', 4, 18], ['X', 30, 16], ['S', 20, 14], ['T', 75, -90, 30, 0, 10], ['H', 20, 60, 8], ['J', 1, 8], ['H', -12, 60, 18], ['H', -12, 60, 18], ['B', 50, 18], ['X', 20, 18], ['H', 15, 50, 18], ['H', 6, 40, 18], ['X', 20, 18], ['T', 75, 120, 60, 0, 10]] });
     }
   },
   {
-    id: 's4m15', section: 3, name: 'Needle Drop',
-    blurb: 'A super strip up a hill and a big jump down onto a road only 8 m wide, then banked bends to the line.',
+    id: 's4m17', section: 3, name: 'Black Diamond',
+    blurb: 'Straight down the mountain: three ski jumps, each bigger than the last, a banked right and an icy left between them, and a hairpin at the bottom.',
     build() {
-      return TrackKit.build({ w: 15, pieces: [['S', 20, 15], ['T', 75, -15, 10, 0, 15], ['S', 10, 15], ['X', 30, 15], ['H', 6, 40, 15], ['J', 3, 8], ['T', 120, -90, 10, 0, 8], ['S', 60, 8], ['T', 90, 60, 30, 0, 8], ['T', 40, 60, 45, 0, 8]] });
+      const b = new TrackBuilder({ width: 15, y: 120, fine: true });
+      b.pad(22, 19);
+      b.slope(40, -6);
+      b.straight(14);
+      b.ramp(14, 4);
+      b.skiJump(14, 4, 40, 18, 26, { w: 18 });
+      b.landing(34, -18, { w: 18 });
+      b.slope(24, -3);
+      b.curve(85, -55, { bank: 22, rise: -5, chev: 1 });
+      b.straight(24);
+      b.strip(20);
+      b.straight(12);
+      b.ramp(26, 4);
+      b.skiJump(20, 7, 56, 22, 40, { w: 22 });
+      b.landing(44, -22, { w: 22 });
+      b.slope(30, -5);
+      b.curve(75, 60, { bank: 20, grip: 0.8, rise: -4, chev: 1 });
+      b.straight(20);
+      b.strip(20);
+      b.straight(14);
+      b.ramp(28, 5);
+      b.skiJump(24, 9, 58, 25, 46, { w: 24 });
+      b.landing(50, -25, { w: 24 });
+      b.slope(36, -7);
+      b.straight(14);
+      b.curve(24, 150, { bank: 10, w: 18, chev: 1 });
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
     }
   }
 ];
@@ -7596,7 +7740,9 @@ const NEXT_LEVELS = [
 const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24',
   's2c25', 's2c10', 's2c28', 's2c30', 's2c32',
   // Season 3's first maps, replaced by the players' maps on 2026-10-26
-  's4c2', 's4c3', 's4c4', 's4c5', 's4c6', 's4c7', 's4c8', 's4c9', 's4c10', 's4c11', 's4c12', 's4c13', 's4c14', 's4c15', 's4c16'];
+  's4c2', 's4c3', 's4c4', 's4c5', 's4c6', 's4c7', 's4c8', 's4c9', 's4c10', 's4c11', 's4c12', 's4c13', 's4c14', 's4c15', 's4c16',
+  // the first Hourglass and Needle Drop, replaced on 2026-10-26
+  's4m6', 's4m15'];
 /**
  * The daily map: a new course every day, made from the date, so every
  * player's game makes exactly the same one. Only proven pieces: turns of
@@ -10860,6 +11006,9 @@ const ClosedCoach = {
     this.post('Hi ' + name + '. The track is closed right now: aiPolytrack is open on school days, 8:30 AM to 3:30 PM ' +
       '(Wednesdays until 2:30 PM), Pacific time. It opens again in ' + this.left() + '.\n\nThis is a good time to step away from the screen. ' +
       'You could ' + this.idea() + ', or ' + this.idea() + '. The best drivers rest too. Ask me anything in the meantime.');
+    if (!this.noModel && Coach.api()) {
+      Coach.availability().then((a) => { if (a === 'available') this.warm().catch(() => { this.noModel = true; }); }).catch(() => {});
+    }
   },
   post(text, who) {
     const d = document.createElement('div');
@@ -10919,8 +11068,15 @@ const ClosedCoach = {
   /** the on-device model's answer, shown as it arrives; '' if there is none or it is too slow */
   async model(q, out) {
     const within = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('slow')), ms))]);
-    if (this.noModel || !Coach.api() || (await within(Coach.availability(), 5000)) !== 'available') return '';
-    if (!this.session) {
+    if (this.noModel || !Coach.api() || (await within(Coach.availability(), 2500)) !== 'available') return '';
+    if (!this.session) await within(this.warm(), 6000);
+    return this.ask(q, out);
+  },
+  /** the model's session, made once (when the closed screen opens, so the first answer is quick) */
+  warm() {
+    if (this.session) return Promise.resolve(this.session);
+    if (this._warming) return this._warming;
+    this._warming = (async () => {
       const sys = 'You are Coach, the coach inside the racing game aiPolytrack. Your only name is Coach, part of aiPolytrack; never name the company, model or technology behind you. ' +
         'The game is CLOSED right now: it is only open on school days, Monday, Tuesday, Thursday and Friday 8:30 AM to 3:30 PM and Wednesday 8:30 AM to 2:30 PM, Pacific time. ' +
         'Always answer what the player actually said first, kindly and directly (a question gets a real answer; a feeling gets a caring reply). ' +
@@ -10928,29 +11084,35 @@ const ClosedCoach = {
         'homework, reading, going outside, exercise, a hobby, helping at home, friends, family or sleep. ' +
         'Never help them get around the hours (an access code from the admin is the only way). If they seem upset or unsafe, encourage them to talk to a trusted adult. ' +
         'Be warm and brief: at most 4 short sentences.';
-      this.session = await within(Coach.api() === 'new'
+      this.session = await (Coach.api() === 'new'
         ? self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: sys }], expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] })
-        : self.ai.languageModel.create({ systemPrompt: sys }), 10000);
-    }
+        : self.ai.languageModel.create({ systemPrompt: sys }));
+      return this.session;
+    })();
+    this._warming.catch(() => { this._warming = null; });
+    return this._warming;
+  },
+  async ask(q, out) {
     const ctl = new AbortController(), session = this.session;
+    if (!session) throw new Error('no session');
     let acc = '', whole = null, first = false, over = false, t1 = 0, t2 = 0;
     const msg = q + '\n[The game opens again in ' + this.left() + ']';
     const read = (async () => {
       if (!session.promptStreaming) { acc = String(await session.prompt(msg)); return; }
       for await (const chunk of session.promptStreaming(msg, { signal: ctl.signal })) {
-        if (over) return;
+        if (over || out.dataset.done) return;
         first = true;
         if (!acc) acc = chunk;
         else { if (whole === null) whole = chunk.length > acc.length && chunk.startsWith(acc); acc = whole ? chunk : acc + chunk; }
-        out.textContent = acc;
+        if (/[a-z]{2}/i.test(acc)) { out.classList.remove('typing'); out.textContent = acc; }
         $('clLog').scrollTop = $('clLog').scrollHeight;
       }
     })();
-    // no first words within 12 s, or no end within 30 s: Coach answers by
+    // no first words within 6 s, or no end within 15 s: Coach answers by
     // itself, whether or not the model ever stops (it is asked to)
     const late = new Promise((done) => {
-      t1 = setTimeout(() => { if (!first) done('slow'); }, 12000);
-      t2 = setTimeout(() => done('slow'), 30000);
+      t1 = setTimeout(() => { if (!first) done('slow'); }, 6000);
+      t2 = setTimeout(() => done('slow'), 15000);
     });
     try {
       if ((await Promise.race([read.then(() => 'ok'), late])) === 'slow') {
@@ -10960,7 +11122,8 @@ const ClosedCoach = {
         if (!acc.trim()) throw new Error('slow');
       }
     } finally { clearTimeout(t1); clearTimeout(t2); }
-    return acc.trim() ? Coach.scrub(acc) : '';
+    // a few dots or a word or two is not an answer
+    return /[a-z]{2}.*\s.*[a-z]{2}/is.test(acc) ? Coach.scrub(acc) : '';
   },
   async send() {
     const box = $('clIn'), q = box.value.trim().slice(0, 400);
@@ -10968,10 +11131,27 @@ const ClosedCoach = {
     box.value = '';
     this.post(q, 'me');
     this.busy = true;
-    const out = this.post('…');
-    let text = '';
+    const out = this.post('');
+    out.classList.add('typing');
+    out.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    let text = '', done = false;
+    const finish = (t) => {
+      if (done) return;
+      done = true;
+      out.dataset.done = '1';
+      let ans = String(t || '').trim();
+      if (!ans) { try { ans = this.quick(q); } catch (e) { ans = 'The track is closed for now, so this is a good time to step away from the screen: ' + this.idea() + '.'; } }
+      out.classList.remove('typing');
+      out.innerHTML = Coach.format(ans);
+      $('clLog').scrollTop = $('clLog').scrollHeight;
+      this.busy = false;
+    };
+    // whatever the model does, Coach has answered within 18 s
+    const guard = setTimeout(() => { this.noModel = true; finish(''); }, 18000);
     try {
-      text = Coach.WHO.test(q) ? Coach.IAM : await this.model(q, out);
+      if (Coach.WHO.test(q)) text = Coach.IAM;
+      else if (this.noModel || !Coach.api()) await new Promise((r) => setTimeout(r, 450));     // a moment to "type"
+      else text = await this.model(q, out);
     } catch (e) {
       // a model that fails or hangs is left alone for the rest of the visit
       text = '';
@@ -10979,10 +11159,8 @@ const ClosedCoach = {
       try { if (this.session) this.session.destroy(); } catch (e2) { /* gone already */ }
       this.session = null;
     } finally {
-      if (!text.trim()) text = this.quick(q);
-      out.innerHTML = Coach.format(text);
-      $('clLog').scrollTop = $('clLog').scrollHeight;
-      this.busy = false;
+      clearTimeout(guard);
+      finish(text);
     }
   }
 };
@@ -10998,14 +11176,20 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
  * remembered in this browser. index.html#whatsnew shows it any time.
  */
 const WhatsNew = {
-  SEASON: 3, KEY: 'whatsNew',
+  // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
+  // everyone who saw an earlier list sees it again
+  SEASON: 3, EDITION: 3.1, KEY: 'whatsNew',
   ITEMS: [
-    ['map', 'Sixteen new maps', 'Most were built by players in the track builder, from a 250 m sprint to a 1.2 km epic, plus a straight line with a jump.'],
+    ['map', 'Sixteen new maps', 'Most were built by players in the track builder (three by Julian Svoboda), from a 280 m sprint to Black Diamond\'s three ski jumps down a mountain.'],
     ['build', 'Track builder', 'Build up to 3 tracks of your own, make them public, and race everyone else\'s. Each track has its own leaderboard.'],
+    ['target', 'Practise any part of a map', 'Pick a moment of your best run and start right there, at the same speed, after a 3-2-1. Practice times never count.'],
+    ['eye', 'Hide your run', 'Keep your racing line to yourself: 100 credits a school day hides a run from everyone else (weekends are free).'],
+    ['photo', 'Watch a whole section or season', 'One big view follows the action, a lane per driver shows where everyone is, and one click watches the top 3.'],
+    ['clock', 'Opening hours', 'Open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), Pacific time. When it\'s closed, Coach has ideas for what to do instead.'],
+    ['key', 'Your own keys', 'In Settings, pick the keys for Play again (R) and Next map (N) on the finish screen.'],
     ['crown', 'Season 2 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
-    ['clock', 'Opening hours', 'aiPolytrack is open on school days: 8:30 AM to 3:30 PM, and until 2:30 PM on Wednesdays (Pacific time).'],
-    ['target', 'Thousandths everywhere', 'Every time and every gap is shown to the thousandth of a second.'],
-    ['gem', 'Quicker credits', 'Big payouts land in under two seconds.']
+    ['flag', 'Thousandths and quicker credits', 'Every time and gap is shown to the thousandth of a second, and big payouts land in under two seconds.'],
+    ['card', 'Always the latest version', 'When aiPolytrack is updated, it reloads itself the next time you\'re on the menu. No more old tabs.']
   ],
   ICON: {
     map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/>',
@@ -11019,13 +11203,14 @@ const WhatsNew = {
     key: '<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h1 M11 11h1 M15 11h2 M7 14h10"/>',
     friend: '<circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5 M17 8v6 M14 11h6"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/>',
     build: '<path d="M4 18c3 0 4-3 6-6s4-6 8-6 M4 18h3 M17 6h3"/><circle cx="4" cy="18" r="1.5"/><circle cx="20" cy="6" r="1.5"/>'
   },
   /** from the menu: show once, the first time after the season goes live */
   maybe() {
     if (/whatsnew/.test(location.hash)) { this.open(); return; }
     if (SEASON < this.SEASON || !Cloud.user) return;
-    if (Prefs.get(this.KEY, 0) >= this.SEASON) return;
+    if (Prefs.get(this.KEY, 0) >= this.EDITION) return;
     this.open();
   },
   open() {
@@ -11043,8 +11228,62 @@ const WhatsNew = {
   },
   close() {
     $('wnBox').hidden = true;
-    Prefs.set(this.KEY, Math.max(SEASON, this.SEASON));
+    Prefs.set(this.KEY, Math.max(SEASON, this.EDITION));
     if (/whatsnew/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* fine */ } }
+  }
+};
+
+/**
+ * Always the latest version. Every two minutes (and whenever the tab comes
+ * back into view) the page asks the server, with a tiny HEAD request, when
+ * the game was last published. A newer copy than the one running means an
+ * update (a new season, say): the game reloads itself the moment the player
+ * is somewhere safe (the menu, a leaderboard, the sign-in page...), never
+ * in the middle of a run, a race or the track builder, and says so until then.
+ */
+const Updater = {
+  loaded: 0, pending: false, busy: false, at: 0, told: false,
+  SAFE: ['menu', 'gate', 'boot', 'select', 'closed', 'banned', 'stats', 'info', 'garage', 'trophies', 'tracks'],
+  start() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    this.loaded = Date.parse(document.lastModified) || 0;
+    if (!this.loaded) return;
+    setTimeout(() => this.check(), 20000);
+    setInterval(() => this.check(), 120000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.check(); });
+  },
+  async check() {
+    if (this.pending) { this.maybe(); return; }
+    if (this.busy || Date.now() - this.at < 30000) return;
+    this.busy = true; this.at = Date.now();
+    try {
+      const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      const lm = Date.parse(r.headers.get('last-modified') || '');
+      // (a second or two either way is the same copy)
+      if (r.ok && lm && lm > this.loaded + 2000) { this.pending = true; this.maybe(); }
+    } catch (e) { /* offline: try again later */ } finally { this.busy = false; }
+  },
+  /** reload now if it's safe; otherwise say it will happen */
+  maybe(screen) {
+    if (!this.pending) return;
+    const st = screen || Game.state;
+    if (this.SAFE.includes(st)) {
+      this.pending = false;
+      try { sessionStorage.setItem('aipolytrack.updated', '1'); } catch (e) { /* fine */ }
+      location.reload();
+      return;
+    }
+    if (!this.told) {
+      this.told = true;
+      UI.toast(st === 'builder' ? 'aiPolytrack has been updated: save your track, then go back to the menu to load the new version.'
+        : 'aiPolytrack has been updated. It loads the new version when you\'re back on the menu.');
+    }
+  },
+  /** after an update: a word to say so */
+  greet() {
+    let was = false;
+    try { was = sessionStorage.getItem('aipolytrack.updated') === '1'; sessionStorage.removeItem('aipolytrack.updated'); } catch (e) { /* fine */ }
+    if (was) setTimeout(() => UI.toast('aiPolytrack is up to date.'), 1200);
   }
 };
 
@@ -12072,7 +12311,7 @@ const Coach = {
       'You talk with ' + I.name + ' like a real racing coach. ' + Tone.voice(I) + '\n' +
       'You can answer ANY question, on any subject (school work, facts, advice, anything): answer it properly and correctly first, then add one ' +
       'short line that ties it back to aiPolytrack in your coaching voice. For anything about the game\'s times, use ONLY the facts and the working ' +
-      'you are given. Never invent a time, name, place or number; copy numbers exactly. Name maps by tag and name (for example "B2 Big Air"). ' +
+      'you are given. Never invent a time, name, place or number; copy numbers exactly. Name maps by tag and name (for example "B2 Hourglass"). ' +
       'When figures are listed as on screen, point the player at them by number ("see Figure 2"). When the working lists fixes, give the player ' +
       'those fixes as a short list with their numbers: that is the most useful thing you can say. Keep it tight: at most 6 short sentences or a ' +
       'short list, no preamble.' + (this.short() ? ' The player asked for SHORT answers: two sentences at most.' : '') + '\n\n' +
@@ -14688,6 +14927,7 @@ const UI = {
     if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
     if (id !== 'stats') TopTen.stop();
     if (id === 'menu' || id === 'gate') Notice.show();
+    if (Updater.pending) setTimeout(() => Updater.maybe(Game.state), 0);
     $('boot').hidden = true;             // the loading notice ends when any screen shows
     document.body.dataset.screen = id;   // lets CSS hide things per screen
     Morph.go(from, id);
@@ -15208,12 +15448,15 @@ const UI = {
     const rows = Records.overall(ids);
     const actions = Cloud.on;
     const sel = Game.boardSel[key] || (Game.boardSel[key] = new Set());
-    const whole = new Set(rows.filter((r) => r.uid && r.count === ids.length && !ids.some((x) => RunHides.closed(r.uid, x))).map((r) => r.uid));
+    // a driver can be watched with a time on all four maps, as long as not
+    // every one of those runs is hidden (a hidden one just isn't shown)
+    const whole = new Set(rows.filter((r) => r.uid && r.count === ids.length && !ids.every((x) => RunHides.closed(r.uid, x))).map((r) => r.uid));
     for (const uid of [...sel]) if (!whole.has(uid)) sel.delete(uid);
     $('secNote').textContent = actions
       ? 'Every driver\'s best on the four maps added up. Tick drivers with all four to watch their runs back to back — ' +
         'the four maps on screen at once — or tick two to compare them.'
       : 'Every best on the four maps added up (times on this device).';
+    this.topButton('bSecTop', rows, whole, (uids) => SectionView.open(sec, uids, false));
     const show = Game.boardShow[key] || 10;
     const board = $('secBoard');
     if (!rows.length) board.innerHTML = '<p class="empty">No times in ' + escapeHtml(SECTIONS[sec]) + ' yet.</p>';
@@ -15227,7 +15470,7 @@ const UI = {
         h += '<tr class="' + [(mine ? 'me' : ''), (checked ? 'sel' : '')].filter(Boolean).join(' ') + '">';
         if (actions) {
           h += ok ? '<td><input type="checkbox" class="selBox" data-uid="' + escapeHtml(r.uid) + '"' + (checked ? ' checked' : '') +
-            ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all four maps, and none of them hidden">—</td>';
+            ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all four maps (and not every one of those runs hidden)">—</td>';
         }
         h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(r.n) +
           (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="d">' + r.count + ' / ' + ids.length +
@@ -15258,6 +15501,15 @@ const UI = {
       el.innerHTML = top ? '♛ <b>' + escapeHtml(top.n) + '</b> · ' + formatTime(top.t) : 'no times yet';
     });
   },
+  /** "Watch the top 3": one click to the best drivers who can be watched */
+  topButton(id, rows, whole, go) {
+    const btn = $(id);
+    const top = Cloud.on ? rows.filter((r) => whole.has(r.uid)).slice(0, 3) : [];
+    btn.hidden = !top.length;
+    if (!top.length) return;
+    btn.textContent = '\u25B6 ' + (top.length === 1 ? 'Watch ' + top[0].n : 'Watch the top ' + top.length + ': ' + top.map((r) => r.n).join(', '));
+    btn.onclick = () => go(top.map((r) => r.uid));
+  },
   updateSectionMultiBar(sec) {
     const sel = Game.boardSel['sec' + sec];
     const n = sel ? sel.size : 0;
@@ -15270,8 +15522,10 @@ const UI = {
     $('ovSeason').textContent = String(SEASON);
     const actions = Cloud.on;
     const sel = Game.boardSel.all || (Game.boardSel.all = new Set());
-    const whole = new Set(Records.overall(COURSE_IDS).filter((r) => r.uid && r.count === COURSE_IDS.length && !COURSE_IDS.some((x) => RunHides.closed(r.uid, x))).map((r) => r.uid));
+    const ovRows = Records.overall(COURSE_IDS);
+    const whole = new Set(ovRows.filter((r) => r.uid && r.count === COURSE_IDS.length && !COURSE_IDS.every((x) => RunHides.closed(r.uid, x))).map((r) => r.uid));
     for (const uid of [...sel]) if (!whole.has(uid)) sel.delete(uid);
+    this.topButton('bOvTop', ovRows, whole, (uids) => SectionView.open('all', uids, false));
     $('ovNote').textContent = 'Most maps cleared first, then the lowest total of best times.' + (actions
       ? ' Tick drivers with all ' + COURSE_IDS.length + ' maps to watch the whole season back to back, every map on screen at once, or tick two to compare them.'
       : '');
@@ -15539,6 +15793,9 @@ function escapeHtml(s) {
 const SectionView = {
   renderer: null, quads: [], cars: [], t: 0, playing: false, rate: 1, sec: 0, compare: false,
   scrubbing: false, longest: 0, hudAcc: 0, lastT: 0, W: 0, H: 0, camIdx: -1, cmpMap: 0, cmpAuto: true, cmps: [],
+  // 'focus': one big map where the action is and a few small ones beside
+  // it; 'grid': every map the same size. pinned: a map picked by hand.
+  view: 'focus', main: 0, pinned: null, layoutKey: '',
 
   ensureRenderer() {
     if (this.renderer) return;
@@ -15612,11 +15869,23 @@ const SectionView = {
     const rows = Records.overall(ids);
     const loaded = await Promise.all(capped.map(async (uid) => {
       const got = await Promise.all([Cloud.fetchCarColorsOf(uid), ...ids.map((id) => Cloud.fetchGhost(id, uid))]);
-      return { uid, colors: got[0], ghosts: got.slice(1), name: (rows.find((r) => r.uid === uid) || {}).n || 'driver' };
+      // a run they hid (or one with no recording) is kept as just its time:
+      // the clock still runs through it, the car just isn't shown on that map
+      const ghosts = got.slice(1).map((g, k) => {
+        if (g) return g;
+        const row = Records.board(ids[k]).find((r) => r.uid === uid);
+        return row ? { t: row.t, s: null, hidden: true } : null;
+      });
+      return { uid, colors: got[0], ghosts, name: (rows.find((r) => r.uid === uid) || {}).n || 'driver' };
     }));
-    const cars = loaded.filter((c) => c.ghosts.every(Boolean));
-    if (!cars.length) { UI.toast(Cloud.ghostProblem()); return; }
-    if (cars.length < loaded.length) UI.toast((loaded.length - cars.length) + ' left out: one of their ' + ids.length + ' runs has no ghost.');
+    const cars = loaded.filter((c) => c.ghosts.every(Boolean) && c.ghosts.some((g) => !g.hidden));
+    if (!cars.length) { UI.toast(Cloud.ghostProblem() || 'Those runs are hidden.'); return; }
+    if (cars.length < loaded.length) UI.toast((loaded.length - cars.length) + ' left out: every one of their runs here is hidden.');
+    const hid = cars.filter((c) => c.ghosts.some((g) => g.hidden));
+    if (hid.length) {
+      UI.toast(hid.map((c) => c.name + ' hid ' + c.ghosts.map((g, k) => g.hidden ? courseTag(idxs[k]) : '').filter(Boolean).join(', ')).join('; ') +
+        ': not shown there, but their time still counts.');
+    }
     this.teardown();
     this.ensureRenderer();
     this.renderer.setPixelRatio(all ? 1 : Math.min(devicePixelRatio || 1, 1.5));
@@ -15632,7 +15901,7 @@ const SectionView = {
       bodyMat.color.setHex(hslToHex(c.colors.primary.h, c.colors.primary.s, c.colors.primary.l));
       darkMat.color.setHex(hslToHex(c.colors.secondary.h, c.colors.secondary.s, c.colors.secondary.l));
       bodyMat.transparent = darkMat.transparent = true;
-      bodyMat.opacity = darkMat.opacity = cars.length > 1 ? 0.55 : 0.9;
+      bodyMat.opacity = darkMat.opacity = cars.length > 1 ? 0.8 : 0.92;
       bodyMat.depthWrite = darkMat.depthWrite = false;
       const meshes = this.quads.map((q) => {
         const built = buildCarMesh(bodyMat, darkMat);
@@ -15657,6 +15926,8 @@ const SectionView = {
     this.t = 0; this.lastT = 0; this.playing = true; this.scrubbing = false;
     this.camIdx = this.cars.length > 1 ? -1 : 0;
     this.cmpAuto = true; this.cmpMap = 0;
+    this.view = Prefs.get('svView', 'focus') === 'grid' ? 'grid' : 'focus';
+    this.pinned = null; this.main = 0; this.layoutKey = '';
     Game.state = 'section';
     Sound.stopEngine();
     $('svTitle').textContent = this.title + (this.compare ? ' · compare' : '');
@@ -15675,14 +15946,17 @@ const SectionView = {
         .map((p) => { const [key, txt] = p.split(':'); return '<div class="k' + (key === 'boost' ? ' boost' : '') + '" data-k="' + key + '">' + txt + '</div>'; }).join('') +
       '</div><span class="svSpd"></span></div>' +
       this.cars.map((c) => '<div class="svTag" data-t="' + k + '-' + c.n + '"><i style="background:' + c.dot + '"></i>' + escapeHtml(c.name) + '</div>').join('') +
-      '<div class="svDist" data-d="' + k + '" hidden></div>').join('');
+      '<div class="svDist" data-d="' + k + '" hidden></div><div class="svHidNote" data-h="' + k + '" hidden></div>').join('');
     this.quads.forEach((q, k) => {
+      q.hidNote = document.querySelector('.svHidNote[data-h="' + k + '"]');
       q.frame = document.querySelector('.svFrame[data-f="' + k + '"]');
       q.label = document.querySelector('.svLabel[data-q="' + k + '"]');
       q.keys = document.querySelector('.svKeys[data-k="' + k + '"]');
       q.tags = this.cars.map((c) => document.querySelector('.svTag[data-t="' + k + '-' + c.n + '"]'));
       q.dist = document.querySelector('.svDist[data-d="' + k + '"]');
     });
+    this.buildProgress();
+    $('bSvView').textContent = this.view === 'grid' ? 'Focus on the action' : 'Show every map';
     $('svPanel').classList.toggle('wide', this.compare);
     $('svCmpWrap').hidden = !this.compare;
     if (this.compare) {
@@ -15702,22 +15976,86 @@ const SectionView = {
     this.hud(true);
   },
 
-  /** four quarters of the screen, leaving room for the bars and the panel */
+  /** which map each car is on at time t (by the clock, hidden or not) */
+  mapOf(c, t) {
+    let k = 0;
+    while (k < this.quads.length - 1 && t >= c.starts[k] + c.ghosts[k].t) k++;
+    return k;
+  },
+  /** focus view: the big map and the small ones beside it */
+  pickMaps(t) {
+    const n = this.quads.length;
+    let main = this.pinned;
+    if (main === null) {
+      const followed = this.camIdx >= 0 ? this.cars[this.camIdx] : null;
+      if (followed) main = this.mapOf(followed, t);
+      else {
+        // the furthest car that can be seen, else the furthest of all
+        const at = this.cars.map((c) => ({ c, k: this.mapOf(c, t) }));
+        const seen = at.filter((a) => !a.c.ghosts[a.k].hidden);
+        const pool = seen.length ? seen : at;
+        main = pool.reduce((b, a) => (a.k > b ? a.k : b), 0);
+        // once everyone has finished, the last map; before anyone has moved, the first
+        if (this.cars.every((c) => t >= c.total)) main = n - 1;
+      }
+    }
+    if (n <= 1) return { main, thumbs: [] };
+    let thumbs;
+    if (n <= 4) thumbs = this.quads.map((q, k) => k).filter((k) => k !== main);
+    else {
+      // the season: other maps with someone on them, then the next maps along
+      const busy = new Map();
+      for (const c of this.cars) { const k = this.mapOf(c, t); if (k !== main && t < c.total && !c.ghosts[k].hidden) busy.set(k, (busy.get(k) || 0) + 1); }
+      thumbs = [...busy.keys()].sort((a, b) => busy.get(b) - busy.get(a) || a - b).slice(0, 3);
+      for (let k = main + 1; thumbs.length < 3 && k < n; k++) if (!thumbs.includes(k)) thumbs.push(k);
+      for (let k = main - 1; thumbs.length < 3 && k >= 0; k--) if (!thumbs.includes(k)) thumbs.push(k);
+      thumbs.sort((a, b) => a - b);
+    }
+    return { main, thumbs };
+  },
+  /** the maps on screen (focus: one big and up to three small; grid: all
+   *  of them), leaving room for the bars, the progress strip and the panel */
   layout() {
     const c = $('secCanvas');
     const W = c.clientWidth || innerWidth, H = c.clientHeight || innerHeight;
-    if (W === this.W && H === this.H) return;
+    const pick = this.view === 'focus' ? this.pickMaps(this.t) : null;
+    const key = W + 'x' + H + ':' + this.view + ':' + (pick ? pick.main + '/' + pick.thumbs.join(',') : '');
+    if (key === this.layoutKey) return;
+    this.layoutKey = key;
+    const resized = W !== this.W || H !== this.H;
     this.W = W; this.H = H;
-    this.renderer.setSize(W, H, false);
+    if (resized) this.renderer.setSize(W, H, false);
     const wide = W > 900;
-    const top = 62, bottom = wide ? 170 : 170 + Math.min(H * 0.3, 240), right = wide ? (this.compare ? 424 : 312) : 0;
-    const gw = W - right - 8, gh = H - top - bottom;
-    // a section: 2 x 2; the whole season: 4 x 4
-    const cols = this.quads.length > 4 ? 4 : 2, rows = Math.ceil(this.quads.length / cols);
-    const qw = Math.floor((gw - 6 * (cols - 1)) / cols), qh = Math.floor((gh - 6 * (rows - 1)) / rows);
+    const progH = this.progH || 0;
+    const top = 62, bottom = (wide ? 170 : 170 + Math.min(H * 0.3, 240)) + progH + (progH ? 8 : 0), right = wide ? (this.compare ? 424 : 312) : 0;
+    const gw = W - right - 8, gh = Math.max(H - top - bottom, 120);
+    const prog = $('svProg');
+    Object.assign(prog.style, { left: '4px', top: (top + gh + 6) + 'px', width: gw + 'px' });
+    const rects = new Map();
+    if (pick) {
+      this.main = pick.main;
+      const tw = pick.thumbs.length ? Math.round(Math.min(gw * 0.27, 360)) : 0;
+      rects.set(pick.main, { x: 4, y: top, w: gw - (tw ? tw + 6 : 0), h: gh, big: true });
+      const th = pick.thumbs.length ? Math.floor((gh - 6 * (pick.thumbs.length - 1)) / pick.thumbs.length) : 0;
+      pick.thumbs.forEach((k, j) => rects.set(k, { x: 4 + gw - tw, y: top + j * (th + 6), w: tw, h: th, thumb: true }));
+    } else {
+      // a section: 2 x 2; the whole season: 4 x 4
+      const cols = this.quads.length > 4 ? 4 : 2, rows = Math.ceil(this.quads.length / cols);
+      const qw = Math.floor((gw - 6 * (cols - 1)) / cols), qh = Math.floor((gh - 6 * (rows - 1)) / rows);
+      this.quads.forEach((q, k) => rects.set(k, { x: 4 + (k % cols) * (qw + 6), y: top + Math.floor(k / cols) * (qh + 6), w: qw, h: qh }));
+    }
     this.quads.forEach((q, k) => {
-      const x = 4 + (k % cols) * (qw + 6), y = top + Math.floor(k / cols) * (qh + 6);
-      q.rect = { x, y, w: qw, h: qh };
+      const R = rects.get(k);
+      const shown = !!R;
+      for (const el of [q.frame, q.label, q.keys, q.dist, q.hidNote, ...q.tags]) if (el) el.style.visibility = shown ? '' : 'hidden';
+      q.rect = shown ? { x: R.x, y: R.y, w: R.w, h: R.h } : null;
+      q.big = shown && !!R.big;
+      q.frame.classList.toggle('main', q.big);
+      q.frame.classList.toggle('thumb', shown && !!R.thumb);
+      q.label.classList.toggle('big', q.big);
+      q.tags.forEach((el) => { if (el.classList.contains('big') !== q.big) { el.classList.toggle('big', q.big); el._w = 0; } });
+      if (!shown) return;
+      const { x, y, w: qw, h: qh } = q.rect;
       q.camera.aspect = qw / Math.max(qh, 1);
       q.camera.updateProjectionMatrix();
       Object.assign(q.frame.style, { left: x + 'px', top: y + 'px', width: qw + 'px', height: qh + 'px' });
@@ -15730,11 +16068,69 @@ const SectionView = {
       const ks = Math.min(1, (qw - 16) / 250);
       q.keys.style.transform = ks < 1 ? 'scale(' + ks.toFixed(3) + ')' : '';
       q.keys.style.transformOrigin = 'left bottom';
-      q.keysFit = ks >= 0.6 && qh >= 8 + 29 + 48;
+      q.keysFit = ks >= 0.6 && qh >= 8 + 29 + 48 && !R.thumb;      // (the small maps of focus view: no keys)
     });
     $('svPanel').style.width = wide ? (right - 26) + 'px' : '';
     for (const q of this.quads) q.dirty = true;
     this.clearAll = true;
+    this.progressHighlight();
+  },
+  setView(v) {
+    this.view = v;
+    Prefs.set('svView', v);
+    this.pinned = null;
+    this.layoutKey = '';
+    $('bSvView').textContent = v === 'grid' ? 'Focus on the action' : 'Show every map';
+    this.layout();
+    this.hud(true);
+  },
+  /** a map picked by hand fills the big picture (null: back to following the action) */
+  pin(k) {
+    if (this.view !== 'focus') this.setView('focus');
+    this.pinned = k;
+    this.layoutKey = '';
+    this.layout();
+    this.hud(true);
+  },
+
+  /** the strip under the maps: a lane per driver, a column per map */
+  buildProgress() {
+    const n = this.quads.length, el = $('svProg');
+    const cols = 'grid-template-columns:minmax(70px,130px) repeat(' + n + ',minmax(0,1fr))';
+    let h = '<div class="pgHead"><span>Where everyone is</span><button class="ghost small" id="bSvAuto" hidden>Back to following the action</button></div>' +
+      '<div class="pgGrid" style="' + cols + '"><div></div>' +
+      this.quads.map((q, k) => '<button class="pgMap" data-k="' + k + '" title="' + escapeHtml(q.lv.name) + '">' + courseTag(q.i) + '</button>').join('');
+    for (const c of this.cars) {
+      h += '<div class="pgName" data-n="' + c.n + '"><i style="background:' + c.dot + '"></i>' + escapeHtml(c.name) + '</div>' +
+        '<div class="pgLane" style="grid-column:2 / span ' + n + '">' +
+        c.ghosts.map((g, k) => '<span class="seg' + (g.hidden ? ' hid' : '') + '" data-k="' + k + '" style="left:' + (k / n * 100).toFixed(3) + '%;width:' + (100 / n).toFixed(3) + '%"' +
+          (g.hidden ? ' title="' + escapeHtml(c.name) + ' hid this run"' : '') + '></span>').join('') +
+        '<span class="pgDot" style="background:' + c.dot + ';color:' + c.dot + '"></span></div>';
+    }
+    el.innerHTML = h + '</div>';
+    this.progH = 32 + 15 * (this.cars.length + 1);
+    el.querySelectorAll('.pgMap').forEach((b) => b.addEventListener('click', () => this.pin(+b.dataset.k)));
+    el.querySelectorAll('.pgName').forEach((b) => b.addEventListener('click', () => { const n2 = +b.dataset.n; this.setCam(this.camIdx === n2 ? -1 : n2); }));
+    $('bSvAuto').addEventListener('click', () => this.pin(null));
+    this.cars.forEach((c) => { c.dotEl = el.querySelector('.pgName[data-n="' + c.n + '"] + .pgLane .pgDot'); c.nameEl = el.querySelector('.pgName[data-n="' + c.n + '"]'); });
+  },
+  progressHighlight() {
+    const on = this.view === 'focus' ? this.main : -1;
+    document.querySelectorAll('#svProg .pgMap').forEach((b) => b.classList.toggle('on', +b.dataset.k === on));
+    document.querySelectorAll('#svProg .seg').forEach((b) => b.classList.toggle('cur', +b.dataset.k === on));
+    const auto = $('bSvAuto');
+    if (auto) auto.hidden = this.pinned === null;
+  },
+  progressDots() {
+    const n = this.quads.length, t = this.t;
+    for (const c of this.cars) {
+      if (!c.dotEl) continue;
+      const k = this.mapOf(c, t), g = c.ghosts[k];
+      const f = t >= c.total ? 1 : (k + clamp((t - c.starts[k]) / Math.max(g.t, 0.001), 0, 1)) / n;
+      c.dotEl.style.left = (f * 100).toFixed(2) + '%';
+      c.dotEl.classList.toggle('hid', !!g.hidden && t < c.total);
+      c.nameEl.classList.toggle('on', c.n === this.camIdx);
+    }
   },
 
   /** where a ghost is at local time lt: position into pos, rotation into
@@ -15778,18 +16174,19 @@ const SectionView = {
     const W = 300, H = 40, PAD = 3, pts = [];
     let max = 1;
     c.ghosts.forEach((g, k) => {
+      if (g.hidden) return;
       const s = g.s, n = s.length / GHOST_STRIDE;
       for (let i = 1; i < n; i++) {
         const a = (i - 1) * GHOST_STRIDE, b = i * GHOST_STRIDE;
         const v = Math.hypot(s[b] - s[a], s[b + 1] - s[a + 1], s[b + 2] - s[a + 2]) * GHOST_HZ;
-        pts.push([c.starts[k] + i / GHOST_HZ, v]);
+        pts.push([c.starts[k] + i / GHOST_HZ, v, i === 1]);
         if (v > max) max = v;
       }
     });
     this.graphCar = c; this.graphPts = pts;
     const step = Math.max(1, Math.floor(pts.length / 600));
     let d = '';
-    for (let i = 0; i < pts.length; i += step) d += (d ? 'L' : 'M') + (pts[i][0] / c.total * W).toFixed(1) + ',' + (H - PAD - pts[i][1] / max * (H - PAD * 2)).toFixed(1) + ' ';
+    for (let i = 0; i < pts.length; i += step) d += (d && !pts[i][2] ? 'L' : 'M') + (pts[i][0] / c.total * W).toFixed(1) + ',' + (H - PAD - pts[i][1] / max * (H - PAD * 2)).toFixed(1) + ' ';
     $('svSpeedPath').setAttribute('d', d);
     $('svSpeedSplits').setAttribute('d', c.starts.slice(1).map((s) => 'M' + (s / c.total * W).toFixed(1) + ',0 L' + (s / c.total * W).toFixed(1) + ',' + H).join(' '));
   },
@@ -15812,7 +16209,7 @@ const SectionView = {
         const g = c.ghosts[k], m = c.meshes[k], rig = c.rigs[k], lt = t - c.starts[k];
         // on this map from its start until it finishes; on the last map it
         // stays at the finish, anywhere else it has moved on to the next
-        const on = lt >= 0 && (lt <= g.t || last);
+        const on = lt >= 0 && (lt <= g.t || last) && !g.hidden;
         c.active[k] = on;
         if (!on) { m.visible = false; setGhostFlame(m, false, dt); continue; }
         m.visible = true;
@@ -15884,6 +16281,7 @@ const SectionView = {
     r.setScissorTest(true);
     const H = this.H;
     for (const q of this.quads) {
+      if (!q.rect) continue;                   // not on screen (focus view)
       // nobody on this map: its still picture is already there
       if (q.mode === 'still' && !q.dirty) continue;
       q.dirty = false;
@@ -15920,6 +16318,11 @@ const SectionView = {
       const T = [], D = [];
       c.ghosts.forEach((g, k) => {
         const q = this.quads[k], path = q.course.path, cum = q.course.cum;
+        if (g.hidden) {
+          const m = Math.max(2, Math.ceil(g.t * GHOST_HZ) + 1);
+          for (let j = 0; j < m; j++) { T.push(c.starts[k] + Math.min(j / GHOST_HZ, g.t)); D.push(offs[k] + q.course.length * Math.min(j / GHOST_HZ / g.t, 1)); }
+          return;
+        }
         const s = g.s, n = s.length / GHOST_STRIDE;
         // the path can be sparse (a long straight is two points), so each
         // sample is projected onto the nearest segment, not the nearest point
@@ -15964,6 +16367,13 @@ const SectionView = {
   showCompareMap(k) {
     this.cmpMap = k;
     $('svCmpTabs').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.m === k));
+    const hidBy = this.cars.slice(0, 2).filter((c) => c.ghosts[k].hidden);
+    if (hidBy.length) {
+      this.cmps[k] = false;
+      $('svCmp').innerHTML = '<p class="cmpNote" style="margin-top:10px">' + escapeHtml(hidBy.map((c) => c.name).join(' and ')) +
+        (hidBy.length > 1 ? ' hid their runs' : ' hid this run') + ' on ' + courseTag(this.quads[k].i) + ', so there is nothing to compare here. The times still count above.</p>';
+      return;
+    }
     if (!this.cmps[k]) {
       const C = Object.create(Compare);
       C.pre = 'sv'; C.twoHeads = true; C.graphs = [];
@@ -15998,7 +16408,16 @@ const SectionView = {
       .map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
     const hits = (l, t, r, b, list) => list.some((q) => r > q.left && l < q.right && b > q.top && t < q.bottom);
     this.quads.forEach((q, k) => {
+      if (!q.rect) { q.keys.hidden = true; q.hidNote.hidden = true; return; }
       q.keys.hidden = !q.focus || q.keysFit === false;     // (their contents update below)
+      // someone is on this map right now with a hidden run: say so
+      const hiddenHere = this.cars.filter((c) => { const lt = t - c.starts[k]; return c.ghosts[k].hidden && lt >= 0 && lt < c.ghosts[k].t; });
+      q.hidNote.hidden = !hiddenHere.length || q.rect.h < 90;
+      if (hiddenHere.length) {
+        q.hidNote.textContent = hiddenHere.map((c) => c.name).join(', ') + (hiddenHere.length > 1 ? ' hid their runs here' : ' hid their run here');
+        q.hidNote.style.left = (q.rect.x + q.rect.w / 2) + 'px';
+        q.hidNote.style.top = (q.rect.y + q.rect.h * (q.big ? (q.mode === 'still' ? 0.5 : 0.22) : 0.66)) + 'px';
+      }
       const own = boxes.concat([q.label, q.keys].filter((e) => e && !e.hidden).map((e) => e.getBoundingClientRect()));
       const inQuad = (l, t, r, b) => l >= q.rect.x && r <= q.rect.x + q.rect.w && t >= q.rect.y && b <= q.rect.y + q.rect.h;
       const want = [];
@@ -16053,17 +16472,19 @@ const SectionView = {
     if (this.hudAcc < 0.08) return;
     this.hudAcc = 0;
     if (gc) {
-      let k = 0;
-      while (k < this.quads.length - 1 && t >= gc.starts[k] + gc.ghosts[k].t) k++;
-      $('svSpeedNow').textContent = Math.round((t >= gc.total ? 0 : gc.rigs[k].speed) * KMH) + ' km/h';
+      const k = this.mapOf(gc, t);
+      $('svSpeedNow').textContent = gc.ghosts[k].hidden && t < gc.total ? 'hidden run' : Math.round((t >= gc.total ? 0 : gc.rigs[k].speed) * KMH) + ' km/h';
     }
+    this.progressDots();
     this.quads.forEach((q, k) => {
+      if (!q.rect) return;
       q.label.innerHTML = '<div class="h"><span>' + courseTag(q.i) + '</span>' + escapeHtml(q.lv.name) + '</div>' +
         this.cars.map((c) => {
           const g = c.ghosts[k], lt = t - c.starts[k];
           const cls = lt < 0 ? 'wait' : lt >= g.t ? 'done' : '';
           const val = lt < 0 ? '—' : formatTime(Math.min(lt, g.t));
-          return '<div class="r"><i style="background:' + c.dot + '"></i><b>' + escapeHtml(c.name) + '</b><span class="tm ' + cls + '">' + val + '</span></div>';
+          return '<div class="r"><i style="background:' + c.dot + '"></i><b>' + escapeHtml(c.name) + '</b>' + (g.hidden ? '<span class="hid">hidden</span>' : '') +
+            '<span class="tm ' + cls + '">' + val + '</span></div>';
         }).join('');
       // the keys and speed of the car this quarter is about
       q.keys.hidden = !q.focus || q.keysFit === false;
@@ -16120,7 +16541,7 @@ const SectionView = {
       top.innerHTML = '<h4>' + escapeHtml(this.title) + ' · watching ' + this.cars.length + '</h4>' + rows.map((r, p) =>
         '<div class="row2' + (r.c.n === this.camIdx ? ' on' : '') + '" data-n="' + r.c.n + '"><i style="background:' + r.c.dot + '"></i><span class="n">' +
         (r.done ? (p + 1) + '. ' : '') + escapeHtml(r.c.name) + '</span><span class="s">' +
-        (r.done ? 'finished' : courseTag(this.quads[r.k].i) + ' · ' + Math.round(r.c.rigs[r.k].speed * KMH) + ' km/h') +
+        (r.done ? 'finished' : courseTag(this.quads[r.k].i) + ' · ' + (r.c.ghosts[r.k].hidden ? 'hidden run' : Math.round(r.c.rigs[r.k].speed * KMH) + ' km/h')) +
         '</span><span class="v' + (r.done ? ' done' : '') + '">' + formatTime(r.sofar) + '</span></div>').join('') +
         (this.cars.length > 1 ? '<div class="cmpNote" style="margin-top:6px">Click a driver to follow them.</div>' : '');
       top.querySelectorAll('.row2').forEach((el) => el.addEventListener('click', () => {
@@ -16610,7 +17031,9 @@ const Game = {
   boardSel: {}, boardShow: {}, cdShow: 10,
 
   boot() {
-    Device.init();
+    Device.ready();
+    Updater.start();
+    Updater.greet();
     buildMaterials();
     buildGeometry();
     App.init();
@@ -16697,7 +17120,8 @@ const Game = {
           $('boot').textContent = 'Signing in…';
           this.state = 'boot';
           UI.gateMode(false);
-          Cloud.watch((user, profile) => this.onAuth(user, profile));
+          // a blocked computer is turned away before it can sign in
+          Cloud.watch(async (user, profile) => { await Cloud.deviceCheck(); this.onAuth(user, profile); });
           setTimeout(() => {
             if (this.state === 'boot') { UI.show('gate'); this.state = 'gate'; }
           }, 8000);
@@ -16749,6 +17173,7 @@ const Game = {
       return;
     }
     this.authPending = false;
+    if (Cloud.deviceBlocked) { this.showLocked(true); return; }
     const knownGoodUid = this.confirmedUid;
     if (!user) {
       // watch() only passes a null user once the SDK's own session has
@@ -16779,7 +17204,7 @@ const Game = {
       UI.gateError(Cloud.error || 'This account has no profile — an invite code is needed.');
       UI.show('gate'); this.state = 'gate'; return;
     }
-    if (Cloud.banned()) { this.confirmedUid = null; UI.show('banned'); this.state = 'banned'; return; }
+    if (Cloud.banned()) { this.showLocked(false); return; }
     // A repeat report of the session we already have (Firebase can fire
     // more than once): nothing to redo, and above all no yanking the
     // player back to the menu from whatever screen they are on.
@@ -16801,6 +17226,51 @@ const Game = {
     this.toMenu();
     RunHides.load(true);
     this.loadCloudData(user.uid, fresh);
+  },
+
+  /**
+   * The suspended screen (this account) or the blocked one (this computer:
+   * nobody signs in, plays or makes an account here). A signed-in player on
+   * a blocked computer is signed out of it.
+   */
+  showLocked(computer) {
+    this.confirmedUid = null;
+    clearTimeout(this._cloudRetry);
+    Cloud.stopBoards(); Cloud.stopAdjust();
+    const facts = [];
+    if (computer) {
+      $('bnTitle').textContent = 'This computer is blocked';
+      $('bnText').textContent = 'The admin has blocked this computer from aiPolytrack, so no account can sign in, ' +
+        'play or be made on it. If you think that is a mistake, speak to whoever runs this server.';
+      facts.push(['Until', Cloud.deviceUntil ? fmtWhen(Cloud.deviceUntil) : 'For good']);
+      if (Cloud.user) {
+        Cloud.user = null; Cloud.profile = null;
+        Cloud.busy = true;
+        Promise.resolve(Cloud.sb.auth.signOut({ scope: 'local' })).catch(() => null).then(() => { Cloud.busy = false; });
+      }
+      $('bnOut').textContent = 'Check again';
+    } else {
+      const p = Cloud.profile || {};
+      $('bnTitle').textContent = 'This account is suspended';
+      $('bnText').textContent = 'Your access to aiPolytrack has been withdrawn, so times and credits are locked. ' +
+        'If you think that is a mistake, speak to whoever runs this server.';
+      if (p.banReason) facts.push(['Why', p.banReason]);
+      facts.push(['Until', p.banUntil ? fmtWhen(p.banUntil) + ' (sign in again after that)' : 'For good']);
+      $('bnOut').textContent = 'Sign out';
+    }
+    const box = $('bnFacts');
+    box.innerHTML = '';
+    for (const [k, v] of facts) {
+      const row = document.createElement('div');
+      const a = document.createElement('span'); a.textContent = k;
+      const b = document.createElement('b'); b.textContent = v;
+      row.append(a, b); box.appendChild(row);
+    }
+    box.hidden = !facts.length;
+    $('boot').hidden = true;
+    UI.who(null);
+    UI.show('banned');
+    this.state = 'banned';
   },
 
   /** everything a signed-in session needs from the server, after the menu
@@ -16885,7 +17355,29 @@ const Game = {
       Cloud.busy = false;
       $('gGo').disabled = false;
     });
-    $('bnOut').addEventListener('click', () => Cloud.signOut());
+    $('bnOut').addEventListener('click', () => {
+      if (Cloud.deviceBlocked) { location.reload(); return; }
+      Cloud.signOut();
+    });
+    // Coach reads a new username as it is typed
+    let coachT = 0;
+    $('gUser').addEventListener('input', () => {
+      clearTimeout(coachT);
+      const box = $('gCoach');
+      box.hidden = true;
+      if (!UI.creating || !Cloud.on) return;
+      const v = $('gUser').value.trim();
+      if (!validUsername(v)) return;
+      coachT = setTimeout(async () => {
+        const bad = await Cloud.nameProblem(v);
+        if (bad && $('gUser').value.trim() === v && UI.creating) {
+          box.innerHTML = '';
+          const b = document.createElement('b'); b.textContent = 'Coach: ';
+          box.append(b, document.createTextNode(bad.replace(/^Coach detected/, 'detected')));
+          box.hidden = false;
+        }
+      }, 350);
+    });
     $('whoOut').addEventListener('click', () => Cloud.signOut());
     $('bInvite').addEventListener('click', () => Referral.open());
     $('whoCard').addEventListener('click', () => { if (Cloud.user) Profiles.open(Cloud.user.uid, Cloud.name()); });
@@ -16987,6 +17479,12 @@ const Game = {
       if (sel.length === 2) SectionView.open('all', sel, true);
     });
     $('bSvBack').addEventListener('click', () => SectionView.exit());
+    $('bSvView').addEventListener('click', () => SectionView.setView(SectionView.view === 'grid' ? 'focus' : 'grid'));
+    // a small map, clicked, becomes the big one
+    $('svLabels').addEventListener('click', (e) => {
+      const f = e.target.closest('.svFrame.thumb');
+      if (f) SectionView.pin(+f.dataset.f);
+    });
     $('bSvPlay').addEventListener('click', () => SectionView.togglePlay());
     $('bSvStop').addEventListener('click', () => {
       SectionView.t = 0; SectionView.playing = false;

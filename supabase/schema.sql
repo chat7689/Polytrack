@@ -262,6 +262,11 @@ create table if not exists public.bans (
   created_at timestamptz not null default now(),
   primary key (kind, value)
 );
+-- a block may end (until; null: for good) and notes which account it came from
+alter table public.bans add column if not exists until timestamptz;
+alter table public.bans add column if not exists from_uid uuid;
+-- a new account that looks like a blocked computer coming back
+alter table public.signup_log add column if not exists flag text;
 
 -- Every run gets a ticket from the server the moment the car sets off. A
 -- time is only taken with its ticket, from the same player, on the same
@@ -843,6 +848,14 @@ insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floo
 on conflict (course_id) do update set sx = excluded.sx, sy = excluded.sy, sz = excluded.sz, fx = excluded.fx, fy = excluded.fy, fz = excluded.fz,
   gate_r = excluded.gate_r, floor_ms = excluded.floor_ms, ref_ms = excluded.ref_ms, len_m = excluded.len_m, cps = excluded.cps;
 
+-- the remade Hourglass (s4m16, for s4m6) and Black Diamond (s4m17, for Needle Drop s4m15),
+-- from tools/sim/gen_rules2.js
+insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floor_ms, ref_ms, len_m, cps) values
+('s4m16', 0, 0, 7, 141.2, 0, 474.9, 13, 9083, 12975, 562, '{0,0,10,0,40.7,8,0,81.5,8,0,122.4,15,0,164,4.9,0,206.1,15,0,247.1,10.7,0,287.2,8,8.5,328.4,8,30.7,364.1,8,59.7,393.4,8,88.7,422.4,8,117.8,451.5,8}'),
+('s4m17', 0, 120, 7, -221.7, 0.1, 854.9, 12.5, 17107, 24439, 1180, '{0,0,9.5,0,40.5,7.5,0,80.7,7.5,0,122.7,9,0,164.8,9,0,205,7.5,-4,245.7,7.5,-26.2,281.3,7.5,-58.6,305.3,7.5,-91.6,328.4,7.5,-126.4,352.7,11,-159.1,375.7,11,-192.9,399.3,11,-227.7,423.7,11,-261.5,447.4,7.5,-294.6,474.5,7.5,-310.1,511.7,7.5,-308.1,553.9,7.5,-304.3,596.7,7.5,-300.7,638.3,12,-297,680.8,12,-293.3,723.3,12,-289.5,765.8,12,-285.9,807.6,12,-282.2,850.3,7.5,-271.6,890.3,9,-235.9,884.9,9}')
+on conflict (course_id) do update set sx = excluded.sx, sy = excluded.sy, sz = excluded.sz, fx = excluded.fx, fy = excluded.fy, fz = excluded.fz,
+  gate_r = excluded.gate_r, floor_ms = excluded.floor_ms, ref_ms = excluded.ref_ms, len_m = excluded.len_m, cps = excluded.cps;
+
 -- ----------------------------------------------------------------- helpers
 
 -- the address a username signs in with (must match the game's USERNAME_DOMAIN)
@@ -971,7 +984,9 @@ begin
   if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
   select * into p from public.profiles where id = auth.uid();
   if not found then raise exception 'no profile' using errcode = '28000'; end if;
-  if p.banned then raise exception 'This account is suspended.' using errcode = 'P0001'; end if;
+  if p.banned and not exists (select 1 from public.account_bans b where b.uid = p.id and b.until is not null and b.until <= now()) then
+    raise exception 'This account is suspended.' using errcode = 'P0001';
+  end if;
   return p;
 end $$;
 
@@ -1125,9 +1140,10 @@ $$;
 -- is this computer, browser or network blocked?
 create or replace function public._blocked(p_device text, p_fp text, p_ip text) returns boolean
 language sql stable security definer set search_path = public, pg_temp as $$
-  select exists (select 1 from public.bans b where (b.kind = 'device' and b.value = coalesce(p_device, ''))
-                                              or (b.kind = 'fp' and b.value = coalesce(p_fp, ''))
-                                              or (b.kind = 'ip' and b.value = coalesce(p_ip, '') and p_ip <> ''))
+  select exists (select 1 from public.bans b where (b.until is null or b.until > now())
+                                              and ((b.kind = 'device' and b.value = coalesce(p_device, ''))
+                                              or (b.kind = 'fp' and b.value = coalesce(p_fp, '') and coalesce(p_fp, '') <> '')
+                                              or (b.kind = 'ip' and b.value = coalesce(p_ip, '') and p_ip <> '')))
 $$;
 
 -- remembers the computer (and which account used it); returns whether it is blocked
@@ -1148,9 +1164,26 @@ end $$;
 -- the game says which computer a signed-in player is on
 create or replace function public.touch_device(p_device text, p_fp text) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_fp text := left(coalesce(p_fp, ''), 64); v_ip text := public._client_ip(); fresh boolean; r jsonb; nm text;
 begin
   if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
-  return jsonb_build_object('blocked', public._see_device(p_device, p_fp));
+  if exists (select 1 from public.account_bans where uid = auth.uid() and until is not null and until <= now()) then
+    update public.profiles set banned = false where id = auth.uid();
+    update public.bests set banned = false where uid = auth.uid();
+    delete from public.account_bans where uid = auth.uid();
+  end if;
+  fresh := coalesce(p_device, '') ~ '^[a-f0-9]{32}$' and not exists (select 1 from public.devices where id = p_device);
+  perform public._see_device(p_device, p_fp);
+  r := public.device_status(p_device, p_fp);
+  select display_name into nm from public.profiles where id = auth.uid();
+  if (r ->> 'blocked')::boolean then
+    perform public._sec_event('blocked sign-in', nm, p_device, v_fp, v_ip, 'Signed in on a blocked computer; the game locked the screen.');
+  elsif fresh and v_fp <> '' and exists (select 1 from public.devices d join public.bans b on b.kind = 'device' and b.value = d.id
+                                         where d.fp = v_fp and d.id <> p_device and (b.until is null or b.until > now())) then
+    perform public._sec_event('look-alike', nm, p_device, v_fp, v_ip,
+      'A new computer id with the same browser fingerprint as a blocked computer (a cleared browser, or an identical laptop).');
+  end if;
+  return r;
 end $$;
 
 -- ----------------------------------------------------------------- runs
@@ -1432,9 +1465,18 @@ begin
   if coalesce(p_name, '') !~ '^[A-Za-z0-9_-]{3,14}$' or email <> public.login_email(p_name) then
     return jsonb_build_object('ok', false, 'error', 'name');
   end if;
+  if public._bad_name(p_name) is not null then
+    begin delete from auth.users where id = me; exception when others then null; end;
+    perform public._sec_event('bad name', p_name, p_device, v_fp, v_ip, 'Coach refused this username at sign-up.');
+    return jsonb_build_object('ok', false, 'error', 'badname', 'word', (public.name_check(p_name)) ->> 'word');
+  end if;
   perform pg_advisory_xact_lock(hashtext('signup'));
   if coalesce(p_device, '') !~ '^[a-f0-9]{32}$' then why := 'device';
-  elsif public._blocked(p_device, v_fp, v_ip) then why := 'blocked';
+  elsif public._blocked(p_device, v_fp, v_ip) then
+    why := 'blocked';
+    perform public._sec_event('blocked sign-up', p_name, p_device, v_fp, v_ip, 'A blocked computer tried to make an account; it was refused.');
+  elsif coalesce((select value ->> 'on' from public.settings where key = 'signups'), 'true') = 'false'
+        and not exists (select 1 from public.profiles where legacy and lower(display_name) = lower(p_name)) then why := 'paused';
   elsif (select count(*) from public.signup_log where device_id = p_device) >= 5 then why := 'device_limit';
   elsif v_ip <> '' and (select count(*) from public.signup_log where ip = v_ip and at > now() - interval '1 hour') >= 30 then why := 'busy';
   elsif (select count(*) from public.signup_log where at > now() - interval '1 hour') >= 200 then why := 'busy';
@@ -1471,7 +1513,13 @@ begin
   end if;
   insert into public.profiles (id, display_name) values (me, p_name);
   if ref_by is not null then insert into public.referrals (uid, referrer) values (me, ref_by) on conflict (uid) do nothing; end if;
-  insert into public.signup_log (uid, device_id, fp, ip) values (me, p_device, v_fp, v_ip);
+  insert into public.signup_log (uid, device_id, fp, ip, flag) values (me, p_device, v_fp, v_ip,
+    case when v_fp <> '' and exists (select 1 from public.devices d join public.bans b on b.kind = 'device' and b.value = d.id
+                                     where d.fp = v_fp and (b.until is null or b.until > now()))
+           then 'Same browser fingerprint as a blocked computer'
+         when v_ip <> '' and exists (select 1 from public.devices d join public.bans b on b.kind = 'device' and b.value = d.id
+                                     where d.last_ip = v_ip and d.last_seen > now() - interval '30 days' and (b.until is null or b.until > now()))
+           then 'Same network as a blocked computer' end);
   perform public._see_device(p_device, v_fp);
   return jsonb_build_object('ok', true);
 end $$;
@@ -1503,6 +1551,265 @@ begin
     out := out || jsonb_build_object(u::text, public._balance(u));
   end loop;
   return out;
+end $$;
+
+-- ------------------------------------------------- bans, blocks and names
+-- A ban has a reason and may end (null: for good). Account bans live in
+-- account_bans (only the player and the admin read them); computer,
+-- browser and network blocks in bans, each noting which account it came
+-- from (from_uid) so "unban everything" can undo exactly what a ban did.
+create table if not exists public.account_bans (
+  uid uuid primary key,
+  reason text not null default '',
+  until timestamptz,
+  from_uid uuid,
+  at timestamptz not null default now()
+);
+-- everything the admin does to players, computers and blocks
+create table if not exists public.admin_log (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  action text not null,
+  target text,
+  detail text
+);
+-- what blocked computers (and people getting round blocks) have tried,
+-- for the admin's Security page; one line per computer and kind an hour
+create table if not exists public.security_events (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  kind text not null,
+  name text,
+  device_id text,
+  fp text,
+  ip text,
+  detail text
+);
+create index if not exists security_events_at on public.security_events (at desc);
+create or replace function public._sec_event(p_kind text, p_name text, p_device text, p_fp text, p_ip text, p_detail text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if exists (select 1 from public.security_events where kind = p_kind and coalesce(device_id, '') = coalesce(p_device, '')
+               and coalesce(name, '') = coalesce(p_name, '') and at > now() - interval '1 hour') then return; end if;
+  insert into public.security_events (kind, name, device_id, fp, ip, detail)
+    values (p_kind, left(p_name, 40), left(p_device, 64), left(p_fp, 64), left(p_ip, 64), left(p_detail, 300));
+  delete from public.security_events where at < now() - interval '90 days';
+end $$;
+create or replace function public.admin_security_events(p_limit integer) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(jsonb_build_object('at', (extract(epoch from at) * 1000)::bigint, 'kind', kind, 'name', name,
+      'device', device_id, 'fp', fp, 'ip', ip, 'detail', detail) order by id desc)
+    from (select * from public.security_events order by id desc limit least(greatest(coalesce(p_limit, 50), 1), 500)) x), '[]'::jsonb);
+end $$;
+
+create or replace function public._log(p_action text, p_target text, p_detail text) returns void
+language sql security definer set search_path = public, pg_temp as $$
+  insert into public.admin_log (action, target, detail) values (p_action, left(coalesce(p_target, ''), 200), left(coalesce(p_detail, ''), 500))
+$$;
+
+-- Coach's username check: the word it found (for the message), or null.
+-- Letters swapped for look-alike numbers and stretched letters are seen
+-- through; short words only count on their own, and a list of ordinary
+-- words that happen to contain a bad one (class, grape, Scunthorpe...) is
+-- let through.
+create or replace function public._bad_name(p_name text) returns text
+language plpgsql immutable set search_path = public, pg_temp as $$
+declare
+  raw text := lower(coalesce(p_name, ''));
+  s text; c text; w text; tok text;
+  roots text[] := array['fuck','fuk','fvck','fck','fack','phuck','shit','bitch','biatch','cunt','dick','cock','pussy','penis','vagina',
+    'boob','titty','titties','porn','nude','horny','dildo','jizz','semen','orgasm','blowjob','handjob','milf','slut','whore','hooker',
+    'rapist','rape','molest','pedo','incest','nigg','niga','negro','fagg','faggot','retard','tranny','kike','chink','coon',
+    'wetback','nazi','hitler','kkk','killyourself','suicide','asshole','arsehole','dumbass','jackass','badass',
+    'bastard','twat','wank','piss','prick','skank','douche','sexy','erection','testicle','scrotum','nutsack','ballsack','clit',
+    'labia','butthole','buttplug','shag','bollock','dumbfuck','motherf'];
+  tokens text[] := array['ass','arse','hoe','hoes','tit','tits','fag','sex','sexx','anal','anus','cum','spic','heil','kys','kms'];
+  allow text[] := array['class','pass','grass','bass','mass','lass','sass','glass','brass','assassin','embassy','compass','cockpit',
+    'cocktail','peacock','hancock','cockatoo','shitake','scunthorpe','grape','drape','scrape','trapeze','therapist','rapeseed',
+    'cucumber','document','circum','accumulat','cumulus','sussex','essex','titan','raccoon','cocoon','tycoon','pedometer','torpedo',
+    'niagara','dickens','dickinson','spice','spicy','prickly','shaggy','analog','canal','banal','analys','scum','dickey','hitchcock',
+    'babcock','shuttlecock','skunk','pissarro','wankel','sushi','ishita','swank','montenegro','cockroach','parapet','mishit'];
+begin
+  -- look-alike numbers and signs back to letters
+  s := translate(raw, '0134578@$!|', 'oieastbasil');
+  foreach w in array allow loop s := replace(s, w, '#'); end loop;
+  c := regexp_replace(s, '(.)\1+', '\1', 'g');               -- fuuuuck -> fuck
+  foreach w in array roots loop
+    if position(w in s) > 0 or (w = regexp_replace(w, '(.)\1+', '\1', 'g') and position(w in c) > 0) then return w; end if;
+  end loop;
+  -- short words, only as a word of their own (Big_Ass, xASSx, Sex99, TitBot)
+  for tok in select lower(t) from regexp_split_to_table(regexp_replace(translate(coalesce(p_name, ''), '01345@$', 'oieasas'), '([a-z])([A-Z])', '\1 \2', 'g'), '[^A-Za-z]+') t loop
+    if tok = any(tokens) or regexp_replace(tok, '(.)\1+', '\1', 'g') = any(tokens) then return tok; end if;
+  end loop;
+  return null;
+end $$;
+-- for the sign-up page, before an account is made (anyone may ask)
+create or replace function public.name_check(p_name text) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare w text := public._bad_name(p_name);
+begin
+  if w is null then return jsonb_build_object('ok', true); end if;
+  return jsonb_build_object('ok', false, 'word', left(w, 1) || repeat('*', greatest(length(w) - 1, 1)));
+end $$;
+
+-- is this computer (or its browser, or its network) blocked? For the game
+-- before anyone signs in, so a blocked computer can't even get that far.
+create or replace function public.device_status(p_device text, p_fp text) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare v_ip text := public._client_ip(); b record;
+  paused boolean := coalesce((select value ->> 'on' from public.settings where key = 'signups'), 'true') = 'false';
+begin
+  select bool_or(until is null) as forever, max(until) as until, count(*) as n into b from public.bans
+  where (until is null or until > now())
+    and ((kind = 'device' and value = coalesce(p_device, '')) or (kind = 'fp' and value = left(coalesce(p_fp, ''), 64) and coalesce(p_fp, '') <> '')
+         or (kind = 'ip' and value = v_ip and v_ip <> ''));
+  if b.n = 0 then return jsonb_build_object('blocked', false, 'signupsPaused', paused); end if;
+  return jsonb_build_object('blocked', true, 'signupsPaused', paused,
+    'until', case when b.forever then null else (extract(epoch from b.until) * 1000)::bigint end);
+end $$;
+-- the admin: pause (or reopen) new accounts, for a flood of fake sign-ups
+create or replace function public.admin_set_signups(p_on boolean) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  insert into public.settings (key, value) values ('signups', jsonb_build_object('on', coalesce(p_on, true)))
+    on conflict (key) do update set value = excluded.value;
+  perform public._log(case when p_on then 'reopen sign-ups' else 'pause sign-ups' end, '', '');
+end $$;
+
+-- the admin: ban a player, and as much around them as asked
+--   p_days: how long (null or 0: for good)
+--   p_devices: every computer they ever used is blocked too
+--   p_fps: and those computers' browser fingerprints (careful: identical school laptops share one)
+--   p_ips: and their networks (careful: a whole school can share one)
+--   p_alts: and every other account that used those computers
+create or replace function public.admin_ban_player(p_uid uuid, p_reason text, p_days integer, p_devices boolean, p_fps boolean,
+  p_ips boolean, p_alts boolean) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare t timestamptz := case when coalesce(p_days, 0) > 0 then now() + make_interval(days => p_days) else null end;
+  why text := left(coalesce(nullif(btrim(p_reason), ''), 'No reason given'), 200); nm text;
+  devs text[]; fps text[]; ips text[]; alts uuid[]; u uuid; v text;
+begin
+  perform public._require_admin();
+  select display_name into nm from public.profiles where id = p_uid;
+  if nm is null then raise exception 'No such player.' using errcode = 'P0001'; end if;
+  select array_agg(distinct d) into devs from (
+    select device_id d from public.device_accounts where uid = p_uid
+    union select device_id from public.signup_log where uid = p_uid and device_id is not null) x where d ~ '^[a-f0-9]{32}$';
+  devs := coalesce(devs, '{}');
+  select array_agg(distinct f) into fps from (
+    select fp f from public.devices where id = any(devs) union select fp from public.signup_log where uid = p_uid) x where coalesce(f, '') <> '';
+  fps := coalesce(fps, '{}');
+  select array_agg(distinct i) into ips from (
+    select last_ip i from public.devices where id = any(devs) union select first_ip from public.devices where id = any(devs)
+    union select ip from public.signup_log where uid = p_uid) x where coalesce(i, '') <> '';
+  ips := coalesce(ips, '{}');
+  select array_agg(distinct uid) into alts from public.device_accounts where device_id = any(devs) and uid <> p_uid;
+  alts := coalesce(alts, '{}');
+  -- the account
+  update public.profiles set banned = true where id = p_uid;
+  update public.bests set banned = true where uid = p_uid;
+  insert into public.account_bans (uid, reason, until, from_uid) values (p_uid, why, t, p_uid)
+    on conflict (uid) do update set reason = excluded.reason, until = excluded.until, from_uid = excluded.from_uid, at = now();
+  update public.runs set status = 'void' where uid = p_uid and status = 'open';
+  if p_devices then
+    foreach v in array devs loop
+      insert into public.bans (kind, value, note, until, from_uid) values ('device', v, 'with ' || nm || ': ' || why, t, p_uid)
+        on conflict (kind, value) do update set note = excluded.note, until = excluded.until, from_uid = excluded.from_uid;
+    end loop;
+    update public.runs set status = 'void' where device_id = any(devs) and status = 'open';
+  end if;
+  if p_fps then
+    foreach v in array fps loop
+      insert into public.bans (kind, value, note, until, from_uid) values ('fp', v, 'with ' || nm || ': ' || why, t, p_uid)
+        on conflict (kind, value) do update set note = excluded.note, until = excluded.until, from_uid = excluded.from_uid;
+    end loop;
+  end if;
+  if p_ips then
+    foreach v in array ips loop
+      insert into public.bans (kind, value, note, until, from_uid) values ('ip', v, 'with ' || nm || ': ' || why, t, p_uid)
+        on conflict (kind, value) do update set note = excluded.note, until = excluded.until, from_uid = excluded.from_uid;
+    end loop;
+  end if;
+  if p_alts then
+    foreach u in array alts loop
+      update public.profiles set banned = true where id = u;
+      update public.bests set banned = true where uid = u;
+      insert into public.account_bans (uid, reason, until, from_uid) values (u, 'Same computer as ' || nm || ': ' || why, t, p_uid)
+        on conflict (uid) do update set reason = excluded.reason, until = excluded.until, from_uid = excluded.from_uid, at = now();
+    end loop;
+  end if;
+  perform public._log('ban', nm, why || case when t is null then ' (for good)' else ' (until ' || to_char(t at time zone 'America/Los_Angeles', 'Mon DD HH24:MI') || ')' end
+    || case when p_devices then ', ' || cardinality(devs) || case when cardinality(devs) = 1 then ' computer' else ' computers' end else '' end
+    || case when p_fps then ', ' || cardinality(fps) || case when cardinality(fps) = 1 then ' fingerprint' else ' fingerprints' end else '' end
+    || case when p_ips then ', ' || cardinality(ips) || case when cardinality(ips) = 1 then ' network' else ' networks' end else '' end
+    || case when p_alts then ', ' || cardinality(alts) || case when cardinality(alts) = 1 then ' other account' else ' other accounts' end else '' end);
+  return jsonb_build_object('devices', case when p_devices then cardinality(devs) else 0 end, 'fps', case when p_fps then cardinality(fps) else 0 end,
+    'ips', case when p_ips then cardinality(ips) else 0 end, 'alts', case when p_alts then cardinality(alts) else 0 end);
+end $$;
+-- undo a player's ban, and (p_all) every block and account ban it made
+create or replace function public.admin_unban_player(p_uid uuid, p_all boolean) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare nm text; u uuid;
+begin
+  perform public._require_admin();
+  select display_name into nm from public.profiles where id = p_uid;
+  update public.profiles set banned = false where id = p_uid;
+  update public.bests set banned = false where uid = p_uid;
+  delete from public.account_bans where uid = p_uid;
+  if p_all then
+    delete from public.bans where from_uid = p_uid;
+    for u in select uid from public.account_bans where from_uid = p_uid loop
+      update public.profiles set banned = false where id = u;
+      update public.bests set banned = false where uid = u;
+    end loop;
+    delete from public.account_bans where from_uid = p_uid;
+  end if;
+  perform public._log('unban', nm, case when p_all then 'and everything the ban blocked' else 'the account only' end);
+end $$;
+-- one player's computers, browsers, networks and the other accounts on them
+create or replace function public.admin_player_links(p_uid uuid) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare devs text[];
+begin
+  perform public._require_admin();
+  select array_agg(distinct d) into devs from (
+    select device_id d from public.device_accounts where uid = p_uid
+    union select device_id from public.signup_log where uid = p_uid and device_id is not null) x where d is not null;
+  devs := coalesce(devs, '{}');
+  return jsonb_build_object(
+    'ban', (select jsonb_build_object('reason', reason, 'until', (extract(epoch from until) * 1000)::bigint) from public.account_bans where uid = p_uid),
+    'signup', (select jsonb_build_object('at', (extract(epoch from at) * 1000)::bigint, 'device', device_id, 'fp', fp, 'ip', ip, 'flag', flag)
+               from public.signup_log where uid = p_uid order by at limit 1),
+    'devices', coalesce((select jsonb_agg(jsonb_build_object('id', d.id, 'fp', d.fp, 'ip', d.last_ip,
+        'seen', (extract(epoch from d.last_seen) * 1000)::bigint,
+        'blocked', exists (select 1 from public.bans b where b.kind = 'device' and b.value = d.id and (b.until is null or b.until > now())),
+        'fpBlocked', exists (select 1 from public.bans b where b.kind = 'fp' and b.value = d.fp and (b.until is null or b.until > now())),
+        'sameFp', (select count(*) from public.devices o where o.fp = d.fp and o.id <> d.id)) order by d.last_seen desc)
+      from public.devices d where d.id = any(devs)), '[]'::jsonb),
+    'alts', coalesce((select jsonb_agg(jsonb_build_object('uid', p.id, 'name', p.display_name, 'banned', p.banned) order by p.display_name)
+      from public.profiles p where p.id <> p_uid and p.id in (select uid from public.device_accounts where device_id = any(devs))), '[]'::jsonb));
+end $$;
+-- the admin's recent actions
+create or replace function public.admin_actions(p_limit integer) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(jsonb_build_object('at', (extract(epoch from at) * 1000)::bigint, 'action', action, 'target', target, 'detail', detail) order by id desc)
+    from (select * from public.admin_log order by id desc limit least(greatest(coalesce(p_limit, 50), 1), 500)) x), '[]'::jsonb);
+end $$;
+-- new accounts that look like someone getting round a block: the same
+-- browser fingerprint, or the same network, as a blocked computer
+create or replace function public.admin_evaders() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(jsonb_build_object('uid', s.uid, 'name', p.display_name, 'banned', coalesce(p.banned, false), 'flag', s.flag,
+      'at', (extract(epoch from s.at) * 1000)::bigint, 'device', s.device_id) order by s.at desc)
+    from public.signup_log s left join public.profiles p on p.id = s.uid
+    where s.flag is not null and s.at > now() - interval '60 days'), '[]'::jsonb);
 end $$;
 
 -- ------------------------------------------------------------ opening hours
@@ -1884,6 +2191,9 @@ begin
   if nm !~ '^[A-Za-z0-9][A-Za-z0-9 ''!?.,&-]{1,28}[A-Za-z0-9!?.'']$' then
     return jsonb_build_object('ok', false, 'error', 'Give the track a name: 3 to 30 letters, numbers and spaces.');
   end if;
+  if public._bad_name(replace(nm, ' ', '_')) is not null then
+    return jsonb_build_object('ok', false, 'error', 'Coach detected an inappropriate word in that track name ("' || ((public.name_check(replace(nm, ' ', '_'))) ->> 'word') || '"). Pick another name.');
+  end if;
   g := public._track_geo(p_width, p_pieces);
   if not (g ->> 'ok')::boolean then return jsonb_build_object('ok', false, 'error', g ->> 'error'); end if;
   perform pg_advisory_xact_lock(hashtext('tracks:' || p.id::text));
@@ -2035,7 +2345,8 @@ begin
   perform public._require_admin();
   if p_kind not in ('device', 'fp', 'ip') or coalesce(btrim(p_value), '') = '' then raise exception 'bad ban' using errcode = '22023'; end if;
   insert into public.bans (kind, value, note) values (p_kind, btrim(p_value), left(coalesce(p_note, ''), 200))
-    on conflict (kind, value) do update set note = excluded.note;
+    on conflict (kind, value) do update set note = excluded.note, until = null;
+  perform public._log('block', p_kind || ' ' || btrim(p_value), p_note);
   -- a blocked computer's open runs end now
   if p_kind = 'device' then update public.runs set status = 'void' where device_id = btrim(p_value) and status = 'open'; end if;
 end $$;
@@ -2044,6 +2355,7 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 begin
   perform public._require_admin();
   delete from public.bans where kind = p_kind and value = p_value;
+  perform public._log('unblock', p_kind || ' ' || p_value, '');
 end $$;
 -- the time is fine: drop its flags
 create or replace function public.admin_clear_flags(p_uid uuid, p_course text) returns void
@@ -2154,6 +2466,13 @@ begin
   perform public._require_admin();
   update public.profiles set banned = p_banned where id = p_uid;
   update public.bests set banned = p_banned where uid = p_uid;
+  if p_banned then
+    insert into public.account_bans (uid, reason, until, from_uid) values (p_uid, 'Banned on the admin page', null, p_uid)
+      on conflict (uid) do nothing;
+  else
+    delete from public.account_bans where uid = p_uid;
+  end if;
+  perform public._log(case when p_banned then 'ban' else 'unban' end, (select display_name from public.profiles where id = p_uid), 'the account only');
 end $$;
 
 -- a new password for a player who forgot theirs (logins have no inbox, so
@@ -2186,6 +2505,7 @@ begin
   perform public._track_reset('u' || t.id, true) from public.user_tracks t where t.uid = p_uid;
   delete from public.track_limits where uid = p_uid;
   delete from public.run_hides where uid = p_uid;
+  perform public._log('delete account', (select display_name from public.profiles where id = p_uid), '');
   delete from public.user_tracks where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admins where user_id = p_uid;
   -- (Supabase refuses any UPDATE or DELETE without a WHERE of its own)
@@ -2381,6 +2701,9 @@ alter table public.access_tries enable row level security;
 alter table public.user_tracks enable row level security;
 alter table public.track_limits enable row level security;
 alter table public.run_hides enable row level security;
+alter table public.account_bans enable row level security;
+alter table public.admin_log enable row level security;
+alter table public.security_events enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -2395,7 +2718,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -2412,6 +2735,10 @@ end $$;
 drop policy if exists player_read on public.ghosts;
 create policy player_read on public.ghosts for select to authenticated
   using (uid = auth.uid() or not exists (select 1 from public.run_hides h where h.uid = ghosts.uid and h.course_id = ghosts.course_id and h.until > now()));
+
+-- a banned player may read why, and until when
+drop policy if exists own_ban on public.account_bans;
+create policy own_ban on public.account_bans for select to authenticated using (uid = auth.uid());
 
 drop policy if exists own_admin_row on public.admins;
 create policy own_admin_row on public.admins for select to authenticated using (user_id = auth.uid());
@@ -2468,12 +2795,17 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
   public.admin_set_captcha(text), public._client_ip(), public.admin_make_access_code(text, timestamptz),
   public.admin_access_codes(), public.admin_delete_access_code(text), public.admin_tracks(), public.admin_delete_track(bigint), public.admin_track_limits(), public.admin_set_track_limit(uuid, integer),
   public._track_json(public.user_tracks) to anon;
+grant execute on function public.name_check(text), public.device_status(text, text), public.admin_ban_player(uuid, text, integer, boolean, boolean, boolean, boolean),
+  public.admin_unban_player(uuid, boolean), public.admin_player_links(uuid), public.admin_actions(integer), public.admin_evaders(),
+  public.admin_security_events(integer), public.admin_set_signups(boolean) to anon;
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
 revoke execute on function public.close_season(text, text[], text[]) from public, anon, authenticated;
 revoke execute on function public._day_runs(uuid) from public, anon, authenticated;
 revoke execute on function public._track_reset(text, boolean) from public, anon, authenticated;
+revoke execute on function public._log(text, text, text) from public, anon, authenticated;
+revoke execute on function public._sec_event(text, text, text, text, text, text) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- season 1, closed
