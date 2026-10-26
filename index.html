@@ -10088,7 +10088,13 @@ const Tracks = {
       // an unchanged road goes back exactly as it was saved, so its times stay
       const r = await Cloud.rpc('save_track', { p_id: d.id, p_name: d.name, p_public: pub, p_width: same && this.origPieces ? this.origW : d.w,
         p_pieces: same && this.origPieces ? this.origPieces : d.pieces });
-      if (!r || !r.ok) { $('bdMsg').textContent = (r && r.error) || 'Couldn\'t save it.'; return; }
+      if (!r || !r.ok) {
+        // the game takes this road, so a refusal of its pieces means the server is older than the game
+        $('bdMsg').textContent = r && /isn't a piece the builder makes|width must be 13 to 18/.test(r.error || '')
+          ? 'The game\'s server hasn\'t been updated for the new track pieces yet, so it can\'t save this. Try again once it has been.'
+          : (r && r.error) || 'Couldn\'t save it.';
+        return;
+      }
       if (r.reset) { delete Records.data.ghosts[r.course]; delete Records.data.boards[r.course]; delete Records.data.myBests[r.course]; }
       d.id = r.id;
       if (!same || !this.origPieces) { this.origPieces = d.pieces.map((p) => p.slice()); this.origW = d.w; this.origNorm = JSON.stringify(d.pieces); }
