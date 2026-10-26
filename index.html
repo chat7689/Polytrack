@@ -6807,10 +6807,21 @@ function embankment(F, side) {
     const edgeLen = Math.hypot(edgeP[i + 1].x - edgeP[i].x, edgeP[i + 1].z - edgeP[i].z);
     if (edgeLen >= seg) continue;                  // the outside of this turn
     const r = seg / Math.abs(dy) - F[i].w / 2;     // radius of this inside edge
-    const l = Math.max(0.6, 0.85 * r);
+    // the foot keeps a round radius of its own (10 m, or over half the edge's):
+    // held any closer to the centre it curled into a tight ring, a cone of
+    // earth on a raised hairpin; the bank gets steeper instead
+    const l = Math.max(0.6, Math.min(0.85 * r, r - Math.max(10, 0.55 * r)));
     lim[i] = Math.min(lim[i], l);
     lim[i + 1] = Math.min(lim[i + 1], l);
   }
+  // The limit changes only gradually along the road: half a metre in for
+  // every metre travelled. (It used to arrive within about 10 m, so at the
+  // start of a raised turn the foot swung 12 m inwards at once: a tight
+  // curl where the bank met the grass.)
+  const run = [0];
+  for (let i = 1; i < n; i++) run.push(run[i - 1] + Math.hypot(F[i].p[0] - F[i - 1].p[0], F[i].p[2] - F[i - 1].p[2]));
+  for (let i = 1; i < n; i++) lim[i] = Math.min(lim[i], lim[i - 1] + 0.5 * (run[i] - run[i - 1]));
+  for (let i = n - 2; i >= 0; i--) lim[i] = Math.min(lim[i], lim[i + 1] + 0.5 * (run[i + 1] - run[i]));
   // eased along the strip (a moving minimum, then a moving average over the
   // same span, which never exceeds the limit) so the foot line has no notch
   const k = 3;
@@ -6833,6 +6844,16 @@ function embankment(F, side) {
     f.y = GROUND_Y - BANK_SINK;
     return f;
   });
+  // a few light smoothing passes along the foot: a step in the road's width
+  // or the bank drawing in at a turn no longer leaves a kink where it meets
+  // the grass (a few passes only, so the points never bunch up)
+  for (let it = 0; it < 6; it++) {
+    const px = foot.map((f) => f.x), pz = foot.map((f) => f.z);
+    for (let i = 1; i < n - 1; i++) {
+      foot[i].x += 0.5 * ((px[i - 1] + px[i + 1]) / 2 - px[i]);
+      foot[i].z += 0.5 * ((pz[i - 1] + pz[i + 1]) / 2 - pz[i]);
+    }
+  }
   const norm = edgeP.map((p, i) => {
     const t = new THREE.Vector3().subVectors(edgeP[Math.min(n - 1, i + 1)], edgeP[Math.max(0, i - 1)]);
     const down = new THREE.Vector3().subVectors(foot[i], p);
