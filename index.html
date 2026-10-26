@@ -1809,7 +1809,7 @@ button.danger-outline{background:none}
 .bdGrid{grid-template-columns:minmax(0,1.05fr) minmax(0,1.45fr) minmax(0,.95fr);gap:22px;margin-top:16px}
 @media(max-width:1180px){.bdGrid{gap:14px;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,.9fr)}.bdCards{grid-template-columns:repeat(3,minmax(0,1fr))}
   .bdOpt{flex-wrap:wrap}.bdOpt select{flex:1 1 120px}.builderPanel{padding:16px 18px 14px}}
-@media(max-height:820px){.pcCard{padding:5px 3px 5px;gap:2px}.pcIc{width:34px;height:22px}.bdCards{margin-bottom:10px}
+@media(max-height:820px){.pieceCard{padding:5px 3px 5px;gap:2px}.pcIc{width:34px;height:22px}.bdCards{margin-bottom:10px}
   .bdOpts{gap:5px}.bdOpt select{padding:5px 8px}.bdPiece{margin:10px 0 8px}.bdTop{padding-bottom:10px}.bdGrid{margin-top:12px}
   .bdFoot{margin-top:10px;padding-top:10px}.bd3dWrap,.miniMap.bdMap{height:min(48vh,500px)}.bdOpts .dNote{display:none}}
 @media(max-width:900px){.bdGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.bdView{grid-column:1/-1;order:-1}}
@@ -1817,11 +1817,11 @@ button.danger-outline{background:none}
 .bdGrid h3{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:10px}
 .bdCards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:14px}
 @media(max-width:1300px){.bdCards{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.pcCard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 7px;min-width:0;background:#16181c;
+.pieceCard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 7px;min-width:0;background:#16181c;
   border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--dim)}
-.pcCard b{font-size:11.5px;font-weight:500;line-height:1.15;text-align:center;color:var(--ink)}
-.pcCard:hover{background:#1c1f23;border-color:rgba(255,255,255,.14)}
-.pcCard.on{border-color:var(--ember);background:#1d1a18;color:var(--ink)}
+.pieceCard b{font-size:11.5px;font-weight:500;line-height:1.15;text-align:center;color:var(--ink)}
+.pieceCard:hover{background:#1c1f23;border-color:rgba(255,255,255,.14)}
+.pieceCard.on{border-color:var(--ember);background:#1d1a18;color:var(--ink)}
 .pcIc{width:42px;height:28px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .pcIc .i2{stroke-width:1.4;opacity:.45}
 .pcIc .iB{stroke:#4fc6e6}
@@ -1852,6 +1852,139 @@ button.danger-outline{background:none}
   border-radius:6px;padding:10px;resize:vertical}
 .bdIORow{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .tkImport{margin-left:auto}
+
+/* ---------- Season 3: the home screen as widgets ---------- */
+.menuPanel{width:min(1320px,96vw);max-height:96vh;padding:20px 26px 22px}
+.mHello{margin:16px 0 14px}
+.bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:minmax(104px,auto);gap:10px;
+  grid-template-areas:"play play daily daily coach coach" "play play race build coach coach" "lead lead course troph you you" "lead lead garage champ chall more"}
+@media(max-height:760px){.bento{grid-auto-rows:minmax(92px,auto)}}
+@media(max-width:900px){.bento{grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-areas:"play play daily daily" "play play race build" "coach coach course troph" "coach coach garage champ" "lead lead you you" "lead lead chall more"}}
+@media(max-width:560px){.bento{grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-areas:"play play" "daily daily" "race build" "course troph" "coach coach" "garage champ" "you you" "lead lead" "chall more"}}
+.w{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;min-width:0;
+  text-align:left;padding:14px 15px;border-radius:12px;border:1px solid rgba(255,255,255,.06);background:#181a1e;color:var(--ink);overflow:hidden}
+button.w:hover{background:#1e2125;border-color:rgba(255,255,255,.14)}
+button.w:active{transform:scale(.985)}
+.w b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.w small{font-size:12px;color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wKick{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ember)}
+.wIc{position:absolute;top:13px;left:14px;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  background:rgba(242,115,63,.12)}
+.wIc svg{width:18px;height:18px;fill:none;stroke:var(--ember);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* the one big action */
+.wPlay{grid-area:play;background:var(--ember);border-color:var(--ember);color:#1a0b03;padding:18px 20px;justify-content:flex-end}
+button.wPlay:hover{background:#f5844f;border-color:#f5844f}
+.wPlay .wKick{color:rgba(26,11,3,.65)}
+.wPlay small{color:rgba(26,11,3,.72);font-size:14px;font-weight:500}
+.wPlayGo{display:flex;align-items:baseline;justify-content:space-between;width:100%}
+.wPlayGo b{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.wArrow{font-size:28px;transition:transform .2s}
+.wPlay:hover .wArrow{transform:translateX(4px)}
+.wPlayMap{position:absolute;top:10px;right:12px;width:52%;height:62%;opacity:.5;pointer-events:none}
+.wPlayMap svg{width:100%;height:100%}
+.wPlayMap .mmTrack{stroke:rgba(26,11,3,.28)}
+.wPlayMap .mmLine{stroke:rgba(26,11,3,.55)}
+.wPlayMap .mmStart,.wPlayMap .mmFin,.wPlayMap .mmArrow{fill:#1a0b03}
+/* live things: the daily and the day's challenge */
+.wDaily{grid-area:daily;justify-content:space-between}
+.wHead{display:flex;justify-content:space-between;align-items:center;width:100%}
+.wTitle{font-size:19px!important;margin-top:4px}
+.wSub{font-size:12px;color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wFoot{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:4px;font-size:12px;color:var(--dim)}
+.wFoot .dcPrize{display:flex;align-items:center;gap:4px}
+.wFoot .dcTime{font-family:var(--mono);color:var(--ink)}
+.wDaily .dPill{color:var(--ember)}
+.wDaily.closed .dPill{color:var(--dimmer)}
+.wChall{grid-area:chall;justify-content:space-between}
+.wChall .dayChK{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ember)}
+.wChall b{font-family:var(--mono);font-size:14px}
+.wChall .dayChT{font-size:11.5px;color:var(--dim)}
+.wChall .dayChBar{display:block;width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
+.wChall .dayChBar i{display:block;height:100%;width:0;background:var(--ember);transition:width .6s}
+.wChall.done .dayChBar i{background:var(--aqua)}
+/* places to go */
+.wAct{justify-content:flex-end}
+.wRace{grid-area:race}.wBuild{grid-area:build}#bCourses{grid-area:course}#bTrophies{grid-area:troph}#bGarage{grid-area:garage}
+/* information: a darker inset, not a button unless it opens something */
+.wInfo{background:#121315;border-color:rgba(255,255,255,.05);justify-content:flex-start}
+.wCoach{grid-area:coach;padding:14px 16px}
+.wCoach .coachBrief{margin:0;padding:0;border:0;width:100%}
+.wCoach .cbHeadline{font-size:15px;margin:10px 0 8px}
+.wCoach .cbItems li{grid-template-columns:82px minmax(0,1fr);font-size:12.5px}
+.wCoach .cbItems li:nth-child(n+4){display:none}
+.wCoach .cbTag{color:var(--ember)}
+.wCoachEmpty{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;width:100%;height:100%;
+  padding:0;border:0;background:none;text-align:left;position:relative}
+.wCoachEmpty:hover{background:none}
+.wCoachEmpty .wIc{top:0;left:0}
+.wCoach:has(#aiCard:not([hidden])) .wCoachEmpty{display:none}
+.wLead{grid-area:lead;padding:12px 15px}
+.wLead .leaderCard{border:0;padding:0;width:100%;background:none}
+.wLead .lcKick{color:var(--ember);font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
+.wLead .lcCar{height:clamp(90px,15vh,150px)}
+.wLead .lcName{font-size:17px}
+.wLead .sectionLeaders{width:100%;margin-top:4px;border:0;padding:0;grid-template-columns:1fr 1fr;gap:2px 10px}
+.wLead .secLead{padding:3px 0!important}
+.wLead .slCar{width:34px!important;height:20px!important}
+.wEmpty{font-size:12.5px;color:var(--dim);margin:auto 0 0}
+.wLead:has(#overallLeaderCard:not([hidden])) .wEmpty,.wYou:has(#youCard:not([hidden])) .wEmpty{display:none}
+.wYou{grid-area:you;justify-content:center}
+.wYou .youCard{width:100%;margin:0;border:0}
+.wYou .youCard div{padding:2px 2px 6px}
+.wYou .youCard b{font-size:17px}
+.wYou .youCard .perfRow{padding:7px 0 0;border-top:1px solid rgba(255,255,255,.06)}
+.wYou .youCard .perfRow b{color:var(--ember)}
+.wChamp{grid-area:champ;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;cursor:pointer}
+.wChamp .csTxt small{color:var(--ember);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.wChamp .csTxt b{font-size:15px}
+.wChamp .csRest{margin:0;align-items:flex-start;font-size:11.5px}
+.wChamp #champIcon{position:absolute;top:12px;left:14px}
+button.wChamp:hover{background:#17181b;border-color:rgba(242,115,63,.35)}
+/* small things */
+.wMore{grid-area:more;display:grid;grid-template-rows:1fr 1fr;gap:8px;min-width:0}
+.wSmall{flex-direction:row;align-items:center;justify-content:flex-start;padding:8px 13px;font-size:13px;font-weight:500;border-radius:10px}
+.wSmall:hover{color:var(--ember)}
+#driverRow{margin-top:12px}
+#driverRow[hidden]{display:none}
+
+/* ---------- moving between screens: the panel morphs ---------- */
+.morphGhost{position:fixed;pointer-events:none;background:#121417;border:1px solid rgba(255,255,255,.07);
+  box-shadow:0 18px 48px rgba(0,0,0,.32);will-change:left,top,width,height}
+.panel.morphIn{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+.panel.morphIn > *{animation:morphKids .34s cubic-bezier(.2,.8,.2,1) .14s both}
+@keyframes morphKids{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.panel.fadeIn{animation:panelIn .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes panelIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+/* popups */
+@keyframes popBack{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.965)}to{opacity:1;transform:none}}
+.wnBox:not([hidden]),.pfBox:not([hidden]),.pcBox:not([hidden]),.refBox:not([hidden]),.captchaBox:not([hidden]),.bdIO:not([hidden]){animation:popBack .22s ease both}
+.wnBox:not([hidden]) .wnPanel,.pfBox:not([hidden]) .pfCard,.pcBox:not([hidden]) .pcCard,.refBox:not([hidden]) .refPanel,.bdIO:not([hidden]) .bdIOBox{
+  animation:popIn .32s cubic-bezier(.2,.8,.2,1) both}
+.toast.on{border-left:2px solid var(--ember)}
+@media(prefers-reduced-motion:reduce){
+  .panel.morphIn > *,.panel.fadeIn,.wnBox,.pfBox,.pcBox,.refBox,.captchaBox,.bdIO,.wnPanel,.pfCard,.pcCard,.refPanel,.bdIOBox{animation:none!important}
+}
+
+/* ---------- more of the accent ---------- */
+::selection{background:rgba(242,115,63,.45)}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--ember)}
+.kick{color:var(--ember)}
+.tab.on{border-color:var(--ember);color:var(--ember);background:rgba(242,115,63,.08)}
+.card .idx,.pvTag{color:var(--ember)}
+.dCard h3,.tkHd,.bdGrid h3,.gh{color:var(--ember)}
+.secBar h3{color:var(--ink)}
+.secBar .sl b{color:var(--ember)}
+.podium .p1 .m{color:var(--ember)}
+.menuTop .who .cr b{color:var(--ember)}
+.creditBadge b{color:var(--ember)}
+.infoNav a:hover,.infoBody h3{color:var(--ember)}
+.mGreet{background:none}
+#rKick{color:var(--ember)}
+.clCount{color:var(--ember)}
+.setRow b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -2032,42 +2165,25 @@ button.danger-outline{background:none}
         <p class="mSub" id="mSub"></p>
       </div>
       <div class="noticeBox" id="menuNotice" hidden></div>
+      <button class="previewBar" id="bPreview" hidden>Next season preview <span>only you can see this · not released</span></button>
 
-      <div class="menuGrid">
-        <div class="menuMain">
-          <button class="playBtn" id="bDrive">
-            <span class="playText"><b>Play</b><small id="bDriveNext">Launch Pad</small></span>
-            <span class="playGo" aria-hidden="true">&rarr;</span>
-          </button>
-          <button class="previewBar" id="bPreview" hidden>Next season preview <span>only you can see this · not released</span></button>
-          <nav class="mList" aria-label="Main menu">
-            <button class="mRow mDaily dailyCard" id="bDaily">
-              <span class="mrT">Daily map <span class="dPill" id="dailyTileState">Live</span></span>
-              <span class="mrM"><b id="dailyTileName">—</b> <span id="dailyTileSub"></span><span class="dcPrize"></span></span>
-              <span class="mrR dcTime" id="dailyTileTime"></span>
-            </button>
-            <button class="mRow" id="bMulti"><span class="mrT">Race friends</span><span class="mrM">Live, up to 8 players</span></button>
-            <button class="mRow" id="bTracks"><span class="mrT">Track builder</span><span class="mrM">Build your own, drive everyone's</span></button>
-            <button class="mRow" id="bCourses"><span class="mrT">Courses</span><span class="mrM">16 maps and their leaderboards</span></button>
-            <button class="mRow" id="bStats"><span class="mrT">Coach</span><span class="mrM">Your times, analysed</span></button>
-            <button class="mRow" id="bTrophies"><span class="mrT">Trophy room</span><span class="mrM" id="tileTrophies">Your awards</span></button>
-            <button class="mRow" id="bGarage"><span class="mrT">Garage</span><span class="mrM">Paint your car</span></button>
-            <button class="mRow" id="bSettings"><span class="mrT">Settings</span><span class="mrM">Account and controls</span></button>
-            <button class="mRow" id="bInfo"><span class="mrT">How it works</span><span class="mrM">The guide</span></button>
-          </nav>
-          <div class="dayCh" id="dayCh" hidden title="Finish 300 runs today (any season maps, the daily included) for 300 credits on top of the usual 1 a run. Resets at midnight Pacific.">
-            <span class="dayChK">Daily challenge</span>
-            <b id="dayChCount">0 / 300 runs</b>
-            <span class="dayChT">300 runs today earns <span class="gem2d"></span> 300</span>
-            <span class="dayChBar"><i id="dayChBar"></i></span>
-          </div>
-          <div id="driverRow">
-            <label class="fld" for="driver">Driver name</label>
-            <input type="text" id="driver" maxlength="14" placeholder="Driver">
-          </div>
-        </div>
+      <!-- the home screen: widgets of different sizes, grouped by what they are -->
+      <div class="bento">
+        <button class="w wPlay" id="bDrive">
+          <span class="wPlayMap" id="playMap" aria-hidden="true"></span>
+          <span class="wKick">Up next</span>
+          <span class="wPlayGo"><b>Play</b><span class="wArrow" aria-hidden="true">&rarr;</span></span>
+          <small id="bDriveNext">Launch Pad</small>
+        </button>
 
-        <div class="menuMid">
+        <button class="w wLive wDaily" id="bDaily">
+          <span class="wHead"><span class="wKick">Daily map</span><span class="dPill" id="dailyTileState">Live</span></span>
+          <b class="wTitle" id="dailyTileName">—</b>
+          <span class="wSub" id="dailyTileSub"></span>
+          <span class="wFoot"><span class="dcPrize"></span><span class="dcTime" id="dailyTileTime"></span></span>
+        </button>
+
+        <div class="w wInfo wCoach">
           <section class="coachBrief" id="aiCard" hidden>
             <div class="cbHead"><span class="cbAvatar"><svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/><circle cx="12" cy="21.3" r="1.1"/></svg></span><div class="cbWho"><b>Coach</b><small id="aiTime">Live briefing</small></div>
               <button class="ghost small" id="bPhoto" hidden>Photo finish</button><button class="ghost small" id="bAiCoach">Ask Coach &rarr;</button></div>
@@ -2075,13 +2191,22 @@ button.danger-outline{background:none}
             <ul class="cbItems" id="aiLines"></ul>
             <button class="small primary cbGo" id="bAiTarget" hidden></button>
           </section>
-        </div>
-        <aside class="menuSide">
-          <button class="champStrip" id="champCard" hidden title="Last season's champion: open their card">
-            <span id="champIcon"></span>
-            <span class="csTxt"><small id="champKick">Season 2 champion</small><b id="champName">—</b></span>
-            <span class="csRest"><span id="champTime"></span><span id="champRest"></span></span>
+          <button class="wCoachEmpty" id="bStats">
+            <span class="wIc"><svg viewBox="0 0 24 24"><path d="M4.5 13.5v-1.8a7.5 7.5 0 0 1 15 0v1.8"/><rect x="3" y="12.5" width="4" height="6" rx="1.6"/><rect x="17" y="12.5" width="4" height="6" rx="1.6"/><path d="M19 18.5c0 1.9-1.6 2.8-4.6 2.8h-1.6"/></svg></span>
+            <b>Coach</b><small>Your times, analysed</small>
           </button>
+        </div>
+
+        <button class="w wAct wRace" id="bMulti">
+          <span class="wIc"><svg viewBox="0 0 24 24"><path d="M5 20V4M5 4h10l-2 3.5 2 3.5H5"/><path d="M15 20v-6h5"/></svg></span>
+          <b>Race friends</b><small>Live, up to 8</small>
+        </button>
+        <button class="w wAct wBuild" id="bTracks">
+          <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 19c4 0 5-4 8-7s5-6 10-6"/><circle cx="3" cy="19" r="1.6"/><circle cx="21" cy="6" r="1.6"/><path d="M12 19h9"/></svg></span>
+          <b>Track builder</b><small>Build and share</small>
+        </button>
+
+        <div class="w wInfo wLead">
           <div class="leaderCard" id="overallLeaderCard" hidden>
             <div class="lcHead"><span class="lcKick" id="overallLeaderKick">Season 3 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
             <div class="lcBody">
@@ -2090,8 +2215,46 @@ button.danger-outline{background:none}
             </div>
           </div>
           <div class="sectionLeaders" id="sectionLeaders"></div>
+          <p class="wEmpty">No leader yet: the first times of the season will show here.</p>
+        </div>
+
+        <button class="w wAct" id="bCourses">
+          <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></span>
+          <b>Courses</b><small>16 maps</small>
+        </button>
+        <button class="w wAct" id="bTrophies">
+          <span class="wIc"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg></span>
+          <b>Trophy room</b><small id="tileTrophies">Your awards</small>
+        </button>
+
+        <div class="w wInfo wYou">
           <div class="youCard" id="youCard" hidden></div>
-        </aside>
+          <p class="wEmpty">Finish a map to see where you stand.</p>
+        </div>
+
+        <button class="w wAct" id="bGarage">
+          <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 15l2-5h14l2 5v3H3z"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/><path d="M7 10l2-4h6l2 4"/></svg></span>
+          <b>Garage</b><small>Paint your car</small>
+        </button>
+        <button class="w wInfo wChamp" id="champCard" hidden title="Last season's champion: open their card">
+          <span id="champIcon"></span>
+          <span class="csTxt"><small id="champKick">Season 2 champion</small><b id="champName">—</b></span>
+          <span class="csRest"><span id="champTime"></span><span id="champRest"></span></span>
+        </button>
+        <div class="w wLive wChall" id="dayCh" hidden title="Finish 300 runs today (any season maps, the daily included) for 300 credits on top of the usual 1 a run. Resets at midnight Pacific.">
+          <span class="dayChK">Daily challenge</span>
+          <b id="dayChCount">0 / 300 runs</b>
+          <span class="dayChT">300 runs today earns 300 credits</span>
+          <span class="dayChBar"><i id="dayChBar"></i></span>
+        </div>
+        <div class="wMore">
+          <button class="w wSmall" id="bSettings">Settings</button>
+          <button class="w wSmall" id="bInfo">How it works</button>
+        </div>
+      </div>
+      <div id="driverRow">
+        <label class="fld" for="driver">Driver name</label>
+        <input type="text" id="driver" maxlength="14" placeholder="Driver">
       </div>
     </div>
   </div>
@@ -9738,7 +9901,7 @@ const Tracks = {
       return '<option value="' + v + '"' + (v === o[key] ? ' selected' : '') + '>' + l + '</option>';
     }).join('') + '</select>';
     const lab = (t, c) => '<label class="bdOpt"><span>' + t + '</span>' + c + '</label>';
-    $('bdTypes').innerHTML = this.TYPES.map(([k, n]) => '<button class="pcCard' + (k === this.kind ? ' on' : '') + '" data-kind="' + k + '" title="' +
+    $('bdTypes').innerHTML = this.TYPES.map(([k, n]) => '<button class="pieceCard' + (k === this.kind ? ' on' : '') + '" data-kind="' + k + '" title="' +
       this.HINTS[k] + '">' + this.icon(k) + '<b>' + n + '</b></button>').join('');
     let h = '';
     const m = (v) => v + ' m', note = (t) => '<p class="dNote">' + t + '</p>';
@@ -14319,10 +14482,81 @@ const Compare = {
   }
 };
 
+/**
+ * Moving between screens: the charcoal panel of the screen you leave glides
+ * and reshapes into the panel of the one you open, while the new screen's
+ * contents fade in. Opened from a home-screen widget, it grows out of that
+ * widget. A plain shape (the "ghost") does the moving, so nothing inside a
+ * panel is ever stretched; the real panel takes over when it lands.
+ */
+const Morph = {
+  origin: null, ghost: null, anim: null,
+  quiet() { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); },
+  /** the visible screen's panel, before a change */
+  current() {
+    for (const L of document.querySelectorAll('.layer:not([hidden])')) {
+      if (L.id === 'hud') continue;
+      const p = L.querySelector(':scope > .panel');
+      if (p) return { el: p, rect: p.getBoundingClientRect(), radius: getComputedStyle(p).borderRadius, bg: getComputedStyle(p).backgroundColor };
+    }
+    return null;
+  },
+  /** a widget (or any button) was pressed: a screen opening now grows out of it */
+  note(el) {
+    const cs = getComputedStyle(el);
+    this.origin = { rect: el.getBoundingClientRect(), radius: cs.borderRadius, bg: cs.backgroundColor, t: performance.now() };
+  },
+  go(from, id) {
+    const L = $(id), to = L && L.querySelector(':scope > .panel');
+    const origin = this.origin && performance.now() - this.origin.t < 700 ? this.origin : null;
+    this.origin = null;
+    if (!to || this.quiet()) return;
+    if (from && from.el === to) return;
+    const src = origin || from;
+    if (this.anim) { this.anim.cancel(); this.anim = null; }
+    if (this.ghost) { this.ghost.remove(); this.ghost = null; }
+    document.querySelectorAll('.panel.morphIn').forEach((p) => p.classList.remove('morphIn'));
+    if (!src) {
+      to.classList.remove('fadeIn'); void to.offsetWidth; to.classList.add('fadeIn');
+      clearTimeout(this.safeFade);
+      this.safeFade = setTimeout(() => to.classList.remove('fadeIn'), 600);
+      return;
+    }
+    const a = src.rect, b = to.getBoundingClientRect(), cs = getComputedStyle(to);
+    const g = document.createElement('div');
+    g.className = 'morphGhost';
+    L.insertBefore(g, to);              // under the new panel, over its scrim
+    this.ghost = g;
+    to.classList.add('morphIn');
+    const frame = (r, rad, bg) => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', borderRadius: rad, backgroundColor: bg });
+    this.anim = g.animate([frame(a, src.radius, src.bg), frame(b, cs.borderRadius, '#121417')],
+      { duration: origin ? 460 : 400, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
+    const done = () => {
+      if (this.ghost === g) { g.remove(); this.ghost = null; this.anim = null; }
+      setTimeout(() => to.classList.remove('morphIn'), 360);
+    };
+    this.anim.onfinish = done;
+    this.anim.oncancel = () => { g.remove(); to.classList.remove('morphIn'); };
+    // whatever happens to the animation (a hidden tab pauses them), the real
+    // panel and its contents are there within a second
+    clearTimeout(this.safe);
+    this.safe = setTimeout(() => {
+      if (this.ghost === g) { g.remove(); this.ghost = null; if (this.anim) { this.anim.cancel(); this.anim = null; } }
+      to.classList.remove('morphIn');
+    }, 900);
+  }
+};
+// a press on a widget, a card or a menu button: where the next screen grows from
+addEventListener('pointerdown', (e) => {
+  const el = e.target.closest && e.target.closest('.w, .tkCard, .card, .secBar');
+  if (el) Morph.note(el);
+}, true);
+
 /* ---------------------------------------------------------------- 11. ui */
 const UI = {
   toastT: 0,
   show(id) {
+    const from = Morph.current();
     ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'preview', 'result', 'gate', 'banned', 'spectate', 'settings',
      'garage', 'trophies', 'multi', 'closed', 'tracks', 'builder']
       .forEach((k) => { $(k).hidden = k !== id; });
@@ -14332,6 +14566,7 @@ const UI = {
     if (id === 'menu' || id === 'gate') Notice.show();
     $('boot').hidden = true;             // the loading notice ends when any screen shows
     document.body.dataset.screen = id;   // lets CSS hide things per screen
+    Morph.go(from, id);
   },
   who(name, credits) {
     $('who').hidden = !name;
@@ -17123,6 +17358,7 @@ const Game = {
     TrophyRoom.stop();
     const next = this.nextCourseIndex();
     $('bDriveNext').textContent = next >= 0 ? courseTag(next) + ' · ' + LEVELS[next].name : '';
+    $('playMap').innerHTML = next >= 0 ? MiniMap.svg(next, false) : '';
     UI.overallLeaderCard();
     this.trophyTileText();
     this.flushPendingAuth();
