@@ -529,10 +529,10 @@ const S1 = ['Proving Ground','Overpass','Switchback','Ribbon','Cauldron','Steppi
 // This season's maps (Season 3, live since 2026-10-25) in play order: must
 // match LEVELS in index.html. Replaced maps get new ids, so old times on
 // retired maps never show up on the new ones.
-const S2 = [['s4c1', 'Straight Shot'], ['s4c2', 'Quarter Turn'], ['s4c3', 'U-Turn'], ['s4c4', 'Dogleg'],
-  ['s4c5', 'Cliff Drop'], ['s4c6', 'Horseshoe'], ['s4c7', 'Double Dip'], ['s4c8', 'Kink'],
-  ['s4c9', 'Tabletop'], ['s4c10', 'Black Ice'], ['s4c11', 'Speed Trap'], ['s4c12', 'Elbow'],
-  ['s4c13', 'Ripples'], ['s4c14', 'Steep Wall'], ['s4c15', 'Long Jump'], ['s4c16', 'Last Call']]
+const S2 = [['s4m1', 'Afterburner'], ['s4m2', 'Goat Path'], ['s4m3', 'Off Kilter'], ['s4m4', 'Guacamole'],
+  ['s4m5', 'Velodrome'], ['s4m6', 'Hourglass'], ['s4c1', 'Straight Shot'], ['s4m7', 'Snapback'],
+  ['s4m8', 'Pinball'], ['s4m9', 'Ridgeback'], ['s4m10', 'Big Dipper'], ['s4m11', 'Long Table'],
+  ['s4m12', 'coil'], ['s4m13', 'Kicker'], ['s4m14', 'cornfield'], ['s4m15', 'Needle Drop']]
   .map(([id, name], i) => ({ id, name, sec: Math.floor(i / 4), tag: 'ABCD'[Math.floor(i / 4)] + ((i % 4) + 1) }));
 // last season (Season 2, closed 2026-10-25): its times stay readable
 const PREV = [['s3c1', 'Ignition'], ['s3c2', 'Skip Rope'], ['s3c3', 'Rattler'], ['s3c4', 'Ramp Rush'],
@@ -557,7 +557,11 @@ PREV1.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (Season 1)'; });
 [['s2c2', 'Coastline'], ['s2c3', 'Redline Bank'], ['s2c5', 'Quarry Run'], ['s2c7', 'Glass Mile'],
   ['s2c9', 'High Wire'], ['s2c12', 'Corkscrew Ridge'], ['s2c13', 'Velocity'], ['s2c15', 'Sky Harbor'],
   ['s2c17', 'Ribbon Road'], ['s2c8', 'Switchyard'], ['s2c11', 'Drop Zone'], ['s2c24', 'Overdrive'],
-  ['s2c25', 'Hairpin Hollow'], ['s2c10', 'Thunder Bowl'], ['s2c28', 'Drift King'], ['s2c30', 'Vortex, first version'], ['s2c32', 'Vortex']]
+  ['s2c25', 'Hairpin Hollow'], ['s2c10', 'Thunder Bowl'], ['s2c28', 'Drift King'], ['s2c30', 'Vortex, first version'], ['s2c32', 'Vortex'],
+  // Season 3's first maps, replaced by the players' maps on 2026-10-26
+  ['s4c2', 'Quarter Turn'], ['s4c3', 'U-Turn'], ['s4c4', 'Dogleg'], ['s4c5', 'Cliff Drop'], ['s4c6', 'Horseshoe'], ['s4c7', 'Double Dip'],
+  ['s4c8', 'Kink'], ['s4c9', 'Tabletop'], ['s4c10', 'Black Ice'], ['s4c11', 'Speed Trap'], ['s4c12', 'Elbow'], ['s4c13', 'Ripples'],
+  ['s4c14', 'Steep Wall'], ['s4c15', 'Long Jump'], ['s4c16', 'Last Call']]
   .forEach(([id, name]) => { COURSE_NAME[id] = name + ' (retired)'; });
 
 const { createClient } = await import(SUPABASE.sdk);

@@ -2029,6 +2029,10 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--embe
 .creditBadge{display:none!important}
 body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .creditBadge:not([hidden]){display:flex!important}
 @media(max-width:760px){body[data-screen=result] .creditBadge{display:none!important}}
+
+/* a map a player made: their name under its description */
+.madeBy{font-size:12px;font-weight:600;color:var(--ember);margin:2px 0 4px}
+.madeBy[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -2619,6 +2623,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           <button class="ghost" id="bCdBack">← All courses</button>
         </div>
         <p class="lede" style="margin-bottom:6px" id="cdBlurb"></p>
+        <p class="madeBy" id="cdBy" hidden></p>
         <p class="cdBest" id="cdBest"></p>
         <div class="cols" style="margin-top:14px">
           <div>
@@ -7282,20 +7287,65 @@ function disposeCourse(course, scene) {
 }
 
 /* --------------------------------------------------------- 8. course data
-   This season (Season 3, released 2026-10-25): sixteen minimalist courses
-   in four sections of four, most with one or two turns, one just a
-   straight line with a jump. Sections exist so each has its own smaller
-   overall winner; they share no theme. No course puts two big opposite
-   turns back to back (TrackBuilder enforces it), no road crosses another,
+   This season (Season 3): sixteen courses in four sections of four. Since
+   2026-10-26 most are tracks players made in the track builder (built
+   with TrackKit, in random order); a map whose maker is credited has `by`.
+   Straight Shot (s4c1) is the season's straight line with a jump, kept
+   from the first sixteen; the other first maps (s4c2..s4c16) are retired
+   and their times stay in the database. Sections exist so each has its own
+   smaller overall winner; they share no theme. No road crosses another,
    and every course is built { fine: true } (see fineDeck). Earlier
-   seasons' maps (s2c*, s3c*) are retired: their times stay in the
-   database, and close_season() kept their podiums.                     */
+   seasons' maps (s2c*, s3c*) are retired too, and close_season() kept
+   their podiums.                                                        */
 const SEASON = 3;
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
 const LEVELS = [
   // ---------------------------------------------------------- Section A
   {
-    id: 's4c1', section: 0, name: 'Straight Shot',
+    id: 's4m1', section: 0, name: 'Afterburner',
+    blurb: 'The long one: two super strips on a narrow road, a crest, two big jumps and a tabletop to finish.',
+    build() {
+      return TrackKit.build({ w: 15, pieces: [['T', 60, 75, 5, 0, 15], ['S', 20, 15], ['T', 75, 75, 20, 0, 15], ['H', 10, 60, 15], ['B', 30, 12], ['X', 60, 8], ['X', 60, 8], ['B', 30, 12], ['C', 9, 15], ['S', 20, 15], ['H', -10, 100, 15], ['S', 100, 15], ['J', 3, 15], ['S', 100, 15], ['T', 50, 75, 15, 0, 15], ['T', 50, 45, 15, 0, 15], ['J', 4, 8]] });
+    }
+  },
+  {
+    id: 's4m2', section: 0, name: 'Goat Path',
+    blurb: 'Up onto a narrow ledge and through tight, narrow corners, with speed strips between them.',
+    build() {
+      return TrackKit.build({ w: 15, pieces: [['S', 80, 15], ['H', 12, 40, 10], ['T', 24, 60, 10, 0, 10], ['S', 50, 10], ['T', 24, -90, 10, 0, 10], ['S', 10, 10], ['B', 30, 10], ['T', 60, -105, 10, 0, 10], ['H', -4, 60, 10], ['B', 30, 10], ['T', 40, -30, 0, 0, 20]] });
+    }
+  },
+  {
+    id: 's4m3', section: 0, name: 'Off Kilter',
+    blurb: 'An off-camber right that holds you less than you think, a crest, a steep banked left and a jump.',
+    build() {
+      return TrackKit.build({ w: 15, pieces: [['S', 60, 15], ['T', 75, -60, -10, 0, 15], ['S', 50, 15], ['C', 7, 15], ['S', 40, 15], ['T', 60, 90, 40, 0, 16], ['S', 50, 16], ['J', 2, 16], ['S', 60, 15]] });
+    }
+  },
+  {
+    id: 's4m4', section: 0, name: 'Guacamole', by: 'Julian Svoboda',
+    blurb: 'A super strip, a big jump, two steep banked rights and a hop off a hill onto a wide landing.',
+    build() {
+      return TrackKit.build({ w: 15, pieces: [['X', 30, 15], ['H', 12, 40, 15], ['B', 30, 15], ['J', 3, 15], ['S', 40, 15], ['T', 75, 120, 45, 0, 15], ['S', 10, 15], ['B', 30, 15], ['S', 10, 15], ['T', 75, -90, 55, 0, 15], ['B', 50, 15], ['T', 75, -90, 55, 0, 15], ['H', 6, 20, 15], ['H', 12, 40, 15], ['J', 1, 25], ['H', -20, 100, 30], ['S', 20, 30], ['T', 60, -120, 25, 0, 8]] });
+    }
+  },
+  // ---------------------------------------------------------- Section B
+  {
+    id: 's4m5', section: 1, name: 'Velodrome',
+    blurb: 'A hop, a super strip and one enormous U-turn banked at 70 degrees. Flat out.',
+    build() {
+      return TrackKit.build({ w: 20, pieces: [['J', 1, 20], ['X', 60, 20], ['T', 150, -180, 70, 0, 20]] });
+    }
+  },
+  {
+    id: 's4m6', section: 1, name: 'Hourglass',
+    blurb: 'A super strip into a wide open area that squeezes down to 6 m, then a banked left and a crest.',
+    build() {
+      return TrackKit.build({ w: 18, pieces: [['S', 40, 18], ['X', 30, 18], ['W', 60, 40], ['N', 40, 6], ['S', 40, 15], ['T', 60, 90, 30, 0, 15], ['S', 60, 15], ['C', 7, 15], ['S', 80, 15]] });
+    }
+  },
+  {
+    id: 's4c1', section: 1, name: 'Straight Shot',
     blurb: 'A straight line and one jump. Nothing else: flat out, and land it clean.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
@@ -7310,267 +7360,69 @@ const LEVELS = [
       b.straight(34, { w: 19 });
       return b.build();
     }
-  },
-  {
-    id: 's4c2', section: 0, name: 'Quarter Turn',
-    blurb: 'One straight, one banked left-hander, one straight.',
+  },  {
+    id: 's4m7', section: 1, name: 'Snapback',
+    blurb: 'A speed strip, a banked left, then a sharp right that snaps you back the other way.',
     build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(120);
-      b.curve(60, 90, { bank: 24, chev: 1 });
-      b.straight(120);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },
-  {
-    id: 's4c3', section: 0, name: 'U-Turn',
-    blurb: 'Out, round one tight hairpin, and back. Brake late or drift it.',
-    build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(130);
-      b.curve(24, -180, { bank: 10, w: 18, chev: 1 });
-      b.straight(130);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },
-  {
-    id: 's4c4', section: 0, name: 'Dogleg',
-    blurb: 'Two turns: a right, a straight, a left.',
-    build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(90);
-      b.curve(50, -70, { bank: 22, chev: 1 });
-      b.straight(70);
-      b.curve(50, 70, { bank: 22, chev: 1 });
-      b.straight(90);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },
-  // ---------------------------------------------------------- Section B
-  {
-    id: 's4c5', section: 1, name: 'Cliff Drop',
-    blurb: 'Off the top of a hill in one long jump, then a single sweeper at the bottom.',
-    build() {
-      const b = new TrackBuilder({ width: 15, y: 44, fine: true });
-      b.pad(22, 19);
-      b.straight(40);
-      b.ramp(16, 5);
-      b.skiJump(18, 5, 46, 20, 34, { w: 20 });
-      b.landing(40, -20, { w: 20 });
-      b.slope(30, -4);
-      b.straight(50);
-      b.curve(70, 60, { bank: 24, chev: 1 });
-      b.straight(70);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },
-  {
-    id: 's4c6', section: 1, name: 'Horseshoe',
-    blurb: 'One big banked U-turn you can take flat out, and straights either side.',
-    build() {
-      const b = new TrackBuilder({ width: 16, fine: true });
-      b.pad(24, 20);
-      b.straight(100);
-      b.curve(55, 180, { bank: 40, chev: 1 });
-      b.straight(100);
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
-    }
-  },
-  {
-    id: 's4c7', section: 1, name: 'Double Dip',
-    blurb: 'A straight with two jumps on it. Keep it pointed straight on the first and you\'ll fly the second.',
-    build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      const jump = () => { b.slope(20, 2); b.ramp(12, 7); b.gap(16, -1.5); b.landing(14, -6, { w: 18 }); };
-      b.pad(24, 19);
-      b.straight(80);
-      jump();
-      b.straight(70);
-      jump();
-      b.straight(70);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },
-  {
-    id: 's4c8', section: 1, name: 'Kink',
-    blurb: 'Almost straight: two gentle bends and a crest between them. Find the line that needs no steering.',
-    build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(80);
-      b.curve(90, 30, { bank: 8 });
-      b.straight(40);
-      b.crest(26, 5);
-      b.straight(40);
-      b.curve(90, -30, { bank: 8 });
-      b.straight(80);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
+      return TrackKit.build({ w: 15, pieces: [['S', 20, 15], ['B', 20, 15], ['T', 60, 60, 20, 0, 15], ['S', 50, 15], ['T', 20, -60, 20, 0, 15]] });
     }
   },
   // ---------------------------------------------------------- Section C
   {
-    id: 's4c9', section: 2, name: 'Tabletop',
-    blurb: 'A jump onto a flat top, down the other side and one banked right to finish.',
+    id: 's4m8', section: 2, name: 'Pinball',
+    blurb: 'Hops and jumps between banked turns, with two speed strips in a row.',
     build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(70);
-      b.slope(30, 4);
-      b.ramp(14, 8);
-      b.gap(20, -2);
-      b.table(30, 19);
-      b.slope(34, -4);
-      b.straight(30);
-      b.curve(45, -90, { bank: 20, chev: 1 });
-      b.straight(70);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
+      return TrackKit.build({ w: 15, pieces: [['J', 1, 15], ['T', 60, -75, 40, 0, 15], ['J', 2, 15], ['B', 50, 15], ['B', 50, 15], ['T', 60, 75, 40, 0, 15], ['T', 60, 75, 40, 0, 15]] });
     }
   },
   {
-    id: 's4c10', section: 2, name: 'Black Ice',
-    blurb: 'A single long icy corner. Too much speed and you slide wide; too little and you lose.',
+    id: 's4m9', section: 2, name: 'Ridgeback',
+    blurb: 'An off-camber left, a long climb, then a big banked S along the top of the ridge.',
     build() {
-      const b = new TrackBuilder({ width: 16, fine: true });
-      b.pad(24, 20);
-      b.straight(90);
-      b.curve(70, -120, { bank: 20, grip: 0.7, chev: 1 });
-      b.straight(90);
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
+      return TrackKit.build({ w: 15, pieces: [['S', 20, 15], ['T', 50, 60, -10, 0, 10], ['B', 30, 10], ['H', 10, 100, 10], ['T', 50, 120, 40, 0, 10], ['S', 50, 10], ['T', 50, -120, 40, 0, 10], ['T', 50, -45, 40, 0, 10]] });
     }
   },
   {
-    id: 's4c11', section: 2, name: 'Speed Trap',
-    blurb: 'Two speed strips straight into a hairpin. How late can you brake?',
+    id: 's4m10', section: 2, name: 'Big Dipper',
+    blurb: 'Up, down and up again: hills, super strips, two jumps and a fast banked turn at the end.',
     build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(30);
-      b.strip(30);
-      b.straight(40);
-      b.strip(30);
-      b.straight(40);
-      b.curve(22, 160, { bank: 10, w: 18, chev: 1 });
-      b.straight(80);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
+      return TrackKit.build({ w: 10, pieces: [['H', 20, 60, 10], ['B', 30, 10], ['T', 75, -15, 5, 0, 10], ['H', -10, 60, 10], ['H', 20, 60, 10], ['T', 75, 15, 20, 0, 10], ['X', 60, 12], ['T', 75, -15, 5, 0, 12], ['J', 2, 12], ['S', 50, 12], ['X', 60, 12], ['H', -20, 60, 14], ['H', -10, 60, 16], ['J', 4, 16], ['T', 90, 60, 30, 0, 16], ['S', 50, 8]] });
     }
   },
   {
-    id: 's4c12', section: 2, name: 'Elbow',
-    blurb: 'One sharp left-hander, then a little jump on the way home.',
+    id: 's4m11', section: 2, name: 'Long Table',
+    blurb: 'Two lefts in a row, a tabletop jump and a tight right on the far side.',
     build() {
-      const b = new TrackBuilder({ width: 16, fine: true });
-      b.pad(24, 20);
-      b.straight(80);
-      b.curve(26, 100, { bank: 12, w: 17, chev: 1 });
-      b.straight(60);
-      b.ramp(10, 6);
-      b.gap(10, -1.5);
-      b.landing(10, -5, { w: 17 });
-      b.straight(60, { w: 17 });
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
+      return TrackKit.build({ w: 15, pieces: [['T', 20, 75, 10, 0, 15], ['T', 75, 75, 10, 0, 15], ['S', 80, 15], ['J', 4, 20], ['S', 20, 20], ['T', 20, -45, 10, 0, 20]] });
     }
   },
   // ---------------------------------------------------------- Section D
   {
-    id: 's4c13', section: 3, name: 'Ripples',
-    blurb: 'Rollers, one banked right, more rollers. Stay light over the tops.',
+    id: 's4m12', section: 3, name: 'coil', by: 'Julian Svoboda',
+    blurb: 'Banked turns that get steeper as the road gets narrower, with a speed strip after each one.',
     build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(50);
-      b.rollers(3, 22, 0.6);
-      b.straight(40);
-      b.curve(60, -80, { bank: 24, chev: 1 });
-      b.straight(40);
-      b.rollers(2, 22, 0.6);
-      b.straight(50);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
+      return TrackKit.build({ w: 20, pieces: [['R', 2, 0.6, 20], ['B', 30, 17], ['H', 12, 40, 15], ['T', 60, -120, 55, 0, 13], ['B', 50, 12], ['T', 50, 90, 60, 0, 10], ['B', 50, 8], ['T', 40, 75, 65, 0, 8], ['B', 50, 8], ['T', 50, -60, 60, 0, 8], ['S', 10, 8]] });
     }
   },
   {
-    id: 's4c14', section: 3, name: 'Steep Wall',
-    blurb: 'A speed strip, then a U-turn banked so steep it is nearly a wall. Commit to it.',
+    id: 's4m13', section: 3, name: 'Kicker',
+    blurb: 'Down a hill, off a big jump, round a banked hairpin and onto a super strip.',
     build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(80);
-      b.strip(24);
-      b.straight(30);
-      b.curve(66, 170, { bank: 68, ramp: 0.5, chev: 1 });
-      b.straight(100);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
+      return TrackKit.build({ w: 15, pieces: [['H', -15, 60, 15], ['B', 30, 15], ['J', 3, 15], ['S', 60, 15], ['T', 40, 180, 25, 0, 15], ['S', 80, 15], ['X', 30, 15], ['S', 60, 15]] });
     }
   },
   {
-    id: 's4c15', section: 3, name: 'Long Jump',
-    blurb: 'Down a hill and off the biggest kicker of the season, then one quick bend to the line.',
+    id: 's4m14', section: 3, name: 'cornfield', by: 'Julian Svoboda',
+    blurb: 'Climbs, jumps and super strips on a road that narrows to 8 m, then a 60 degree banked left to finish.',
     build() {
-      const b = new TrackBuilder({ width: 18, y: 50, fine: true });
-      b.pad(22, 22);
-      b.straight(30);
-      b.strip(20);
-      b.straight(12);
-      b.ramp(18, 7);
-      b.skiJump(22, 8, 52, 24, 40, { w: 32 });
-      b.landing(48, -24, { w: 30 });
-      b.slope(40, -6, { w: 22 });
-      b.straight(40, { w: 20 });
-      b.curve(70, 50, { bank: 20, chev: 1 });
-      b.straight(60);
-      b.gate('finish');
-      b.straight(34, { w: 22 });
-      return b.build();
+      return TrackKit.build({ w: 20, pieces: [['X', 20, 20], ['H', 20, 60, 20], ['J', 4, 18], ['X', 30, 16], ['S', 20, 14], ['T', 75, -90, 30, 0, 10], ['H', 20, 60, 8], ['J', 1, 8], ['H', -12, 60, 18], ['H', -12, 60, 18], ['B', 50, 18], ['X', 20, 18], ['H', 15, 50, 18], ['H', 6, 40, 18], ['X', 20, 18], ['T', 75, 120, 60, 0, 10]] });
     }
   },
   {
-    id: 's4c16', section: 3, name: 'Last Call',
-    blurb: 'The finale, kept simple: a hairpin, a jump and one banked right.',
+    id: 's4m15', section: 3, name: 'Needle Drop',
+    blurb: 'A super strip up a hill and a big jump down onto a road only 8 m wide, then banked bends to the line.',
     build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(70);
-      b.curve(24, 160, { bank: 10, w: 18, chev: 1 });
-      b.straight(50);
-      b.strip(20);
-      b.slope(24, 2.5);
-      b.ramp(14, 9);
-      b.gap(20, -2);
-      b.landing(18, -8, { w: 18 });
-      b.straight(40);
-      b.curve(60, -90, { bank: 26, chev: 1 });
-      b.straight(50);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
+      return TrackKit.build({ w: 15, pieces: [['S', 20, 15], ['T', 75, -15, 10, 0, 15], ['S', 10, 15], ['X', 30, 15], ['H', 6, 40, 15], ['J', 3, 8], ['T', 120, -90, 10, 0, 8], ['S', 60, 8], ['T', 90, 60, 30, 0, 8], ['T', 40, 60, 45, 0, 8]] });
     }
   }
 ];
@@ -7589,7 +7441,9 @@ const NEXT_LEVELS = [
 // Season 2 maps that were replaced by new ones (new ids, so their old times
 // never appear on the new maps); a score reset still clears these too
 const RETIRED_IDS = ['s2c2', 's2c3', 's2c5', 's2c7', 's2c9', 's2c12', 's2c13', 's2c15', 's2c17', 's2c8', 's2c11', 's2c24',
-  's2c25', 's2c10', 's2c28', 's2c30', 's2c32'];
+  's2c25', 's2c10', 's2c28', 's2c30', 's2c32',
+  // Season 3's first maps, replaced by the players' maps on 2026-10-26
+  's4c2', 's4c3', 's4c4', 's4c5', 's4c6', 's4c7', 's4c8', 's4c9', 's4c10', 's4c11', 's4c12', 's4c13', 's4c14', 's4c15', 's4c16'];
 /**
  * The daily map: a new course every day, made from the date, so every
  * player's game makes exactly the same one. Only proven pieces: turns of
@@ -10991,7 +10845,7 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   SEASON: 3, KEY: 'whatsNew',
   ITEMS: [
-    ['map', 'Sixteen new maps', 'Minimalist: most have one or two turns, and one is just a straight line with a jump. Every time starts from zero.'],
+    ['map', 'Sixteen new maps', 'Most were built by players in the track builder, from a 250 m sprint to a 1.2 km epic, plus a straight line with a jump.'],
     ['build', 'Track builder', 'Build up to 3 tracks of your own, make them public, and race everyone else\'s. Each track has its own leaderboard.'],
     ['crown', 'Season 2 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
     ['clock', 'Opening hours', 'aiPolytrack is open on school days: 8:30 AM to 3:30 PM, and until 2:30 PM on Wednesdays (Pacific time).'],
@@ -14741,7 +14595,8 @@ const UI = {
   course(i, name) {
     const lv = levelAt(i);
     $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : i === UTRACK_I ? (lv.draft ? 'TEST DRIVE · NOT SAVED' : 'PLAYER TRACK' + (lv.author ? ' · BY ' + lv.author.toUpperCase() : '')) : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
-      : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase() + ' · ' + Looks.LIST[Looks.of(i)].name.toUpperCase();
+      : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase() + ' · ' + Looks.LIST[Looks.of(i)].name.toUpperCase() +
+        (LEVELS[i].by ? ' · MADE BY ' + LEVELS[i].by.toUpperCase() : '');
     $('hName').textContent = name;
   },
   clock(t, stopped) {
@@ -15058,6 +14913,7 @@ const UI = {
         btn.innerHTML = '<div class="idx">' + courseTag(i) + '</div>' +
           '<div class="ttl">' + escapeHtml(lv.name) + '</div>' +
           '<div class="desc">' + (playable[i] ? escapeHtml(lv.blurb) : 'Failed to load.') + '</div>' +
+          (lv.by ? '<div class="madeBy">Made by ' + escapeHtml(lv.by) + '</div>' : '') +
           this.podium(lv.id) +
           '<div class="foot"><span>your best</span><span class="best">' + (best ? formatTime(best) : '—') + '</span></div>' +
           (Records.cleared(lv.id) ? '<span class="done"></span>'
@@ -15110,6 +14966,8 @@ const UI = {
     $('cdSection').textContent = SECTIONS[lv.section] + ' · ' + Looks.LIST[Looks.of(i)].name + ' · ' + courseTag(i);
     $('cdName').textContent = lv.name;
     $('cdBlurb').textContent = lv.blurb;
+    $('cdBy').textContent = lv.by ? 'Made by ' + lv.by : '';
+    $('cdBy').hidden = !lv.by;
     const list = Records.board(id);
     const best = Records.best(id);
     const rank = this.myRank(list);
