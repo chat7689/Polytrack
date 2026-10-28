@@ -623,7 +623,38 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .gNone{font-size:12px;margin:-10px 0 16px}
 .gNum{display:flex;align-items:center;gap:10px;font-size:13px;margin:-6px 0 16px}
 .gNum input{width:64px}
-.gBoxHero{display:grid;grid-template-columns:140px 1fr;gap:20px;align-items:center}
+.gStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.gStats div{border:1px solid var(--rule-2);border-radius:10px;padding:10px 12px;background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}
+.gStats b{display:block;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.gStats span{font-size:11.5px;color:var(--dim)}
+.gBoxBtns{display:grid;grid-template-columns:1.3fr 1fr;gap:10px}
+.gBig{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px 16px;border-radius:12px;font-size:16px;font-weight:700;text-align:left}
+.gBig small{font-size:12px;font-weight:500;opacity:.8;display:flex;align-items:center;gap:5px}
+.gBig.primary{box-shadow:0 8px 28px -10px var(--ember)}
+.gBig:not(:disabled):hover{transform:translateY(-1px)}
+#gBoxFree:not(:disabled){border-color:var(--ember);color:var(--ember)}
+.gOddRow{display:grid;grid-template-columns:140px 1fr 46px;gap:10px;align-items:center;font-size:12.5px;padding:4px 0}
+.gOddRow b{font-weight:600;color:var(--kc)}
+.gOddRow .bar{height:7px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+.gOddRow .bar i{display:block;height:100%;background:var(--kc);border-radius:4px;box-shadow:0 0 10px var(--kc)}
+.gOddRow span{text-align:right;font-family:var(--mono);color:var(--dim)}
+.gOddRow small{grid-column:2 / 3;color:var(--dimmer);margin-top:-3px}
+.gTiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin-bottom:18px}
+.gTile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border-radius:10px;border:1px solid var(--rule-2);
+  background:rgba(255,255,255,.02);font-size:12px;font-weight:600;color:var(--ink);text-align:center;transition:border-color .15s,transform .15s}
+.gTile .gPic{height:56px;display:flex;align-items:center;justify-content:center;width:100%}
+.gTile .gPic img{max-width:100%;max-height:56px}
+.gTile .gPic .kPic{width:72px;height:48px}
+.gTile i{font-style:normal;font-size:9.5px;color:#e45cff;letter-spacing:.08em;text-transform:uppercase}
+.gTile:hover{border-color:var(--kc,rgba(255,255,255,.3));transform:translateY(-1px)}
+.gTile.on{border-color:var(--kc,var(--ember));background:rgba(255,255,255,.06);box-shadow:0 0 0 1px var(--kc,var(--ember)),0 0 22px -8px var(--kc,var(--ember))}
+.gTile.def .gPic{font-size:22px;color:var(--dimmer)}
+.garagePanel{background:linear-gradient(180deg,rgba(24,28,36,.98),rgba(16,18,24,.98))}
+.garageBig{background:radial-gradient(ellipse at 50% 70%,rgba(242,115,63,.12),transparent 60%),radial-gradient(ellipse at 50% 0%,#1e2534,#0f1219);border-color:rgba(255,255,255,.08)}
+/* the menu's Garage tile, while there's something waiting there */
+#bGarage.wHot{box-shadow:0 0 0 2px var(--ember),0 0 26px -4px var(--ember);animation:wHot 2.2s ease-in-out infinite}
+@keyframes wHot{0%,100%{box-shadow:0 0 0 2px var(--ember),0 0 18px -6px var(--ember)}50%{box-shadow:0 0 0 2px var(--ember),0 0 34px -2px var(--ember)}}
+.wNew{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;letter-spacing:.1em;background:var(--ember);color:#fff;border-radius:4px;padding:1px 6px}
 .gRuns{margin:14px 0 6px;font-size:12.5px;display:grid;grid-template-columns:1fr auto;gap:4px 10px}
 .gRuns span{color:var(--dim)}
 .gBar{grid-column:1 / -1;height:6px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
@@ -675,7 +706,12 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .crate.done{opacity:.35;transform:scale(.85);transition:opacity .3s,transform .3s}
 .crate.born{animation:crateBorn .45s cubic-bezier(.2,.9,.3,1.3)}
 @keyframes crateBorn{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
-.boxOpen{position:fixed;inset:0;z-index:90;background:radial-gradient(circle at 50% 45%,rgba(30,36,50,.92),rgba(5,7,12,.97));display:flex;align-items:center;justify-content:center}
+.boxOpen{position:fixed;inset:0;z-index:90;background:radial-gradient(ellipse at 50% 40%,#1b2130 0%,#07090e 75%);display:flex;align-items:center;justify-content:center}
+#boGL{position:absolute;inset:0;width:100%;height:100%;display:block}
+.boWhite{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5}
+.boWhite.go{animation:boWhite .5s ease-out}
+@keyframes boWhite{0%{opacity:.85}100%{opacity:0}}
+.boCount{position:absolute;top:22px;left:0;right:0;text-align:center;font-size:12px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;z-index:6;pointer-events:none}
 .boxOpen[hidden]{display:none}
 #boFx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
 .boStage{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;align-items:flex-end;max-width:90vw;position:relative;z-index:2;transform:translateY(-10vh)}
@@ -686,8 +722,9 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .boFlash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:800;color:var(--fc,#fff);pointer-events:none;opacity:0;z-index:5;letter-spacing:.04em}
 .boFlash.go{animation:boFlash .7s ease-out}
 @keyframes boFlash{0%{opacity:0;transform:scale(.6)}20%{opacity:1;transform:scale(1.05)}100%{opacity:0;transform:scale(1.25)}}
-.boCard{position:absolute;z-index:6;left:50%;top:56%;transform:translate(-50%,-50%);min-width:260px;max-width:86vw;text-align:center;padding:18px 26px 20px;
-  border-radius:14px;background:rgba(18,21,27,.96);border:1px solid var(--kc);box-shadow:0 0 50px -6px var(--kc)}
+.boCard{position:absolute;z-index:6;left:50%;bottom:4%;transform:translate(-50%,0);min-width:260px;max-width:86vw;text-align:center;padding:14px 28px 16px;
+  border-radius:14px;background:rgba(12,15,21,.82);border:1px solid var(--kc);box-shadow:0 0 50px -6px var(--kc);backdrop-filter:blur(6px);pointer-events:none}
+.boCard b{text-shadow:0 0 24px var(--kc)}
 .boCard small{display:block;font-size:11px;letter-spacing:.14em;color:var(--kc);font-weight:700}
 .boCard b{display:block;font-size:24px;margin-top:4px}
 .boCard span{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
@@ -695,7 +732,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .boCard .boPic img{max-height:110px}
 .boCard .kPic{width:150px;height:100px}
 .boCard.pop{animation:cardPop .45s cubic-bezier(.2,.9,.3,1.4)}
-@keyframes cardPop{0%{transform:translate(-50%,-40%) scale(.5);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes cardPop{0%{transform:translate(-50%,30px) scale(.7);opacity:0}100%{transform:translate(-50%,0) scale(1);opacity:1}}
 .boGem .gem2d{transform:scale(3)}
 .boHue{display:block;width:90px;height:90px;border-radius:50%;box-shadow:0 0 30px rgba(255,255,255,.2)}
 .boSum{position:relative;z-index:6;width:min(560px,92vw);max-height:80vh;overflow:auto;padding:20px 22px;border-radius:14px;background:rgba(18,21,27,.97);border:1px solid var(--rule)}
@@ -2491,7 +2528,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 
         <button class="w wAct" id="bGarage">
           <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 15l2-5h14l2 5v3H3z"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/><path d="M7 10l2-4h6l2 4"/></svg></span>
-          <b>Garage</b><small>Boxes, cars and paint</small><i class="wBadge" id="gFreeMenu" hidden></i>
+          <b>Garage</b><small>Boxes, cars and paint</small><i class="wBadge" id="gFreeMenu" hidden></i><span class="wNew" id="gNewMenu" hidden>NEW</span>
         </button>
         <button class="w wInfo wChamp" id="champCard" hidden title="Last season's champion: open their card">
           <span id="champIcon"></span>
@@ -3302,33 +3339,19 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         </div>
         <div>
           <section class="gPane" data-pane="boxes">
-            <div class="gBoxHero">
-              <div class="crate hero"><div class="cLid"></div><div class="cBody"><i></i><i></i></div><div class="cGlow"></div></div>
-              <div>
-                <h3 class="gh">BOXES</h3>
-                <p class="lede">Every box holds one thing: a car, a decal, a finish celebration, a boost, wheels, a title, a profile
-                  icon, credits or a hue pack. And one box in ten splits into two more boxes.</p>
-                <div class="row" style="gap:10px">
-                  <button class="primary" id="gBoxBuy">Open a box · <span class="gem2d"></span> 100</button>
-                  <button id="gBoxFree">No free box yet</button>
-                </div>
-                <div class="gRuns"><span>Free box every 50 finished runs</span><b id="gBoxRuns">0 / 50 runs</b><div class="gBar"><i id="gBoxRunsBar"></i></div></div>
-                <small class="dim" id="gBoxOpened"></small>
-              </div>
+            <div class="gStats">
+              <div><b id="gStatFree">0</b><span>free boxes</span></div>
+              <div><b id="gStatOpened">0</b><span>boxes opened</span></div>
+              <div><b id="gStatFound">0 / 96</b><span>found</span></div>
             </div>
-            <h3 class="gh" style="margin-top:22px">WHAT'S INSIDE</h3>
-            <table class="gOdds">
-              <tr style="--kc:#ffcf5c"><td>Car</td><td>8 to find</td><td>1%</td></tr>
-              <tr style="--kc:#e45cff"><td>Animated decal</td><td>8 to find</td><td>2%</td></tr>
-              <tr style="--kc:#4ea1ff"><td>Decal</td><td>8 to find</td><td>3%</td></tr>
-              <tr style="--kc:#3ddbb8"><td>Finish celebration</td><td>8 to find</td><td>4%</td></tr>
-              <tr style="--kc:#ff8a3d"><td>Boost</td><td>16 to find</td><td>5%</td></tr>
-              <tr style="--kc:#7ee06a"><td>Wheels</td><td>16 to find</td><td>5%</td></tr>
-              <tr style="--kc:#cdd6e3"><td>Title</td><td>16 to find</td><td>10%</td></tr>
-              <tr style="--kc:#cdd6e3"><td>Profile icon</td><td>16 to find</td><td>10%</td></tr>
-              <tr style="--kc:#9aa1aa"><td>1 to 25 credits, or a hue pack</td><td>half and half</td><td>50%</td></tr>
-              <tr style="--kc:#ffffff"><td>Splits into two boxes</td><td>up to 8 boxes</td><td>10%</td></tr>
-            </table>
+            <div class="gBoxBtns">
+              <button class="primary gBig" id="gBoxBuy"><span>Open a box</span><small><span class="gem2d"></span> 100 credits</small></button>
+              <button class="gBig" id="gBoxFree"><span>Open a free box</span><small>none yet</small></button>
+            </div>
+            <div class="gRuns"><span>Next free box: every 50 finished runs</span><b id="gBoxRuns">0 / 50 runs</b><div class="gBar"><i id="gBoxRunsBar"></i></div></div>
+            <h3 class="gh" style="margin-top:20px">WHAT'S IN A BOX</h3>
+            <div class="gOdds" id="gOdds"></div>
+            <small class="dim" id="gBoxOpened"></small>
           </section>
           <section class="gPane" data-pane="car" hidden></section>
           <section class="gPane" data-pane="paint" hidden>
@@ -3367,12 +3390,12 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
     </div>
   </div>
 
-  <!-- opening a box -->
+  <!-- opening a box: a 3D stage, and words over it -->
   <div class="boxOpen" id="boxOpen" hidden>
-    <div class="boRays" id="boRays"></div>
-    <canvas id="boFx"></canvas>
-    <div class="boStage" id="boStage"></div>
+    <canvas id="boGL"></canvas>
+    <div class="boWhite" id="boWhite"></div>
     <div class="boFlash" id="boFlash"></div>
+    <div class="boCount" id="boCount"></div>
     <div class="boCard" id="boCard" hidden></div>
     <div class="boSum" id="boSum" hidden></div>
     <button class="ghost small boSkip" id="boSkip">Skip</button>
@@ -9774,6 +9797,20 @@ const GaragePreview = {
     this.car = buildCarMesh().group;
     this.car.rotation.y = deg(200);
     this.scene.add(this.car);
+    // a turntable under it, and the box for the Boxes tab
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.75, 0.12, 64), new THREE.MeshStandardMaterial({ color: 0x06080c, metalness: 0.5, roughness: 0.45 }));
+    disc.position.y = CAR.mountY - CAR.susRest - CAR.wheelR - 0.06;
+    this.scene.add(disc);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.68, 0.02, 6, 96), new THREE.MeshBasicMaterial({ color: 0xf2733f }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = disc.position.y + 0.065;
+    this.scene.add(ring);
+    this.crate = Box3D.crate(1.1);
+    this.crate.group.position.y = disc.position.y + 0.06;
+    this.crate.group.visible = false;
+    this.scene.add(this.crate.group);
+    this.crateLight = new THREE.PointLight(0xffcf5c, 0, 6, 2);
+    this.crateLight.position.set(0, 1.2, 0.6);
+    this.scene.add(this.crateLight);
     addEventListener('resize', () => { if (this.running) this.resize(); });
   },
 
@@ -9793,6 +9830,19 @@ const GaragePreview = {
       if (!this.running) return;
       this.angle += 0.008;
       this.car.rotation.y = deg(200) + this.angle;
+      // the Boxes tab: the crate instead of the car, its seam glowing in every prize colour in turn
+      this.car.visible = !this.box;
+      this.crate.group.visible = !!this.box;
+      if (this.box) {
+        const t = performance.now() / 1000, cols = ['#ffcf5c', '#e45cff', '#4ea1ff', '#3ddbb8', '#ff8a3d', '#7ee06a'];
+        this.crate.group.rotation.y = 0.5 + Math.sin(t * 0.5) * 0.5;
+        this.crate.group.position.y = CAR.mountY - CAR.susRest - CAR.wheelR + Math.abs(Math.sin(t * 1.4)) * 0.12;
+        const c = cols[Math.floor(t / 1.2) % cols.length];
+        this.crate.seam.color.set(c);
+        this.crate.seam.opacity = 0.55 + 0.45 * Math.sin(t * 3);
+        this.crateLight.color.set(c);
+        this.crateLight.intensity = 1.2 + Math.sin(t * 3) * 0.8;
+      } else this.crateLight.intensity = 0;
       const fl = this.car.userData.flame;
       if (fl) { this.phase = (this.phase || 0) + 0.6; Boost.animate(fl, this.boost ? 1 : 0, this.phase, 1 / 60); }
       this.renderer.render(this.scene, this.camera);
@@ -12366,14 +12416,27 @@ const Garage = {
     Look.refreshOwn();
     Flair.mine();
     this.badge();
+    this.intro();
     if (Game.state === 'garage') this.render();
   },
-  /** the menu tile: how many free boxes are waiting */
+  /** the menu tile: how many free boxes are waiting, and an orange outline
+   *  while there's one to open (or you haven't opened your first box yet) */
   badge() {
     const n = this.freeBoxes(), el = $('gFreeMenu');
     if (el) { el.hidden = !n; el.textContent = n > 9 ? '9+' : String(n); }
     const t = $('gFreeBadge');
     if (t) { t.hidden = !n; t.textContent = String(n); }
+    const signed = Cloud.on && Cloud.user;
+    const first = !this.data || !(this.data.opened > 0);
+    $('bGarage').classList.toggle('wHot', !!signed && (n > 0 || first));
+    $('gNewMenu').hidden = !signed || !!Prefs.get('garageSeen', false);
+  },
+  /** Coach tells you about the boxes, once */
+  intro() {
+    if (!Cloud.on || !Cloud.user || !this.data || Prefs.get('coachGarageIntro', false) || Game.state !== 'menu') return;
+    Prefs.set('coachGarageIntro', true);
+    CoachAlerts.queue.push({ garageIntro: true, free: this.freeBoxes() });
+    CoachAlerts.flush();
   },
   /** after a counted finish: progress toward a free box */
   onFinish(f) {
@@ -12429,6 +12492,8 @@ const Garage = {
   // ------------------------------------------------------------- the screen
   show(tab) {
     this.tab = tab || this.tab || 'boxes';
+    Prefs.set('garageSeen', true);
+    this.badge();
     this.render();
     this.load();
   },
@@ -12438,6 +12503,7 @@ const Garage = {
     document.querySelectorAll('#garage .gPane').forEach((p) => { p.hidden = p.dataset.pane !== this.tab; });
     $('gCredits').textContent = Cloud.on && Cloud.user ? fmtCredits(Records.credits) : 'offline';
     GaragePreview.boost = this.tab === 'car';
+    GaragePreview.box = this.tab === 'boxes';
     if (this.tab === 'paint') UI.garage();
     else if (this.tab === 'boxes') this.renderBoxes();
     else if (this.tab === 'car') this.renderCar();
@@ -12460,10 +12526,19 @@ const Garage = {
     const free = this.freeBoxes(), runs = d ? d.runs : 0;
     $('gBoxBuy').disabled = !signed || BoxOpen.on || (Records.credits || 0) < 100;
     $('gBoxFree').disabled = !signed || BoxOpen.on || !free;
-    $('gBoxFree').textContent = free ? 'Open a free box (' + free + ')' : 'No free box yet';
+    $('gBoxFree').querySelector('small').textContent = free ? free + (free === 1 ? ' waiting' : ' waiting') : 'none yet';
     $('gBoxRuns').textContent = signed ? runs + ' / 50 runs' : 'Sign in to open boxes';
     $('gBoxRunsBar').style.width = Math.min(100, runs / 50 * 100).toFixed(1) + '%';
-    $('gBoxOpened').textContent = d ? 'Boxes opened: ' + fmtCredits(d.opened || 0) : '';
+    $('gStatFree').textContent = String(free);
+    $('gStatOpened').textContent = fmtCredits((d && d.opened) || 0);
+    $('gStatFound').textContent = (d ? d.inventory.length : 0) + ' / ' + (Catalog.ofKind('car') && Catalog.items.length);
+    const odds = [['car', 1, '8 cars'], ['anim', 2, '8 animated decals'], ['decal', 3, '8 decals'], ['cel', 4, '8 finish celebrations'], ['boost', 5, '16 boosts'],
+      ['wheel', 5, '16 wheels'], ['title', 10, '16 titles'], ['icon', 10, '16 profile icons'], ['credits', 50, '1-25 credits, or a hue pack'], ['split', 10, 'splits into two more boxes (up to 8)']];
+    $('gOdds').innerHTML = odds.map(([k, pc, what]) => {
+      const K = k === 'split' ? { label: 'Split', col: '#ffffff' } : ITEM_KIND[k];
+      return '<div class="gOddRow" style="--kc:' + K.col + '"><b>' + escapeHtml(k === 'credits' ? 'Credits or hue' : K.label) + '</b><div class="bar"><i style="width:' + Math.max(3, pc * 2) + '%"></i></div><span>' + pc + '%</span><small>' + escapeHtml(what) + '</small></div>';
+    }).join('');
+    $('gBoxOpened').textContent = '';
   },
   /** the Car tab: a row of what you own for each slot */
   renderCar() {
@@ -12473,10 +12548,11 @@ const Garage = {
     let h = '';
     for (const [slot, label, kinds, def] of slots) {
       const all = kinds.flatMap((k) => Catalog.ofKind(k)), mine = all.filter((it) => this.owned(it.id));
-      h += '<h3 class="gh">' + label.toUpperCase() + ' <small>' + mine.length + ' / ' + all.length + ' collected</small></h3><div class="gPick">' +
-        '<button class="gOpt' + (!lo[slot] ? ' on' : '') + '" data-slot="' + slot + '" data-id="">' + E(def) + '</button>' +
-        mine.map((it) => '<button class="gOpt' + (lo[slot] === it.id ? ' on' : '') + '" data-slot="' + slot + '" data-id="' + it.id + '" style="--kc:' + ITEM_KIND[it.kind].col + '">' +
-          E(it.name) + (it.kind === 'anim' ? ' <i>animated</i>' : '') + '</button>').join('') + '</div>';
+      const defPic = slot === 'car' ? Catalog.pic({ id: '', kind: 'car' }) : '—';
+      h += '<h3 class="gh">' + label.toUpperCase() + ' <small>' + mine.length + ' / ' + all.length + ' collected</small></h3><div class="gTiles">' +
+        '<button class="gTile def gOpt' + (!lo[slot] ? ' on' : '') + '" data-slot="' + slot + '" data-id=""><div class="gPic">' + defPic + '</div>' + E(def) + '</button>' +
+        mine.map((it) => '<button class="gTile gOpt' + (lo[slot] === it.id ? ' on' : '') + '" data-slot="' + slot + '" data-id="' + it.id + '" style="--kc:' + ITEM_KIND[it.kind].col + '">' +
+          '<div class="gPic">' + Catalog.pic(it) + '</div>' + E(it.name) + (it.kind === 'anim' ? '<i>animated</i>' : '') + '</button>').join('') + '</div>';
       if (slot === 'decal' && lo.decal === 'decal:number') {
         h += '<label class="gNum">Your number <input type="number" id="gNumIn" min="0" max="99" value="' + (lo.num === undefined ? 7 : lo.num) + '"></label>';
       }
@@ -12538,59 +12614,491 @@ const Garage = {
 };
 
 /**
+ * The box, in 3D: a metal crate with orange bands and a lid whose seam
+ * glows. Box3D.crate() makes one (the garage's preview shows one too); the
+ * opening scene is Box3D: a stage, a light inside the crate, a shockwave
+ * ring, a light pillar, and a few hundred pieces for the burst.
+ */
+const Box3D = {
+  r: null, scene: null, cam: null, running: false, last: 0, tweens: [], skip: false,
+  mats: null,
+  mat() {
+    if (this.mats) return this.mats;
+    return (this.mats = {
+      D: new THREE.MeshStandardMaterial({ color: 0x262c38, metalness: 0.55, roughness: 0.38, flatShading: true }),
+      O: new THREE.MeshStandardMaterial({ color: 0xe8480c, metalness: 0.35, roughness: 0.4, emissive: 0x2a0a00, flatShading: true }),
+      M: new THREE.MeshStandardMaterial({ color: 0xc9d0da, metalness: 0.85, roughness: 0.25, flatShading: true })
+    });
+  },
+  /** a crate: { group, lid, seam (its material), body } at scale s */
+  crate(s) {
+    const m = this.mat();
+    const build = (fn) => {
+      const g = {};
+      fn(g);
+      const out = new THREE.Group();
+      for (const slot in g) {
+        const mesh = new THREE.Mesh(mergeParts(g[slot].map((geo) => ({ g: geo, s: [1, 1, 1], p: [0, 0, 0] }))), m[slot]);
+        mesh.castShadow = true;
+        out.add(mesh);
+      }
+      return out;
+    };
+    const group = new THREE.Group();
+    const body = build((g) => {
+      kBox(g, 'D', [1.3, 0.9, 1.3], [0, 0.45, 0], null, 0.06);
+      for (const x of [-0.36, 0.36]) kBox(g, 'O', [0.16, 0.92, 1.33], [x, 0.45, 0], null, 0.02);
+      for (const z of [-0.36, 0.36]) kBox(g, 'O', [1.33, 0.92, 0.16], [0, 0.45, z], null, 0.02);
+      for (const x of [-0.62, 0.62]) for (const z of [-0.62, 0.62]) kBox(g, 'M', [0.12, 0.94, 0.12], [x, 0.45, z], null, 0.03);
+    });
+    group.add(body);
+    const lid = new THREE.Group();
+    lid.position.y = 0.92;
+    lid.add(build((g) => {
+      kBox(g, 'D', [1.4, 0.22, 1.4], [0, 0.11, 0], null, 0.06);
+      for (const x of [-0.36, 0.36]) kBox(g, 'O', [0.16, 0.24, 1.43], [x, 0.11, 0], null, 0.02);
+      for (const z of [-0.36, 0.36]) kBox(g, 'O', [1.43, 0.24, 0.16], [0, 0.11, z], null, 0.02);
+      kBox(g, 'M', [0.5, 0.06, 0.5], [0, 0.25, 0], [0, Math.PI / 4, 0], 0.02);
+    }));
+    group.add(lid);
+    const seamMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.05, 1.36), seamMat);
+    seam.position.y = 0.92;
+    group.add(seam);
+    group.scale.setScalar(s || 1);
+    return { group, lid, seam: seamMat, body };
+  },
+
+  ensure() {
+    if (this.r) return;
+    const cv = $('boGL');
+    this.r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+    this.r.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+    this.r.outputEncoding = THREE.sRGBEncoding;
+    this.r.toneMapping = THREE.ACESFilmicToneMapping;
+    this.r.toneMappingExposure = 1.1;
+    this.r.shadowMap.enabled = true;
+    const S = this.scene = new THREE.Scene();
+    this.cam = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    S.fog = new THREE.Fog(0x07090e, 7, 15);              // the floor fades into the dark
+    S.add(new THREE.HemisphereLight(0xbcd4ff, 0x0b0e14, 0.35));
+    const key = new THREE.DirectionalLight(0xfff2e0, 1.25);
+    key.position.set(4, 9, 6); key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    Object.assign(key.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 });
+    S.add(key);
+    const rim = new THREE.DirectionalLight(0x6fa8ff, 0.8);
+    rim.position.set(-6, 4, -5);
+    S.add(rim);
+    this.inner = new THREE.PointLight(0xffffff, 0, 9, 2);
+    this.inner.position.set(0, 1, 0);
+    S.add(this.inner);
+    // the stage: a dark floor with a soft pool of light under the crate
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(14, 64), new THREE.MeshStandardMaterial({ color: 0x020304, roughness: 0.35, metalness: 0.6 }));
+    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+    S.add(floor);
+    const cv2 = document.createElement('canvas'); cv2.width = cv2.height = 256;
+    const g2 = cv2.getContext('2d'), grd = g2.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.35, 'rgba(255,255,255,.35)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g2.fillStyle = grd; g2.fillRect(0, 0, 256, 256);
+    this.glowTex = new THREE.CanvasTexture(cv2);
+    this.pool = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshBasicMaterial({ map: this.glowTex, color: 0xf2733f, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.pool.rotation.x = -Math.PI / 2; this.pool.position.y = 0.01;
+    S.add(this.pool);
+    // the light pillar and the shockwave
+    const cv3 = document.createElement('canvas'); cv3.width = 4; cv3.height = 256;
+    const g3 = cv3.getContext('2d'), gr3 = g3.createLinearGradient(0, 0, 0, 256);
+    gr3.addColorStop(0, 'rgba(255,255,255,0)'); gr3.addColorStop(0.6, 'rgba(255,255,255,.5)'); gr3.addColorStop(1, 'rgba(255,255,255,1)');
+    g3.fillStyle = gr3; g3.fillRect(0, 0, 4, 256);
+    this.beam = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.95, 12, 32, 1, true),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv3), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    this.beam.position.y = 6;
+    S.add(this.beam);
+    this.ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.05, 6, 64), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.ring.rotation.x = Math.PI / 2; this.ring.position.y = 0.06;
+    S.add(this.ring);
+    // the burst: pieces, instanced
+    this.N = 420;
+    this.bits = new THREE.InstancedMesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), this.N);
+    this.bits.frustumCulled = false;
+    // (colours from the start, so the shader is built to use them)
+    for (let i = 0; i < this.N; i++) this.bits.setColorAt(i, new THREE.Color(1, 1, 1));
+    S.add(this.bits);
+    this.ps = [];
+    // drifting dust, always
+    this.dust = new THREE.InstancedMesh(new THREE.BoxGeometry(0.025, 0.025, 0.025), new THREE.MeshBasicMaterial({ color: 0xffd9b0, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }), 90);
+    this.dustP = [];
+    for (let i = 0; i < 90; i++) this.dustP.push(new THREE.Vector3((Math.random() - 0.5) * 12, Math.random() * 5, (Math.random() - 0.5) * 9 - 1));
+    S.add(this.dust);
+    addEventListener('resize', () => { if (this.running) this.size(); });
+  },
+  size() {
+    const cv = $('boGL'), w = cv.clientWidth || innerWidth, h = cv.clientHeight || innerHeight;
+    this.r.setSize(w, h, false);
+    this.cam.aspect = w / h;
+    this.cam.updateProjectionMatrix();
+  },
+  start() {
+    this.ensure();
+    this.size();
+    this.view = { z: 7.6, y: 3.3, look: 0.8, shake: 0 };
+    if (this.running) return;
+    this.running = true;
+    this.last = performance.now();
+    const loop = (now) => {
+      if (!this.running) return;
+      const dt = Math.min(0.05, (now - this.last) / 1000);
+      this.last = now;
+      this.step(dt);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  },
+  stop() { this.running = false; },
+  /** a tween: fn(k) for k 0..1 over dur seconds (finished at once while skipping) */
+  tween(dur, fn) {
+    return new Promise((res) => {
+      if (this.skip || dur <= 0) { fn(1); res(); return; }
+      this.tweens.push({ t: 0, dur, fn, res });
+    });
+  },
+  wait(dur) { return this.tween(dur, () => {}); },
+  step(dt) {
+    for (const tw of [...this.tweens]) {
+      tw.t += dt;
+      const k = this.skip ? 1 : Math.min(1, tw.t / tw.dur);
+      tw.fn(k);
+      if (k >= 1) { this.tweens.splice(this.tweens.indexOf(tw), 1); tw.res(); }
+    }
+    const t = performance.now() / 1000;
+    if (this.onStep) this.onStep(dt, t);
+    // the burst's pieces
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3();
+    for (let i = 0; i < this.N; i++) {
+      const p = this.ps[i];
+      if (!p || p.life >= p.max) { m4.makeScale(0, 0, 0); this.bits.setMatrixAt(i, m4); continue; }
+      p.life += dt;
+      p.v.y -= p.g * dt;
+      p.v.multiplyScalar(Math.exp(-p.drag * dt));
+      p.p.addScaledVector(p.v, dt);
+      if (p.p.y < 0.03) { p.p.y = 0.03; p.v.y *= -0.35; p.v.x *= 0.7; p.v.z *= 0.7; }
+      const k = 1 - p.life / p.max;
+      q.setFromEuler(e.set(p.life * p.spin, p.life * p.spin * 0.7, 0));
+      m4.compose(p.p, q, sc.setScalar(p.s * Math.min(1, k * 2)));
+      this.bits.setMatrixAt(i, m4);
+    }
+    this.bits.instanceMatrix.needsUpdate = true;
+    // dust
+    for (let i = 0; i < this.dustP.length; i++) {
+      const d = this.dustP[i];
+      d.y += dt * 0.12; if (d.y > 5) d.y = 0;
+      m4.makeTranslation(d.x + Math.sin(t * 0.4 + i) * 0.2, d.y, d.z);
+      this.dust.setMatrixAt(i, m4);
+    }
+    this.dust.instanceMatrix.needsUpdate = true;
+    // the camera, with any shake
+    const v = this.view, sh = v.shake;
+    v.shake = Math.max(0, sh - dt * 2.2);
+    const jx = (Math.random() - 0.5) * sh * 0.3, jy = (Math.random() - 0.5) * sh * 0.3;
+    this.cam.position.set(Math.sin(t * 0.15) * 0.6 + jx, v.y + jy, v.z);
+    this.cam.lookAt(0, v.look, 0);
+    this.r.render(this.scene, this.cam);
+  },
+  /** throw n pieces out of the crate */
+  burst(n, cols, power) {
+    const pick = cols.map((c) => new THREE.Color(c));
+    let made = 0;
+    for (let i = 0; i < this.N && made < n; i++) {
+      const p = this.ps[i];
+      if (p && p.life < p.max) continue;
+      const a = Math.random() * Math.PI * 2, up = 0.35 + Math.random() * 0.9, sp = (3 + Math.random() * 7) * (power || 1);
+      this.ps[i] = {
+        p: new THREE.Vector3((Math.random() - 0.5) * 0.6, 1.0, (Math.random() - 0.5) * 0.6),
+        v: new THREE.Vector3(Math.cos(a) * sp * (1 - up * 0.5), up * sp * 1.1, Math.sin(a) * sp * (1 - up * 0.5)),
+        g: 7, drag: 0.9, life: 0, max: 1.2 + Math.random() * 1.6, s: 0.45 + Math.random() * 0.9, spin: (Math.random() - 0.5) * 18
+      };
+      this.bits.setColorAt(i, pick[made % pick.length]);
+      made++;
+    }
+    if (this.bits.instanceColor) this.bits.instanceColor.needsUpdate = true;
+  },
+  /** the token for something that isn't shown on the car: a coin with its picture */
+  token(r, kind) {
+    const K = ITEM_KIND[kind], cv = document.createElement('canvas');
+    cv.width = cv.height = 512;
+    const c = cv.getContext('2d');
+    const g = c.createRadialGradient(256, 220, 20, 256, 256, 256);
+    g.addColorStop(0, '#2a3040'); g.addColorStop(1, '#0d1016');
+    c.fillStyle = g; c.beginPath(); c.arc(256, 256, 256, 0, Math.PI * 2); c.fill();
+    c.lineWidth = 22; c.strokeStyle = K.col; c.beginPath(); c.arc(256, 256, 236, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const col = Look.mine();
+    if (kind === 'icon') {
+      const k = String(r.item).replace(/^icon:/, '');
+      const P = col.primary ? hslCss(col.primary.h, col.primary.s, col.primary.l) : '#e83030';
+      c.fillStyle = P; c.beginPath(); c.arc(256, 256, 170, 0, Math.PI * 2); c.fill();
+      c.save(); c.translate(256 - 150, 256 - 150); c.scale(12.5, 12.5); c.fillStyle = '#fff';
+      for (const m of (PROFILE_ICONS[k] || '').matchAll(/ d="([^"]+)"/g)) c.fill(new Path2D(m[1]), 'evenodd');
+      if (k === 'atom') { c.beginPath(); c.arc(12, 12, 2.4, 0, 7); c.fill(); c.lineWidth = 1.6; c.strokeStyle = '#fff'; for (const a of [0, 60, -60]) { c.save(); c.translate(12, 12); c.rotate(a * Math.PI / 180); c.beginPath(); c.ellipse(0, 0, 10, 4, 0, 0, 7); c.stroke(); c.restore(); } }
+      c.restore();
+    } else if (kind === 'title') {
+      const words = String(r.name).toUpperCase().split(' ');
+      c.font = '800 66px Inter, "Segoe UI", Arial, sans-serif';
+      c.fillStyle = K.col === '#cdd6e3' ? '#e8c26a' : K.col;
+      words.forEach((w, k) => c.fillText(w, 256, 256 + (k - (words.length - 1) / 2) * 76));
+    } else if (kind === 'credits') {
+      c.fillStyle = '#5fd0ff'; c.beginPath(); c.moveTo(256, 120); c.lineTo(330, 200); c.lineTo(256, 300); c.lineTo(182, 200); c.closePath(); c.fill();
+      c.fillStyle = '#fff'; c.font = '800 110px Inter, "Segoe UI", Arial, sans-serif'; c.fillText('+' + r.credits, 256, 380);
+    } else if (kind === 'hue') {
+      c.fillStyle = hslCss(CarColor.hueAt(r.hue), CarColor.HUE_S, CarColor.HUE_L);
+      c.beginPath(); c.arc(256, 236, 140, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#fff'; c.font = '800 54px Inter, "Segoe UI", Arial, sans-serif'; c.fillText('NEW HUE', 256, 420);
+    } else {
+      // a finish celebration: a starburst in your colours
+      const P = col.primary ? hslCss(col.primary.h, col.primary.s, Math.max(col.primary.l, 50)) : '#e83030';
+      const Sx = col.secondary ? hslCss(col.secondary.h, col.secondary.s, Math.max(col.secondary.l, 55)) : '#fff';
+      for (let k = 0; k < 24; k++) {
+        const a = k * Math.PI / 12, r0 = 60, r1 = k % 2 ? 150 : 200;
+        c.strokeStyle = k % 3 ? P : Sx; c.lineWidth = 14; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(256 + Math.cos(a) * r0, 256 + Math.sin(a) * r0); c.lineTo(256 + Math.cos(a) * r1, 256 + Math.sin(a) * r1); c.stroke();
+      }
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(256, 256, 40, 0, Math.PI * 2); c.fill();
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    const face = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+    const edge = new THREE.MeshStandardMaterial({ color: new THREE.Color(K.col), metalness: 0.8, roughness: 0.3, emissive: new THREE.Color(K.col).multiplyScalar(0.25) });
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.12, 48), [edge, face, face]);
+    coin.rotation.x = Math.PI / 2;
+    const g2 = new THREE.Group();
+    g2.add(coin);
+    return g2;
+  },
+  /** what's in the box, to rise out of it: your car wearing it, or a token */
+  prize(r, kind) {
+    if (kind === 'car' || kind === 'decal' || kind === 'anim' || kind === 'wheel' || kind === 'boost') {
+      const body = MAT.body.clone(), dark = MAT.bodyDark.clone();
+      const built = buildCarMesh(body, dark);
+      const slot = kind === 'anim' ? 'decal' : kind;
+      const mine = Look.mine();
+      Look.paint(built.group, { primary: mine.primary, secondary: mine.secondary, loadout: Object.assign({}, mine.loadout, { [slot]: r.item }) });
+      built.group.scale.setScalar(0.62);
+      built.group.userData.lit = kind === 'boost';
+      const g = new THREE.Group();
+      g.add(built.group);
+      g.userData.car = built.group;
+      return g;
+    }
+    return this.token(r, kind);
+  },
+  dispose(obj) {
+    if (!obj) return;
+    this.scene.remove(obj);
+    obj.traverse((o) => {
+      if (o.isMesh && o.geometry && !o.geometry.userData.shared) {
+        if (!o.parent || !o.parent.userData) { /* shared car geometry is cached: leave it */ }
+      }
+    });
+  }
+};
+
+/**
  * Opening a box. The server opens it first (so nothing can be faked); this
- * only plays it back: the box rattles while light leaks out in the colour of
- * what's inside, splits on screen when it split, bursts, and shows each
- * thing; then a summary to equip or sell from.
+ * plays it back in 3D: the crate drops in, rattles harder and harder while
+ * light leaks from its seam in the colour of what's inside, then the lid
+ * blasts off, a shockwave and a pillar of light go up, and the prize rises
+ * out. A box that split cracks into two smaller crates, which wait on a shelf
+ * behind and are opened in turn (the same order the server rolled them).
+ * Whatever happens, it ends on the summary.
  */
 const BoxOpen = {
-  on: false, skip: false, res: null,
-  wait(ms) { return new Promise((r) => { const t = setTimeout(r, this.skip ? 0 : ms); this._t = t; }); },
-  crate(depth) {
-    const el = document.createElement('div');
-    el.className = 'crate d' + Math.min(depth, 3);
-    el.innerHTML = '<div class="cLid"></div><div class="cBody"><i></i><i></i></div><div class="cGlow"></div>';
-    return el;
-  },
+  on: false, res: null,
   kindOf(r) { return r.kind || (r.hue !== undefined ? 'hue' : 'credits'); },
   async open(free) {
     if (this.on || !Cloud.on || !Cloud.user) return;
     let res;
     try { res = await Cloud.rpc('open_box', { p_free: !!free }); } catch (e) { UI.toast(Cloud.errText(e)); return; }
-    this.on = true; this.skip = false; this.res = res;
+    this.on = true; this.res = res;
     Records.credits = res.balance;
     UI.who(Cloud.name(), Records.credits);
     if (Garage.data) Garage.data.free_boxes = res.free_boxes;
     Garage.badge();
-    const ov = $('boxOpen'), stage = $('boStage');
-    stage.innerHTML = ''; $('boCard').hidden = true; $('boSum').hidden = true; $('boSkip').hidden = false;
-    ov.hidden = false;
-    ov.className = 'boxOpen';
-    const queue = [this.crate(0)];
-    stage.appendChild(queue[0]);
-    await this.wait(350);
+    $('boCard').hidden = true; $('boSum').hidden = true; $('boSkip').hidden = false; $('boCount').textContent = '';
+    $('boxOpen').hidden = false;
+    Box3D.skip = false;
+    Box3D.start();
     const got = [];
-    for (const r of res.results) {
-      const c = queue.shift();
-      if (!c) break;
+    try { await this.play(res.results, got); } catch (e) { console.warn('aiPolytrack: box animation', e); }
+    // everything the box gave, whatever happened above
+    const leaves = res.results.filter((r) => !r.split);
+    this.cleanup();
+    this.summary(leaves.length >= got.length ? leaves : got);
+  },
+  /** the crates on stage: the one being opened at the middle, the rest on a shelf behind */
+  shelf(list) {
+    const n = list.length;
+    list.forEach((c, i) => {
+      const x = (i - (n - 1) / 2) * 1.25, from = c.group.position.clone(), s0 = c.group.scale.x;
+      Box3D.tween(0.45, (k) => {
+        const e = 1 - Math.pow(1 - k, 3);
+        c.group.position.set(from.x + (x - from.x) * e, from.y * (1 - e), from.z + (-3.4 - from.z) * e);
+        c.group.scale.setScalar(s0 + (0.55 - s0) * e);
+      });
+    });
+  },
+  async play(results, got) {
+    const B = Box3D, S = B.scene;
+    const leaves = results.filter((r) => !r.split).length;
+    let opened = 0;
+    // the first crate drops in and bounces
+    const first = B.crate(1);
+    first.depth = 0;
+    S.add(first.group);
+    this.crates = [first];
+    first.group.position.set(0, 6, 0);
+    Sound.noiseHit(0.42, 0.25, 0.05, 80, 400, 'lowpass');
+    await B.tween(0.6, (k) => { first.group.position.y = 6 * (1 - k * k); });
+    B.view.shake = 0.6;
+    await B.tween(0.35, (k) => { first.group.position.y = Math.sin(k * Math.PI) * 0.35 * (1 - k); });
+    const queue = [first], waiting = [];
+    for (const r of results) {
+      let c = queue.shift();
+      if (!c) { c = B.crate(1); S.add(c.group); }             // (never short of crates, whatever the list)
+      // bring it to the middle
+      const i = waiting.indexOf(c);
+      if (i >= 0) {
+        waiting.splice(i, 1);
+        this.shelf(waiting);
+        const from = c.group.position.clone(), s0 = c.group.scale.x;
+        await B.tween(0.5, (k) => {
+          const e = 1 - Math.pow(1 - k, 3);
+          c.group.position.set(from.x * (1 - e), Math.sin(e * Math.PI) * 1.2, from.z * (1 - e));
+          c.group.scale.setScalar(s0 + (1 - s0) * e);
+        });
+      }
       if (r.split) {
-        // the box splits in two
-        c.classList.add('shake');
-        Sound.tone(220, 0, 0.18, 0.05, 'square');
-        await this.wait(520);
-        const a = this.crate(r.depth + 1), b = this.crate(r.depth + 1);
-        a.classList.add('born'); b.classList.add('born');
-        stage.replaceChild(a, c); a.after(b);
-        queue.push(a, b);
-        Sound.tone(660, 0, 0.12, 0.06, 'triangle'); Sound.tone(990, 0.08, 0.16, 0.06, 'triangle');
-        this.flash('#ffffff', 'Split!');
-        await this.wait(650);
+        await this.split(c, r, queue, waiting);
         continue;
       }
+      opened++;
+      $('boCount').textContent = leaves > 1 ? 'Box ' + opened + ' of ' + leaves : '';
       await this.reveal(c, r);
       got.push(r);
     }
-    this.summary(got);
+  },
+  /** a crate cracks into two smaller ones, which go to the shelf */
+  async split(c, r, queue, waiting) {
+    const B = Box3D, g = c.group;
+    c.seam.color.set('#ffffff');
+    await B.tween(0.8, (k) => {
+      g.rotation.z = Math.sin(k * 60) * 0.06 * k;
+      g.position.x = Math.sin(k * 47) * 0.05 * k;
+      c.seam.opacity = k;
+      if (Math.random() < 0.15) Sound.tone(300 + k * 500, 0, 0.05, 0.03, 'square');
+    });
+    this.flash('#ffffff', 'Split!');
+    Sound.tone(660, 0, 0.14, 0.07, 'triangle'); Sound.tone(990, 0.08, 0.2, 0.07, 'triangle');
+    B.view.shake = 0.8;
+    B.burst(60, ['#ffffff', '#f2733f'], 0.7);
+    // two crates burst out of it
+    B.scene.remove(g);
+    const kids = [B.crate(1), B.crate(1)];
+    kids.forEach((k2, j) => {
+      k2.depth = (r.depth || 0) + 1;
+      k2.group.position.set(0, 0.4, 0);
+      k2.group.scale.setScalar(0.2);
+      B.scene.add(k2.group);
+      const side = j ? 1 : -1;
+      B.tween(0.55, (k) => {
+        const e = 1 - Math.pow(1 - k, 2);
+        k2.group.position.set(side * 1.6 * e, 0.4 + Math.sin(k * Math.PI) * 1.6, 0);
+        k2.group.scale.setScalar(0.2 + 0.6 * e);
+        k2.group.rotation.y = side * k * 3;
+      });
+    });
+    await B.wait(0.7);
+    queue.push(kids[0], kids[1]);
+    waiting.push(kids[0], kids[1]);
+    this.shelf(waiting);
+    await B.wait(0.5);
+  },
+  async reveal(c, r) {
+    const B = Box3D, g = c.group, k0 = this.kindOf(r), K = ITEM_KIND[k0];
+    const big = k0 === 'car' || k0 === 'anim';
+    const col = new THREE.Color(K.col);
+    // the build-up: rattling harder, the seam brighter, the camera closer
+    const dur = big ? 2.6 : 1.5, cycle = ['#ffcf5c', '#e45cff', '#4ea1ff', '#ffffff'];
+    let tick = 0;
+    await B.tween(dur, (k) => {
+      const a = k * k;
+      g.rotation.z = Math.sin(k * (big ? 90 : 60)) * 0.08 * a;
+      g.rotation.x = Math.cos(k * 53) * 0.05 * a;
+      g.position.y = Math.max(0, Math.sin(k * 40)) * 0.08 * a;
+      if (big && k < 0.8) c.seam.color.set(cycle[Math.floor(k * 14) % cycle.length]); else c.seam.color.copy(col);
+      c.seam.opacity = 0.25 + a * 0.75;
+      B.inner.color.copy(c.seam.color);
+      B.inner.intensity = a * (big ? 6 : 3.5);
+      B.pool.material.color.copy(c.seam.color);
+      B.pool.material.opacity = 0.3 + a * 0.5;
+      B.view.z = 7.6 - a * 1.8; B.view.y = 3.3 - a * 0.7; B.view.look = 0.8 + a * 0.2;
+      const step = Math.floor(k * (big ? 14 : 8));
+      if (step > tick) { tick = step; Sound.tone(140 + step * (big ? 40 : 30), 0, 0.07, 0.05, 'square'); }
+    });
+    // the burst
+    g.rotation.set(0, 0, 0); g.position.y = 0;
+    this.flash(K.col, '');
+    $('boWhite').classList.remove('go'); void $('boWhite').offsetWidth; $('boWhite').classList.add('go');
+    B.view.shake = big ? 1.6 : 0.9;
+    B.burst(big ? 360 : 160, [K.col, '#ffffff', big ? '#ffcf5c' : K.col], big ? 1.4 : 1);
+    if (big) { Sound.finish(true); Sound.noiseHit(0, 0.6, 0.08, 60, 900, 'lowpass'); }
+    else if (k0 === 'credits') Sound.creditTick();
+    else { Sound.creditWin(); Sound.noiseHit(0, 0.3, 0.05, 80, 700, 'lowpass'); }
+    const lid = c.lid, lv = new THREE.Vector3((Math.random() < 0.5 ? -1 : 1) * (1.5 + Math.random() * 2), 9, -3.5), spin = (Math.random() - 0.5) * 14;
+    B.ring.material.color.copy(col);
+    B.beam.material.color.copy(col);
+    const prize = B.prize(r, k0);
+    prize.position.set(0, 0.6, 0);
+    prize.scale.setScalar(0.01);
+    B.scene.add(prize);
+    this.prizeObj = prize;
+    let phase = 0;
+    B.onStep = (dt, t) => {
+      prize.rotation.y += dt * (big ? 1.2 : 0.9);
+      prize.position.y += (2.0 + Math.sin(t * 2) * 0.08 - prize.position.y) * Math.min(1, dt * 3);
+      const car = prize.userData.car;
+      if (car && car.userData.flame) { phase += dt * 34; Boost.animate(car.userData.flame, car.userData.lit ? 1 : 0, phase, dt); }
+    };
+    this.card(r);
+    B.tween(1.6, (k) => {
+      lid.position.set(lv.x * k, 0.92 + lv.y * k - 9 * k * k, lv.z * k);
+      lid.rotation.set(spin * k, spin * 0.6 * k, spin * 0.3 * k);
+      const s = 0.5 + k * 9;
+      B.ring.scale.set(s, s, s); B.ring.material.opacity = (1 - k) * 0.9;
+      B.beam.material.opacity = Math.sin(Math.min(1, k * 1.5) * Math.PI / 2) * (big ? 0.42 : 0.28);
+      B.beam.scale.set(1 + k * 0.3, Math.min(1, k * 3), 1 + k * 0.3);
+      B.inner.intensity = (big ? 6 : 3.5) * (1 - k * 0.6);
+    });
+    await B.tween(0.7, (k) => {
+      const e = 1 + Math.sin(k * Math.PI) * 0.25 * (1 - k);
+      prize.scale.setScalar(Math.max(0.01, k * e));
+      B.view.z = 5.8 + k * 1.4; B.view.y = 2.6 + k * 0.5; B.view.look = 1 + k * 0.45;      // pull back to show it whole
+    });
+    // look at it a moment (a click moves on)
+    await Promise.race([B.wait(big ? 3.2 : 1.9), new Promise((res) => { this.next = res; })]);
+    this.next = null;
+    $('boCard').hidden = true;
+    // and away: the prize shrinks, the empty crate sinks, the light fades
+    await B.tween(0.45, (k) => {
+      prize.scale.setScalar(Math.max(0.01, 1 - k));
+      g.position.y = -1.2 * k * k;
+      B.beam.material.opacity *= 1 - k;
+      B.pool.material.opacity = 0.35;
+      B.inner.intensity *= 1 - k;
+      B.view.z = 7.2 + k * 0.4; B.view.y = 3.1 + k * 0.2; B.view.look = 1.45 - k * 0.65;
+    });
+    B.onStep = null;
+    B.scene.remove(prize); B.scene.remove(g);
+    this.prizeObj = null;
   },
   flash(col, text) {
     const f = $('boFlash');
@@ -12598,71 +13106,38 @@ const BoxOpen = {
     f.textContent = text || '';
     f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   },
-  async reveal(c, r) {
-    const k = this.kindOf(r), K = ITEM_KIND[k];
-    const big = k === 'car' || k === 'anim';
-    c.style.setProperty('--gc', K.col);
-    c.classList.add('shake', 'glow');
-    if (big) c.classList.add('rare');
-    for (let i = 0; i < (big ? 8 : 5); i++) { Sound.tone(150 + i * (big ? 40 : 25), i * 0.11, 0.06, 0.05, 'square'); }
-    await this.wait(big ? 1300 : 800);
-    c.classList.remove('shake');
-    c.classList.add('burst');
-    this.burst(c, K.col, big);
-    if (big) Sound.finish(true); else if (k === 'credits') Sound.creditTick(); else Sound.creditWin();
-    $('boRays').style.setProperty('--rc', K.col);
-    $('boRays').classList.add('on');
-    this.card(r);
-    await this.wait(big ? 2600 : 1500);
-    $('boRays').classList.remove('on');
-    $('boCard').hidden = true;
-    c.classList.add('done');
-  },
   card(r) {
     const k = this.kindOf(r), K = ITEM_KIND[k], E = escapeHtml;
-    let pic = '', name = '', sub = '';
-    if (k === 'credits') { pic = '<span class="boGem"><span class="gem2d"></span></span>'; name = '+' + r.credits + ' credits'; }
-    else if (k === 'hue') { const h = CarColor.hueAt(r.hue); pic = '<span class="boHue" style="background:' + hslCss(h, CarColor.HUE_S, CarColor.HUE_L) + '"></span>'; name = 'A new hue'; sub = 'Use it in Paint'; }
+    let name = '', sub = '';
+    if (k === 'credits') name = '+' + r.credits + ' credits';
+    else if (k === 'hue') { name = 'A new hue'; sub = 'Use it in Paint'; }
     else {
-      const it = Catalog.get(r.item) || { id: r.item, kind: k, name: r.name };
-      pic = Catalog.pic(it); name = it.name;
-      sub = r.count > 1 ? 'Duplicate (you have ' + r.count + ') · sells for ' + K.sell : 'New!';
+      const it = Catalog.get(r.item) || { name: r.name };
+      name = it.name;
+      sub = r.count > 1 ? 'Duplicate: you have ' + r.count + ' · sells for ' + K.sell : 'New!';
     }
     const card = $('boCard');
     card.style.setProperty('--kc', K.col);
-    card.innerHTML = '<small>' + E(K.label.toUpperCase()) + '</small><div class="boPic">' + pic + '</div><b>' + E(name) + '</b>' + (sub ? '<span>' + E(sub) + '</span>' : '');
+    card.innerHTML = '<small>' + E(K.label.toUpperCase()) + '</small><b>' + E(name) + '</b>' + (sub ? '<span>' + E(sub) + '</span>' : '');
     card.hidden = false;
     card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop');
   },
-  /** a burst of pieces from the box, in the colour of what came out */
-  burst(c, col, big) {
-    const cv = $('boFx'), ctx = cv.getContext('2d');
-    const W = cv.width = cv.clientWidth * (devicePixelRatio || 1), H = cv.height = cv.clientHeight * (devicePixelRatio || 1);
-    const r = c.getBoundingClientRect(), d = devicePixelRatio || 1;
-    const x0 = (r.left + r.width / 2) * d, y0 = (r.top + r.height / 2) * d;
-    const ps = [];
-    for (let i = 0; i < (big ? 160 : 70); i++) {
-      const a = Math.random() * Math.PI * 2, v = (big ? 9 : 6) * (0.4 + Math.random()) * d;
-      ps.push({ x: x0, y: y0, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4 * d, s: (3 + Math.random() * 5) * d, c: Math.random() < 0.3 ? '#ffffff' : col, r: Math.random() * 6 });
-    }
-    let t = 0;
-    const step = () => {
-      ctx.clearRect(0, 0, W, H);
-      t++;
-      for (const p of ps) {
-        p.x += p.vx; p.y += p.vy; p.vy += 0.35 * d; p.vx *= 0.985;
-        ctx.globalAlpha = Math.max(0, 1 - t / 70);
-        ctx.fillStyle = p.c;
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r + t * 0.1); ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6); ctx.restore();
-      }
-      if (t < 70) requestAnimationFrame(step); else ctx.clearRect(0, 0, W, H);
-    };
-    requestAnimationFrame(step);
+  /** clear the stage (after the last box, or a skip) */
+  cleanup() {
+    const B = Box3D;
+    B.onStep = null;
+    B.tweens.forEach((tw) => { try { tw.fn(1); } catch (e) { /* gone already */ } tw.res(); });
+    B.tweens = [];
+    for (const o of [...B.scene.children]) if (o.type === 'Group') B.scene.remove(o);
+    B.beam.material.opacity = 0; B.ring.material.opacity = 0; B.inner.intensity = 0;
+    B.pool.material.color.set('#f2733f'); B.pool.material.opacity = 0.35;
+    B.view.z = 7.6; B.view.y = 3.3; B.view.look = 0.8;
+    $('boCard').hidden = true;
+    $('boCount').textContent = '';
   },
   summary(got) {
     const E = escapeHtml;
     $('boSkip').hidden = true;
-    $('boStage').innerHTML = '';
     const rows = got.map((r) => {
       const k = this.kindOf(r), K = ITEM_KIND[k];
       if (k === 'credits') return '<li style="--kc:' + K.col + '"><span class="k">Credits</span><b>+' + r.credits + '</b></li>';
@@ -12673,14 +13148,14 @@ const BoxOpen = {
         '<span class="a"><button class="small" data-eq="' + slot + '" data-id="' + r.item + '">Use</button><button class="small ghost" data-sell="' + r.item + '">Sell · ' + K.sell + '</button></span></li>';
     }).join('');
     const free = Garage.freeBoxes();
-    $('boSum').innerHTML = '<h3>' + (got.length > 1 ? 'Your ' + got.length + ' boxes gave' : 'Your box gave') + '</h3><ul>' + rows + '</ul>' +
+    $('boSum').innerHTML = '<h3>' + (got.length > 1 ? 'Your box split into ' + got.length + '. They gave:' : 'Your box gave') + '</h3><ul>' + rows + '</ul>' +
       '<div class="row"><button class="ghost" id="boClose">Done</button>' + (free ? '<button id="boFree">Open a free box (' + free + ')</button>' : '') +
       '<button class="primary" id="boAgain"' + ((Records.credits || 0) < 100 ? ' disabled' : '') + '>Open another · 100</button></div>';
     $('boSum').hidden = false;
-    const end = () => { $('boxOpen').hidden = true; this.on = false; Garage.load(); };
+    const end = () => { $('boxOpen').hidden = true; this.on = false; Box3D.stop(); Garage.load(); };
     $('boClose').addEventListener('click', end);
-    $('boAgain').addEventListener('click', () => { this.on = false; this.open(false); });
-    if ($('boFree')) $('boFree').addEventListener('click', () => { this.on = false; this.open(true); });
+    $('boAgain').addEventListener('click', () => { $('boSum').hidden = true; this.on = false; this.open(false); });
+    if ($('boFree')) $('boFree').addEventListener('click', () => { $('boSum').hidden = true; this.on = false; this.open(true); });
     $('boSum').querySelectorAll('[data-eq]').forEach((b) => b.addEventListener('click', async () => { await Garage.equip(b.dataset.eq, b.dataset.id); b.textContent = 'On'; b.disabled = true; }));
     $('boSum').querySelectorAll('[data-sell]').forEach((b) => b.addEventListener('click', async () => { await Garage.sell(b.dataset.sell, 1); b.textContent = 'Sold'; b.disabled = true; }));
     Garage.load();
@@ -13398,6 +13873,22 @@ const CoachAlerts = {
     for (const a of this.queue.splice(0, 3)) {
       const el = document.createElement('div');
       el.className = 'alertCard';
+      if (a.garageIntro) {
+        el.classList.add('unbox');
+        el.style.setProperty('--kc', '#f2733f');
+        el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
+          '<p><b>New in the garage: boxes!</b> 100 credits each, and a free one every 50 runs you finish. Inside: 8 cars, 16 decals (8 of them animated), ' +
+          'wheels, boosts, finish celebrations, titles and profile icons. One box in ten splits into two.' +
+          (a.free ? ' <b>You have ' + a.free + ' free box' + (a.free > 1 ? 'es' : '') + ' waiting.</b>' : ' Your first one could be a car.') + '</p>' +
+          '<div class="ab"><button class="primary small">Open the garage</button><button class="ghost small">Later</button></div>';
+        const closeI = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+        el.querySelector('.ah button').addEventListener('click', closeI);
+        const [go, later] = el.querySelectorAll('.ab button');
+        go.addEventListener('click', () => { closeI(); Game.toGarage('boxes'); });
+        later.addEventListener('click', closeI);
+        stack.appendChild(el);
+        continue;
+      }
       if (a.unbox) {
         const K = ITEM_KIND[a.kind] || ITEM_KIND.car;
         el.classList.add('unbox');
@@ -13784,6 +14275,7 @@ const General = {
     [/\bdrift(ing)?\b/, 'In aiPolytrack you start a drift by braking while steering at speed. On tight flat hairpins it is faster than braking in a straight line, if you stay on the gas through it.'],
     [/hairpin/, 'A hairpin is a very tight turn, close to 180 degrees. Brake before it, turn in late, and focus on the exit speed.'],
     [/chicane/, 'A chicane is a quick left-right (or right-left) pair of turns. The trick is to straighten it: use the whole width so the car barely has to turn.'],
+    [/\b(box|boxes|unbox\w*|crates?|garage|decals?|loot)\b/, 'Boxes are in the garage: 100 credits each, and a free one every 50 runs you finish. Each holds one thing: a car (1 in 100), an animated decal (1 in 50), a decal, a finish celebration, a boost, wheels, a title, a profile icon, or 1 to 25 credits or a hue pack. One box in ten splits into two more, up to eight. Anything but a hue can be sold for credits in the Collection.'],
     [/slipstream|drafting/, 'Slipstreaming is following close behind another car to cut through less air. There are no other cars on the road in aiPolytrack, so it is all about your own line.']
   ],
   answer(q, low) {
@@ -13864,7 +14356,8 @@ const Coach = {
       'those fixes as a short list with their numbers: that is the most useful thing you can say. Keep it tight: at most 6 short sentences or a ' +
       'short list, no preamble.' + (this.short() ? ' The player asked for SHORT answers: two sentences at most.' : '') + '\n\n' +
       'FACTS\n' + Insight.factsText(I) + '\nEVERYONE: ' + I.rows.slice(0, 12).map((r, k) => (k + 1) + '. ' + r.n + ' ' + r.count + '/16 ' + formatTime(r.total)).join('; ') +
-      '\n' + Daily.facts();
+      '\n' + Daily.facts() +
+      '\nGARAGE: boxes cost 100 credits, or one is free every 50 finished runs. A box holds a car (1%), an animated decal (2%), a decal (3%), a finish celebration (4%), a boost (5%), wheels (5%), a title (10%), a profile icon (10%), or 1-25 credits or a hue pack (50%); 10% of boxes split into two more (up to 8). Items sell for credits in the Collection; hues can\'t be sold or bought.';
   },
   async ensureSession(I, onProgress) {
     const key = JSON.stringify(I.maps.map((m) => [m.t, m.lead && m.lead.t, m.rank])) + I.name + (this.short() ? ':short' : '');
@@ -18984,7 +19477,8 @@ const Game = {
     document.querySelectorAll('#gTabs button').forEach((b) => b.addEventListener('click', () => Garage.setTab(b.dataset.tab)));
     $('gBoxBuy').addEventListener('click', () => BoxOpen.open(false));
     $('gBoxFree').addEventListener('click', () => BoxOpen.open(true));
-    $('boSkip').addEventListener('click', () => { BoxOpen.skip = true; });
+    $('boSkip').addEventListener('click', (e) => { e.stopPropagation(); Box3D.skip = true; if (BoxOpen.next) BoxOpen.next(); });
+    $('boxOpen').addEventListener('click', (e) => { if (!e.target.closest('#boSum') && BoxOpen.next) BoxOpen.next(); });
     $('gSatSlider').addEventListener('input', () =>
       this.setGarageSatLight($('gSatSlider').value, $('gLightSlider').value));
     $('gLightSlider').addEventListener('input', () =>
@@ -19899,6 +20393,8 @@ const Game = {
     UI.hello();
     if (!Preview.checked || Date.now() - Preview.checked > 60000) { Preview.checked = Date.now(); Preview.check(); }
     CoachAlerts.flush();                   // podium news waits for the menu (or a finished run)
+    Garage.intro();
+    Garage.badge();
     WhatsNew.maybe();
   },
   /** called whenever the live leaderboard changes: redraw whatever shows it */
