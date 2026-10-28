@@ -29,6 +29,16 @@ button.on{border-color:var(--ember);color:var(--ember)}
 .txt h2 small{font-size:11px;color:var(--ember);letter-spacing:.08em;font-weight:600}
 .txt p{color:var(--dim);font-size:12.5px;margin-top:3px}
 .txt p b{color:var(--ink);font-weight:500}
+.paint{border:1px solid var(--rule);border-radius:10px;background:rgba(22,25,29,.92);padding:12px 14px;margin-bottom:14px}
+.decals{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.decals button small{font-size:10px;letter-spacing:.06em;color:var(--aqua);margin-left:6px;text-transform:uppercase}
+.picks{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center}
+.picks label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.picks span{font-size:12.5px;line-height:1.2}
+.picks small{display:block;color:var(--dim);font-size:11px}
+.picks input[type=color]{width:34px;height:28px;border:1px solid var(--rule);border-radius:6px;background:none;padding:2px;cursor:pointer}
+.picks input[type=number]{width:58px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:5px 8px}
+.dnote{color:var(--dim);font-size:12.5px;margin-top:10px;min-height:1.5em}
 </style>
 </head>
 <body>
@@ -37,15 +47,26 @@ button.on{border-color:var(--ember);color:var(--ember)}
   <header>
     <div>
       <h1>ai<span>Polytrack</span> · car shapes</h1>
-      <p class="lede">Candidate new looks. Each one stays on the same wheels and inside the same hitbox (the aqua box),
-        so handling, collisions and flips are unchanged. Drag a car to turn it.</p>
+      <p class="lede">Candidate new looks, with decals. Each one stays on the same wheels and inside the same hitbox
+        (Hitbox shows it), so handling, collisions and flips are unchanged. Pick a decal and any colours; drag a car to turn it.</p>
     </div>
     <div class="ctl">
-      <button id="bHull" class="on">Hitbox</button>
+      <button id="bHull">Hitbox</button>
       <button id="bSpin" class="on">Spin</button>
       <button id="bSide">Side view</button>
     </div>
   </header>
+  <section class="paint">
+    <div class="decals" id="decals"></div>
+    <div class="picks">
+      <label><input type="color" id="cPrimary" value="#e83030"><span>Primary<small>body</small></span></label>
+      <label><input type="color" id="cSecondary" value="#972626"><span>Secondary<small>splitter, skirts, wing</small></span></label>
+      <label><input type="color" id="cDecalA" value="#ffffff"><span>Decal 1<small>main</small></span></label>
+      <label><input type="color" id="cDecalB" value="#ffc628"><span>Decal 2<small>outline, second</small></span></label>
+      <label id="numWrap"><input type="number" id="num" min="0" max="99" value="7"><span>Number<small>0 to 99</small></span></label>
+    </div>
+    <p class="dnote" id="dnote"></p>
+  </section>
   <div class="grid" id="grid"></div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -69,10 +90,13 @@ const M = {
 };
 
 // --- building blocks --------------------------------------------------------
+/** a box, baked into car coordinates (as the game's mergeParts does), so a
+ *  decal pattern reads the same position on every part */
 function box(g, mat, s, p, r) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
-  m.position.set(p[0], p[1], p[2]);
-  if (r) m.rotation.set(r[0], r[1], r[2]);
+  const geo = new THREE.BoxGeometry(s[0], s[1], s[2]);
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0));
+  geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(p[0], p[1], p[2]), q, new THREE.Vector3(1, 1, 1)));
+  const m = new THREE.Mesh(geo, mat);
   g.add(m);
   return m;
 }
@@ -121,6 +145,115 @@ function wheels(g) {
   }
 }
 const both = (fn) => { fn(-1); fn(1); };
+
+// --- decals -------------------------------------------------------------------
+// A decal is a pattern over the car's own space (x across, y up, z forward),
+// worked out per pixel in the body paint's shader. It doesn't care what the
+// body is made of, so the same decal fits every shape and carries on across
+// every edge (hood to nose, roof to tail) with no seam. Two colours of its
+// own (uDA, uDB) on top of the body's primary and secondary; the animated
+// ones also glow a little.
+const DECALS = [
+  { id: 0, name: 'None' },
+  { id: 1, name: 'Racing stripes', kind: 'normal', note: 'Twin stripes over the top with an outline, and a stripe along each side.' },
+  { id: 2, name: 'Race number', kind: 'normal', note: 'A swoosh that rises toward the tail, and your number on both doors and the roof.' },
+  { id: 3, name: 'Chevrons', kind: 'animated', note: 'Glowing arrows that stream from the nose to the tail.' },
+  { id: 4, name: 'Aurora', kind: 'animated', note: 'Ribbons of your two colours drifting over the whole car.' }
+];
+const numCanvas = document.createElement('canvas');
+numCanvas.width = numCanvas.height = 256;
+const U = {
+  uDecal: { value: 1 }, uDA: { value: new THREE.Color(0xffffff) }, uDB: { value: new THREE.Color(0xffc628) },
+  uTime: { value: 0 }, uNum: { value: new THREE.CanvasTexture(numCanvas) }
+};
+function drawNumber(n) {
+  const c = numCanvas.getContext('2d');
+  c.clearRect(0, 0, 256, 256);
+  c.fillStyle = '#fff';
+  c.font = '800 ' + (String(n).length > 1 ? 150 : 180) + 'px Inter, "Segoe UI", Arial, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(String(n), 128, 140);
+  U.uNum.value.needsUpdate = true;
+}
+drawNumber(7);
+const DECAL_GLSL = `
+uniform int uDecal; uniform vec3 uDA; uniform vec3 uDB; uniform float uTime; uniform sampler2D uNum;
+varying vec3 vDecalPos;
+float dBand(float v, float a, float b) { float w = max(fwidth(v), 1e-4); return smoothstep(a - w, a + w, v) - smoothstep(b - w, b + w, v); }
+float dLess(float v, float a) { float w = max(fwidth(v), 1e-4); return 1.0 - smoothstep(a - w, a + w, v); }
+`;
+const DECAL_PAINT = `
+if (uDecal > 0) {
+  vec3 dp = vDecalPos;
+  vec3 dn = normalize(cross(dFdx(dp), dFdy(dp)));
+  float sideF = smoothstep(0.55, 0.8, abs(dn.x));      // the car's flanks
+  float topF = 1.0 - sideF;                            // the top, nose and tail
+  float ax = abs(dp.x);
+  vec3 dc = diffuseColor.rgb, glow = vec3(0.0);
+  if (uDecal == 1) {
+    // twin stripes over everything facing up, forward or back, outlined in B
+    float s = dBand(ax, 0.10, 0.30) * topF;
+    float o = (dBand(ax, 0.075, 0.10) + dBand(ax, 0.30, 0.325)) * topF;
+    float ss = dBand(dp.y, 0.06, 0.13) * sideF;
+    float so = dBand(dp.y, 0.145, 0.165) * sideF;
+    dc = mix(dc, uDB, clamp(o + so, 0.0, 1.0));
+    dc = mix(dc, uDA, clamp(s + ss, 0.0, 1.0));
+  } else if (uDecal == 2) {
+    // a swoosh along each side, widening and rising toward the tail
+    float t = clamp((1.95 - dp.z) / 3.9, 0.0, 1.0);
+    float lo = -0.10 + 0.13 * t, hi = lo + 0.06 + 0.07 * t;
+    dc = mix(dc, uDA, dBand(dp.y, lo, hi) * sideF);
+    dc = mix(dc, uDB, dBand(dp.y, hi + 0.02, hi + 0.04) * sideF);
+    // number roundels on the doors (reading the right way on both sides)...
+    vec2 q = vec2(dp.z + 0.12, dp.y - 0.08);
+    float r = length(q);
+    float disc = dLess(r, 0.20) * sideF, ring = dBand(r, 0.20, 0.23) * sideF;
+    float dig = texture2D(uNum, clamp(vec2(0.5 - sign(dp.x) * q.x / 0.40, 0.5 + q.y / 0.40), 0.0, 1.0)).a * disc;
+    // ...and on the roof, upright from the chase camera
+    float roofF = step(0.75, abs(dn.y)) * step(0.44, dp.y);
+    vec2 q2 = vec2(dp.x, dp.z + 0.24);
+    float r2 = length(q2);
+    float disc2 = dLess(r2, 0.20) * roofF, ring2 = dBand(r2, 0.20, 0.225) * roofF;
+    float dig2 = texture2D(uNum, clamp(vec2(0.5 - q2.x / 0.40, 0.5 + q2.y / 0.40), 0.0, 1.0)).a * disc2;
+    dc = mix(dc, uDB, max(disc, disc2));
+    dc = mix(dc, uDA, clamp(ring + ring2 + dig + dig2, 0.0, 1.0));
+  } else if (uDecal == 3) {
+    // arrows pointing forward, streaming back; every other one in B
+    float sp = uTime * 1.4;
+    float v = dp.z + ax * 0.9;
+    float d = abs(fract(v * 1.5 + sp) - 0.5);
+    float m = dLess(d, 0.17) * dLess(ax, 0.44) * topF;
+    vec3 col = mix(uDA, uDB, mod(floor(v * 1.5 + sp), 2.0));
+    float vs = dp.z + abs(dp.y - 0.06) * 1.3;
+    float ds = abs(fract(vs * 1.5 + sp) - 0.5);
+    float ms = dLess(ds, 0.15) * dLess(abs(dp.y - 0.06), 0.13) * sideF;
+    vec3 cols = mix(uDA, uDB, mod(floor(vs * 1.5 + sp), 2.0));
+    dc = mix(dc, col, m); dc = mix(dc, cols, ms);
+    glow += col * m * 0.5 + cols * ms * 0.5;
+  } else if (uDecal == 4) {
+    // ribbons that drift over the whole car, shading from A to B
+    float w = sin(dp.z * 1.9 - dp.y * 3.4 - uTime * 1.2 + 1.7 * sin(dp.x * 1.8 + uTime * 0.55));
+    float rib = smoothstep(0.1, 0.8, w);
+    vec3 col = mix(uDA, uDB, 0.5 + 0.5 * sin(dp.z * 0.9 - dp.y * 2.0 + uTime * 0.8));
+    dc = mix(dc, col, rib * 0.92);
+    glow += col * rib * 0.3;
+  }
+  diffuseColor.rgb = dc;
+  totalEmissiveRadiance += glow;
+}
+`;
+/** the body paints (primary and secondary) take the decal */
+function decalify(mat) {
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = 'varying vec3 vDecalPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvDecalPos = transformed;');
+    sh.fragmentShader = DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT);
+  };
+  mat.customProgramCacheKey = () => 'decal';
+  mat.needsUpdate = true;
+}
+decalify(M.B);
+decalify(M.D);
 
 // --- the candidates -----------------------------------------------------------
 const CARS = [
@@ -280,12 +413,35 @@ for (const c of CARS) {
   v.el.addEventListener('pointerup', () => { v.drag = null; });
   views.push(v);
 }
-const toggle = (id, fn) => document.getElementById(id).addEventListener('click', (e) => { e.currentTarget.classList.toggle('on', fn()); });
+showHull = false;
+const $ = (id) => document.getElementById(id);
+const toggle = (id, fn) => $(id).addEventListener('click', (e) => { e.currentTarget.classList.toggle('on', fn()); });
 toggle('bHull', () => (showHull = !showHull));
+// the paint: a decal, the body's two colours and the decal's two
+function pickDecal(id) {
+  U.uDecal.value = id;
+  document.querySelectorAll('#decals button').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
+  const d = DECALS.find((x) => x.id === id);
+  $('dnote').textContent = d.note || 'Just the body colours.';
+  $('numWrap').style.display = id === 2 ? '' : 'none';
+}
+$('decals').innerHTML = DECALS.map((d) => '<button data-id="' + d.id + '">' + d.name + (d.kind === 'animated' ? '<small>animated</small>' : '') + '</button>').join('');
+$('decals').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) pickDecal(+b.dataset.id); });
+const paint = () => {
+  M.B.color.set($('cPrimary').value);
+  M.D.color.set($('cSecondary').value);
+  U.uDA.value.set($('cDecalA').value);
+  U.uDB.value.set($('cDecalB').value);
+};
+for (const id of ['cPrimary', 'cSecondary', 'cDecalA', 'cDecalB']) $(id).addEventListener('input', paint);
+$('num').addEventListener('input', () => drawNumber(Math.max(0, Math.min(99, Math.floor(+$('num').value || 0)))));
+paint();
+pickDecal(1);
 toggle('bSpin', () => (spin = !spin));
 toggle('bSide', () => (sideView = !sideView));
 
-function frame() {
+function frame(ms) {
+  U.uTime.value = (ms || 0) / 1000;
   const W = innerWidth, H = innerHeight;
   const cv = renderer.domElement;
   if (cv.width !== Math.floor(W * renderer.getPixelRatio()) || cv.height !== Math.floor(H * renderer.getPixelRatio())) renderer.setSize(W, H, false);
