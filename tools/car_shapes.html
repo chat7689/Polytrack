@@ -218,15 +218,19 @@ const CARS = [
   },
   {
     name: 'Wedge', tag: 'A', like: '',
-    note: 'One sharp line from a low nose to a high, cut-off tail: pop-up lights, a low glass canopy, intakes behind the doors and louvres over the engine. <b>Decals:</b> a huge flat side and a long flat hood.',
+    note: 'One sharp line from a low nose to a high, cut-off tail: pop-up lights, a low glass canopy, long strakes down the doors and ducts in the engine cover. <b>Decals:</b> a long flat hood and the strakes.',
     build(g) {
       side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
         [1.99, -0.12], [2.0, 0.10], [1.25, 0.32], [0.55, 0.40], [-1.70, 0.45], [-1.98, 0.45], [-1.99, 0.02]], 1.98);
       side(g, M.G, [[0.66, 0.36], [0.02, 0.555], [-0.80, 0.555], [-1.42, 0.44], [-1.42, 0.38], [0.66, 0.38]], 1.36, { bs: 0.015, bt: 0.02 });
       cbox(g, M.B, [1.30, 0.03, 0.74], [0, 0.563, -0.40], null, 0.01);
       both((s) => cbox(g, M.D, [0.36, 0.05, 0.22], [s * 0.58, 0.255, 1.62], [deg(16), 0, 0], 0.012));
-      for (let k = 0; k < 4; k++) cbox(g, M.K, [1.20, 0.02, 0.05], [0, 0.49, -1.50 - k * 0.09], null, 0);
-      sideVent(g, 0.99, 0.22, -0.95, 0.14, 0.40, 3);
+      // the strakes: five long fins over a dark intake along each door
+      both((s) => {
+        cbox(g, M.K, [0.012, 0.27, 1.46], [s * 0.993, 0.13, -0.52], null, 0.004);
+        for (let k = 0; k < 5; k++) cbox(g, M.D, [0.04, 0.026, 1.50], [s * 0.995, 0.02 + k * 0.058, -0.52], null, 0.008);
+        cbox(g, M.K, [0.22, 0.012, 0.36], [s * 0.40, 0.478, -1.66], [0, s * deg(8), 0], 0);
+      });
       cbox(g, M.D, [1.92, 0.05, 0.30], [0, -0.21, 1.84]);
       both((s) => cbox(g, M.D, [0.05, 0.07, 1.62], [s * 0.975, -0.15, 0]));
       both((s) => cbox(g, M.L, [0.44, 0.035, 0.16], [s * 0.60, 0.16, 1.80], [deg(16), 0, 0], 0.008));
@@ -238,22 +242,24 @@ const CARS = [
   },
   {
     name: 'GT Fastback', tag: 'B', like: '',
-    note: 'Long hood, cabin set back, glass sloping to a ducktail: an oval grille, round lamps, vents behind the front wheels and four round tail lights. <b>Decals:</b> stripes nose to tail, numbers on the doors.',
+    note: 'A long, low hood between humped fenders with the lamps faired into them, a small bubble cabin set far back, rear haunches and a ducktail. <b>Decals:</b> stripes down the hood, numbers on the doors.',
     build(g) {
       side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
-        [1.99, -0.10], [1.99, 0.12], [1.82, 0.27], [1.25, 0.33], [0.70, 0.37], [-1.30, 0.40], [-1.92, 0.44], [-1.99, 0.37], [-1.99, 0.02]], 1.98);
-      side(g, M.G, [[0.72, 0.35], [0.06, 0.555], [-0.42, 0.555], [-1.44, 0.41], [-1.44, 0.36], [0.72, 0.36]], 1.42, { bs: 0.015, bt: 0.02 });
-      cbox(g, M.B, [1.36, 0.03, 0.46], [0, 0.565, -0.18], null, 0.01);
-      cbox(g, M.D, [1.80, 0.035, 0.18], [0, 0.465, -1.88], [deg(-12), 0, 0], 0.01);
-      cbox(g, M.D, [1.92, 0.05, 0.28], [0, -0.21, 1.85]);
-      cbox(g, M.D, [1.84, 0.10, 0.24], [0, -0.16, -1.88]);
-      both((s) => cbox(g, M.D, [0.05, 0.07, 1.62], [s * 0.975, -0.15, 0]));
-      cbox(g, M.K, [0.66, 0.11, 0.03], [0, 0.02, 1.995], null, 0.03);
-      both((s) => { cyl(g, M.L, 0.085, 0.05, [s * 0.66, 0.11, 1.975], 'z', 14); cyl(g, M.L, 0.05, 0.04, [s * 0.44, 0.10, 1.985], 'z', 12); });
-      both((s) => { cyl(g, M.R, 0.06, 0.03, [s * 0.46, 0.30, -1.99], 'z'); cyl(g, M.R, 0.06, 0.03, [s * 0.74, 0.30, -1.99], 'z'); });
-      sideVent(g, 0.99, 0.12, 0.62, 0.10, 0.24, 3);
-      both((s) => cyl(g, M.C, 0.05, 0.12, [s * 0.36, -0.09, -1.99], 'z'));
-      mirrors(g, 0.80, 0.41, 0.50);
+        [1.99, -0.10], [1.99, 0.06], [1.80, 0.18], [0.75, 0.27], [-1.30, 0.32], [-1.92, 0.35], [-1.99, 0.30], [-1.99, 0.02]], 1.98);
+      both((s) => {
+        side(g, M.B, [...bottom(0.55, 1.98, -0.06, 0.40, [FZ]), [1.99, 0.0], [1.96, 0.14], [1.75, 0.30], [1.40, 0.385], [0.95, 0.37], [0.62, 0.26], [0.55, 0.10]], 0.40, { x: s * 0.79 });
+        side(g, M.B, [...bottom(-1.98, -0.55, -0.06, 0.40, [-FZ]), [-0.55, 0.10], [-0.62, 0.30], [-0.95, 0.40], [-1.45, 0.42], [-1.85, 0.38], [-1.98, 0.30], [-1.99, 0.0]], 0.40, { x: s * 0.79 });
+        cyl(g, M.C, 0.10, 0.04, [s * 0.79, 0.22, 1.93], 'z', 16);
+        cyl(g, M.L, 0.085, 0.05, [s * 0.79, 0.22, 1.935], 'z', 16);
+        cyl(g, M.R, 0.055, 0.03, [s * 0.79, 0.30, -1.99], 'z', 12);
+      });
+      side(g, M.G, [[0.62, 0.30], [0.10, 0.53], [-0.38, 0.545], [-1.30, 0.34], [0.62, 0.32]], 1.20, { bs: 0.015, bt: 0.02 });
+      cbox(g, M.B, [1.14, 0.03, 0.46], [0, 0.555, -0.16], null, 0.01);
+      cbox(g, M.K, [0.62, 0.10, 0.03], [0, 0.04, 1.995], null, 0.04);
+      cbox(g, M.C, [1.90, 0.03, 0.05], [0, -0.06, 2.0], null, 0.01);
+      cbox(g, M.D, [1.20, 0.03, 0.18], [0, 0.375, -1.88], [deg(-14), 0, 0], 0.01);
+      both((s) => { cbox(g, M.D, [0.05, 0.07, 1.20], [s * 0.975, -0.15, 0]); cyl(g, M.C, 0.045, 0.14, [s * 0.30, -0.10, -1.99], 'z'); });
+      mirrors(g, 0.72, 0.38, 0.50);
     }
   },
   {
@@ -304,14 +310,18 @@ const CARS = [
   },
   {
     name: 'Muscle', tag: 'E', like: '',
-    note: 'Blunt nose with four round lamps, a long flat hood with a raised scoop, side pipes, louvres over the rear glass and chrome bumpers. <b>Decals:</b> stripes over the scoop and flames down the sides.',
+    note: 'Blunt nose with four round lamps, a chrome supercharger bursting through the hood, a vinyl roof, side pipes, rear louvres and chrome bumpers. <b>Decals:</b> flames down the sides.',
     build(g) {
       side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
         [1.99, -0.08], [1.99, 0.30], [1.90, 0.35], [0.56, 0.37], [-1.22, 0.39], [-1.95, 0.39], [-1.99, 0.34], [-1.99, -0.06]], 1.98);
       side(g, M.G, [[0.58, 0.35], [0.20, 0.555], [-0.78, 0.555], [-1.24, 0.38], [0.58, 0.36]], 1.50, { bs: 0.015, bt: 0.02 });
-      cbox(g, M.B, [1.46, 0.03, 0.96], [0, 0.565, -0.29], null, 0.01);
-      side(g, M.B, [[1.72, 0.36], [1.52, 0.44], [0.78, 0.45], [0.64, 0.37]], 0.56, { bs: 0.02, bt: 0.02 });
-      cbox(g, M.K, [0.40, 0.045, 0.06], [0, 0.43, 1.55], null, 0.008);
+      cbox(g, M.T, [1.46, 0.03, 0.96], [0, 0.565, -0.29], null, 0.01);
+      // the blower: a chrome supercharger through the hood, its belt and its scoop
+      cbox(g, M.C, [0.42, 0.12, 0.36], [0, 0.42, 1.24], null, 0.02);
+      for (let k = 0; k < 5; k++) cbox(g, M.T, [0.44, 0.012, 0.012], [0, 0.39 + k * 0.02, 1.43], null, 0);
+      cyl(g, M.K, 0.07, 0.06, [0, 0.43, 1.44], 'z', 14);
+      cbox(g, M.K, [0.34, 0.07, 0.24], [0, 0.515, 1.26], null, 0.015);
+      cbox(g, M.C, [0.36, 0.012, 0.26], [0, 0.553, 1.26], null, 0.004);
       for (let k = 0; k < 3; k++) cbox(g, M.K, [1.36, 0.018, 0.04], [0, 0.505 - k * 0.055, -0.92 - k * 0.12], [deg(20), 0, 0], 0);
       cbox(g, M.D, [1.80, 0.04, 0.18], [0, 0.42, -1.92], [deg(-14), 0, 0], 0.01);
       cbox(g, M.C, [2.0, 0.09, 0.10], [0, -0.07, 1.99], null, 0.03);
@@ -323,71 +333,53 @@ const CARS = [
     }
   },
   {
-    name: 'Stinger', tag: 'F', like: 'like a Breakout',
-    note: 'Low and sharp: an arrow nose, the wheels under angular pods, a narrow canopy, twin tail fins with a wing between them. <b>Decals:</b> the pods and fins.',
+    name: 'Stinger', tag: 'F', like: 'open-wheel',
+    note: 'An open-wheel racer: a needle nose, the wheels out in the open, a full-width front wing, sidepods, an air box over the driver with a halo, and a tall rear wing. <b>Decals:</b> the nose, sidepods and engine cover.',
     build(g) {
-      side(g, M.B, [[-1.98, -0.16], [1.80, -0.16], [2.0, -0.06], [1.98, 0.02], [0.60, 0.24], [-1.40, 0.32], [-1.98, 0.32], [-1.99, -0.05]], 1.30);
-      both((s) => {
-        side(g, M.B, [...bottom(0.60, 1.98, -0.16, 0.39, [FZ]), [1.99, -0.10], [1.96, 0.02], [1.45, 0.32], [0.95, 0.35], [0.65, 0.18], [0.60, 0.0]], 0.40, { x: s * 0.79 });
-        side(g, M.B, [...bottom(-1.98, -0.60, -0.16, 0.39, [-FZ]), [-0.60, 0.0], [-0.70, 0.24], [-1.05, 0.38], [-1.70, 0.38], [-1.98, 0.30], [-1.99, -0.04]], 0.40, { x: s * 0.79 });
-        side(g, M.D, [[-0.62, -0.15], [0.62, -0.15], [0.62, 0.0], [-0.62, 0.14]], 0.36, { x: s * 0.80 });
-        side(g, M.B, [[-1.10, 0.30], [-1.30, 0.40], [-1.80, 0.56], [-1.97, 0.56], [-1.97, 0.30]], 0.05, { x: s * 0.55, bs: 0.008, bt: 0.008 });
-        cbox(g, M.L, [0.24, 0.03, 0.14], [s * 0.80, 0.23, 1.62], [deg(31), 0, 0], 0.008);
-        cbox(g, M.R, [0.05, 0.18, 0.04], [s * 0.55, 0.42, -1.97]);
-        cbox(g, M.K, [0.02, 0.10, 0.30], [s * 0.985, -0.06, 0.10], [deg(-8), 0, 0], 0.004);
-      });
-      side(g, M.G, [[0.70, 0.18], [0.20, 0.46], [-0.55, 0.49], [-1.15, 0.31], [-1.15, 0.18]], 0.90, { bs: 0.02, bt: 0.02 });
-      cbox(g, M.B, [0.56, 0.03, 0.46], [0, 0.505, -0.20], null, 0.01);
-      cbox(g, M.D, [1.12, 0.035, 0.24], [0, 0.53, -1.80], [deg(-5), 0, 0], 0.01);
-      cbox(g, M.D, [1.30, 0.03, 0.30], [0, -0.17, 1.88], null, 0.01);
-      cyl(g, M.C, 0.07, 0.14, [0, 0.10, -1.99], 'z');
+      side(g, M.B, [[-1.95, -0.16], [1.70, -0.16], [1.99, -0.10], [1.97, 0.0], [1.10, 0.14], [0.40, 0.24], [-0.40, 0.26], [-1.60, 0.28], [-1.95, 0.22]], 0.86);
+      side(g, M.B, [[-0.30, 0.24], [-0.42, 0.53], [-0.72, 0.545], [-1.60, 0.34], [-1.60, 0.24]], 0.40, { bs: 0.02, bt: 0.03 });
+      cbox(g, M.K, [0.20, 0.12, 0.03], [0, 0.46, -0.41], [deg(-20), 0, 0], 0.01);
+      pair(g, M.B, [[-0.72, -0.16], [0.62, -0.16], [0.62, 0.10], [0.42, 0.20], [-0.72, 0.22]], 0.30, 0.575);
+      both((s) => cbox(g, M.K, [0.30, 0.10, 0.02], [s * 0.575, 0.08, 0.63], null, 0.01));
+      cbox(g, M.K, [0.46, 0.04, 0.56], [0, 0.27, 0.06], null, 0.015);
+      const halo = new THREE.TorusGeometry(0.24, 0.022, 6, 18, Math.PI);
+      halo.rotateX(-Math.PI / 2);
+      add(g, place(halo, [0, 0.40, 0.04]), M.T);
+      cbox(g, M.T, [0.04, 0.13, 0.04], [0, 0.34, 0.27], null, 0.01);
+      // the wings
+      cbox(g, M.D, [1.96, 0.03, 0.34], [0, -0.14, 1.80], null, 0.01);
+      cbox(g, M.D, [1.70, 0.025, 0.20], [0, -0.09, 1.70], [deg(-12), 0, 0], 0.008);
+      both((s) => { cbox(g, M.D, [0.03, 0.15, 0.42], [s * 0.965, -0.08, 1.79], null, 0.008); cbox(g, M.D, [0.03, 0.26, 0.42], [s * 0.86, 0.43, -1.82], null, 0.008); });
+      cbox(g, M.D, [1.70, 0.04, 0.30], [0, 0.53, -1.82], [deg(-8), 0, 0], 0.012);
+      cbox(g, M.T, [0.05, 0.27, 0.10], [0, 0.40, -1.80], null, 0.01);
+      cyl(g, M.C, 0.06, 0.12, [0, 0.20, -1.96], 'z');
+      cbox(g, M.R, [0.12, 0.05, 0.03], [0, 0.04, -1.965], null, 0.008);
+      mirrors(g, 0.66, 0.30, 0.45);
     }
   },
   {
     name: 'Bulldog', tag: 'G', like: 'like an Octane',
-    note: 'Cab-forward and chunky: a short nose, a steep windshield, big round fenders, a hood scoop, a bumper bar and a roof spoiler. <b>Decals:</b> the round fenders and the doors.',
+    note: 'Round everywhere: a short bulbous nose, a bubble cabin, big round fenders, a skid plate, a stubby roof spoiler and twin big exhausts. <b>Decals:</b> the round fenders and the doors.',
     build(g) {
       side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
-        [1.99, -0.10], [1.99, 0.22], [1.78, 0.31], [1.15, 0.35], [-1.70, 0.37], [-1.96, 0.35], [-1.99, -0.06]], 1.80);
+        [1.99, -0.12], [2.0, 0.05], [1.97, 0.16], [1.88, 0.25], [1.72, 0.31], [1.40, 0.35], [1.10, 0.36], [-1.60, 0.37], [-1.82, 0.34], [-1.95, 0.26], [-1.99, 0.12], [-1.99, -0.08]], 1.80);
       for (const c of [-FZ, FZ]) {
-        pair(g, M.B, [...bottom(c - 0.60, c + 0.60, -0.08, 0.41, [c]),
-          [c + 0.60, 0.06], [c + 0.48, 0.28], [c + 0.22, 0.39], [c - 0.22, 0.39], [c - 0.48, 0.28], [c - 0.60, 0.06]], 0.26, 0.86);
+        const top = [];
+        for (let k = 0; k <= 10; k++) { const f = k * Math.PI / 10; top.push([c + 0.62 * Math.cos(f), 0.06 + 0.36 * Math.sin(f)]); }
+        pair(g, M.B, [...bottom(c - 0.62, c + 0.62, -0.08, 0.41, [c]), ...top], 0.26, 0.86);
       }
-      side(g, M.G, [[1.15, 0.33], [0.55, 0.545], [-1.30, 0.545], [-1.62, 0.40], [-1.62, 0.33]], 1.60, { bs: 0.02, bt: 0.03 });
-      cbox(g, M.B, [1.62, 0.035, 1.70], [0, 0.558, -0.38], null, 0.012);
-      cbox(g, M.D, [1.56, 0.03, 0.26], [0, 0.55, -1.42], [deg(-12), 0, 0], 0.01);
-      cbox(g, M.B, [0.50, 0.06, 0.40], [0, 0.37, 1.40], null, 0.02);
-      cbox(g, M.K, [0.38, 0.035, 0.02], [0, 0.385, 1.605], null, 0.004);
-      cbox(g, M.T, [1.84, 0.10, 0.10], [0, -0.08, 2.0], null, 0.03);
-      cbox(g, M.K, [0.70, 0.12, 0.03], [0, 0.10, 1.995], null, 0.01);
-      both((s) => { cyl(g, M.L, 0.10, 0.05, [s * 0.62, 0.15, 1.98], 'z', 16); cyl(g, M.R, 0.08, 0.04, [s * 0.70, 0.22, -1.985], 'z', 14); });
-      cyl(g, M.C, 0.06, 0.14, [-0.40, -0.10, -1.99], 'z');
+      side(g, M.G, [[1.12, 0.34], [0.85, 0.47], [0.55, 0.535], [0.20, 0.552], [-1.10, 0.552], [-1.40, 0.52], [-1.58, 0.44], [-1.62, 0.36]], 1.60, { bs: 0.02, bt: 0.03 });
+      cbox(g, M.B, [1.50, 0.03, 1.36], [0, 0.56, -0.45], null, 0.012);
+      cbox(g, M.D, [1.30, 0.03, 0.18], [0, 0.535, -1.47], [deg(-20), 0, 0], 0.01);
+      cbox(g, M.T, [1.40, 0.06, 0.40], [0, -0.20, 1.80], null, 0.02);
+      cbox(g, M.K, [0.70, 0.12, 0.03], [0, 0.08, 1.995], null, 0.05);
+      both((s) => { cyl(g, M.L, 0.11, 0.05, [s * 0.60, 0.17, 1.975], 'z', 16); cyl(g, M.R, 0.09, 0.04, [s * 0.70, 0.20, -1.985], 'z', 14); cyl(g, M.C, 0.09, 0.14, [s * 0.32, -0.08, -1.99], 'z', 14); });
+      cyl(g, M.T, 0.06, 0.012, [-0.40, 0.58, -0.70], 'y', 10);
       mirrors(g, 0.88, 0.40, 0.92);
     }
   },
   {
-    name: 'Brute', tag: 'H', like: 'like a Merc',
-    note: 'A boxy van: a flat roof the whole way back, slab sides, a big grille, a bull bar, a roof rack and side steps. <b>Decals:</b> the biggest sides of any car.',
-    build(g) {
-      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
-        [1.99, -0.10], [1.99, 0.30], [1.66, 0.34], [1.22, 0.525], [-1.92, 0.525], [-1.99, 0.48], [-1.99, -0.08]], 1.96, { bt: 0.04, bs: 0.025 });
-      cbox(g, M.G, [1.70, 0.47, 0.04], [0, 0.462, 1.452], [deg(-66.6), 0, 0], 0.01);
-      both((s) => { cbox(g, M.G, [0.02, 0.13, 0.80], [s * 0.985, 0.42, 0.70], null, 0.006); cbox(g, M.G, [0.02, 0.10, 0.40], [s * 0.985, 0.43, -0.55], null, 0.006); });
-      both((s) => { cbox(g, M.T, [0.05, 0.025, 2.60], [s * 0.70, 0.565, -0.45], null, 0.008); cbox(g, M.D, [0.10, 0.04, 1.30], [s * 0.94, -0.17, 0], null, 0.01); });
-      for (const z of [0.60, -0.45, -1.50]) cbox(g, M.T, [1.40, 0.02, 0.04], [0, 0.56, z], null, 0);
-      cbox(g, M.K, [1.30, 0.20, 0.03], [0, 0.11, 1.995], null, 0.01);
-      for (let k = 0; k < 4; k++) cbox(g, M.T, [1.26, 0.014, 0.035], [0, 0.04 + k * 0.045, 2.0], null, 0);
-      both((s) => { cbox(g, M.L, [0.22, 0.14, 0.03], [s * 0.82, 0.17, 1.995], null, 0.01); cbox(g, M.R, [0.10, 0.28, 0.03], [s * 0.88, 0.26, -1.995]); });
-      both((s) => cbox(g, M.T, [0.06, 0.30, 0.06], [s * 0.55, 0.02, 2.04], null, 0.015));
-      cbox(g, M.T, [1.30, 0.06, 0.06], [0, 0.16, 2.04], null, 0.015);
-      cbox(g, M.T, [1.30, 0.06, 0.06], [0, -0.06, 2.04], null, 0.015);
-      flare(g, M.D, FZ, 0.39, 0.47, 0.95, 0.10); flare(g, M.D, -FZ, 0.39, 0.47, 0.95, 0.10);
-      cbox(g, M.K, [0.01, 0.40, 0.01], [0, 0.20, -1.996], null, 0);
-      mirrors(g, 0.92, 0.42, 1.20);
-    }
-  },
-  {
-    name: 'Manta', tag: 'I', like: 'like a Plank',
+    name: 'Manta', tag: 'H', like: 'like a Plank',
     note: 'Flat as a board: a thin, wide slab with the wheels showing underneath, a small bubble cockpit, intakes beside it, side blades and two tail fins. <b>Decals:</b> the whole top is one big flat canvas.',
     build(g) {
       side(g, M.B, [...bottom(-1.98, 1.98, -0.05, 0.37),
@@ -416,18 +408,22 @@ const CARS = [
 // made from it (whichever shows up better).
 const DECALS = [
   { id: 0, name: 'None', note: 'Just your two colours.' },
-  { id: 1, name: 'Racing stripes', note: 'Twin stripes over the top with an outline, carried down the nose and tail, and a stripe along each side.' },
+  { id: 1, name: 'Racing stripes', note: 'Twin outlined stripes over the top, carried down the nose and tail, and a stripe along each side.' },
   { id: 2, name: 'Race number', note: 'A swoosh rising toward the tail, and your number on both doors and the roof.' },
   { id: 3, name: 'Flames', note: 'Hot-rod flames from the nose, over the hood and down both sides.' },
   { id: 4, name: 'Lightning', note: 'A bolt down each side and over the top, thick at the nose and thinning to the tail.' },
-  { id: 5, name: 'Checkered', note: 'A chequered roof, nose band and sill band.' },
+  { id: 5, name: 'Checkered', note: 'A chequered roof, nose and sills, lined up across every edge.' },
   { id: 6, name: 'Tiger', note: 'Stripes that run down from the top edges, sharpening to points.' },
-  { id: 7, name: 'Two-tone', note: 'The lower half in the second colour, the line rising toward the tail.' },
-  { id: 8, name: 'Arrows', anim: true, note: 'Glowing arrows, each with a fading trail, streaming from the nose to the tail.' },
-  { id: 9, name: 'Aurora', anim: true, note: 'Soft ribbons drifting over the whole car.' },
-  { id: 10, name: 'Pulse', anim: true, note: 'Thin neon lines with pulses of light racing back along them.' },
-  { id: 11, name: 'Inferno', anim: true, note: 'The flames, alive: they flicker and glow.' },
-  { id: 12, name: 'Glint', anim: true, note: 'A sheen of light that sweeps over the paint.' }
+  { id: 7, name: 'Shark', note: 'A shark mouth full of teeth wrapped around the nose, and an eye on each side.' },
+  { id: 8, name: 'Digital camo', note: 'Blocky camouflage in three tones, the blocks carrying on round every edge.' },
+  { id: 9, name: 'Arrows', anim: true, note: 'Bright arrows, each with a fading trail, streaming from the nose to the tail.' },
+  { id: 10, name: 'Aurora', anim: true, note: 'Soft ribbons drifting over the whole car.' },
+  { id: 11, name: 'Pulse', anim: true, note: 'Thin neon lines with pulses of light racing back along them.' },
+  { id: 12, name: 'Inferno', anim: true, note: 'The flames, alive: they flicker and burn.' },
+  { id: 13, name: 'Glint', anim: true, note: 'A sheen of light sweeping over the paint, and sparkling flakes.' },
+  { id: 14, name: 'Lava', anim: true, note: 'Dark rock split by glowing cracks that throb with heat.' },
+  { id: 15, name: 'Starfield', anim: true, note: 'Deep space: drifting nebula clouds and twinkling stars.' },
+  { id: 16, name: 'Shockwave', anim: true, note: 'Rings of energy rippling out from the middle of the car over a glowing grid.' }
 ];
 const numCanvas = document.createElement('canvas');
 numCanvas.width = numCanvas.height = 256;
@@ -450,6 +446,23 @@ uniform int uDecal; uniform vec3 uP; uniform vec3 uS; uniform float uTime; unifo
 varying vec3 vDecalPos;
 float dBand(float v, float a, float b) { float w = max(fwidth(v), 1e-4); return smoothstep(a - w, a + w, v) - smoothstep(b - w, b + w, v); }
 float dLess(float v, float a) { float w = max(fwidth(v), 1e-4); return 1.0 - smoothstep(a - w, a + w, v); }
+float h13(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+vec3 h33(vec3 p) {
+  p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
+  return fract(sin(p) * 43758.5453);
+}
+// cells: distance to the nearest and second-nearest random point
+vec2 dVor(vec3 p) {
+  vec3 i = floor(p), f = fract(p);
+  float d1 = 8.0, d2 = 8.0;
+  for (int z = -1; z <= 1; z++) for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec3 g = vec3(float(x), float(y), float(z));
+    vec3 r = g + h33(i + g) - f;
+    float d = dot(r, r);
+    if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+  }
+  return vec2(sqrt(d1), sqrt(d2));
+}
 // hot-rod flames: along = metres back from the nose, across = 0..1 over the
 // panel; tongues of different lengths ending in points
 float dFlame(float along, float across, float n, float off, float t, float anim, out float edge, out float core) {
@@ -461,9 +474,10 @@ float dFlame(float along, float across, float n, float off, float t, float anim,
   core = dLess(along, len - 0.26);
   return dLess(along, len);
 }
-// a chevron train moving back: the bright head and its fading trail
+// a train of arrows moving back: each one's bright head, and the trail
+// fading out behind it (toward the nose)
 void dArrow(float v, float sp, out float head, out float trail) {
-  float ph = fract(v * 1.3 - sp), aw = max(fwidth(v * 1.3), 1e-4);
+  float ph = fract(sp - v * 1.3), aw = max(fwidth(v * 1.3), 1e-4);
   head = smoothstep(0.0, aw, ph) * (1.0 - smoothstep(0.085 - aw, 0.085 + aw, ph));
   trail = (1.0 - smoothstep(0.085, 0.6, ph)) * step(0.085, ph) * 0.6;
 }
@@ -511,8 +525,8 @@ if (uDecal > 0) {
     dc = mix(dc, paper, max(disc, disc2));
     dc = mix(dc, ink, clamp(dig + dig2, 0.0, 1.0));
     dc = mix(dc, C1, clamp(ring + ring2, 0.0, 1.0));
-  } else if (uDecal == 3 || uDecal == 11) {
-    float anim = uDecal == 11 ? 1.0 : 0.0, e1, c1, e2, c2;
+  } else if (uDecal == 3 || uDecal == 12) {
+    float anim = uDecal == 12 ? 1.0 : 0.0, e1, c1, e2, c2;
     float acrossS = (dp.y + 0.21) / 0.52;
     float fS = dFlame(u, acrossS, 3.0, 0.0, t, anim, e1, c1) * sideF * step(0.0, acrossS) * step(acrossS, 1.0);
     float acrossT = ax / 0.80;
@@ -528,14 +542,16 @@ if (uDecal > 0) {
     float w = mix(0.065, 0.012, clamp(u / 3.8, 0.0, 1.0));
     float yc = 0.06 + 0.11 * (tri1 - 0.5) + 0.035 * (tri2 - 0.5);
     float xc = 0.16 * (tri1 - 0.5) + 0.05 * (tri2 - 0.5);
-    float b = dLess(abs(dp.y - yc), w) * sideF + dLess(abs(dp.x - xc), w * 1.4) * topF;
-    float bo = dBand(abs(dp.y - yc), w, w + 0.022) * sideF + dBand(abs(dp.x - xc), w * 1.4, w * 1.4 + 0.022) * topF;
+    float dS = abs(dp.y - yc), dT = abs(dp.x - xc);
+    float b = dLess(dS, w) * sideF + dLess(dT, w * 1.4) * topF;
+    float bo = dBand(dS, w, w + 0.022) * sideF + dBand(dT, w * 1.4, w * 1.4 + 0.022) * topF;
+    float halo = (1.0 - smoothstep(w, w + 0.10, dS)) * sideF + (1.0 - smoothstep(w * 1.4, w * 1.4 + 0.12, dT)) * topF;
+    dc = mix(dc, C1, clamp(halo, 0.0, 1.0) * 0.25);
     dc = mix(dc, C2, clamp(bo, 0.0, 1.0));
     dc = mix(dc, C1, clamp(b, 0.0, 1.0));
   } else if (uDecal == 5) {
-    vec2 cc = an.x > max(an.y, an.z) ? dp.zy : (an.y > an.z ? dp.xz : dp.xy);
-    float ck = mod(floor(cc.x / 0.09) + floor(cc.y / 0.09), 2.0);
-    float region = max(max(roofF, step(dp.y, -0.03) * sideF), step(u, 0.36) * topF);
+    float ck = mod(floor(dp.x / 0.09) + floor(dp.y / 0.09) + floor(dp.z / 0.09), 2.0);
+    float region = max(max(roofF, step(dp.y, -0.03) * sideF), step(u, 0.36));
     dc = mix(dc, mix(C1, C2, ck), region);
   } else if (uDecal == 6) {
     float ph = u * 2.1 + 0.22 * sin(u * 4.7 + 1.0);
@@ -544,10 +560,32 @@ if (uDecal > 0) {
     float wd = 0.17 * (1.0 - h) * (0.8 + 0.2 * sin(floor(ph) * 3.1));
     dc = mix(dc, C1, dLess(s, wd) * step(h, 0.97));
   } else if (uDecal == 7) {
-    float yl = 0.16 * clamp(u / 3.9, 0.0, 1.0);
-    dc = mix(dc, C1, dLess(dp.y, yl));
-    dc = mix(dc, C2, dBand(dp.y, yl, yl + 0.02));
+    // round the front: the jaw follows x across the nose, and runs back
+    // along each side, closing to a point
+    float nose = step(1.5, dp.z) * step(an.x, an.z) * step(an.y, an.z);
+    float along = mix(u, ax, nose);
+    float h = mix(0.13 * clamp(1.0 - u / 0.95, 0.0, 1.0), 0.13, nose);
+    float where = clamp(sideF + nose, 0.0, 1.0) * step(0.004, h);
+    float dyy = abs(dp.y - 0.02);
+    float mouth = dLess(dyy, h) * where;
+    float tooth = 0.055 * (1.0 - abs(2.0 * fract(along * 11.0) - 1.0)) * clamp(h / 0.13, 0.0, 1.0);
+    float teeth = mouth * (1.0 - dLess(dyy, h - tooth));
+    float lip = dBand(dyy, h, h + 0.025) * where;
+    vec2 eq = vec2(u - 1.0, dp.y - 0.17);
+    float eye = dLess(length(eq), 0.06) * sideF;
+    float pupil = dLess(length(eq - vec2(0.012, -0.004)), 0.03) * sideF;
+    vec3 dark = C1 * 0.1 + vec3(0.02), white = vec3(0.95);
+    dc = mix(dc, C1, lip);
+    dc = mix(dc, dark, mouth);
+    dc = mix(dc, white, teeth + eye);
+    dc = mix(dc, dark, pupil);
   } else if (uDecal == 8) {
+    float big = h13(floor(dp / 0.22)), small = h13(floor(dp / 0.075) + 17.0);
+    vec3 cam = dc;
+    if (big > 0.52) cam = C1;
+    if (small > 0.90) cam = C2; else if (small < 0.18) cam = mix(dc, C1, 0.5);
+    dc = cam;
+  } else if (uDecal == 9) {
     float sp = t * 2.0, h1, t1, h2, t2;
     float dy = abs(dp.y - 0.07);
     dArrow(u - dy * 1.15, sp, h1, t1);
@@ -557,13 +595,13 @@ if (uDecal > 0) {
     dc = mix(dc, C1, clamp(T, 0.0, 1.0));
     dc = mix(dc, LT, clamp(H, 0.0, 1.0));
     glow += C1 * T * 0.5 + LT * H * 1.1;
-  } else if (uDecal == 9) {
+  } else if (uDecal == 10) {
     float w = sin(dp.z * 1.9 - dp.y * 3.4 - t * 1.2 + 1.7 * sin(dp.x * 1.8 + t * 0.55));
     float rib = smoothstep(0.1, 0.8, w);
     vec3 col = mix(C1, LT, 0.5 + 0.5 * sin(dp.z * 0.9 - dp.y * 2.0 + t * 0.8));
     dc = mix(dc, col, rib * 0.9);
     glow += col * rib * 0.3;
-  } else if (uDecal == 10) {
+  } else if (uDecal == 11) {
     float lines = dLess(abs(dp.y - 0.14), 0.011) * sideF + dLess(abs(dp.y + 0.10), 0.008) * sideF
                 + dLess(abs(ax - 0.30), 0.011) * topF + dLess(ax, 0.008) * topF;
     lines = clamp(lines, 0.0, 1.0);
@@ -571,12 +609,41 @@ if (uDecal > 0) {
     float lit = 0.3 + 1.6 * pow(p, 8.0);
     dc = mix(dc, LT, lines);
     glow += LT * lines * lit;
-  } else if (uDecal == 12) {
+  } else if (uDecal == 13) {
     float s = dp.z * 0.7 + dp.y * 1.3 + ax * 0.25;
     float g = exp(-pow((fract(s * 0.22 - t * 0.28) - 0.5) * 9.0, 2.0));
+    float flake = step(0.965, h13(floor(dp / 0.035) + floor(t * 3.0)));
     vec3 gc = mix(C1, vec3(1.0), 0.65);
-    dc = mix(dc, gc, g * 0.55);
-    glow += gc * g * 0.6;
+    dc = mix(dc, gc, g * 0.55 + flake * 0.5);
+    glow += gc * (g * 0.6 + flake * 0.5);
+  } else if (uDecal == 14) {
+    vec2 v = dVor(dp * 3.2);
+    float e = v.y - v.x;
+    float crack = dLess(e, 0.045), near = 1.0 - smoothstep(0.0, 0.26, e);
+    float throb = 0.6 + 0.4 * sin(t * 2.2 + h13(floor(dp * 3.2)) * 6.28 + dp.z * 2.0);
+    vec3 hot = mix(C1, vec3(1.0), 0.35);
+    dc = mix(dc * 0.45, hot, crack);
+    dc = mix(dc, C1, near * 0.25 * (1.0 - crack));
+    glow += hot * crack * throb * 0.9 + C1 * near * 0.25 * throb;
+  } else if (uDecal == 15) {
+    float cloud = 0.5 + 0.5 * sin(dp.x * 2.3 + 1.5 * sin(dp.z * 1.7 + t * 0.15)) * sin(dp.z * 1.9 - dp.y * 2.6 + t * 0.1);
+    vec3 space = mix(dc * 0.2, C1 * 0.55, smoothstep(0.35, 0.95, cloud));
+    vec3 cs = dp / 0.07, ci = floor(cs), cf = fract(cs) - 0.5;
+    float hs = h13(ci);
+    float sd = length(cf - (h33(ci) - 0.5) * 0.5);
+    float star = step(0.86, hs) * dLess(sd, 0.10 + 0.08 * fract(hs * 7.0));
+    float tw = 0.4 + 0.6 * pow(0.5 + 0.5 * sin(t * (2.0 + hs * 4.0) + hs * 40.0), 3.0);
+    dc = mix(space, LT, star * tw);
+    glow += LT * star * tw * 0.9 + C1 * smoothstep(0.6, 1.0, cloud) * 0.08;
+  } else if (uDecal == 16) {
+    float r = length(vec3(dp.x * 1.1, (dp.y - 0.15) * 1.6, dp.z * 0.55));
+    float ph = fract(t * 0.7 - r * 1.1), aw = max(fwidth(r * 1.1), 1e-4);
+    float ring = smoothstep(0.0, aw * 1.5, ph) * (1.0 - smoothstep(0.05, 0.05 + aw * 1.5, ph));
+    float wake = (1.0 - smoothstep(0.05, 0.5, ph)) * step(0.05, ph);
+    float grid = dLess(min(abs(fract(dp.x * 6.0) - 0.5), abs(fract(dp.z * 6.0 + dp.y * 3.0) - 0.5)), 0.04);
+    dc = mix(dc, C1, wake * (0.35 + grid * 0.5));
+    dc = mix(dc, LT, ring);
+    glow += LT * ring * 1.2 + C1 * wake * (0.2 + grid * 0.6);
   }
   diffuseColor.rgb = dc;
   totalEmissiveRadiance += glow;

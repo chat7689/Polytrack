@@ -1068,7 +1068,7 @@ end $$;
 -- ------------------------------------------------------------ daily maps
 -- A new map every day (the game makes it from the date), open from 00:00 to
 -- 12:00 Pacific time. Each attempt costs 1 credit. At noon the fastest wins
--- 1 000 credits: whichever player's game first asks after 12:05 (the five
+-- 300 credits: whichever player's game first asks after 12:05 (the five
 -- minutes let runs still on the road finish) settles it, exactly once.
 create or replace function public._daily_now() returns timestamp
 language sql stable as $$ select (now() at time zone 'America/Los_Angeles') $$;
@@ -1121,7 +1121,7 @@ begin
     values (p_day, w.uid, w.display_name, w.time_ms, hold, case when w.uid is null then null else not hold end)
     returning * into r;
   if r.uid is not null and not hold then
-    insert into public.credit_events (uid, delta, kind, note) values (r.uid, 1000, 'daily_win', 'won daily ' || p_day);
+    insert into public.credit_events (uid, delta, kind, note) values (r.uid, 300, 'daily_win', 'won daily ' || p_day);
   end if;
   return to_jsonb(r) || jsonb_build_object('settled', true);
 end $$;
@@ -2421,7 +2421,7 @@ begin
   select * into r from public.daily_results where day = p_day and held and paid is not true for update;
   if not found then raise exception 'Nothing held for that day.' using errcode = 'P0001'; end if;
   if p_pay then
-    insert into public.credit_events (uid, delta, kind, note) values (r.uid, 1000, 'daily_win', 'won daily ' || p_day);
+    insert into public.credit_events (uid, delta, kind, note) values (r.uid, 300, 'daily_win', 'won daily ' || p_day);
     update public.daily_results set held = false, paid = true where day = p_day;
   else
     delete from public.bests where uid = r.uid and course_id = 'd' || p_day;

@@ -2736,7 +2736,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <div class="dGrid">
         <section class="dCard dMain">
           <div class="dStatus"><span class="dPill" id="dState">LIVE</span><span id="dCountdown"></span></div>
-          <div class="dPrize"><span class="gem2d"></span><b>1 000</b> credits to the fastest at noon PT</div>
+          <div class="dPrize"><span class="gem2d"></span><b>300</b> credits to the fastest at noon PT</div>
           <div class="dMine" id="dMine"></div>
           <button class="primary dPlay" id="bDailyPlay">Drive · 1 credit</button>
           <div class="dBal" id="dBal"></div>
@@ -7864,7 +7864,7 @@ const DailyGen = {
     const bits = [has('table') ? 'a tabletop jump' : '', has('rollers') ? 'rollers' : '', has('strip') ? 'speed strips' : '', has('crest') ? 'crests' : ''].filter(Boolean);
     return {
       id: 'd' + day, daily: true, day, section: -1, name,
-      blurb: 'Today only' + (bits.length ? ': ' + bits.slice(0, 3).join(', ') : '') + '. Fastest at noon wins 1 000 credits.',
+      blurb: 'Today only' + (bits.length ? ': ' + bits.slice(0, 3).join(', ') : '') + '. Fastest at noon wins 300 credits.',
       plan: p, build: () => this.run(p)
     };
   }
@@ -9438,7 +9438,7 @@ const Radar = {
  * Today's daily map: open from 12:00 am to 12:00 pm Pacific time, the same
  * map for everyone (made from the date), its own leaderboard, no trophies
  * and nothing to do with the season. Each attempt costs 1 credit (the
- * server takes it); at noon the fastest wins 1 000 credits.
+ * server takes it); at noon the fastest wins 300 credits.
  */
 const Daily = {
   TZ: 'America/Los_Angeles', level: null, day: '', results: [], attempts: 0, lastRefresh: 0, tick: 0,
@@ -9516,12 +9516,12 @@ const Daily = {
     $('dailyTileTime').textContent = c.open ? this.hms(c.toNoon) + ' left' : 'next in ' + this.hms(c.toMidnight);
     $('dailyTileState').textContent = c.open ? 'Live' : 'Closed';
     $('bDaily').classList.toggle('closed', !c.open);
-    $('bDaily').querySelector('.dcPrize').innerHTML = c.open ? '<span class="gem2d"></span> 1 000 to the fastest at noon' : 'A new map every midnight PT';
+    $('bDaily').querySelector('.dcPrize').innerHTML = c.open ? '<span class="gem2d"></span> 300 to the fastest at noon' : 'A new map every midnight PT';
     const top = b[0];
     const won = !c.open && this.results.find((r) => r.day === this.day);
     $('dailyTileSub').textContent = c.open
-      ? (top ? 'Leader ' + top.n + ' · ' + formatTime(top.t) + ' · 1 credit per try' : 'No times yet · 1 credit per try · 1 000 to the winner')
-      : (won && won.display_name ? won.display_name + ' won today\'s 1 000 credits' : 'Today\'s map is closed');
+      ? (top ? 'Leader ' + top.n + ' · ' + formatTime(top.t) + ' · 1 credit per try' : 'No times yet · 1 credit per try · 300 to the winner')
+      : (won && won.display_name ? won.display_name + ' won today\'s 300 credits' : 'Today\'s map is closed');
   },
   open() {
     this.prepare();
@@ -9562,7 +9562,7 @@ const Daily = {
     try {
       const c = this.prepare(), b = this.board();
       return 'TODAY\'S DAILY MAP: ' + this.level.name + ', ' + (c.open ? 'open for ' + this.hms(c.toNoon) + ' more (closes at noon Pacific)' : 'closed until midnight Pacific') +
-        '. Board: ' + (b.length ? b.slice(0, 5).map((e, k) => (k + 1) + '. ' + e.n + ' ' + formatTime(e.t)).join('; ') : 'no times yet') + '. Each attempt costs 1 credit; the fastest at noon wins 1 000 credits.';
+        '. Board: ' + (b.length ? b.slice(0, 5).map((e, k) => (k + 1) + '. ' + e.n + ' ' + formatTime(e.t)).join('; ') : 'no times yet') + '. Each attempt costs 1 credit; the fastest at noon wins 300 credits.';
     } catch (e) { return ''; }
   },
   /** pay for an attempt, then drive */
@@ -11867,7 +11867,7 @@ const CoachAlerts = {
       el.className = 'alertCard';
       if (a.win) {
         el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
-          '<p>You won the daily on <b>' + escapeHtml(Daily.pretty(a.day)) + '</b> (' + escapeHtml(a.name) + ', ' + formatTime(a.t) + '). <b>+1 000 credits.</b> Now defend it in the next one.</p>';
+          '<p>You won the daily on <b>' + escapeHtml(Daily.pretty(a.day)) + '</b> (' + escapeHtml(a.name) + ', ' + formatTime(a.t) + '). <b>+300 credits.</b> Now defend it in the next one.</p>';
         const closeW = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
         el.querySelector('.ah button').addEventListener('click', closeW);
         stack.appendChild(el);
@@ -13061,14 +13061,14 @@ const Coach = {
     h += '<div class="figList" style="margin-top:6px">' + (b.length ? b.slice(0, 8).map((e, n) => '<div class="figRow' + (n === k ? ' me' : '') + '"><span class="tg" style="color:' + (n === 0 ? '#ffcf5c' : 'var(--dimmer)') + '">' + (n + 1) +
       '</span><span class="nm">' + E(e.n) + '</span><span class="v">' + formatTime(e.t) + '</span></div>').join('') : '<p class="stNote">Nobody has a time yet.</p>') + '</div>';
     h += '<div class="figBtns"><button class="primary small" data-go="daily">Open the daily</button></div>';
-    const fig = Figs.add('Today\'s daily · ' + lv.name, h, 'Every attempt costs 1 credit. The fastest at noon Pacific wins 1 000.');
+    const fig = Figs.add('Today\'s daily · ' + lv.name, h, 'Every attempt costs 1 credit. The fastest at noon Pacific wins 300.');
     fig.el.querySelector('[data-go=daily]').addEventListener('click', () => Daily.open());
     let text = 'Today\'s daily is **' + lv.name + '** ({F}). ';
     if (!c.open) text += 'It\'s closed: the next one opens at midnight Pacific, in ' + Daily.hms(c.toMidnight) + '. ';
     else {
-      text += 'It closes at noon Pacific, ' + Daily.hms(c.toNoon) + ' from now, and the fastest then wins 1 000 credits. ';
+      text += 'It closes at noon Pacific, ' + Daily.hms(c.toNoon) + ' from now, and the fastest then wins 300 credits. ';
       if (k === 0) text += 'You lead it at ' + formatTime(b[0].t) + (b[1] ? ', ' + (b[1].t - b[0].t).toFixed(3) + ' s up on ' + b[1].n : '') + '. Keep your foot on their neck.';
-      else if (k > 0) text += 'You\'re ' + Insight.ord(k + 1) + ' at ' + formatTime(b[k].t) + ', ' + (b[k].t - b[0].t).toFixed(3) + ' s behind ' + b[0].n + '. That\'s 1 000 credits you\'re leaving on the table.';
+      else if (k > 0) text += 'You\'re ' + Insight.ord(k + 1) + ' at ' + formatTime(b[k].t) + ', ' + (b[k].t - b[0].t).toFixed(3) + ' s behind ' + b[0].n + '. That\'s 300 credits you\'re leaving on the table.';
       else text += b[0] ? b[0].n + ' leads at ' + formatTime(b[0].t) + ' and you haven\'t even tried. One credit a go.' : 'Nobody has a time yet. One credit and it\'s yours to lose.';
     }
     return { fig, text, notes: text.replace('{F}', 'the figure') };
@@ -18750,7 +18750,7 @@ const Game = {
     const lv = levelAt(courseIndexOf(id));
     const uid = Cloud.on && Cloud.user ? Cloud.user.uid : null;
     const list = Records.board(id).slice(0, 5);
-    $('rBoardHd').textContent = lv && lv.daily ? 'Today’s daily · the fastest at noon wins 1 000 credits' : 'Course leaderboard — ' + (lv ? lv.name : '');
+    $('rBoardHd').textContent = lv && lv.daily ? 'Today’s daily · the fastest at noon wins 300 credits' : 'Course leaderboard — ' + (lv ? lv.name : '');
     $('rBoard').innerHTML = list.map((e, i) =>
       '<li class="' + ((uid ? e.uid === uid : e.n === Records.driver()) ? 'me' : '') + '"><span>' +
       (i + 1) + '. ' + escapeHtml(e.n) + freshTag(e) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');

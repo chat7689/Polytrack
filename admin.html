@@ -1709,7 +1709,7 @@ function renderSecurity() {
   $('secHeld').innerHTML = (sec.held || []).map((h) =>
     '<tr><td class="mono">' + esc(h.day) + '</td><td><b>' + esc(h.name || '—') + '</b>' + realTag(h.uid) + '</td><td class="mono r">' + fmt(h.time_ms) +
     '</td><td>' + flagPills(h.flags) + '</td><td class="r" style="white-space:nowrap"><button class="small primary" data-act="pay" data-day="' + esc(h.day) +
-    '">Pay 1 000</button> <button class="small danger" data-act="refuse" data-day="' + esc(h.day) + '">Refuse</button></td></tr>').join('') ||
+    '">Pay 300</button> <button class="small danger" data-act="refuse" data-day="' + esc(h.day) + '">Refuse</button></td></tr>').join('') ||
     '<tr><td colspan="5" class="empty">Nothing on hold.</td></tr>';
   renderDevices();
   $('secBans').innerHTML = (sec.bans || []).map((b) =>
