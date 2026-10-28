@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car shapes</title>
+<!-- Candidate looks for the car, side by side. Visual only: every one sits on
+     the game's real wheels (CAR.wheelR/X/Z, mountY, susRest) inside the same
+     collision hull (CAR.hull), drawn as the aqua box. Not part of the game. -->
+<style>
+:root{--bg:#121417;--panel:#16191d;--ink:#ebedf0;--dim:#9aa1aa;--rule:rgba(255,255,255,.08);--ember:#f2733f;--aqua:#3ddbb8}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 Inter,"Segoe UI",system-ui,sans-serif;padding:22px 16px 40px}
+#gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between;margin-bottom:18px}
+h1{font-size:20px;letter-spacing:-.02em}
+h1 span{color:var(--ember)}
+p.lede{color:var(--dim);font-size:13px;max-width:640px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap}
+button{font:500 12.5px inherit;font-family:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:7px 12px;cursor:pointer}
+button.on{border-color:var(--ember);color:var(--ember)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+.card{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:transparent}
+.view{height:230px;cursor:grab;touch-action:none}
+.view:active{cursor:grabbing}
+.txt{padding:10px 14px 13px;background:rgba(22,25,29,.92);border-top:1px solid var(--rule)}
+.txt h2{font-size:15px;display:flex;gap:8px;align-items:baseline}
+.txt h2 small{font-size:11px;color:var(--ember);letter-spacing:.08em;font-weight:600}
+.txt p{color:var(--dim);font-size:12.5px;margin-top:3px}
+.txt p b{color:var(--ink);font-weight:500}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>ai<span>Polytrack</span> · car shapes</h1>
+      <p class="lede">Candidate new looks. Each one stays on the same wheels and inside the same hitbox (the aqua box),
+        so handling, collisions and flips are unchanged. Drag a car to turn it.</p>
+    </div>
+    <div class="ctl">
+      <button id="bHull" class="on">Hitbox</button>
+      <button id="bSpin" class="on">Spin</button>
+      <button id="bSide">Side view</button>
+    </div>
+  </header>
+  <div class="grid" id="grid"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+// --- the game's numbers (index.html CAR) -----------------------------------
+const CAR = { hull: { hw: 0.92, hh: 0.30, hl: 1.86, cy: 0.26 }, wheelR: 0.33, wheelX: 0.92, wheelZ: 1.25, mountY: 0.14, susRest: 0.26 };
+const WY = CAR.mountY - CAR.susRest;            // wheel centre height, -0.12
+const deg = (d) => d * Math.PI / 180;
+const std = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.72, metalness: 0.04, flatShading: true }, o || {}));
+const M = {
+  B: std(0xe83030, { roughness: 0.42, metalness: 0.1 }),       // body (primary)
+  D: std(0x972626, { roughness: 0.5, metalness: 0.08 }),        // body dark (secondary)
+  T: std(0x2b3442, { roughness: 0.6, metalness: 0.12 }),        // trim
+  G: std(0x9fd4f2, { roughness: 0.24, metalness: 0.2 }),        // glass
+  L: std(0xfff0c6, { emissive: 0xffd77a, emissiveIntensity: 1.0 }),
+  R: std(0x50121a, { emissive: 0xff2d2d, emissiveIntensity: 0.15 }),
+  C: std(0xd9dee5, { roughness: 0.3, metalness: 0.6 }),         // chrome
+  tyre: std(0x12161d, { roughness: 0.96, flatShading: false }),
+  rim: std(0xf2f5f8, { roughness: 0.42, metalness: 0.3, flatShading: false })
+};
+
+// --- building blocks --------------------------------------------------------
+function box(g, mat, s, p, r) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
+  m.position.set(p[0], p[1], p[2]);
+  if (r) m.rotation.set(r[0], r[1], r[2]);
+  g.add(m);
+  return m;
+}
+/** a side-view outline (z, y points) pushed out to width w, edges chamfered */
+function side(g, mat, pts, w, o) {
+  o = o || {};
+  const bt = o.bt == null ? 0.035 : o.bt, bs = o.bs == null ? 0.03 : o.bs;
+  const shape = new THREE.Shape(pts.map((p) => new THREE.Vector2(p[0], p[1])));
+  const depth = Math.max(0.001, w - 2 * bt);
+  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bt > 0, bevelThickness: bt, bevelSize: bs, bevelSegments: 1, steps: 1, curveSegments: 4 });
+  geo.rotateY(-Math.PI / 2);                    // shape x -> car z, extrusion -> car x
+  geo.translate(depth / 2 + (o.x || 0), 0, 0);
+  const m = new THREE.Mesh(geo, mat);
+  g.add(m);
+  return m;
+}
+/** the bottom edge from rear (zR) to front (zF) at height yb, with a round
+ *  wheel arch of radius r cut out over each axle */
+function bottom(zR, zF, yb, r, only) {
+  const out = [[zR, yb]];
+  const a = Math.asin(Math.min(1, (WY - yb) / r));      // where the arch meets the bottom
+  for (const c of (only || [-CAR.wheelZ, CAR.wheelZ])) {
+    if (c - r < zR || c + r > zF) continue;
+    const f0 = Math.PI - a, f1 = a;                     // (yb is below the wheel centre: a < 0)
+    for (let k = 0; k <= 12; k++) {
+      const f = f0 + (f1 - f0) * k / 12;
+      out.push([c + r * Math.cos(f), WY + r * Math.sin(f)]);
+    }
+  }
+  out.push([zF, yb]);
+  return out;
+}
+function wheels(g) {
+  const R = CAR.wheelR;
+  for (const sx of [-1, 1]) for (const sz of [1, -1]) {
+    const w = new THREE.Group();
+    w.position.set(sx * CAR.wheelX, WY, sz * CAR.wheelZ);
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.28, 16), M.tyre);
+    tyre.rotation.z = Math.PI / 2;
+    w.add(tyre);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.62, R * 0.62, 0.30, 12), M.rim);
+    rim.rotation.z = Math.PI / 2;
+    w.add(rim);
+    for (let k = 0; k < 4; k++) box(w, M.rim, [0.30, R * 1.28, 0.075], [0, 0, 0], [(k * Math.PI) / 4, 0, 0]);
+    g.add(w);
+  }
+}
+const both = (fn) => { fn(-1); fn(1); };
+
+// --- the candidates -----------------------------------------------------------
+const CARS = [
+  {
+    name: 'Today', tag: 'CURRENT',
+    note: 'The car as it is: 24 boxes. Decals would have to sit on lots of small, separate faces.',
+    build(g) {
+      const B = M.B, D = M.D, T = M.T, G = M.G;
+      box(g, T, [1.74, 0.14, 3.46], [0, -0.18, 0]);
+      box(g, B, [1.98, 0.34, 3.62], [0, 0.02, 0]);
+      box(g, B, [1.82, 0.22, 1.00], [0, 0.06, 1.48], [deg(-5), 0, 0]);
+      box(g, B, [1.90, 0.22, 0.95], [0, 0.13, -1.40]);
+      box(g, D, [1.90, 0.10, 0.34], [0, -0.20, 1.86]);
+      box(g, D, [1.82, 0.12, 0.30], [0, -0.17, -1.88]);
+      box(g, D, [2.00, 0.10, 1.90], [0, -0.06, 0]);
+      box(g, T, [1.30, 0.42, 1.46], [0, 0.34, -0.20]);
+      box(g, G, [1.22, 0.42, 0.17], [0, 0.32, 0.58], [deg(34), 0, 0]);
+      box(g, G, [1.20, 0.38, 0.15], [0, 0.32, -0.96], [deg(-38), 0, 0]);
+      box(g, G, [0.06, 0.26, 1.16], [-0.66, 0.36, -0.18]);
+      box(g, G, [0.06, 0.26, 1.16], [0.66, 0.36, -0.18]);
+      box(g, B, [1.18, 0.09, 1.20], [0, 0.53, -0.30]);
+      box(g, T, [0.09, 0.10, 0.20], [-0.99, 0.30, 0.46]);
+      box(g, T, [0.09, 0.10, 0.20], [0.99, 0.30, 0.46]);
+      box(g, D, [1.70, 0.07, 0.34], [0, 0.47, -1.82]);
+      box(g, T, [0.10, 0.22, 0.10], [-0.56, 0.37, -1.80]);
+      box(g, T, [0.10, 0.22, 0.10], [0.56, 0.37, -1.80]);
+      both((s) => { box(g, M.L, [0.42, 0.13, 0.07], [s * 0.64, 0.08, 1.95]); box(g, M.R, [0.46, 0.11, 0.07], [s * 0.62, 0.16, -1.90]); });
+    }
+  },
+  {
+    name: 'Wedge', tag: 'A',
+    note: 'One sharp line from a low nose to a high, cut-off tail, with a low glass canopy. <b>Decals:</b> a huge flat side and a long flat hood.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.12], [2.0, 0.10], [1.25, 0.32], [0.55, 0.40], [-1.70, 0.45], [-1.98, 0.45], [-1.99, 0.02]], 1.98);
+      side(g, M.G, [[0.66, 0.36], [0.02, 0.555], [-0.80, 0.555], [-1.42, 0.44], [-1.42, 0.38], [0.66, 0.38]], 1.36, { bs: 0.015, bt: 0.02 });
+      box(g, M.B, [1.30, 0.03, 0.74], [0, 0.565, -0.40]);
+      box(g, M.D, [1.92, 0.05, 0.30], [0, -0.21, 1.84]);
+      both((s) => box(g, M.D, [0.05, 0.07, 1.62], [s * 0.995, -0.15, 0]));
+      both((s) => box(g, M.L, [0.44, 0.035, 0.16], [s * 0.60, 0.16, 1.78], [deg(16), 0, 0]));
+      box(g, M.R, [1.70, 0.07, 0.04], [0, 0.36, -1.995]);
+      box(g, M.D, [1.86, 0.035, 0.16], [0, 0.465, -1.90], [deg(-10), 0, 0]);
+      both((s) => box(g, M.T, [0.14, 0.09, 0.08], [s * 0.32, -0.08, -1.99]));
+    }
+  },
+  {
+    name: 'GT Fastback', tag: 'B',
+    note: 'Long hood, cabin set back, glass sloping to a ducktail. Classic and friendly. <b>Decals:</b> stripes run nose to tail, numbers on the doors.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.99, 0.12], [1.82, 0.27], [1.25, 0.33], [0.70, 0.37], [-1.30, 0.40], [-1.92, 0.44], [-1.99, 0.37], [-1.99, 0.02]], 1.98);
+      side(g, M.G, [[0.72, 0.35], [0.06, 0.555], [-0.42, 0.555], [-1.44, 0.41], [-1.44, 0.36], [0.72, 0.36]], 1.42, { bs: 0.015, bt: 0.02 });
+      box(g, M.B, [1.36, 0.03, 0.46], [0, 0.565, -0.18]);
+      box(g, M.D, [1.92, 0.05, 0.28], [0, -0.21, 1.85]);
+      box(g, M.D, [1.84, 0.10, 0.24], [0, -0.16, -1.88]);
+      both((s) => box(g, M.D, [0.05, 0.07, 1.62], [s * 0.995, -0.15, 0]));
+      both((s) => { box(g, M.L, [0.30, 0.12, 0.05], [s * 0.66, 0.16, 1.93], [deg(-30), 0, 0]); box(g, M.R, [0.42, 0.09, 0.04], [s * 0.60, 0.30, -1.985]); });
+      both((s) => box(g, M.T, [0.10, 0.07, 0.18], [s * 0.80, 0.41, 0.50]));
+      both((s) => box(g, M.T, [0.12, 0.09, 0.08], [s * 0.36, -0.09, -1.99]));
+    }
+  },
+  {
+    name: 'Prototype', tag: 'C',
+    note: 'A Le Mans racer: a low middle with the wheels under their own fenders, a glass bubble, a fin and a big wing. <b>Decals:</b> the fin and fenders, made for numbers and sponsors.',
+    build(g) {
+      // the middle tub (the wheels sit outside it)
+      side(g, M.B, [[-1.96, -0.18], [1.90, -0.18], [1.99, -0.12], [1.97, 0.04], [0.80, 0.22], [-1.55, 0.30], [-1.98, 0.30], [-1.98, -0.06]], 1.10);
+      // a fender over each wheel, and a side pod between them
+      both((s) => {
+        side(g, M.B, [...bottom(0.56, 1.98, -0.17, 0.39, [CAR.wheelZ]), [1.99, -0.08], [1.96, 0.08], [1.55, 0.30], [1.05, 0.36], [0.62, 0.22], [0.56, 0.0]], 0.46, { x: s * 0.765 });
+        side(g, M.B, [...bottom(-1.98, -0.56, -0.17, 0.39, [-CAR.wheelZ]), [-0.56, 0.0], [-0.70, 0.30], [-1.20, 0.39], [-1.80, 0.36], [-1.98, 0.28], [-1.99, -0.05]], 0.46, { x: s * 0.765 });
+        side(g, M.D, [[-0.60, -0.16], [0.60, -0.16], [0.60, 0.06], [0.20, 0.17], [-0.60, 0.24]], 0.40, { x: s * 0.77 });
+      });
+      side(g, M.G, [[0.62, 0.20], [0.14, 0.50], [-0.52, 0.525], [-1.02, 0.30], [-1.02, 0.20]], 0.96, { bs: 0.02, bt: 0.02 });
+      box(g, M.B, [0.62, 0.03, 0.52], [0, 0.54, -0.20]);
+      side(g, M.B, [[-0.52, 0.30], [-0.62, 0.52], [-1.70, 0.545], [-1.92, 0.44], [-1.92, 0.30]], 0.05, { bs: 0.008, bt: 0.008 });
+      box(g, M.D, [1.84, 0.04, 0.30], [0, 0.555, -1.80], [deg(-6), 0, 0]);
+      both((s) => { box(g, M.D, [0.04, 0.24, 0.50], [s * 0.93, 0.46, -1.78]); box(g, M.L, [0.30, 0.05, 0.14], [s * 0.70, 0.17, 1.72], [deg(20), 0, 0]); });
+      box(g, M.D, [1.96, 0.04, 0.26], [0, -0.17, 1.86]);
+      box(g, M.R, [1.0, 0.06, 0.04], [0, 0.22, -1.99]);
+    }
+  },
+  {
+    name: 'Rally Hatch', tag: 'D',
+    note: 'A short, chunky hatchback with flared arches, a roof spoiler and a light pod. <b>Decals:</b> tall flat doors and a big roof, the classic rally-car canvas.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.98, 0.18], [1.80, 0.27], [1.10, 0.32], [0.85, 0.33], [-1.74, 0.35], [-1.97, 0.33], [-1.99, -0.06]], 1.94, { bs: 0.04, bt: 0.05 });
+      side(g, M.G, [[0.86, 0.31], [0.30, 0.545], [-1.62, 0.545], [-1.88, 0.40], [-1.88, 0.31]], 1.62, { bs: 0.02, bt: 0.03 });
+      box(g, M.B, [1.64, 0.035, 1.80], [0, 0.56, -0.66]);
+      box(g, M.D, [1.60, 0.03, 0.26], [0, 0.565, -1.62], [deg(-8), 0, 0]);
+      // flared arches
+      both((s) => { for (const c of [-CAR.wheelZ, CAR.wheelZ]) side(g, M.D, [...[...Array(13)].map((_, k) => { const f = Math.PI - k * Math.PI / 12; return [c + 0.46 * Math.cos(f), WY + 0.46 * Math.sin(f)]; }),
+        ...[...Array(13)].map((_, k) => { const f = k * Math.PI / 12; return [c + 0.39 * Math.cos(f), WY + 0.39 * Math.sin(f)]; })], 0.10, { x: s * 0.95, bs: 0.01, bt: 0.01 }); });
+      for (const x of [-0.45, -0.15, 0.15, 0.45]) box(g, M.L, [0.20, 0.13, 0.05], [x, 0.24, 2.0]);
+      box(g, M.T, [1.10, 0.05, 0.06], [0, 0.17, 2.0]);
+      both((s) => box(g, M.R, [0.20, 0.20, 0.04], [s * 0.78, 0.18, -1.995]));
+      box(g, M.T, [1.96, 0.08, 0.14], [0, -0.15, 1.94]);
+      box(g, M.T, [1.96, 0.08, 0.14], [0, -0.15, -1.94]);
+    }
+  },
+  {
+    name: 'Muscle', tag: 'E',
+    note: 'Blunt nose, long flat hood with a raised scoop, short tail and chrome bumpers. <b>Decals:</b> twin stripes over the scoop and flames along the sides.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.08], [1.99, 0.30], [1.90, 0.35], [0.56, 0.37], [-1.22, 0.39], [-1.95, 0.39], [-1.99, 0.34], [-1.99, -0.06]], 1.98);
+      side(g, M.G, [[0.58, 0.35], [0.20, 0.555], [-0.78, 0.555], [-1.24, 0.38], [0.58, 0.36]], 1.50, { bs: 0.015, bt: 0.02 });
+      box(g, M.B, [1.46, 0.03, 0.96], [0, 0.565, -0.29]);
+      side(g, M.B, [[1.72, 0.36], [1.52, 0.44], [0.78, 0.45], [0.64, 0.37]], 0.56, { bs: 0.02, bt: 0.02 });
+      box(g, M.T, [0.40, 0.045, 0.06], [0, 0.43, 1.55]);
+      box(g, M.C, [2.02, 0.09, 0.10], [0, -0.07, 2.0]);
+      box(g, M.C, [2.02, 0.09, 0.10], [0, -0.07, -2.0]);
+      both((s) => { box(g, M.L, [0.24, 0.20, 0.04], [s * 0.70, 0.17, 2.0]); box(g, M.R, [0.60, 0.10, 0.04], [s * 0.52, 0.24, -2.0]); });
+      box(g, M.T, [1.10, 0.14, 0.04], [0, 0.15, 2.0]);
+      both((s) => box(g, M.C, [0.14, 0.10, 0.10], [s * 0.42, -0.14, -2.02]));
+    }
+  }
+];
+
+// --- the page -----------------------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.setClearColor(0x000000, 0);
+renderer.setScissorTest(true);
+const hullBox = new THREE.BoxGeometry(CAR.hull.hw * 2, CAR.hull.hh * 2, CAR.hull.hl * 2);
+const hullMat = new THREE.LineBasicMaterial({ color: 0x3ddbb8, transparent: true, opacity: 0.9, depthTest: false });
+const views = [];
+let showHull = true, spin = true, sideView = false;
+
+for (const c of CARS) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<div class="view"></div><div class="txt"><h2><small>' + c.tag + '</small>' + c.name + '</h2><p>' + c.note + '</p></div>';
+  document.getElementById('grid').appendChild(card);
+  const scene = new THREE.Scene();
+  const key = new THREE.DirectionalLight(0xfff6e8, 1.4); key.position.set(4, 6, 4);
+  const rim = new THREE.DirectionalLight(0x6fa8ff, 0.5); rim.position.set(-5, 3, -4);
+  scene.add(key, rim, new THREE.AmbientLight(0xaac4e0, 0.65));
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), new THREE.MeshStandardMaterial({ color: 0x07080a, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = WY - CAR.wheelR - 0.005;
+  scene.add(ground);
+  const car = new THREE.Group();
+  c.build(car);
+  wheels(car);
+  const hull = new THREE.LineSegments(new THREE.EdgesGeometry(hullBox), hullMat);
+  hull.position.y = CAR.hull.cy;
+  hull.renderOrder = 10;
+  car.add(hull);
+  scene.add(car);
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.5, 60);
+  const v = { el: card.querySelector('.view'), scene, car, hull, camera, angle: deg(200) + views.length * 0.35, drag: null };
+  v.el.addEventListener('pointerdown', (e) => { v.drag = e.clientX; v.el.setPointerCapture(e.pointerId); });
+  v.el.addEventListener('pointermove', (e) => { if (v.drag !== null) { v.angle += (e.clientX - v.drag) * 0.012; v.drag = e.clientX; } });
+  v.el.addEventListener('pointerup', () => { v.drag = null; });
+  views.push(v);
+}
+const toggle = (id, fn) => document.getElementById(id).addEventListener('click', (e) => { e.currentTarget.classList.toggle('on', fn()); });
+toggle('bHull', () => (showHull = !showHull));
+toggle('bSpin', () => (spin = !spin));
+toggle('bSide', () => (sideView = !sideView));
+
+function frame() {
+  const W = innerWidth, H = innerHeight;
+  const cv = renderer.domElement;
+  if (cv.width !== Math.floor(W * renderer.getPixelRatio()) || cv.height !== Math.floor(H * renderer.getPixelRatio())) renderer.setSize(W, H, false);
+  renderer.setScissor(0, 0, W, H); renderer.setViewport(0, 0, W, H); renderer.clear();
+  for (const v of views) {
+    const r = v.el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > H) continue;
+    if (spin && v.drag === null && !sideView) v.angle += 0.006;
+    v.car.rotation.y = sideView ? -Math.PI / 2 : v.angle;
+    v.hull.visible = showHull;
+    v.camera.aspect = r.width / r.height;
+    const back = Math.max(1, 1.9 / v.camera.aspect);
+    if (sideView) v.camera.position.set(0, 0.35, 9.2 * back); else v.camera.position.set(0, 1.7 * back, 6.4 * back);
+    v.camera.lookAt(0, sideView ? 0.12 : 0.15, 0);
+    v.camera.updateProjectionMatrix();
+    const y = H - r.bottom;
+    renderer.setViewport(r.left, y, r.width, r.height);
+    renderer.setScissor(r.left, y, r.width, r.height);
+    renderer.render(v.scene, v.camera);
+  }
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>
