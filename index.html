@@ -744,7 +744,6 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .boSum li small.new{color:var(--aqua);text-transform:uppercase;font-size:10px;letter-spacing:.08em}
 .boSum li .a{display:flex;gap:6px}
 .boSum .sw{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px}
-.boSkip{position:absolute;right:20px;bottom:20px;z-index:7}
 @media (max-width:760px){.gBoxHero{grid-template-columns:1fr}.boSum li{grid-template-columns:1fr auto}}
 .menuPanel{width:min(1160px,95vw);padding:24px 30px 18px}
 .menuTop{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
@@ -3398,7 +3397,6 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
     <div class="boCount" id="boCount"></div>
     <div class="boCard" id="boCard" hidden></div>
     <div class="boSum" id="boSum" hidden></div>
-    <button class="ghost small boSkip" id="boSkip">Skip</button>
   </div>
 
   <div class="layer" id="result" hidden>
@@ -12868,10 +12866,18 @@ const Box3D = {
     tex.encoding = THREE.sRGBEncoding;
     const face = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
     const edge = new THREE.MeshStandardMaterial({ color: new THREE.Color(K.col), metalness: 0.8, roughness: 0.3, emissive: new THREE.Color(K.col).multiplyScalar(0.25) });
-    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.12, 48), [edge, face, face]);
-    coin.rotation.x = Math.PI / 2;
+    // a coin standing up: an edge, and the picture upright on both faces
     const g2 = new THREE.Group();
-    g2.add(coin);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.12, 48, 1, true), edge);
+    rim.rotation.x = Math.PI / 2;
+    g2.add(rim);
+    for (const side of [1, -1]) {
+      const f = new THREE.Mesh(new THREE.CircleGeometry(0.75, 48), face);
+      f.position.z = side * 0.061;
+      if (side < 0) f.rotation.y = Math.PI;
+      g2.add(f);
+    }
+    g2.userData.token = true;
     return g2;
   },
   /** what's in the box, to rise out of it: your car wearing it, or a token */
@@ -12923,7 +12929,7 @@ const BoxOpen = {
     UI.who(Cloud.name(), Records.credits);
     if (Garage.data) Garage.data.free_boxes = res.free_boxes;
     Garage.badge();
-    $('boCard').hidden = true; $('boSum').hidden = true; $('boSkip').hidden = false; $('boCount').textContent = '';
+    $('boCard').hidden = true; $('boSum').hidden = true; $('boCount').textContent = '';
     $('boxOpen').hidden = false;
     Box3D.skip = false;
     Box3D.start();
@@ -13063,7 +13069,8 @@ const BoxOpen = {
     this.prizeObj = prize;
     let phase = 0;
     B.onStep = (dt, t) => {
-      prize.rotation.y += dt * (big ? 1.2 : 0.9);
+      if (prize.userData.token) prize.rotation.y = Math.sin(t * 1.4) * 0.45;
+      else prize.rotation.y += dt * (big ? 1.2 : 0.9);
       prize.position.y += (2.0 + Math.sin(t * 2) * 0.08 - prize.position.y) * Math.min(1, dt * 3);
       const car = prize.userData.car;
       if (car && car.userData.flame) { phase += dt * 34; Boost.animate(car.userData.flame, car.userData.lit ? 1 : 0, phase, dt); }
@@ -13137,7 +13144,6 @@ const BoxOpen = {
   },
   summary(got) {
     const E = escapeHtml;
-    $('boSkip').hidden = true;
     const rows = got.map((r) => {
       const k = this.kindOf(r), K = ITEM_KIND[k];
       if (k === 'credits') return '<li style="--kc:' + K.col + '"><span class="k">Credits</span><b>+' + r.credits + '</b></li>';
@@ -19477,7 +19483,6 @@ const Game = {
     document.querySelectorAll('#gTabs button').forEach((b) => b.addEventListener('click', () => Garage.setTab(b.dataset.tab)));
     $('gBoxBuy').addEventListener('click', () => BoxOpen.open(false));
     $('gBoxFree').addEventListener('click', () => BoxOpen.open(true));
-    $('boSkip').addEventListener('click', (e) => { e.stopPropagation(); Box3D.skip = true; if (BoxOpen.next) BoxOpen.next(); });
     $('boxOpen').addEventListener('click', (e) => { if (!e.target.closest('#boSum') && BoxOpen.next) BoxOpen.next(); });
     $('gSatSlider').addEventListener('input', () =>
       this.setGarageSatLight($('gSatSlider').value, $('gLightSlider').value));
