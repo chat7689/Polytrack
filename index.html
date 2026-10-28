@@ -598,6 +598,117 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .garageBig{height:min(46vh,460px)}
 .gh{font-size:13px;font-weight:600;margin-bottom:8px}
 .garageCols .garageGrid{max-width:min(460px,100%)}
+/* ---------- the garage: tabs, boxes, picks, the collection */
+.garagePanel{max-height:94vh;overflow:auto}
+.gCred{font-size:15px;display:flex;align-items:center;gap:6px}
+.gTabs{display:flex;gap:4px;border-bottom:1px solid var(--rule-2);margin:10px 0 18px;flex-wrap:wrap}
+.gTabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:9px 14px;color:var(--dim);font-weight:600;position:relative}
+.gTabs button.on{color:var(--ink);border-bottom-color:var(--ember)}
+.gTabs button i,.wBadge{font-style:normal;font-size:11px;font-weight:700;background:var(--ember);color:#fff;border-radius:9px;padding:1px 6px;margin-left:6px}
+.wBadge{position:absolute;top:8px;right:8px;margin:0}
+#bGarage{position:relative}
+#gLoadout{margin-top:12px}
+.gCardMini{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.gCardMini b{display:block;font-size:15px}
+.gCardMini small{color:var(--dim);font-size:12px}
+.gLines{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 16px;font-size:12.5px}
+.gLines span{display:block;color:var(--dimmer);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.gh small{color:var(--dim);font-weight:400;letter-spacing:0;margin-left:6px;text-transform:none}
+.gPick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.gOpt{font-size:12.5px;padding:6px 11px;border-radius:999px;border:1px solid var(--rule);background:rgba(255,255,255,.02);color:var(--ink)}
+.gOpt i{font-style:normal;font-size:10px;color:#e45cff;margin-left:4px;text-transform:uppercase;letter-spacing:.06em}
+.gOpt:hover{border-color:var(--kc,rgba(255,255,255,.3))}
+.gOpt.on{border-color:var(--kc,var(--ember));background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px var(--kc,var(--ember))}
+.gOpt.ic{padding:3px;border-radius:10px}
+.gNone{font-size:12px;margin:-10px 0 16px}
+.gNum{display:flex;align-items:center;gap:10px;font-size:13px;margin:-6px 0 16px}
+.gNum input{width:64px}
+.gBoxHero{display:grid;grid-template-columns:140px 1fr;gap:20px;align-items:center}
+.gRuns{margin:14px 0 6px;font-size:12.5px;display:grid;grid-template-columns:1fr auto;gap:4px 10px}
+.gRuns span{color:var(--dim)}
+.gBar{grid-column:1 / -1;height:6px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+.gBar i{display:block;height:100%;background:var(--ember);border-radius:3px;transition:width .4s}
+.gOdds{width:100%;border-collapse:collapse;font-size:12.5px}
+.gOdds td{padding:5px 8px 5px 0;border-bottom:1px solid var(--rule-2)}
+.gOdds td:first-child{border-left:3px solid var(--kc);padding-left:9px;font-weight:600}
+.gOdds td:nth-child(2){color:var(--dim)}
+.gOdds td:last-child{text-align:right;font-family:var(--mono)}
+.gProfile{display:flex;align-items:center;gap:16px;margin-bottom:10px}
+.gProfile b{display:block;font-size:20px;margin-bottom:4px}
+.gColl{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-bottom:18px}
+.gItem{border:1px solid var(--rule-2);border-top:2px solid var(--kc);border-radius:8px;padding:8px;text-align:center;font-size:12px;background:rgba(255,255,255,.02)}
+.gItem b{display:block;font-size:12.5px;margin-top:4px}
+.gItem small{color:var(--dim)}
+.gItem.locked{opacity:.45;border-top-color:var(--rule)}
+.gItem .gPic{height:62px;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--dimmer)}
+.gItem .gPic img{max-width:100%;max-height:62px}
+.gAct{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.gAct button{font-size:11px;padding:4px 6px}
+.kPic{width:84px;height:56px}
+.fTitle{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--signal,#e8c26a);
+  border:1px solid rgba(232,194,106,.35);border-radius:4px;padding:0 5px;margin-left:6px;line-height:16px;white-space:nowrap;vertical-align:middle}
+.fTitle.big{font-size:12px;padding:2px 8px;margin:0;line-height:18px}
+.fIcon{display:inline-flex;align-items:center;justify-content:center;width:var(--fs);height:var(--fs);border-radius:calc(var(--fs) * .28);
+  background:var(--fa);color:var(--fb);margin-right:6px;flex:0 0 auto;vertical-align:middle;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.fIcon svg{width:72%;height:72%}
+.fIcon.none{background:rgba(255,255,255,.06)}
+/* the box: a crate whose seams glow with what's inside */
+.crate{position:relative;width:120px;height:110px;flex:0 0 auto;--gc:#ffcf5c}
+.crate.d1{width:96px;height:88px}.crate.d2{width:78px;height:72px}.crate.d3{width:64px;height:58px}
+.crate .cBody{position:absolute;left:6%;right:6%;bottom:0;height:72%;border-radius:8px;background:linear-gradient(160deg,#2c3240,#1a1e27);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.08),0 10px 30px rgba(0,0,0,.5)}
+.crate .cBody i{position:absolute;top:0;bottom:0;width:12%;background:linear-gradient(#f2733f,#c4521f);left:22%}
+.crate .cBody i+i{left:auto;right:22%}
+.crate .cLid{position:absolute;left:0;right:0;top:12%;height:22%;border-radius:8px;background:linear-gradient(160deg,#3a4152,#232835);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.1);z-index:2;transition:transform .35s cubic-bezier(.2,.9,.3,1.4),opacity .35s}
+.crate .cGlow{position:absolute;left:10%;right:10%;top:32%;height:4px;border-radius:2px;background:var(--gc);opacity:0;filter:blur(2px);z-index:3;
+  box-shadow:0 0 18px 6px var(--gc)}
+.crate.hero{animation:crateIdle 2.8s ease-in-out infinite}
+@keyframes crateIdle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(-1.5deg)}}
+.crate.shake{animation:crateShake .12s linear infinite}
+.crate.rare.shake{animation:crateShake .07s linear infinite}
+@keyframes crateShake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,1px) rotate(-3deg)}50%{transform:translate(2px,-2px) rotate(2deg)}75%{transform:translate(3px,1px) rotate(3deg)}100%{transform:translate(0,0) rotate(0)}}
+.crate.glow .cGlow{opacity:1;animation:glowUp 1.2s ease-in forwards}
+@keyframes glowUp{0%{opacity:.2}100%{opacity:1;box-shadow:0 0 34px 14px var(--gc)}}
+.crate.burst .cLid{transform:translateY(-160%) rotate(-24deg);opacity:0}
+.crate.burst .cGlow{box-shadow:0 0 60px 30px var(--gc)}
+.crate.done{opacity:.35;transform:scale(.85);transition:opacity .3s,transform .3s}
+.crate.born{animation:crateBorn .45s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes crateBorn{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.boxOpen{position:fixed;inset:0;z-index:90;background:radial-gradient(circle at 50% 45%,rgba(30,36,50,.92),rgba(5,7,12,.97));display:flex;align-items:center;justify-content:center}
+.boxOpen[hidden]{display:none}
+#boFx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
+.boStage{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;align-items:flex-end;max-width:90vw;position:relative;z-index:2;transform:translateY(-10vh)}
+.boRays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,var(--rc,#fff) 0 6deg,transparent 6deg 20deg);opacity:0;
+  mask:radial-gradient(circle,#000 0,transparent 45%);-webkit-mask:radial-gradient(circle,#000 0,transparent 45%);transition:opacity .3s;animation:raysSpin 14s linear infinite}
+.boRays.on{opacity:.22}
+@keyframes raysSpin{to{transform:rotate(360deg)}}
+.boFlash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:800;color:var(--fc,#fff);pointer-events:none;opacity:0;z-index:5;letter-spacing:.04em}
+.boFlash.go{animation:boFlash .7s ease-out}
+@keyframes boFlash{0%{opacity:0;transform:scale(.6)}20%{opacity:1;transform:scale(1.05)}100%{opacity:0;transform:scale(1.25)}}
+.boCard{position:absolute;z-index:6;left:50%;top:56%;transform:translate(-50%,-50%);min-width:260px;max-width:86vw;text-align:center;padding:18px 26px 20px;
+  border-radius:14px;background:rgba(18,21,27,.96);border:1px solid var(--kc);box-shadow:0 0 50px -6px var(--kc)}
+.boCard small{display:block;font-size:11px;letter-spacing:.14em;color:var(--kc);font-weight:700}
+.boCard b{display:block;font-size:24px;margin-top:4px}
+.boCard span{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
+.boCard .boPic{height:110px;display:flex;align-items:center;justify-content:center;margin-top:8px}
+.boCard .boPic img{max-height:110px}
+.boCard .kPic{width:150px;height:100px}
+.boCard.pop{animation:cardPop .45s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes cardPop{0%{transform:translate(-50%,-40%) scale(.5);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.boGem .gem2d{transform:scale(3)}
+.boHue{display:block;width:90px;height:90px;border-radius:50%;box-shadow:0 0 30px rgba(255,255,255,.2)}
+.boSum{position:relative;z-index:6;width:min(560px,92vw);max-height:80vh;overflow:auto;padding:20px 22px;border-radius:14px;background:rgba(18,21,27,.97);border:1px solid var(--rule)}
+.boSum h3{margin:0 0 10px}
+.boSum ul{list-style:none;margin:0 0 14px;padding:0}
+.boSum li{display:grid;grid-template-columns:130px 1fr auto;gap:10px;align-items:center;padding:7px 0 7px 10px;border-bottom:1px solid var(--rule-2);border-left:3px solid var(--kc)}
+.boSum li .k{font-size:11px;color:var(--kc);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.boSum li small{color:var(--dim);font-weight:400}
+.boSum li small.new{color:var(--aqua);text-transform:uppercase;font-size:10px;letter-spacing:.08em}
+.boSum li .a{display:flex;gap:6px}
+.boSum .sw{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px}
+.boSkip{position:absolute;right:20px;bottom:20px;z-index:7}
+@media (max-width:760px){.gBoxHero{grid-template-columns:1fr}.boSum li{grid-template-columns:1fr auto}}
 .menuPanel{width:min(1160px,95vw);padding:24px 30px 18px}
 .menuTop{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
 .menuTop .brand{margin:0;align-items:center;gap:10px;min-width:0}
@@ -889,6 +1000,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .pIcon.none b{background:none;color:var(--dim);filter:none}
 .pLink{color:inherit;text-decoration:none;display:inline-flex;align-items:center;max-width:100%}
 .pLink:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.alertCard.unbox{border-color:var(--kc);box-shadow:0 0 24px -6px var(--kc)}
 td .pIcon{margin-right:7px}
 .pfc{font-family:var(--mono);color:#ffcf5c}
 .pfc.na{color:var(--dimmer)}
@@ -2379,7 +2491,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 
         <button class="w wAct" id="bGarage">
           <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 15l2-5h14l2 5v3H3z"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/><path d="M7 10l2-4h6l2 4"/></svg></span>
-          <b>Garage</b><small>Paint your car</small>
+          <b>Garage</b><small>Boxes, cars and paint</small><i class="wBadge" id="gFreeMenu" hidden></i>
         </button>
         <button class="w wInfo wChamp" id="champCard" hidden title="Last season's champion: open their card">
           <span id="champIcon"></span>
@@ -3109,8 +3221,11 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         </section>
         <section id="i-garage">
           <h3>Garage</h3>
-          <p>A colour pack costs 10 credits and unlocks one new hue at random for the body or the trim. Saturation and
-            brightness are free to change. Other players see your car in your colours in replays.</p>
+          <p>Boxes cost 100 credits, and every 50 runs you finish earns a free one. Each holds one thing: a car (1 in 100),
+            an animated decal (1 in 50), a decal, a finish celebration, a boost, wheels, a title, a profile icon, or 1 to 25
+            credits or a hue pack. One box in ten splits into two more, up to eight. Anything but a hue can be sold for
+            credits in the Collection. Cars, decals, wheels and boosts are painted in your two colours, and other players
+            see them on your ghost; your title and icon show by your name on every leaderboard.</p>
         </section>
         <section id="i-account">
           <h3>Account</h3>
@@ -3163,54 +3278,104 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 
   <div class="layer" id="garage" hidden>
     <div class="scrim"></div>
-    <div class="panel widePanel">
-      <div class="row" style="justify-content:space-between;align-items:baseline">
+    <div class="panel widePanel garagePanel">
+      <div class="row" style="justify-content:space-between;align-items:center">
         <h2 class="big">Garage</h2>
-        <button class="ghost" id="bGarageBack">← Menu</button>
+        <div class="row" style="gap:14px;align-items:center">
+          <span class="gCred"><span class="gem2d"></span> <b id="gCredits">0</b></span>
+          <button class="ghost" id="bGarageBack">← Menu</button>
+        </div>
       </div>
-      <p class="lede" style="margin-bottom:18px">A hue pack (10 credits) unlocks a random hue. Click any
-        hue you own to use it. Sliders are free.</p>
+      <div class="gTabs" id="gTabs">
+        <button data-tab="boxes">Boxes<i id="gFreeBadge" hidden></i></button>
+        <button data-tab="car">Car</button>
+        <button data-tab="paint">Paint</button>
+        <button data-tab="profile">Profile</button>
+        <button data-tab="collection">Collection</button>
+      </div>
       <div class="garageCols">
         <div>
           <div class="garagePreviewWrap garageBig">
             <canvas id="gPreviewCanvas"></canvas>
           </div>
-          <div class="row" style="gap:14px;margin-bottom:18px">
-            <button class="garageSlot" id="gSlotPrimary" data-slot="primary">
-              <span class="swatch" id="gSwatchPrimary"></span>
-              <span>Primary<br><small class="dim">hull, nose, roof</small></span>
-            </button>
-            <button class="garageSlot" id="gSlotSecondary" data-slot="secondary">
-              <span class="swatch" id="gSwatchSecondary"></span>
-              <span>Secondary<br><small class="dim">splitter, sill, wing</small></span>
-            </button>
-          </div>
-          <h3 class="gh">SATURATION / BRIGHTNESS — FREE</h3>
-          <p class="lede" style="font-size:12px;margin-bottom:12px">Tune <span id="gSatLightSlotName">primary</span>.</p>
-          <div class="garageSliderRow">
-            <label for="gSatSlider">Saturation <b id="gSatVal">65%</b></label>
-            <input type="range" id="gSatSlider" min="0" max="100" value="65">
-          </div>
-          <div class="garageSliderRow">
-            <label for="gLightSlider">Brightness <b id="gLightVal">55%</b></label>
-            <input type="range" id="gLightSlider" min="0" max="100" value="55">
-          </div>
+          <div id="gLoadout"></div>
         </div>
         <div>
-          <h3 class="gh">
-            EDITING <span id="gActiveSlotName">PRIMARY</span> — <span class="gem2d"></span> <span id="gCredits">0</span>
-          </h3>
-          <div class="err gBuyMsg" id="gBuyMsg"></div>
-          <h3 class="gh" style="margin-top:14px">HUE</h3>
-          <p class="lede" style="font-size:12px;margin-bottom:8px">Click a bright square to use it on
-            <span id="gHueSlotName">primary</span>. Crossed-out squares are locked.</p>
-          <div class="row" style="margin-bottom:12px">
-            <button class="primary" id="gBuyHue">Buy a hue pack — 10 credits</button>
-          </div>
-          <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
+          <section class="gPane" data-pane="boxes">
+            <div class="gBoxHero">
+              <div class="crate hero"><div class="cLid"></div><div class="cBody"><i></i><i></i></div><div class="cGlow"></div></div>
+              <div>
+                <h3 class="gh">BOXES</h3>
+                <p class="lede">Every box holds one thing: a car, a decal, a finish celebration, a boost, wheels, a title, a profile
+                  icon, credits or a hue pack. And one box in ten splits into two more boxes.</p>
+                <div class="row" style="gap:10px">
+                  <button class="primary" id="gBoxBuy">Open a box · <span class="gem2d"></span> 100</button>
+                  <button id="gBoxFree">No free box yet</button>
+                </div>
+                <div class="gRuns"><span>Free box every 50 finished runs</span><b id="gBoxRuns">0 / 50 runs</b><div class="gBar"><i id="gBoxRunsBar"></i></div></div>
+                <small class="dim" id="gBoxOpened"></small>
+              </div>
+            </div>
+            <h3 class="gh" style="margin-top:22px">WHAT'S INSIDE</h3>
+            <table class="gOdds">
+              <tr style="--kc:#ffcf5c"><td>Car</td><td>8 to find</td><td>1%</td></tr>
+              <tr style="--kc:#e45cff"><td>Animated decal</td><td>8 to find</td><td>2%</td></tr>
+              <tr style="--kc:#4ea1ff"><td>Decal</td><td>8 to find</td><td>3%</td></tr>
+              <tr style="--kc:#3ddbb8"><td>Finish celebration</td><td>8 to find</td><td>4%</td></tr>
+              <tr style="--kc:#ff8a3d"><td>Boost</td><td>16 to find</td><td>5%</td></tr>
+              <tr style="--kc:#7ee06a"><td>Wheels</td><td>16 to find</td><td>5%</td></tr>
+              <tr style="--kc:#cdd6e3"><td>Title</td><td>16 to find</td><td>10%</td></tr>
+              <tr style="--kc:#cdd6e3"><td>Profile icon</td><td>16 to find</td><td>10%</td></tr>
+              <tr style="--kc:#9aa1aa"><td>1 to 25 credits, or a hue pack</td><td>half and half</td><td>50%</td></tr>
+              <tr style="--kc:#ffffff"><td>Splits into two boxes</td><td>up to 8 boxes</td><td>10%</td></tr>
+            </table>
+          </section>
+          <section class="gPane" data-pane="car" hidden></section>
+          <section class="gPane" data-pane="paint" hidden>
+            <p class="lede" style="margin-bottom:14px">Hue packs come out of boxes. Click any hue you own to use it; the sliders are free.
+              Your decal, wheels and boost are painted in these two colours too.</p>
+            <div class="row" style="gap:14px;margin-bottom:18px">
+              <button class="garageSlot" id="gSlotPrimary" data-slot="primary">
+                <span class="swatch" id="gSwatchPrimary"></span>
+                <span>Primary<br><small class="dim">the body</small></span>
+              </button>
+              <button class="garageSlot" id="gSlotSecondary" data-slot="secondary">
+                <span class="swatch" id="gSwatchSecondary"></span>
+                <span>Secondary<br><small class="dim">trim, decal, rims</small></span>
+              </button>
+            </div>
+            <h3 class="gh">SATURATION / BRIGHTNESS: <span id="gSatLightSlotName">primary</span> <span id="gActiveSlotName" hidden></span></h3>
+            <div class="garageSliderRow">
+              <label for="gSatSlider">Saturation <b id="gSatVal">65%</b></label>
+              <input type="range" id="gSatSlider" min="0" max="100" value="65">
+            </div>
+            <div class="garageSliderRow">
+              <label for="gLightSlider">Brightness <b id="gLightVal">55%</b></label>
+              <input type="range" id="gLightSlider" min="0" max="100" value="55">
+            </div>
+            <div class="err gBuyMsg" id="gBuyMsg"></div>
+            <h3 class="gh" style="margin-top:14px">HUE</h3>
+            <p class="lede" style="font-size:12px;margin-bottom:8px">Click a bright square to use it on
+              <span id="gHueSlotName">primary</span>. Crossed-out squares are still locked.</p>
+            <button id="gBuyHue" hidden></button>
+            <div class="garageGrid garageSelectGrid" id="gHueGrid"></div>
+          </section>
+          <section class="gPane" data-pane="profile" hidden></section>
+          <section class="gPane" data-pane="collection" hidden></section>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- opening a box -->
+  <div class="boxOpen" id="boxOpen" hidden>
+    <div class="boRays" id="boRays"></div>
+    <canvas id="boFx"></canvas>
+    <div class="boStage" id="boStage"></div>
+    <div class="boFlash" id="boFlash"></div>
+    <div class="boCard" id="boCard" hidden></div>
+    <div class="boSum" id="boSum" hidden></div>
+    <button class="ghost small boSkip" id="boSkip">Skip</button>
   </div>
 
   <div class="layer" id="result" hidden>
@@ -3748,6 +3913,7 @@ const CarColor = {
   apply() {
     if (MAT.body) MAT.body.color.setHex(hslToHex(this.primary.h, this.primary.s, this.primary.l));
     if (MAT.bodyDark) MAT.bodyDark.color.setHex(hslToHex(this.secondary.h, this.secondary.s, this.secondary.l));
+    if (MAT.body) Look.refreshOwn();
   },
 
   async save() {
@@ -5038,8 +5204,8 @@ const Cloud = {
     const c = (this._colorCache || (this._colorCache = new Map())).get(uid);
     if (c && Date.now() - c.at < 300000) return c.v;
     try {
-      const d = await this.q(this.sb.from('car_customization').select('primary_color, secondary_color').eq('uid', uid).maybeSingle()) || {};
-      const v = { primary: d.primary_color || fallback.primary, secondary: d.secondary_color || fallback.secondary };
+      const d = await this.q(this.sb.from('car_customization').select('primary_color, secondary_color, loadout').eq('uid', uid).maybeSingle()) || {};
+      const v = { primary: d.primary_color || fallback.primary, secondary: d.secondary_color || fallback.secondary, loadout: d.loadout || {} };
       this._colorCache.set(uid, { v, at: Date.now() });
       return v;
     } catch (e) { return fallback; }
@@ -5062,7 +5228,7 @@ const Cloud = {
       uid: this.user.uid, unlocked: state.unlocked, primary_color: state.primary, secondary_color: state.secondary,
       updated_at: new Date().toISOString()
     }, { onConflict: 'uid' }));
-    if (this._colorCache) this._colorCache.set(this.user.uid, { v: { primary: state.primary, secondary: state.secondary }, at: Date.now() });
+    if (this._colorCache) this._colorCache.set(this.user.uid, { v: { primary: state.primary, secondary: state.secondary, loadout: Look.own }, at: Date.now() });
   },
 
   /** buys one color pack for 10 credits (the server checks the balance) */
@@ -5371,10 +5537,16 @@ function buildMaterials() {
   // this is that something.
   MAT.body = std(0xe83030, { roughness: 0.42, metalness: 0.1 });
   MAT.bodyDark = std(0x972626, { roughness: 0.5, metalness: 0.08 });
+  decalify(MAT.body, false);
+  decalify(MAT.bodyDark, true);
   MAT.trim = std(0x2b3442, { roughness: 0.6, metalness: 0.12 });
   MAT.glass = std(0x9fd4f2, { roughness: 0.24, metalness: 0.2 });
   MAT.tyre = std(0x12161d, { roughness: 0.96, flatShading: false });
   MAT.rim = std(0xf2f5f8, { roughness: 0.42, metalness: 0.3, flatShading: false });
+  MAT.rimA = std(0x972626, { roughness: 0.38, metalness: 0.35 });
+  MAT.rimB = std(0xe83030, { roughness: 0.38, metalness: 0.35 });
+  MAT.black = std(0x161a21, { roughness: 0.8 });
+  MAT.chrome = std(0xd9dee5, { roughness: 0.3, metalness: 0.6 });
   MAT.lamp = std(0xfff0c6, { emissive: 0xffd77a, emissiveIntensity: 1.0 });
   MAT.brake = std(0x50121a, { emissive: 0xff2d2d, emissiveIntensity: 0.15 });
   MAT.scenery = std(0x74b45c, { roughness: 1 });
@@ -5634,73 +5806,954 @@ const NOSE_Z = 2.03;     // front of the splitter, forward of the car's origin
  * screen at once can each fade their own plume without fighting over one
  * shared opacity value.
  */
-function buildFlameGroup() {
-  const flame = new THREE.Group();
-  const flameLights = [];
-  for (const sx of [-0.30, 0.30]) {
-    const outer = new THREE.Mesh(GEO.tree, MAT.flame.clone());
-    outer.scale.set(0.22, 1.1, 0.22);
-    outer.position.set(sx, -0.12, -2.45);
-    outer.rotation.x = Math.PI / 2;
-    outer.userData = { k: 1, baseOpacity: MAT.flame.opacity };
-    flame.add(outer);
-    const core = new THREE.Mesh(GEO.tree, MAT.flameCore.clone());
-    core.scale.set(0.11, 0.6, 0.11);
-    core.position.set(sx, -0.12, -2.25);
-    core.rotation.x = Math.PI / 2;
-    core.userData = { k: 0.55, baseOpacity: MAT.flameCore.opacity };
-    flame.add(core);
-    const spark = new THREE.Mesh(GEO.tree, MAT.flameSpark.clone());
-    spark.scale.set(0.045, 0.22, 0.045);
-    spark.position.set(sx, -0.12, -2.10);
-    spark.rotation.x = Math.PI / 2;
-    spark.userData = { k: 0.28, baseOpacity: MAT.flameSpark.opacity };
-    flame.add(spark);
-    const light = new THREE.PointLight(0xff9a44, 0, 5.5, 2);
-    light.position.set(sx, -0.12, -2.3);
-    flame.add(light);
-    flameLights.push(light);
+/* ------------------------------------------------------- the garage's looks
+ * Everything a car can wear besides its two colours: a body (CarKit), a
+ * decal (painted per pixel by the body paint's shader), wheels (WheelKit), a
+ * boost (Boost) and a finish celebration (Celebrate). Look puts them on any
+ * car built by buildCarMesh, from its owner's loadout. All of it is visual
+ * only: the physics never see it (they use CAR.hull and the wheel rays), so
+ * every car drives exactly the same.
+ */
+const LOOK_WY = CAR.mountY - CAR.susRest;          // wheel centre height
+/** the body shapes, baked into car space per material slot:
+ *  B body (primary), D secondary, T trim, K black, G glass, L lamp, R brake, C chrome */
+const CarKit = {
+  cache: {},
+  place(geo, p, r) {
+    return geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(p[0], p[1], p[2]),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0)), new THREE.Vector3(1, 1, 1)));
+  },
+  /** a side-view outline (z, y points) pushed out to width w, edges chamfered */
+  prism(pts, w, bt, bs) {
+    const shape = new THREE.Shape(pts.map((p) => new THREE.Vector2(p[0], p[1])));
+    const depth = Math.max(0.001, w - 2 * bt);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bt > 0, bevelThickness: bt, bevelSize: bs, bevelSegments: 1, steps: 1, curveSegments: 4 });
+    geo.rotateY(-Math.PI / 2);
+    geo.translate(depth / 2, 0, 0);
+    return geo;
+  },
+  /** the pieces of one body: { slot: [geometry, ...] } merged to one geometry per slot */
+  geos(id) {
+    if (this.cache[id]) return this.cache[id];
+    const model = CAR_MODELS.find((m) => m.id === id) || CAR_MODELS[0];
+    const g = {};
+    model.build(g);
+    const out = {};
+    for (const slot in g) out[slot] = mergeParts(g[slot].map((geo) => ({ g: geo, s: [1, 1, 1], p: [0, 0, 0] })));
+    return (this.cache[id] = out);
   }
-  flame.visible = false;
-  return { flame, flameLights };
+};
+// the builders' tools (they write into a { slot: [geometries] } collector)
+const kAdd = (g, geo, slot) => { (g[slot] || (g[slot] = [])).push(geo); return geo; };
+const kPlace = (geo, p, r) => CarKit.place(geo, p, r);
+function kSide(g, slot, pts, w, o) {
+  o = o || {};
+  const geo = CarKit.prism(pts, w, o.bt == null ? 0.035 : o.bt, o.bs == null ? 0.03 : o.bs);
+  geo.translate(o.x || 0, 0, 0);
+  return kAdd(g, geo, slot);
+}
+const kBoth = (fn) => { fn(-1); fn(1); };
+const kPair = (g, slot, pts, w, x, o) => kBoth((s) => kSide(g, slot, pts, w, Object.assign({}, o, { x: s * x })));
+function kBox(g, slot, s, p, r, c) {
+  c = c == null ? Math.min(0.025, s[1] / 4, s[2] / 4, s[0] / 4) : c;
+  const hz = s[2] / 2 - c, hy = s[1] / 2 - c;
+  const geo = c > 0.002 ? CarKit.prism([[-hz, -hy], [hz, -hy], [hz, hy], [-hz, hy]], s[0], c, c) : new THREE.BoxGeometry(s[0], s[1], s[2]);
+  return kAdd(g, kPlace(geo, p, r), slot);
+}
+function kCyl(g, slot, r, len, p, axis, seg) {
+  const geo = new THREE.CylinderGeometry(r, r, len, seg || 12);
+  if (axis === 'z') geo.rotateX(Math.PI / 2); else if (axis === 'x') geo.rotateZ(Math.PI / 2);
+  return kAdd(g, kPlace(geo, p), slot);
+}
+/** the bottom edge from rear (zR) to front (zF) at height yb, a round arch over each axle */
+function kBottom(zR, zF, yb, r, only) {
+  const out = [[zR, yb]];
+  const a = Math.asin(Math.max(-1, Math.min(1, (yb - LOOK_WY) / r)));
+  for (const c of (only || [-CAR.wheelZ, CAR.wheelZ])) {
+    if (c - r < zR || c + r > zF) continue;
+    const f0 = Math.PI - a, f1 = a;
+    for (let k = 0; k <= 14; k++) { const f = f0 + (f1 - f0) * k / 14; out.push([c + r * Math.cos(f), LOOK_WY + r * Math.sin(f)]); }
+  }
+  out.push([zF, yb]);
+  return out;
+}
+function kFlare(g, slot, c, r0, r1, x, w) {
+  const pts = [];
+  for (let k = 0; k <= 14; k++) { const f = Math.PI + 0.18 - (Math.PI + 0.36) * k / 14; pts.push([c + r1 * Math.cos(f), LOOK_WY + r1 * Math.sin(f)]); }
+  for (let k = 14; k >= 0; k--) { const f = Math.PI + 0.18 - (Math.PI + 0.36) * k / 14; pts.push([c + r0 * Math.cos(f), LOOK_WY + r0 * Math.sin(f)]); }
+  kPair(g, slot, pts, w, x, { bt: 0.012, bs: 0.01 });
+}
+function kMirrors(g, x, y, z) {
+  kBoth((s) => { kBox(g, 'T', [0.12, 0.03, 0.05], [s * (x - 0.06), y - 0.03, z]); kBox(g, 'B', [0.07, 0.08, 0.15], [s * x, y, z], null, 0.015); });
+}
+function kSideVent(g, x, y, z, h, len, n) {
+  kBoth((s) => {
+    kBox(g, 'K', [0.02, h, len], [s * x, y, z], null, 0.004);
+    for (let k = 0; k < n; k++) kBox(g, 'T', [0.03, 0.012, len * 0.92], [s * (x + 0.006), y - h / 2 + h * (k + 0.5) / n, z], null, 0);
+  });
+}
+/** the bodies (from tools/car_shapes.html, where they were designed) */
+const CAR_MODELS = [
+  {
+    id: 'classic', name: 'Classic',
+    note: 'The car you drive now, rebuilt: the same boxy hatch with a dark cabin and a wing, now with chamfered panels, real wheel arches with trims, hood vents, a grille and a diffuser.',
+    build(g) {
+      kSide(g, 'B', [...kBottom(-1.98, 1.98, -0.21, 0.37),
+        [1.99, -0.12], [1.99, 0.14], [1.86, 0.25], [0.80, 0.30], [-1.30, 0.31], [-1.92, 0.33], [-1.99, 0.29], [-1.99, -0.08]], 1.98, { bs: 0.015 });
+      kBox(g, 'T', [1.34, 0.27, 1.35], [0, 0.42, -0.275], null, 0.03);
+      kBox(g, 'G', [1.20, 0.43, 0.04], [0, 0.425, 0.575], [deg(-54), 0, 0]);
+      kBox(g, 'G', [1.20, 0.46, 0.04], [0, 0.43, -1.05], [deg(59), 0, 0]);
+      kBoth((s) => kBox(g, 'G', [0.03, 0.17, 1.02], [s * 0.675, 0.43, -0.28], null, 0.01));
+      kBox(g, 'B', [1.24, 0.045, 1.22], [0, 0.552, -0.27], null, 0.02);
+      kBox(g, 'D', [1.74, 0.05, 0.34], [0, 0.50, -1.82], [deg(-6), 0, 0]);
+      kBoth((s) => { kBox(g, 'D', [0.04, 0.15, 0.38], [s * 0.88, 0.48, -1.82]); kBox(g, 'T', [0.06, 0.16, 0.08], [s * 0.52, 0.40, -1.80]); });
+      kBox(g, 'D', [1.94, 0.05, 0.30], [0, -0.20, 1.88]);
+      kBox(g, 'D', [1.80, 0.10, 0.26], [0, -0.16, -1.90]);
+      for (const x of [-0.45, 0, 0.45]) kBox(g, 'T', [0.03, 0.12, 0.24], [x, -0.17, -1.90], null, 0);
+      kBoth((s) => kBox(g, 'D', [0.06, 0.07, 1.20], [s * 0.975, -0.17, 0]));
+      kFlare(g, 'D', CAR.wheelZ, 0.37, 0.42, 0.955, 0.07); kFlare(g, 'D', -CAR.wheelZ, 0.37, 0.42, 0.955, 0.07);
+      kBox(g, 'K', [1.00, 0.11, 0.03], [0, 0.02, 1.995], null, 0.01);
+      for (const y of [-0.01, 0.03]) kBox(g, 'T', [0.96, 0.012, 0.035], [0, y, 2.0], null, 0);
+      kBoth((s) => { kBox(g, 'L', [0.38, 0.09, 0.04], [s * 0.70, 0.08, 1.995]); kBox(g, 'R', [0.46, 0.08, 0.03], [s * 0.62, 0.18, -1.995]); });
+      kBoth((s) => kBox(g, 'K', [0.30, 0.012, 0.20], [s * 0.36, 0.296, 1.20], [deg(2.5), 0, 0], 0));
+      kBoth((s) => kCyl(g, 'C', 0.05, 0.14, [s * 0.32, -0.10, -1.99], 'z'));
+      kMirrors(g, 0.80, 0.40, 0.30);
+    }
+  },
+  {
+    id: 'wedge', name: 'Wedge',
+    note: 'One sharp line from a low nose to a high, cut-off tail: pop-up lights, a low glass canopy, long strakes down the doors and ducts in the engine cover. <b>Decals:</b> a long flat hood and the strakes.',
+    build(g) {
+      kSide(g, 'B', [...kBottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.12], [2.0, 0.10], [1.25, 0.32], [0.55, 0.40], [-1.70, 0.45], [-1.98, 0.45], [-1.99, 0.02]], 1.98);
+      kSide(g, 'G', [[0.66, 0.36], [0.02, 0.555], [-0.80, 0.555], [-1.42, 0.44], [-1.42, 0.38], [0.66, 0.38]], 1.36, { bs: 0.015, bt: 0.02 });
+      kBox(g, 'B', [1.30, 0.03, 0.74], [0, 0.563, -0.40], null, 0.01);
+      kBoth((s) => kBox(g, 'D', [0.36, 0.05, 0.22], [s * 0.58, 0.255, 1.62], [deg(16), 0, 0], 0.012));
+      // the strakes: five long fins over a dark intake along each door
+      kBoth((s) => {
+        kBox(g, 'K', [0.012, 0.27, 1.46], [s * 0.993, 0.13, -0.52], null, 0.004);
+        for (let k = 0; k < 5; k++) kBox(g, 'D', [0.04, 0.026, 1.50], [s * 0.995, 0.02 + k * 0.058, -0.52], null, 0.008);
+        kBox(g, 'K', [0.22, 0.012, 0.36], [s * 0.40, 0.478, -1.66], [0, s * deg(8), 0], 0);
+      });
+      kBox(g, 'D', [1.92, 0.05, 0.30], [0, -0.21, 1.84]);
+      kBoth((s) => kBox(g, 'D', [0.05, 0.07, 1.62], [s * 0.975, -0.15, 0]));
+      kBoth((s) => kBox(g, 'L', [0.44, 0.035, 0.16], [s * 0.60, 0.16, 1.80], [deg(16), 0, 0], 0.008));
+      kBox(g, 'R', [1.70, 0.07, 0.04], [0, 0.36, -1.995]);
+      kBox(g, 'K', [1.20, 0.10, 0.03], [0, 0.17, -1.995]);
+      kBox(g, 'D', [1.86, 0.035, 0.16], [0, 0.48, -1.90], [deg(-10), 0, 0]);
+      kBoth((s) => kCyl(g, 'T', 0.055, 0.12, [s * 0.28, -0.08, -1.99], 'z'));
+    }
+  },
+  {
+    id: 'gt', name: 'GT Fastback',
+    note: 'A long, low hood between humped fenders with the lamps faired into them, a small bubble cabin set far back, rear haunches and a ducktail. <b>Decals:</b> stripes down the hood, numbers on the doors.',
+    build(g) {
+      kSide(g, 'B', [...kBottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.99, 0.06], [1.80, 0.18], [0.75, 0.27], [-1.30, 0.32], [-1.92, 0.35], [-1.99, 0.30], [-1.99, 0.02]], 1.98);
+      kBoth((s) => {
+        kSide(g, 'B', [...kBottom(0.55, 1.98, -0.06, 0.40, [CAR.wheelZ]), [1.99, 0.0], [1.96, 0.14], [1.75, 0.30], [1.40, 0.385], [0.95, 0.37], [0.62, 0.26], [0.55, 0.10]], 0.40, { x: s * 0.79 });
+        kSide(g, 'B', [...kBottom(-1.98, -0.55, -0.06, 0.40, [-CAR.wheelZ]), [-0.55, 0.10], [-0.62, 0.30], [-0.95, 0.40], [-1.45, 0.42], [-1.85, 0.38], [-1.98, 0.30], [-1.99, 0.0]], 0.40, { x: s * 0.79 });
+        kCyl(g, 'C', 0.10, 0.04, [s * 0.79, 0.22, 1.93], 'z', 16);
+        kCyl(g, 'L', 0.085, 0.05, [s * 0.79, 0.22, 1.935], 'z', 16);
+        kCyl(g, 'R', 0.055, 0.03, [s * 0.79, 0.30, -1.99], 'z', 12);
+      });
+      kSide(g, 'G', [[0.62, 0.30], [0.10, 0.53], [-0.38, 0.545], [-1.30, 0.34], [0.62, 0.32]], 1.20, { bs: 0.015, bt: 0.02 });
+      kBox(g, 'B', [1.14, 0.03, 0.46], [0, 0.555, -0.16], null, 0.01);
+      kBox(g, 'K', [0.62, 0.10, 0.03], [0, 0.04, 1.995], null, 0.04);
+      kBox(g, 'C', [1.90, 0.03, 0.05], [0, -0.06, 2.0], null, 0.01);
+      kBox(g, 'D', [1.20, 0.03, 0.18], [0, 0.375, -1.88], [deg(-14), 0, 0], 0.01);
+      kBoth((s) => { kBox(g, 'D', [0.05, 0.07, 1.20], [s * 0.975, -0.15, 0]); kCyl(g, 'C', 0.045, 0.14, [s * 0.30, -0.10, -1.99], 'z'); });
+      kMirrors(g, 0.72, 0.38, 0.50);
+    }
+  },
+  {
+    id: 'proto', name: 'Prototype',
+    note: 'A Le Mans racer: a low middle with each wheel under its own fender, a glass bubble, an air intake, a shark fin, dive planes and a big wing. <b>Decals:</b> the fin and fenders, made for numbers.',
+    build(g) {
+      kSide(g, 'B', [[-1.96, -0.18], [1.90, -0.18], [1.99, -0.12], [1.97, 0.04], [0.80, 0.22], [-1.55, 0.30], [-1.98, 0.30], [-1.98, -0.06]], 1.10);
+      kBoth((s) => {
+        kSide(g, 'B', [...kBottom(0.56, 1.98, -0.17, 0.39, [CAR.wheelZ]), [1.99, -0.08], [1.96, 0.08], [1.55, 0.30], [1.05, 0.36], [0.62, 0.22], [0.56, 0.0]], 0.46, { x: s * 0.765 });
+        kSide(g, 'B', [...kBottom(-1.98, -0.56, -0.17, 0.39, [-CAR.wheelZ]), [-0.56, 0.0], [-0.70, 0.30], [-1.20, 0.39], [-1.80, 0.36], [-1.98, 0.28], [-1.99, -0.05]], 0.46, { x: s * 0.765 });
+        kSide(g, 'D', [[-0.60, -0.16], [0.60, -0.16], [0.60, 0.06], [0.20, 0.17], [-0.60, 0.24]], 0.40, { x: s * 0.77 });
+        kBox(g, 'D', [0.22, 0.02, 0.16], [s * 0.86, 0.06, 1.84], [0, 0, s * deg(-12)], 0);
+        kBox(g, 'K', [0.02, 0.10, 0.20], [s * 0.975, 0.02, 0.45], null, 0.004);
+      });
+      kSide(g, 'G', [[0.62, 0.20], [0.14, 0.50], [-0.52, 0.525], [-1.02, 0.30], [-1.02, 0.20]], 0.96, { bs: 0.02, bt: 0.02 });
+      kBox(g, 'B', [0.62, 0.03, 0.52], [0, 0.54, -0.20], null, 0.01);
+      kSide(g, 'B', [[-0.52, 0.30], [-0.62, 0.52], [-1.70, 0.545], [-1.92, 0.44], [-1.92, 0.30]], 0.05, { bs: 0.008, bt: 0.008 });
+      kBox(g, 'K', [0.22, 0.08, 0.03], [0, 0.47, -0.56], null, 0.008);
+      kBox(g, 'D', [1.84, 0.04, 0.30], [0, 0.555, -1.80], [deg(-6), 0, 0], 0.012);
+      kBoth((s) => { kBox(g, 'D', [0.04, 0.24, 0.50], [s * 0.93, 0.46, -1.78]); kBox(g, 'L', [0.30, 0.05, 0.14], [s * 0.70, 0.17, 1.72], [deg(20), 0, 0], 0.01); });
+      kBox(g, 'D', [1.96, 0.04, 0.26], [0, -0.17, 1.86]);
+      kBox(g, 'R', [1.0, 0.06, 0.04], [0, 0.22, -1.99]);
+      for (const x of [-0.30, 0, 0.30]) kBox(g, 'T', [0.03, 0.12, 0.26], [x, -0.12, -1.86], null, 0);
+      kMirrors(g, 0.72, 0.30, 0.70);
+    }
+  },
+  {
+    id: 'rally', name: 'Rally Hatch',
+    note: 'A short, chunky hatchback with flared arches, a roof spoiler, a light pod, mud flaps and a tow hook. <b>Decals:</b> tall flat doors and a big roof, the classic rally canvas.',
+    build(g) {
+      kSide(g, 'B', [...kBottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.98, 0.18], [1.80, 0.27], [1.10, 0.32], [0.85, 0.33], [-1.74, 0.35], [-1.97, 0.33], [-1.99, -0.06]], 1.94, { bs: 0.04, bt: 0.05 });
+      kSide(g, 'G', [[0.86, 0.31], [0.30, 0.545], [-1.62, 0.545], [-1.88, 0.40], [-1.88, 0.31]], 1.62, { bs: 0.02, bt: 0.03 });
+      kBox(g, 'B', [1.64, 0.035, 1.80], [0, 0.56, -0.66], null, 0.012);
+      kBox(g, 'D', [1.60, 0.03, 0.26], [0, 0.562, -1.62], [deg(-8), 0, 0], 0.01);
+      kBox(g, 'K', [0.40, 0.008, 0.26], [0, 0.578, 0.0], null, 0);
+      kFlare(g, 'D', CAR.wheelZ, 0.39, 0.46, 0.95, 0.10); kFlare(g, 'D', -CAR.wheelZ, 0.39, 0.46, 0.95, 0.10);
+      for (const x of [-0.45, -0.15, 0.15, 0.45]) kCyl(g, 'L', 0.075, 0.05, [x, 0.25, 2.0], 'z', 14);
+      kBox(g, 'T', [1.10, 0.05, 0.06], [0, 0.17, 2.0]);
+      kBoth((s) => { kBox(g, 'R', [0.20, 0.20, 0.04], [s * 0.78, 0.18, -1.995]); kBox(g, 'K', [0.26, 0.17, 0.02], [s * 0.84, -0.13, CAR.wheelZ - 0.48], null, 0); kBox(g, 'K', [0.26, 0.17, 0.02], [s * 0.84, -0.13, -CAR.wheelZ - 0.48], null, 0); });
+      kBox(g, 'T', [1.96, 0.08, 0.14], [0, -0.15, 1.94]);
+      kBox(g, 'T', [1.96, 0.08, 0.14], [0, -0.15, -1.94]);
+      kBox(g, 'R', [0.06, 0.06, 0.10], [0.55, -0.12, 2.02], null, 0.01);
+      kBoth((s) => kCyl(g, 'C', 0.03, 0.03, [s * 0.40, 0.335, 1.62], 'y', 10));
+      kCyl(g, 'C', 0.055, 0.14, [0.70, -0.12, -1.99], 'z');
+      kMirrors(g, 0.90, 0.40, 0.78);
+    }
+  },
+  {
+    id: 'muscle', name: 'Muscle',
+    note: 'Blunt nose with four round lamps, a chrome supercharger bursting through the hood, a vinyl roof, side pipes, rear louvres and chrome bumpers. <b>Decals:</b> flames down the sides.',
+    build(g) {
+      kSide(g, 'B', [...kBottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.08], [1.99, 0.30], [1.90, 0.35], [0.56, 0.37], [-1.22, 0.39], [-1.95, 0.39], [-1.99, 0.34], [-1.99, -0.06]], 1.98);
+      kSide(g, 'G', [[0.58, 0.35], [0.20, 0.555], [-0.78, 0.555], [-1.24, 0.38], [0.58, 0.36]], 1.50, { bs: 0.015, bt: 0.02 });
+      kBox(g, 'T', [1.46, 0.03, 0.96], [0, 0.565, -0.29], null, 0.01);
+      // the blower: a chrome supercharger through the hood, its belt and its scoop
+      kBox(g, 'C', [0.42, 0.12, 0.36], [0, 0.42, 1.24], null, 0.02);
+      for (let k = 0; k < 5; k++) kBox(g, 'T', [0.44, 0.012, 0.012], [0, 0.39 + k * 0.02, 1.43], null, 0);
+      kCyl(g, 'K', 0.07, 0.06, [0, 0.43, 1.44], 'z', 14);
+      kBox(g, 'K', [0.34, 0.07, 0.24], [0, 0.515, 1.26], null, 0.015);
+      kBox(g, 'C', [0.36, 0.012, 0.26], [0, 0.553, 1.26], null, 0.004);
+      for (let k = 0; k < 3; k++) kBox(g, 'K', [1.36, 0.018, 0.04], [0, 0.505 - k * 0.055, -0.92 - k * 0.12], [deg(20), 0, 0], 0);
+      kBox(g, 'D', [1.80, 0.04, 0.18], [0, 0.42, -1.92], [deg(-14), 0, 0], 0.01);
+      kBox(g, 'C', [2.0, 0.09, 0.10], [0, -0.07, 1.99], null, 0.03);
+      kBox(g, 'C', [2.0, 0.09, 0.10], [0, -0.07, -1.99], null, 0.03);
+      kBox(g, 'K', [1.00, 0.16, 0.03], [0, 0.15, 1.995], null, 0.01);
+      for (let k = 0; k < 3; k++) kBox(g, 'T', [0.96, 0.012, 0.035], [0, 0.10 + k * 0.05, 2.0], null, 0);
+      kBoth((s) => { kCyl(g, 'L', 0.075, 0.04, [s * 0.66, 0.16, 1.99], 'z', 14); kCyl(g, 'L', 0.075, 0.04, [s * 0.84, 0.16, 1.99], 'z', 14); kBox(g, 'R', [0.60, 0.10, 0.04], [s * 0.52, 0.24, -2.0]); });
+      kBoth((s) => kCyl(g, 'C', 0.04, 1.30, [s * 0.985, -0.17, 0], 'z'));
+    }
+  },
+  {
+    id: 'stinger', name: 'Stinger',
+    note: 'An open-wheel racer: a needle nose, the wheels out in the open, a full-width front wing, sidepods, an air box over the driver with a halo, and a tall rear wing. <b>Decals:</b> the nose, sidepods and engine cover.',
+    build(g) {
+      kSide(g, 'B', [[-1.95, -0.16], [1.70, -0.16], [1.99, -0.10], [1.97, 0.0], [1.10, 0.14], [0.40, 0.24], [-0.40, 0.26], [-1.60, 0.28], [-1.95, 0.22]], 0.86);
+      kSide(g, 'B', [[-0.30, 0.24], [-0.42, 0.53], [-0.72, 0.545], [-1.60, 0.34], [-1.60, 0.24]], 0.40, { bs: 0.02, bt: 0.03 });
+      kBox(g, 'K', [0.20, 0.12, 0.03], [0, 0.46, -0.41], [deg(-20), 0, 0], 0.01);
+      kPair(g, 'B', [[-0.72, -0.16], [0.62, -0.16], [0.62, 0.10], [0.42, 0.20], [-0.72, 0.22]], 0.30, 0.575);
+      kBoth((s) => kBox(g, 'K', [0.30, 0.10, 0.02], [s * 0.575, 0.08, 0.63], null, 0.01));
+      kBox(g, 'K', [0.46, 0.04, 0.56], [0, 0.27, 0.06], null, 0.015);
+      const halo = new THREE.TorusGeometry(0.24, 0.022, 6, 18, Math.PI);
+      halo.rotateX(-Math.PI / 2);
+      kAdd(g, kPlace(halo, [0, 0.40, 0.04]), 'T');
+      kBox(g, 'T', [0.04, 0.13, 0.04], [0, 0.34, 0.27], null, 0.01);
+      // the wings
+      kBox(g, 'D', [1.96, 0.03, 0.34], [0, -0.14, 1.80], null, 0.01);
+      kBox(g, 'D', [1.70, 0.025, 0.20], [0, -0.09, 1.70], [deg(-12), 0, 0], 0.008);
+      kBoth((s) => { kBox(g, 'D', [0.03, 0.15, 0.42], [s * 0.965, -0.08, 1.79], null, 0.008); kBox(g, 'D', [0.03, 0.26, 0.42], [s * 0.86, 0.43, -1.82], null, 0.008); });
+      kBox(g, 'D', [1.70, 0.04, 0.30], [0, 0.53, -1.82], [deg(-8), 0, 0], 0.012);
+      kBox(g, 'T', [0.05, 0.27, 0.10], [0, 0.40, -1.80], null, 0.01);
+      kCyl(g, 'C', 0.06, 0.12, [0, 0.20, -1.96], 'z');
+      kBox(g, 'R', [0.12, 0.05, 0.03], [0, 0.04, -1.965], null, 0.008);
+      kMirrors(g, 0.66, 0.30, 0.45);
+    }
+  },
+  {
+    id: 'bulldog', name: 'Bulldog',
+    note: 'Round everywhere: a short bulbous nose, a bubble cabin, big round fenders, a skid plate, a stubby roof spoiler and twin big exhausts. <b>Decals:</b> the round fenders and the doors.',
+    build(g) {
+      kSide(g, 'B', [...kBottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.12], [2.0, 0.05], [1.97, 0.16], [1.88, 0.25], [1.72, 0.31], [1.40, 0.35], [1.10, 0.36], [-1.60, 0.37], [-1.82, 0.34], [-1.95, 0.26], [-1.99, 0.12], [-1.99, -0.08]], 1.80);
+      for (const c of [-CAR.wheelZ, CAR.wheelZ]) {
+        const top = [];
+        for (let k = 0; k <= 10; k++) { const f = k * Math.PI / 10; top.push([c + 0.62 * Math.cos(f), 0.06 + 0.36 * Math.sin(f)]); }
+        kPair(g, 'B', [...kBottom(c - 0.62, c + 0.62, -0.08, 0.41, [c]), ...top], 0.26, 0.86);
+      }
+      kSide(g, 'G', [[1.12, 0.34], [0.85, 0.47], [0.55, 0.535], [0.20, 0.552], [-1.10, 0.552], [-1.40, 0.52], [-1.58, 0.44], [-1.62, 0.36]], 1.60, { bs: 0.02, bt: 0.03 });
+      kBox(g, 'B', [1.50, 0.03, 1.36], [0, 0.56, -0.45], null, 0.012);
+      kBox(g, 'D', [1.30, 0.03, 0.18], [0, 0.535, -1.47], [deg(-20), 0, 0], 0.01);
+      kBox(g, 'T', [1.40, 0.06, 0.40], [0, -0.20, 1.80], null, 0.02);
+      kBox(g, 'K', [0.70, 0.12, 0.03], [0, 0.08, 1.995], null, 0.05);
+      kBoth((s) => { kCyl(g, 'L', 0.11, 0.05, [s * 0.60, 0.17, 1.975], 'z', 16); kCyl(g, 'R', 0.09, 0.04, [s * 0.70, 0.20, -1.985], 'z', 14); kCyl(g, 'C', 0.09, 0.14, [s * 0.32, -0.08, -1.99], 'z', 14); });
+      kCyl(g, 'T', 0.06, 0.012, [-0.40, 0.58, -0.70], 'y', 10);
+      kMirrors(g, 0.88, 0.40, 0.92);
+    }
+  },
+  {
+    id: 'manta', name: 'Manta',
+    note: 'Flat as a board: a thin, wide slab with the wheels showing underneath, a small bubble cockpit, intakes beside it, side blades and two tail fins. <b>Decals:</b> the whole top is one big flat canvas.',
+    build(g) {
+      kSide(g, 'B', [...kBottom(-1.98, 1.98, -0.05, 0.37),
+        [1.99, 0.0], [1.99, 0.08], [1.30, 0.24], [-1.70, 0.29], [-1.99, 0.27], [-1.99, -0.03]], 1.98, { bs: 0.015 });
+      kSide(g, 'G', [[0.55, 0.22], [0.10, 0.42], [-0.55, 0.43], [-1.05, 0.27], [-1.05, 0.22]], 0.84, { bs: 0.02, bt: 0.02 });
+      kBox(g, 'B', [0.50, 0.025, 0.50], [0, 0.44, -0.22], null, 0.008);
+      kBoth((s) => {
+        kBox(g, 'D', [0.04, 0.06, 3.40], [s * 0.975, 0.10, 0], null, 0.012);
+        kSide(g, 'D', [[-1.30, 0.26], [-1.60, 0.46], [-1.95, 0.50], [-1.97, 0.27]], 0.05, { x: s * 0.80, bs: 0.008, bt: 0.008 });
+        kBox(g, 'K', [0.20, 0.014, 0.50], [s * 0.60, 0.29, -0.40], [deg(1), 0, 0], 0);
+        kBox(g, 'L', [0.50, 0.025, 0.10], [s * 0.55, 0.115, 1.78], [deg(13), 0, 0], 0.006);
+        kCyl(g, 'C', 0.06, 0.12, [s * 0.30, 0.10, -1.99], 'z');
+      });
+      kBox(g, 'D', [1.96, 0.03, 0.30], [0, -0.05, 1.86], null, 0.01);
+      kBox(g, 'R', [1.60, 0.04, 0.03], [0, 0.20, -1.995]);
+    }
+  }
+];
+// the decals, worked out per pixel over the car's own space (x across, y up,
+// z forward), so they fit every body and carry on across every edge
+const DECAL_GLSL = `
+uniform int uDecal; uniform vec3 uP; uniform vec3 uS; uniform float uTime; uniform sampler2D uNum;
+varying vec3 vDecalPos;
+float dBand(float v, float a, float b) { float w = max(fwidth(v), 1e-4); return smoothstep(a - w, a + w, v) - smoothstep(b - w, b + w, v); }
+float dLess(float v, float a) { float w = max(fwidth(v), 1e-4); return 1.0 - smoothstep(a - w, a + w, v); }
+float h13(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+vec3 h33(vec3 p) {
+  p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
+  return fract(sin(p) * 43758.5453);
+}
+// cells: distance to the nearest and second-nearest random point
+vec2 dVor(vec3 p) {
+  vec3 i = floor(p), f = fract(p);
+  float d1 = 8.0, d2 = 8.0;
+  for (int z = -1; z <= 1; z++) for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec3 g = vec3(float(x), float(y), float(z));
+    vec3 r = g + h33(i + g) - f;
+    float d = dot(r, r);
+    if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+  }
+  return vec2(sqrt(d1), sqrt(d2));
+}
+// hot-rod flames: along = metres back from the nose, across = 0..1 over the
+// panel; tongues of different lengths ending in points
+float dFlame(float along, float across, float n, float off, float t, float anim, out float edge, out float core) {
+  float k = across * n + off, id = floor(k), s = fract(k);
+  float tip = pow(1.0 - abs(2.0 * s - 1.0), 1.4);
+  float len = 0.45 + 0.95 * tip * (0.78 + 0.22 * sin(id * 2.31 + 1.3)) + 0.05 * sin(along * 8.0 + id * 1.7)
+            + anim * (0.16 * sin(t * 6.3 + id * 1.9 + along * 2.0) + 0.07 * sin(t * 11.0 + id * 4.1));
+  edge = dBand(along, len, len + 0.045);
+  core = dLess(along, len - 0.26);
+  return dLess(along, len);
+}
+// a train of arrows moving back: each one's bright head, and the trail
+// fading out behind it (toward the nose)
+void dArrow(float v, float sp, out float head, out float trail) {
+  float ph = fract(sp - v * 1.3), aw = max(fwidth(v * 1.3), 1e-4);
+  head = smoothstep(0.0, aw, ph) * (1.0 - smoothstep(0.085 - aw, 0.085 + aw, ph));
+  trail = (1.0 - smoothstep(0.085, 0.6, ph)) * step(0.085, ph) * 0.6;
+}
+`;
+const DECAL_PAINT = `
+if (uDecal > 0) {
+  vec3 dp = vDecalPos;
+  vec3 dn = normalize(cross(dFdx(dp), dFdy(dp)));
+  vec3 an = abs(dn);
+  float sideF = smoothstep(0.55, 0.8, an.x);           // the flanks
+  float topF = 1.0 - sideF;                            // the top, nose and tail
+  float ax = abs(dp.x), u = 1.97 - dp.z, t = uTime;    // u: metres back from the nose
+#ifdef DECAL_DARK
+  vec3 C1 = uP;
+#else
+  vec3 C1 = uS;
+#endif
+  float lum = dot(C1, vec3(0.299, 0.587, 0.114));
+  vec3 C2 = lum > 0.42 ? C1 * 0.36 : mix(C1, vec3(1.0), 0.62);     // its accent
+  vec3 LT = mix(C1, vec3(1.0), 0.55);                                 // a light version, to glow
+  vec3 dc = diffuseColor.rgb, glow = vec3(0.0);
+  float roofF = step(0.75, an.y) * step(0.40, dp.y);
+  if (uDecal == 1) {
+    float s = dBand(ax, 0.10, 0.30) * topF;
+    float o = (dBand(ax, 0.075, 0.10) + dBand(ax, 0.30, 0.325)) * topF;
+    float ss = dBand(dp.y, 0.05, 0.12) * sideF;
+    float so = (dBand(dp.y, 0.03, 0.05) + dBand(dp.y, 0.12, 0.14)) * sideF;
+    dc = mix(dc, C2, clamp(o + so, 0.0, 1.0));
+    dc = mix(dc, C1, clamp(s + ss, 0.0, 1.0));
+  } else if (uDecal == 2) {
+    float tt = clamp(u / 3.9, 0.0, 1.0);
+    float lo = -0.10 + 0.13 * tt, hi = lo + 0.06 + 0.07 * tt;
+    dc = mix(dc, C1, dBand(dp.y, lo, hi) * sideF);
+    dc = mix(dc, C2, dBand(dp.y, hi + 0.02, hi + 0.04) * sideF);
+    vec2 q = vec2(dp.z + 0.12, dp.y - 0.08);
+    float r = length(q);
+    float disc = dLess(r, 0.20) * sideF, ring = dBand(r, 0.20, 0.23) * sideF;
+    float dig = texture2D(uNum, clamp(vec2(0.5 - sign(dp.x) * q.x / 0.40, 0.5 + q.y / 0.40), 0.0, 1.0)).a * disc;
+    vec2 q2 = vec2(dp.x, dp.z + 0.24);
+    float r2 = length(q2);
+    float disc2 = dLess(r2, 0.20) * roofF, ring2 = dBand(r2, 0.20, 0.225) * roofF;
+    float dig2 = texture2D(uNum, clamp(vec2(0.5 - q2.x / 0.40, 0.5 + q2.y / 0.40), 0.0, 1.0)).a * disc2;
+    vec3 paper = lum > 0.42 ? mix(C1, vec3(1.0), 0.6) : mix(C1, vec3(1.0), 0.88);
+    vec3 ink = lum > 0.42 ? C1 * 0.3 : C1;
+    dc = mix(dc, paper, max(disc, disc2));
+    dc = mix(dc, ink, clamp(dig + dig2, 0.0, 1.0));
+    dc = mix(dc, C1, clamp(ring + ring2, 0.0, 1.0));
+  } else if (uDecal == 3 || uDecal == 12) {
+    float anim = uDecal == 12 ? 1.0 : 0.0, e1, c1, e2, c2;
+    float acrossS = (dp.y + 0.21) / 0.52;
+    float fS = dFlame(u, acrossS, 3.0, 0.0, t, anim, e1, c1) * sideF * step(0.0, acrossS) * step(acrossS, 1.0);
+    float acrossT = ax / 0.80;
+    float fT = dFlame(u, acrossT, 2.5, 0.5, t, anim, e2, c2) * topF * step(acrossT, 1.0);
+    float m = max(fS, fT), core = max(c1 * fS, c2 * fT), edge = max(e1 * sideF, e2 * topF);
+    vec3 hot = mix(C1, vec3(1.0), 0.35);
+    dc = mix(dc, C2, edge * (1.0 - m));
+    dc = mix(dc, C1, m);
+    dc = mix(dc, hot, core);
+    if (anim > 0.5) glow += C1 * m * 0.18 + C1 * core * (0.22 + 0.14 * sin(t * 9.0 + u * 3.0));
+  } else if (uDecal == 4) {
+    float tri1 = abs(fract(u * 1.7) - 0.5) * 2.0, tri2 = abs(fract(u * 4.1 + 0.3) - 0.5) * 2.0;
+    float w = mix(0.065, 0.012, clamp(u / 3.8, 0.0, 1.0));
+    float yc = 0.06 + 0.11 * (tri1 - 0.5) + 0.035 * (tri2 - 0.5);
+    float xc = 0.16 * (tri1 - 0.5) + 0.05 * (tri2 - 0.5);
+    float dS = abs(dp.y - yc), dT = abs(dp.x - xc);
+    float b = dLess(dS, w) * sideF + dLess(dT, w * 1.4) * topF;
+    float bo = dBand(dS, w, w + 0.022) * sideF + dBand(dT, w * 1.4, w * 1.4 + 0.022) * topF;
+    float halo = (1.0 - smoothstep(w, w + 0.10, dS)) * sideF + (1.0 - smoothstep(w * 1.4, w * 1.4 + 0.12, dT)) * topF;
+    dc = mix(dc, C1, clamp(halo, 0.0, 1.0) * 0.25);
+    dc = mix(dc, C2, clamp(bo, 0.0, 1.0));
+    dc = mix(dc, C1, clamp(b, 0.0, 1.0));
+  } else if (uDecal == 5) {
+    float ck = mod(floor(dp.x / 0.09) + floor(dp.y / 0.09) + floor(dp.z / 0.09), 2.0);
+    float region = max(max(roofF, step(dp.y, -0.03) * sideF), step(u, 0.36));
+    dc = mix(dc, mix(C1, C2, ck), region);
+  } else if (uDecal == 6) {
+    float ph = u * 2.1 + 0.22 * sin(u * 4.7 + 1.0);
+    float s = abs(fract(ph) - 0.5);
+    float h = sideF * clamp((0.36 - dp.y) / 0.46, 0.0, 1.0) + topF * clamp((0.92 - ax) / 0.75, 0.0, 1.0);
+    float wd = 0.17 * (1.0 - h) * (0.8 + 0.2 * sin(floor(ph) * 3.1));
+    dc = mix(dc, C1, dLess(s, wd) * step(h, 0.97));
+  } else if (uDecal == 7) {
+    // round the front: the jaw follows x across the nose, and runs back
+    // along each side, closing to a point
+    float nose = step(1.5, dp.z) * step(an.x, an.z) * step(an.y, an.z);
+    float along = mix(u, ax, nose);
+    float h = mix(0.13 * clamp(1.0 - u / 0.95, 0.0, 1.0), 0.13, nose);
+    float where = clamp(sideF + nose, 0.0, 1.0) * step(0.004, h);
+    float dyy = abs(dp.y - 0.02);
+    float mouth = dLess(dyy, h) * where;
+    float tooth = 0.055 * (1.0 - abs(2.0 * fract(along * 11.0) - 1.0)) * clamp(h / 0.13, 0.0, 1.0);
+    float teeth = mouth * (1.0 - dLess(dyy, h - tooth));
+    float lip = dBand(dyy, h, h + 0.025) * where;
+    vec2 eq = vec2(u - 1.0, dp.y - 0.17);
+    float eye = dLess(length(eq), 0.06) * sideF;
+    float pupil = dLess(length(eq - vec2(0.012, -0.004)), 0.03) * sideF;
+    vec3 dark = C1 * 0.1 + vec3(0.02), white = vec3(0.95);
+    dc = mix(dc, C1, lip);
+    dc = mix(dc, dark, mouth);
+    dc = mix(dc, white, teeth + eye);
+    dc = mix(dc, dark, pupil);
+  } else if (uDecal == 8) {
+    float big = h13(floor(dp / 0.22)), small = h13(floor(dp / 0.075) + 17.0);
+    vec3 cam = dc;
+    if (big > 0.52) cam = C1;
+    if (small > 0.90) cam = C2; else if (small < 0.18) cam = mix(dc, C1, 0.5);
+    dc = cam;
+  } else if (uDecal == 9) {
+    float sp = t * 2.0, h1, t1, h2, t2;
+    float dy = abs(dp.y - 0.07);
+    dArrow(u - dy * 1.15, sp, h1, t1);
+    dArrow(u - ax * 1.15, sp, h2, t2);
+    float bs = dLess(dy, 0.14) * sideF, bt = dLess(ax, 0.42) * topF;
+    float H = h1 * bs + h2 * bt, T = t1 * bs + t2 * bt;
+    dc = mix(dc, C1, clamp(T, 0.0, 1.0));
+    dc = mix(dc, LT, clamp(H, 0.0, 1.0));
+    glow += C1 * T * 0.5 + LT * H * 1.1;
+  } else if (uDecal == 10) {
+    float w = sin(dp.z * 1.9 - dp.y * 3.4 - t * 1.2 + 1.7 * sin(dp.x * 1.8 + t * 0.55));
+    float rib = smoothstep(0.1, 0.8, w);
+    vec3 col = mix(C1, LT, 0.5 + 0.5 * sin(dp.z * 0.9 - dp.y * 2.0 + t * 0.8));
+    dc = mix(dc, col, rib * 0.9);
+    glow += col * rib * 0.3;
+  } else if (uDecal == 11) {
+    float lines = dLess(abs(dp.y - 0.14), 0.011) * sideF + dLess(abs(dp.y + 0.10), 0.008) * sideF
+                + dLess(abs(ax - 0.30), 0.011) * topF + dLess(ax, 0.008) * topF;
+    lines = clamp(lines, 0.0, 1.0);
+    float p = fract(u / 1.3 - t * 0.8);
+    float lit = 0.3 + 1.6 * pow(p, 8.0);
+    dc = mix(dc, LT, lines);
+    glow += LT * lines * lit;
+  } else if (uDecal == 13) {
+    float s = dp.z * 0.7 + dp.y * 1.3 + ax * 0.25;
+    float g = exp(-pow((fract(s * 0.22 - t * 0.28) - 0.5) * 9.0, 2.0));
+    float flake = step(0.965, h13(floor(dp / 0.035) + floor(t * 3.0)));
+    vec3 gc = mix(C1, vec3(1.0), 0.65);
+    dc = mix(dc, gc, g * 0.55 + flake * 0.5);
+    glow += gc * (g * 0.6 + flake * 0.5);
+  } else if (uDecal == 14) {
+    vec2 v = dVor(dp * 3.2);
+    float e = v.y - v.x;
+    float crack = dLess(e, 0.045), near = 1.0 - smoothstep(0.0, 0.26, e);
+    float throb = 0.6 + 0.4 * sin(t * 2.2 + h13(floor(dp * 3.2)) * 6.28 + dp.z * 2.0);
+    vec3 hot = mix(C1, vec3(1.0), 0.35);
+    dc = mix(dc * 0.45, hot, crack);
+    dc = mix(dc, C1, near * 0.25 * (1.0 - crack));
+    glow += hot * crack * throb * 0.9 + C1 * near * 0.25 * throb;
+  } else if (uDecal == 15) {
+    float cloud = 0.5 + 0.5 * sin(dp.x * 2.3 + 1.5 * sin(dp.z * 1.7 + t * 0.15)) * sin(dp.z * 1.9 - dp.y * 2.6 + t * 0.1);
+    vec3 space = mix(dc * 0.2, C1 * 0.55, smoothstep(0.35, 0.95, cloud));
+    vec3 cs = dp / 0.07, ci = floor(cs), cf = fract(cs) - 0.5;
+    float hs = h13(ci);
+    float sd = length(cf - (h33(ci) - 0.5) * 0.5);
+    float star = step(0.86, hs) * dLess(sd, 0.10 + 0.08 * fract(hs * 7.0));
+    float tw = 0.4 + 0.6 * pow(0.5 + 0.5 * sin(t * (2.0 + hs * 4.0) + hs * 40.0), 3.0);
+    dc = mix(space, LT, star * tw);
+    glow += LT * star * tw * 0.9 + C1 * smoothstep(0.6, 1.0, cloud) * 0.08;
+  } else if (uDecal == 16) {
+    float r = length(vec3(dp.x * 1.1, (dp.y - 0.15) * 1.6, dp.z * 0.55));
+    float ph = fract(t * 0.7 - r * 1.1), aw = max(fwidth(r * 1.1), 1e-4);
+    float ring = smoothstep(0.0, aw * 1.5, ph) * (1.0 - smoothstep(0.05, 0.05 + aw * 1.5, ph));
+    float wake = (1.0 - smoothstep(0.05, 0.5, ph)) * step(0.05, ph);
+    float grid = dLess(min(abs(fract(dp.x * 6.0) - 0.5), abs(fract(dp.z * 6.0 + dp.y * 3.0) - 0.5)), 0.04);
+    dc = mix(dc, C1, wake * (0.35 + grid * 0.5));
+    dc = mix(dc, LT, ring);
+    glow += LT * ring * 1.2 + C1 * wake * (0.2 + grid * 0.6);
+  }
+  diffuseColor.rgb = dc;
+  totalEmissiveRadiance += glow;
+}
+`;
+/** rims: slot A in the secondary colour, B in the primary, C chrome, K black,
+ *  W the plain white of the standard wheel. Built around the axle (x). */
+const WheelKit = {
+  cache: {},
+  disc(g, slot, r, w, seg) { const geo = new THREE.CylinderGeometry(r, r, w, seg || 20); geo.rotateZ(Math.PI / 2); return kAdd(g, geo, slot); },
+  ring(g, slot, r, tube, x) { const geo = new THREE.TorusGeometry(r, tube, 6, 28); geo.rotateY(Math.PI / 2); geo.translate(x, 0, 0); return kAdd(g, geo, slot); },
+  ringBoth(g, slot, r, tube) { this.ring(g, slot, r, tube, 0.15); this.ring(g, slot, r, tube, -0.15); },
+  /** n spokes from radius r0 to r1, w wide, d deep (along the axle), starting at angle a0, twisted by tilt */
+  spokes(g, slot, n, r0, r1, w, d, a0, tilt) {
+    for (let k = 0; k < n; k++) {
+      const geo = new THREE.BoxGeometry(d, r1 - r0, w);
+      if (tilt) geo.rotateY(tilt);
+      geo.translate(0, (r0 + r1) / 2, 0);
+      geo.rotateX((a0 || 0) + k * Math.PI * 2 / n);
+      kAdd(g, geo, slot);
+    }
+  },
+  bolts(g, slot, n, r, s) {
+    for (let k = 0; k < n; k++) for (const x of [0.155, -0.155]) {
+      const geo = new THREE.BoxGeometry(0.02, s, s);
+      geo.translate(x, r, 0); geo.rotateX(k * Math.PI * 2 / n);
+      kAdd(g, geo, slot);
+    }
+  },
+  STYLES: {
+    '': (g, W) => { W.disc(g, 'W', 0.20, 0.30, 12); W.spokes(g, 'W', 8, 0, 0.205, 0.09, 0.31); },
+    five: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 5, 0.04, 0.215, 0.065, 0.31); W.disc(g, 'C', 0.05, 0.32, 12); W.ringBoth(g, 'B', 0.215, 0.016); },
+    six: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 6, 0.04, 0.215, 0.032, 0.31, 0); W.spokes(g, 'A', 6, 0.04, 0.215, 0.032, 0.31, 0.16); W.disc(g, 'B', 0.055, 0.32, 12); },
+    dish: (g, W) => {
+      W.disc(g, 'A', 0.21, 0.31, 24); W.ringBoth(g, 'B', 0.212, 0.018);
+      for (let k = 0; k < 8; k++) { const geo = new THREE.CylinderGeometry(0.03, 0.03, 0.315, 8); geo.rotateZ(Math.PI / 2); geo.translate(0, 0.13, 0); geo.rotateX(k * Math.PI / 4); kAdd(g, geo, 'K'); }
+      W.disc(g, 'C', 0.055, 0.32, 12);
+    },
+    turbine: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 12, 0.05, 0.21, 0.05, 0.30, 0, 0.5); W.ringBoth(g, 'B', 0.214, 0.016); W.disc(g, 'C', 0.05, 0.32, 10); },
+    mesh: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 10, 0.04, 0.21, 0.018, 0.30, 0, 0.45); W.spokes(g, 'A', 10, 0.04, 0.21, 0.018, 0.30, 0, -0.45); W.ringBoth(g, 'B', 0.214, 0.018); W.disc(g, 'C', 0.045, 0.32, 10); },
+    tri: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 3, 0.03, 0.212, 0.13, 0.31); W.disc(g, 'B', 0.075, 0.32, 14); },
+    split: (g, W) => { W.disc(g, 'K', 0.20, 0.28); for (const a of [0, 0.2]) W.spokes(g, 'A', 5, 0.05, 0.215, 0.024, 0.31, a); W.ringBoth(g, 'B', 0.215, 0.012); W.disc(g, 'C', 0.05, 0.32, 10); },
+    deep: (g, W) => { W.disc(g, 'C', 0.218, 0.30, 24); W.disc(g, 'K', 0.17, 0.31); W.spokes(g, 'A', 5, 0.03, 0.17, 0.06, 0.315); W.disc(g, 'B', 0.05, 0.325, 12); },
+    star: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 5, 0.03, 0.215, 0.075, 0.31); W.spokes(g, 'B', 5, 0.03, 0.13, 0.05, 0.312, Math.PI / 5); W.disc(g, 'C', 0.045, 0.32, 10); },
+    blade: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 6, 0.04, 0.13, 0.05, 0.30, 0); W.spokes(g, 'A', 6, 0.12, 0.215, 0.05, 0.30, 0.28); W.ringBoth(g, 'B', 0.216, 0.014); },
+    beadlock: (g, W) => { W.disc(g, 'K', 0.19, 0.28); W.spokes(g, 'A', 8, 0.04, 0.19, 0.04, 0.30); W.ringBoth(g, 'B', 0.205, 0.03); W.bolts(g, 'C', 12, 0.205, 0.022); },
+    hex: (g, W) => { W.disc(g, 'A', 0.215, 0.31, 6); W.disc(g, 'K', 0.14, 0.315, 6); W.disc(g, 'B', 0.06, 0.32, 6); },
+    cross: (g, W) => { W.disc(g, 'K', 0.20, 0.28); W.spokes(g, 'A', 4, 0, 0.215, 0.085, 0.31, Math.PI / 4); W.ringBoth(g, 'B', 0.215, 0.02); },
+    ring: (g, W) => { W.ringBoth(g, 'A', 0.19, 0.028); W.spokes(g, 'A', 3, 0.06, 0.19, 0.02, 0.30); W.disc(g, 'B', 0.065, 0.31, 16); },
+    aero: (g, W) => { W.disc(g, 'A', 0.215, 0.31, 28); W.spokes(g, 'B', 1, 0.0, 0.215, 0.05, 0.316); W.disc(g, 'C', 0.04, 0.32, 10); },
+    gear: (g, W) => { W.disc(g, 'A', 0.18, 0.31, 20); W.spokes(g, 'A', 12, 0.17, 0.222, 0.045, 0.31); W.disc(g, 'K', 0.10, 0.315, 12); W.disc(g, 'B', 0.05, 0.32, 10); }
+  },
+  geos(id) {
+    const key = this.STYLES[id] ? id : '';
+    if (this.cache[key]) return this.cache[key];
+    const g = {};
+    this.STYLES[key](g, this);
+    const out = {};
+    for (const slot in g) out[slot] = mergeParts(g[slot].map((geo) => ({ g: geo, s: [1, 1, 1], p: [0, 0, 0] })));
+    return (this.cache[key] = out);
+  }
+};
+
+/**
+ * Boosts: the plume out of the back while boosting. '' is the standard
+ * orange flame; the rest take the car's colours (P primary, S secondary, LP/LS
+ * light versions, W white). nz: the nozzles; len/wid: the plume; extra:
+ * rings, bits, sparks, orbs or spin.
+ */
+const BOOSTS = {
+  '': { nz: [-0.30, 0.30], len: 1, wid: 1, outer: 'O', core: 'Y', light: 0xff9a44 },
+  jet: { nz: [-0.30, 0.30], len: 1.6, wid: 0.55, outer: 'S', core: 'W', flick: 1.6 },
+  plasma: { nz: [0], len: 0.8, wid: 1.9, outer: 'P', core: 'LS', flick: 0.5 },
+  twin: { nz: [-0.34, 0.34], len: 1.25, wid: 0.85, outer: 'S', core: 'LP', extra: 'sparks' },
+  quad: { nz: [-0.44, -0.16, 0.16, 0.44], len: 0.85, wid: 0.55, outer: 'P', core: 'W' },
+  afterburner: { nz: [0], len: 1.35, wid: 1.25, outer: 'S', core: 'W', extra: 'rings' },
+  ion: { nz: [-0.30, 0.30], len: 1.1, wid: 0.7, outer: 'LS', core: 'W', extra: 'rings', ringSpeed: 2.2 },
+  comet: { nz: [0], len: 2.1, wid: 1.0, outer: 'P', core: 'W', flick: 0.7 },
+  pixel: { nz: [-0.30, 0.30], len: 0.9, wid: 0.8, outer: 'S', core: 'LS', extra: 'bits' },
+  sparkler: { nz: [-0.30, 0.30], len: 0.7, wid: 0.6, outer: 'P', core: 'W', extra: 'sparks', sparks: 22 },
+  inferno: { nz: [-0.32, 0.32], len: 1.5, wid: 1.4, outer: 'P', core: 'S', flick: 2.2, extra: 'sparks' },
+  ghost: { nz: [0], len: 1.4, wid: 1.2, outer: 'LS', core: 'LP', flick: 0.35, fade: 0.45 },
+  pulse: { nz: [-0.30, 0.30], len: 1.1, wid: 0.9, outer: 'S', core: 'W', extra: 'rings', throb: true },
+  nova: { nz: [0], len: 0.9, wid: 1.1, outer: 'P', core: 'W', extra: 'orbs' },
+  static: { nz: [-0.30, 0.30], len: 1.3, wid: 0.35, outer: 'LS', core: 'W', flick: 3, extra: 'sparks', sparks: 14, jitter: true },
+  vortex: { nz: [-0.22, 0.22], len: 1.25, wid: 0.75, outer: 'S', core: 'LP', extra: 'spin' },
+  dragon: { nz: [0], len: 2.3, wid: 1.7, outer: 'S', core: 'P', flick: 1.8, extra: 'sparks', sparks: 18 }
+};
+const Boost = {
+  mat(base) { return new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: base, depthWrite: false, blending: THREE.AdditiveBlending }); },
+  /** (re)fills a flame group for a style, keeping the group and its lights list (the car holds both) */
+  build(flame, id) {
+    const st = BOOSTS[id] || BOOSTS[''];
+    for (const c of [...flame.children]) { flame.remove(c); if (c.material) c.material.dispose(); if (c.geometry && c.userData.own) c.geometry.dispose(); }
+    const lights = flame.userData.lights || (flame.userData.lights = []);
+    lights.length = 0;
+    flame.userData.style = st; flame.userData.styleId = id || '';
+    const fade = st.fade || 1;
+    for (const sx of st.nz) {
+      const parts = [['outer', 1, 0.85, -2.45, 0.22, 1.1], ['core', 0.55, 0.95, -2.25, 0.11, 0.6], ['tip', 0.28, 0.9, -2.10, 0.045, 0.22]];
+      for (const [role, k, base, z, r, l] of parts) {
+        const m = new THREE.Mesh(GEO.tree, this.mat(base * fade));
+        m.scale.set(r, l, r);
+        m.position.set(sx, -0.12, z);
+        m.rotation.x = Math.PI / 2;
+        m.userData = { k, baseOpacity: base * fade, role, x: sx };
+        flame.add(m);
+      }
+      const light = new THREE.PointLight(st.light || 0xffffff, 0, 5.5, 2);
+      light.position.set(sx, -0.12, -2.3);
+      flame.add(light);
+      lights.push(light);
+    }
+    const ex = st.extra;
+    if (ex === 'rings') for (let k = 0; k < 3; k++) {
+      const geo = new THREE.TorusGeometry(0.16, 0.025, 6, 18);
+      const m = new THREE.Mesh(geo, this.mat(0.8)); m.userData = { role: 'ring', i: k, own: true }; flame.add(m);
+    }
+    if (ex === 'bits' || ex === 'sparks') {
+      const n = ex === 'bits' ? 16 : (st.sparks || 10);
+      for (let k = 0; k < n; k++) {
+        const geo = ex === 'bits' ? new THREE.BoxGeometry(0.08, 0.08, 0.08) : new THREE.BoxGeometry(0.02, 0.02, 0.22);
+        const m = new THREE.Mesh(geo, this.mat(0.9)); m.userData = { role: ex === 'bits' ? 'bit' : 'spark', i: k, own: true, seed: (k * 0.618034) % 1 }; flame.add(m);
+      }
+    }
+    if (ex === 'orbs') for (let k = 0; k < 4; k++) {
+      const geo = new THREE.SphereGeometry(0.07, 8, 6);
+      const m = new THREE.Mesh(geo, this.mat(0.9)); m.userData = { role: 'orb', i: k, own: true }; flame.add(m);
+    }
+    this.paint(flame, flame.userData.P, flame.userData.S);
+    return flame;
+  },
+  /** the colours: P and S are THREE.Colors (the car's) */
+  paint(flame, P, S) {
+    flame.userData.P = P; flame.userData.S = S;
+    const st = flame.userData.style || BOOSTS[''];
+    const pick = (k) => {
+      const c = new THREE.Color();
+      if (k === 'O') return c.setHex(0xff8a26);
+      if (k === 'Y') return c.setHex(0xfff0c0);
+      if (k === 'W' || !P) return c.setHex(0xffffff);
+      if (k === 'P') return c.copy(P);
+      if (k === 'S') return c.copy(S);
+      if (k === 'LP') return c.copy(P).lerp(new THREE.Color(1, 1, 1), 0.55);
+      return c.copy(S).lerp(new THREE.Color(1, 1, 1), 0.55);
+    };
+    const outer = pick(st.outer), core = pick(st.core);
+    for (const c of flame.children) {
+      if (c.isLight) { c.color.copy(st.light ? new THREE.Color(st.light) : outer); continue; }
+      const r = c.userData.role;
+      if (!c.material) continue;
+      c.material.color.copy(r === 'outer' || r === 'bit' || r === 'orb' ? outer : r === 'tip' ? new THREE.Color(1, 1, 1) : core);
+    }
+  },
+  /** one frame: amt is how lit (0..1, fading), phase the flicker clock */
+  animate(flame, amt, phase, dt) {
+    const st = flame.userData.style || BOOSTS[''];
+    const lights = flame.userData.lights || [];
+    flame.visible = amt > 0.01;
+    if (!flame.visible) { for (const l of lights) l.intensity = 0; return; }
+    const f = st.flick || 1;
+    let pulse = 0.78 + 0.22 * Math.sin(phase * f) + 0.13 * Math.sin(phase * 2.7 * f + 1.1) + 0.07 * Math.sin(phase * 5.3 * f + 2.4);
+    if (st.throb) pulse *= 0.55 + 0.45 * Math.max(0, Math.sin(phase * 0.35));
+    const L = st.len || 1, Wd = st.wid || 1;
+    const t = phase / 34;
+    for (const c of flame.children) {
+      const u = c.userData;
+      if (c.isLight || !u.role) continue;
+      if (u.k !== undefined) {
+        const len = (0.7 + pulse * 1.15) * u.k * amt * L;
+        const rad = (0.20 + pulse * 0.05) * u.k * amt * Wd;
+        c.scale.set(rad, Math.max(len, 0.001), rad);
+        c.position.z = -2.05 - len * 0.5;
+        let x = u.x;
+        if (st.jitter) x += (Math.sin(phase * 7.3 + u.k * 9) * 0.03);
+        if (st.extra === 'spin') { const a = t * 9; c.position.y = -0.12 + Math.sin(a + (u.x > 0 ? 0 : Math.PI)) * 0.14; x = Math.cos(a + (u.x > 0 ? 0 : Math.PI)) * 0.22; }
+        c.position.x = x;
+        c.material.opacity = u.baseOpacity * amt;
+        continue;
+      }
+      const span = 1.6 * L * amt;
+      if (u.role === 'ring') {
+        const q = (t * (st.ringSpeed || 1.4) + u.i / 3) % 1;
+        c.position.set(0, -0.12, -2.1 - q * span);
+        const s = (0.6 + q * 1.4) * Wd * 0.9;
+        c.scale.set(s, s, s);
+        c.material.opacity = (1 - q) * 0.8 * amt * (st.throb ? pulse : 1);
+      } else if (u.role === 'bit' || u.role === 'spark') {
+        const q = (t * (u.role === 'bit' ? 1.1 : 2.4) + u.seed) % 1;
+        const side = st.nz[u.i % st.nz.length];
+        const wob = Math.sin(u.i * 12.9898) * 0.25 * Wd;
+        c.position.set(side + wob * q, -0.12 + Math.cos(u.i * 4.1) * 0.18 * q, -2.15 - q * span * 1.2);
+        const s = u.role === 'bit' ? (1 - q) : 1;
+        c.scale.set(s, s, u.role === 'spark' ? 0.6 + pulse : s);
+        if (u.role === 'bit') c.rotation.set(q * 6, q * 4, 0);
+        c.material.opacity = (1 - q) * amt;
+      } else if (u.role === 'orb') {
+        const a = t * 5 + u.i * Math.PI / 2;
+        c.position.set(Math.cos(a) * 0.26, -0.12 + Math.sin(a) * 0.26, -2.25 - 0.3 * Math.sin(t * 3 + u.i));
+        c.material.opacity = 0.9 * amt;
+      }
+    }
+    for (const l of lights) l.intensity = 2.4 * pulse * amt;
+  }
+};
+
+/**
+ * Finish celebrations: a burst at the line when you finish a run. Small
+ * boxes (instanced) with velocity, gravity and a lifetime; rings for the
+ * shockwave and the halo.
+ */
+const CELEBRATIONS = {
+  confetti: { n: 180 }, fireworks: { n: 270 }, shockwave: { n: 60 }, starburst: { n: 140 },
+  lightning: { n: 60 }, pixels: { n: 220 }, fountain: { n: 220 }, halo: { n: 50 }
+};
+const Celebrate = {
+  live: [],
+  play(id, pos, P, S) {
+    if (!CELEBRATIONS[id] || !App.scene) return;
+    const n = CELEBRATIONS[id].n;
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const geo = id === 'starburst' || id === 'fountain' || id === 'lightning' ? new THREE.BoxGeometry(0.035, 0.035, 0.3)
+      : id === 'confetti' ? new THREE.BoxGeometry(0.14, 0.015, 0.09) : new THREE.BoxGeometry(0.09, 0.09, 0.09);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false,
+      blending: id === 'confetti' ? THREE.NormalBlending : THREE.AdditiveBlending });
+    const mesh = new THREE.InstancedMesh(geo, mat, n);
+    mesh.frustumCulled = false;
+    const W = new THREE.Color(1, 1, 1), LP = P.clone().lerp(W, 0.5), LS = S.clone().lerp(W, 0.5);
+    const cols = [P, S, LP, LS, W];
+    const ps = [];
+    const at = pos.clone();
+    for (let i = 0; i < n; i++) {
+      const p = { p: at.clone(), v: new THREE.Vector3(), life: 0, max: rnd(1.4, 2.4), delay: 0, spin: new THREE.Vector3(rnd(-8, 8), rnd(-8, 8), rnd(-8, 8)), s: 1, g: 9 };
+      const dir = new THREE.Vector3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize();
+      if (id === 'confetti') { p.v.set(rnd(-4, 4), rnd(7, 13), rnd(-4, 4)); p.g = 7; p.drag = 1.6; }
+      else if (id === 'fireworks') {
+        const shell = i % 3, c = [new THREE.Vector3(-3, 9, 2), new THREE.Vector3(3, 11, 0), new THREE.Vector3(0, 13, -3)][shell];
+        p.burst = c; p.delay = 0.45 + shell * 0.35; p.v.copy(dir).multiplyScalar(rnd(5, 8)); p.g = 3; p.max = 1.6; p.drag = 1.2;
+      } else if (id === 'shockwave') { p.v.set(dir.x, 0.15, dir.z).normalize().multiplyScalar(rnd(6, 10)); p.p.y += 0.1; p.g = 0; p.drag = 2.5; p.max = 1.1; }
+      else if (id === 'starburst') { p.v.copy(dir).multiplyScalar(rnd(10, 18)); p.g = 0; p.drag = 3; p.max = 1.0; p.aim = true; }
+      else if (id === 'lightning') { p.v.set(rnd(-5, 5), rnd(2, 8), rnd(-5, 5)); p.g = 9; p.max = rnd(0.5, 1.0); p.aim = true; }
+      else if (id === 'pixels') { p.v.copy(dir).multiplyScalar(rnd(4, 11)); p.g = 4; p.drag = 1.5; p.max = rnd(1, 2); }
+      else if (id === 'fountain') { p.delay = (i / n) * 1.5; p.v.set(rnd(-1.5, 1.5), rnd(9, 13), rnd(-1.5, 1.5)); p.g = 14; p.max = 1.2; p.aim = true; }
+      else { p.v.set(dir.x * 0.6, rnd(2, 4), dir.z * 0.6); p.p.y += 1.6; p.g = -0.5; p.max = 1.6; }
+      p.c = cols[i % cols.length];
+      mesh.setColorAt(i, p.c);
+      ps.push(p);
+    }
+    App.scene.add(mesh);
+    const fx = { id, mesh, ps, t: 0, extra: [], at };
+    // rings for the shockwave and the halo, bolts for the lightning
+    const ringMat = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    if (id === 'shockwave' || id === 'halo') {
+      for (let k = 0; k < (id === 'halo' ? 1 : 2); k++) {
+        const r = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 6, 48), ringMat(k ? S : LP));
+        r.rotation.x = Math.PI / 2; r.position.copy(at); r.position.y += id === 'halo' ? 1.9 : 0.15;
+        r.userData = { k };
+        App.scene.add(r); fx.extra.push(r);
+      }
+      if (id === 'halo') {
+        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.2, 14, 20, 1, true), ringMat(LS));
+        beam.position.copy(at); beam.position.y += 7; beam.userData = { beam: true };
+        App.scene.add(beam); fx.extra.push(beam);
+      }
+    }
+    if (id === 'lightning') {
+      for (let k = 0; k < 3; k++) {
+        const pts = [];
+        let x = rnd(-3, 3), z = rnd(-3, 3);
+        for (let s = 0; s <= 8; s++) { pts.push(new THREE.Vector3(at.x + x, at.y + 18 - s * 2.2, at.z + z)); x *= 0.6; z *= 0.6; x += rnd(-1, 1); z += rnd(-1, 1); }
+        pts[pts.length - 1].set(at.x, at.y + 0.3, at.z);
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: k ? LS : W, transparent: true }));
+        line.userData = { bolt: true, delay: k * 0.18 };
+        App.scene.add(line); fx.extra.push(line);
+      }
+    }
+    this.live.push(fx);
+  },
+  step(dt) {
+    if (!this.live.length) return;
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 0, 1);
+    for (const fx of this.live) {
+      fx.t += dt;
+      fx.ps.forEach((p, i) => {
+        let alive = 0;
+        if (fx.t >= p.delay) {
+          if (p.burst && !p.burstDone) { p.p.copy(fx.at).add(p.burst); p.burstDone = true; }
+          p.life += dt;
+          if (p.drag) p.v.multiplyScalar(Math.exp(-p.drag * dt));
+          p.v.y -= p.g * dt;
+          p.p.addScaledVector(p.v, dt);
+          alive = Math.max(0, 1 - p.life / p.max);
+        } else if (p.burst) {
+          // the shell on its way up
+          const k = fx.t / p.delay;
+          p.p.copy(fx.at).addScaledVector(p.burst, k);
+          alive = i < 3 ? 1 : 0;
+        }
+        if (p.aim && p.v.lengthSq() > 0.01) q.setFromUnitVectors(up, sc.copy(p.v).normalize());
+        else q.setFromEuler(e.set(p.spin.x * p.life, p.spin.y * p.life, p.spin.z * p.life));
+        const s = alive > 0 ? (fx.id === 'confetti' ? 1 : alive) : 0.0001;
+        m4.compose(p.p, q, sc.set(s, s, s));
+        fx.mesh.setMatrixAt(i, m4);
+      });
+      fx.mesh.instanceMatrix.needsUpdate = true;
+      for (const x of fx.extra) {
+        if (x.userData.bolt) { x.visible = fx.t > x.userData.delay && fx.t < x.userData.delay + 0.35 && Math.sin(fx.t * 60) > -0.3; continue; }
+        if (x.userData.beam) { x.material.opacity = Math.max(0, 0.45 - fx.t * 0.25); continue; }
+        const k = x.userData.k;
+        const r = 0.5 + Math.max(0, fx.t - k * 0.2) * (fx.id === 'halo' ? 1.2 : 9);
+        x.scale.set(r, r, r);
+        if (fx.id === 'halo') x.position.y = fx.at.y + 1.9 + fx.t * 0.6;
+        x.material.opacity = Math.max(0, 1 - fx.t / 1.5);
+      }
+    }
+    // done: gone
+    this.live = this.live.filter((fx) => {
+      if (fx.t < 3.2) return true;
+      App.scene.remove(fx.mesh); fx.mesh.geometry.dispose(); fx.mesh.material.dispose();
+      for (const x of fx.extra) { App.scene.remove(x); x.geometry.dispose(); x.material.dispose(); }
+      return false;
+    });
+  }
+};
+
+/** the decals: their shader numbers (see DECAL_PAINT) */
+const DECAL_IDS = { 'decal:stripes': 1, 'decal:number': 2, 'decal:flames': 3, 'decal:lightning': 4, 'decal:checker': 5, 'decal:tiger': 6,
+  'decal:shark': 7, 'decal:camo': 8, 'anim:arrows': 9, 'anim:aurora': 10, 'anim:pulse': 11, 'anim:inferno': 12, 'anim:glint': 13,
+  'anim:lava': 14, 'anim:starfield': 15, 'anim:shockwave': 16 };
+/** the body paints take the decal (the secondary parts in the primary colour) */
+// (kept apart from the material's userData, which a clone copies as plain data)
+const DECAL_U = new WeakMap();
+function decalify(mat, dark) {
+  if (DECAL_U.has(mat)) return DECAL_U.get(mat);
+  const U = { uDecal: { value: 0 }, uP: { value: new THREE.Color() }, uS: { value: new THREE.Color() }, uTime: Look.time, uNum: { value: Look.numTex(7) } };
+  DECAL_U.set(mat, U);
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = 'varying vec3 vDecalPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvDecalPos = transformed;');
+    sh.fragmentShader = (dark ? '#define DECAL_DARK\n' : '') + DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT);
+  };
+  mat.customProgramCacheKey = () => (dark ? 'decalDark' : 'decal');
+  mat.needsUpdate = true;
+  return U;
 }
 
-/** original low-poly coupe: authored as primitives, baked per material */
-/** bodyMat/bodyDarkMat default to the shared, live-recolorable MAT.body/
- *  MAT.bodyDark (the player's own car, and the menu's idle preview) — but
- *  spectate's mesh passes its own dedicated clones instead, because it
- *  shows someone else's recorded run and must never pick up whatever
- *  color the *viewer* currently has equipped (see boot()). */
+/**
+ * Putting a loadout on a car: Look.paint(car, colors) where colors is what
+ * Cloud.fetchCarColorsOf gives ({primary, secondary, loadout}). It changes
+ * the body, wheels and boost only when they differ from what the car wears.
+ */
+const Look = {
+  own: {},                                   // the signed-in player's loadout
+  time: { value: 0 },                        // the animated decals' clock
+  _num: {},
+  numTex(n) {
+    n = Math.max(0, Math.min(99, n | 0));
+    if (this._num[n]) return this._num[n];
+    if (typeof document === 'undefined') return null;          // (the physics tools run without a page)
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 256;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#fff';
+    c.font = '800 ' + (String(n).length > 1 ? 150 : 180) + 'px Inter, "Segoe UI", Arial, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(String(n), 128, 140);
+    return (this._num[n] = new THREE.CanvasTexture(cv));
+  },
+  tick(dt) { this.time.value += dt; Celebrate.step(dt); },
+  /** the signed-in player's colours and loadout, as fetchCarColorsOf gives anyone's */
+  mine() { return typeof CarColor === 'undefined' ? { loadout: this.own } : { primary: CarColor.primary, secondary: CarColor.secondary, loadout: this.own }; },
+  paint(car, colors) {
+    const u = car && car.userData;
+    if (!u || !u.mats) return;
+    const lo = (colors && colors.loadout) || {};
+    const m = u.mats;
+    // the body
+    if ((lo.car || '') !== u.carId) {
+      u.carId = lo.car || '';
+      for (const c of [...u.bodyG.children]) u.bodyG.remove(c);
+      const geos = CarKit.geos(u.carId.replace(/^car:/, '') || 'classic');
+      const slotMat = { B: m.body, D: m.dark, T: MAT.trim, K: MAT.black, G: MAT.glass, L: MAT.lamp, R: MAT.brake, C: MAT.chrome };
+      for (const slot in geos) {
+        const mesh = new THREE.Mesh(geos[slot], slotMat[slot] || MAT.trim);
+        mesh.castShadow = slot !== 'L' && slot !== 'R';
+        u.bodyG.add(mesh);
+      }
+    }
+    // the wheels
+    const wid = (lo.wheel || '').replace(/^wheel:/, '');
+    if (wid !== u.wheelId) {
+      u.wheelId = wid;
+      const geos = WheelKit.geos(wid);
+      const slotMat = { A: m.rimA, B: m.rimB, C: MAT.chrome, K: MAT.black, W: MAT.rim };
+      for (const w of u.wheels) {
+        for (const c of [...w.rimG.children]) w.rimG.remove(c);
+        for (const slot in geos) w.rimG.add(new THREE.Mesh(geos[slot], slotMat[slot]));
+      }
+    }
+    // the boost
+    const bid = (lo.boost || '').replace(/^boost:/, '');
+    if (u.flame && bid !== (u.flame.userData.styleId || '')) Boost.build(u.flame, bid);
+    if (!colors || !colors.primary) return;
+    // the colours: body, rims, boost and decal
+    m.body.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
+    m.dark.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
+    m.rimA.color.copy(m.dark.color);
+    m.rimB.color.copy(m.body.color);
+    for (const r of [m.rimA, m.rimB]) { r.transparent = m.body.transparent; r.opacity = m.body.opacity; r.depthWrite = m.body.depthWrite; }
+    if (u.flame) Boost.paint(u.flame, m.body.color, m.dark.color);
+    const id = DECAL_IDS[lo.decal] || 0;
+    for (const [mat, dark] of [[m.body, false], [m.dark, true]]) {
+      const U = decalify(mat, dark);
+      U.uDecal.value = id;
+      U.uP.value.copy(m.body.color);
+      U.uS.value.copy(m.dark.color);
+      U.uNum.value = this.numTex(lo.num === undefined ? 7 : lo.num);
+    }
+  },
+  /** the signed-in player's own cars, after their colours or loadout change */
+  refreshOwn() {
+    const mine = this.mine();
+    if (Game.car && Game.car.mesh) this.paint(Game.car.mesh, mine);
+    if (GaragePreview.car) this.paint(GaragePreview.car, mine);
+  }
+};
+
+function buildFlameGroup(style) {
+  const flame = new THREE.Group();
+  flame.userData.lights = [];
+  Boost.build(flame, style || '');
+  flame.visible = false;
+  return { flame, flameLights: flame.userData.lights };
+}
+
+/** A car: its body (whichever CarKit shape its loadout says), four wheels
+ *  and a boost plume. bodyMat/bodyDarkMat default to the shared, live-
+ *  recolorable MAT.body/MAT.bodyDark (the player's own car, wearing their
+ *  own loadout); anyone else's car passes clones and is dressed with
+ *  Look.paint(car, theirColors) wherever it is painted. */
 function buildCarMesh(bodyMat, bodyDarkMat) {
   const g = new THREE.Group();
-  const P = new PartSet();
-  const B = bodyMat || MAT.body, D = bodyDarkMat || MAT.bodyDark, T = MAT.trim, G = MAT.glass;
-  P.add(T, [1.74, 0.14, 3.46], [0, -0.18, 0]);                      // floor pan
-  P.add(B, [1.98, 0.34, 3.62], [0, 0.02, 0]);                       // main hull
-  P.add(B, [1.82, 0.22, 1.00], [0, 0.06, 1.48], [deg(-5), 0, 0]);    // nose
-  P.add(B, [1.90, 0.22, 0.95], [0, 0.13, -1.40]);                   // rear deck
-  P.add(D, [1.90, 0.10, 0.34], [0, -0.20, 1.86]);                   // splitter
-  P.add(D, [1.82, 0.12, 0.30], [0, -0.17, -1.88]);                  // diffuser
-  P.add(D, [2.00, 0.10, 1.90], [0, -0.06, 0]);                      // sill line
-  P.add(T, [1.30, 0.42, 1.46], [0, 0.34, -0.20]);                   // cabin shell
-  P.add(G, [1.22, 0.42, 0.17], [0, 0.32, 0.58], [deg(34), 0, 0]);
-  P.add(G, [1.20, 0.38, 0.15], [0, 0.32, -0.96], [deg(-38), 0, 0]);
-  P.add(G, [0.06, 0.26, 1.16], [-0.66, 0.36, -0.18]);
-  P.add(G, [0.06, 0.26, 1.16], [0.66, 0.36, -0.18]);
-  P.add(B, [1.18, 0.09, 1.20], [0, 0.53, -0.30]);                   // roof
-  P.add(T, [0.09, 0.10, 0.20], [-0.99, 0.30, 0.46]);                // mirrors
-  P.add(T, [0.09, 0.10, 0.20], [0.99, 0.30, 0.46]);
-  P.add(D, [1.70, 0.07, 0.34], [0, 0.47, -1.82]);                   // wing
-  P.add(T, [0.10, 0.22, 0.10], [-0.56, 0.37, -1.80]);
-  P.add(T, [0.10, 0.22, 0.10], [0.56, 0.37, -1.80]);
-  P.add(MAT.lamp, [0.42, 0.13, 0.07], [-0.64, 0.08, 1.95]);         // lights
-  P.add(MAT.lamp, [0.42, 0.13, 0.07], [0.64, 0.08, 1.95]);
-  P.add(MAT.brake, [0.46, 0.11, 0.07], [-0.62, 0.16, -1.90]);
-  P.add(MAT.brake, [0.46, 0.11, 0.07], [0.62, 0.16, -1.90]);
-  P.add(T, [0.14, 0.10, 0.12], [-0.30, -0.12, -1.93]);              // exhausts
-  P.add(T, [0.14, 0.10, 0.12], [0.30, -0.12, -1.93]);
-  P.build(g, [B, D, T, G]);
-
+  const own = !bodyMat;
+  const B = bodyMat || MAT.body, D = bodyDarkMat || MAT.bodyDark;
+  const mats = { body: B, dark: D, rimA: own ? MAT.rimA : MAT.rimA.clone(), rimB: own ? MAT.rimB : MAT.rimB.clone() };
+  const bodyG = new THREE.Group();
+  g.add(bodyG);
   const { flame, flameLights } = buildFlameGroup();
   g.add(flame);
 
@@ -5712,29 +6765,26 @@ function buildCarMesh(bodyMat, bodyDarkMat) {
     const mount = new THREE.Vector3(sx * CAR.wheelX, CAR.mountY, front ? CAR.wheelZ : -CAR.wheelZ);
     const pivot = new THREE.Group();
     pivot.position.set(mount.x, mount.y - CAR.susRest, mount.z);
-    // one spinning node holding two baked meshes: tyre, and rim with spokes
+    // one spinning node: the tyre, and the rim (whichever style) in a group of its own
     const spin = new THREE.Group();
     const tyre = new THREE.Mesh(GEO.tyre, MAT.tyre);
-    tyre.scale.set(R, 0.28, R);
+    tyre.scale.set(0.28, R, R);
     tyre.castShadow = true;
     spin.add(tyre);
-    const rimParts = new PartSet();
-    rimParts.addGeo(MAT.rim, GEO.rim, [R * 0.62, 0.30, R * 0.62], [0, 0, 0]);
-    for (let k = 0; k < 4; k++) {
-      rimParts.addGeo(MAT.rim, GEO.box, [0.075, R * 1.28, 0.09], [0, 0, 0],
-        [(k * Math.PI) / 4, 0, 0]);
-    }
-    rimParts.build(spin, []);
+    const rimG = new THREE.Group();
+    spin.add(rimG);
     pivot.add(spin);
     g.add(pivot);
     wheels.push({
-      pivot, tyre: spin, front, mount,
+      pivot, tyre: spin, rimG, front, mount,
       steerAngle: 0, comp: 0, load: 0, hitDist: CAR.susRest + R,
       contact: false, slip: 0, spin: 0, spinVel: 0, drop: CAR.susRest, onTrack: true,
       normal: new THREE.Vector3(0, 1, 0), point: new THREE.Vector3(), grip: 1,
       mu: CAR.mu, side: new THREE.Vector3(1, 0, 0)
     });
   }
+  Object.assign(g.userData, { mats, bodyG, wheels, flame, flameLights, carId: null, wheelId: null });
+  Look.paint(g, own ? Look.mine() : { loadout: {} });
   return { group: g, wheels, flame, flameLights };
 }
 
@@ -5767,27 +6817,9 @@ function buildGhostMesh() {
 function setGhostFlame(mesh, lit, dt) {
   const u = mesh.userData;
   if (!u || !u.flame) return;
-  u.flamePhase += (dt || 1 / 60) * 34;
-  u.flameAmt = lerp(u.flameAmt, lit ? 1 : 0, approach(lit ? 40 : 10, dt || 1 / 60));
-  const amt = u.flameAmt;
-  u.flame.visible = amt > 0.01;
-  if (!u.flame.visible) {
-    for (const light of u.flameLights) light.intensity = 0;
-    return;
-  }
-  const pulse = 0.78 + 0.22 * Math.sin(u.flamePhase)
-    + 0.13 * Math.sin(u.flamePhase * 2.7 + 1.1)
-    + 0.07 * Math.sin(u.flamePhase * 5.3 + 2.4);
-  for (const c of u.flame.children) {
-    if (c.userData.k === undefined) continue;
-    const k = c.userData.k;
-    const len = (0.7 + pulse * 1.15) * k * amt;
-    const rad = (0.20 + pulse * 0.05) * k * amt;
-    c.scale.set(rad, Math.max(len, 0.001), rad);
-    c.position.z = -2.05 - len * 0.5;
-    if (c.material) c.material.opacity = c.userData.baseOpacity * amt;
-  }
-  for (const light of u.flameLights) light.intensity = 2.4 * pulse * amt;
+  u.flamePhase = (u.flamePhase || 0) + (dt || 1 / 60) * 34;
+  u.flameAmt = lerp(u.flameAmt || 0, lit ? 1 : 0, approach(lit ? 40 : 10, dt || 1 / 60));
+  Boost.animate(u.flame, u.flameAmt, u.flamePhase, dt || 1 / 60);
 }
 
 /** engine torque in Nm — a peaky curve, flattening off either side */
@@ -6498,31 +7530,7 @@ class Vehicle {
       // fade out over a few frames instead of a hard cut, so the plume
       // gutters out rather than vanishing the instant the key is released
       this.flameAmt = lerp(this.flameAmt || 0, lit ? 1 : 0, approach(lit ? 40 : 10, dt));
-      const amt = this.flameAmt;
-      this.flame.visible = amt > 0.01;
-      if (this.flame.visible) {
-        // three incommensurate sine terms deterministically driven by the
-        // per-instance flamePhase (never the shared LCG) so a hot rocket
-        // flicker never perturbs the audio/course random stream
-        const pulse = 0.78 + 0.22 * Math.sin(this.flamePhase)
-          + 0.13 * Math.sin(this.flamePhase * 2.7 + 1.1)
-          + 0.07 * Math.sin(this.flamePhase * 5.3 + 2.4);
-        for (const c of this.flame.children) {
-          if (c.userData.k === undefined) continue;
-          const k = c.userData.k;
-          const len = (0.7 + pulse * 1.15) * k * amt;
-          const rad = (0.20 + pulse * 0.05) * k * amt;
-          c.scale.set(rad, Math.max(len, 0.001), rad);
-          c.position.z = -2.05 - len * 0.5;
-          if (c.material) c.material.opacity = c.userData.baseOpacity !== undefined
-            ? c.userData.baseOpacity * amt : amt;
-        }
-        if (this.flameLights) {
-          for (const light of this.flameLights) light.intensity = 2.4 * pulse * amt;
-        }
-      } else if (this.flameLights) {
-        for (const light of this.flameLights) light.intensity = 0;
-      }
+      Boost.animate(this.flame, this.flameAmt, this.flamePhase, dt);
     }
     if (dt) {
       this.landImpact *= Math.exp(-7 * dt);
@@ -8785,6 +9793,8 @@ const GaragePreview = {
       if (!this.running) return;
       this.angle += 0.008;
       this.car.rotation.y = deg(200) + this.angle;
+      const fl = this.car.userData.flame;
+      if (fl) { this.phase = (this.phase || 0) + 0.6; Boost.animate(fl, this.boost ? 1 : 0, this.phase, 1 / 60); }
       this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(loop);
     };
@@ -8844,6 +9854,7 @@ function makePlayerCarPreview(canvasId) {
       this.ensureBuilt();
       this.bodyMat.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
       this.darkMat.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
+      Look.paint(this.car, colors);
     },
 
     resize() {
@@ -8927,6 +9938,7 @@ const SectionCars = {
         if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
         this.bodyMat.color.setHex(hslToHex(sl.colors.primary.h, sl.colors.primary.s, sl.colors.primary.l));
         this.darkMat.color.setHex(hslToHex(sl.colors.secondary.h, sl.colors.secondary.s, sl.colors.secondary.l));
+        Look.paint(this.car, sl.colors);
         this.car.rotation.y = deg(200) + this.angle + sec * 1.3;
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
@@ -9120,7 +10132,7 @@ const Podium = {
     const list = Records.board(LEVELS[i].id).slice(0, 3);
     const gen = ++this.gen;
     const colors = await Promise.all(list.map((e) => e.uid ? Cloud.fetchCarColorsOf(e.uid)
-      : (UI.isMe(e) ? Promise.resolve({ primary: CarColor.primary, secondary: CarColor.secondary }) : Promise.resolve(null))));
+      : (UI.isMe(e) ? Promise.resolve(Look.mine()) : Promise.resolve(null))));
     if (gen !== this.gen) return;                    // a newer draw already started
     for (let p = 0; p < 3; p++) {
       const c = this.cars[p], e = list[p], col = colors[p];
@@ -9128,6 +10140,7 @@ const Podium = {
       if (col) {
         c.bodyMat.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l));
         c.darkMat.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l));
+        Look.paint(c.car, col);
       } else {
         c.bodyMat.color.setHex(0x9aa6b8); c.darkMat.color.setHex(0x55606f);
       }
@@ -9551,7 +10564,7 @@ const Daily = {
     $('dBal').innerHTML = Cloud.user ? 'You have <span class="gem2d"></span><b>' + fmtCredits(Records.credits) + '</b> credits' +
       (this.attempts ? ' · ' + this.attempts + ' attempt' + (this.attempts === 1 ? '' : 's') + ' today' : '') : 'Sign in to drive the daily';
     $('dBoard').innerHTML = b.length ? b.slice(0, 12).map((e, n) => '<li class="' + (e.uid === uid ? 'me' : '') + '"><span class="p">' + (n === 0 ? '♛' : n + 1) +
-      '</span><span class="n">' + escapeHtml(e.n) + freshTag(e) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
+      '</span><span class="n">' + Profiles.name(e.uid, e.n, 16) + freshTag(e) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
       : '<li class="none">Nobody yet. Be the first.</li>';
     $('dWinners').innerHTML = this.results.length ? this.results.map((r) => '<li><span class="dd">' + this.pretty(r.day) + '</span><span class="n">' +
       (r.uid ? escapeHtml(r.display_name || 'Driver') + (r.held ? ' <i>(under review)</i>' : r.paid === false ? ' <i>(not paid)</i>' : '') : '<i>no entries</i>') + '</span><span class="t">' + (r.time_ms ? formatTime(r.time_ms / 1000) : '') + '</span></li>').join('')
@@ -11165,6 +12178,515 @@ const ClosedCoach = {
   }
 };
 
+/* ----------------------------------------------------------- the garage
+ * Boxes (100 credits, or a free one per 50 finished runs) give cars, decals,
+ * finish celebrations, boosts, wheels, titles, profile icons, credits and
+ * hue packs; the server rolls them (open_box). Everything but hues can be
+ * sold. Catalog names every item (the server's items table has the same
+ * ids, names and prices); Flair shows everyone's title and icon by their
+ * name; Garage is the screen; BoxOpen plays the opening.
+ */
+const ITEM_KIND = {
+  car: { label: 'Car', plural: 'Cars', col: '#ffcf5c', sell: 1000 },
+  anim: { label: 'Animated decal', plural: 'Animated decals', col: '#e45cff', sell: 500 },
+  decal: { label: 'Decal', plural: 'Decals', col: '#4ea1ff', sell: 300 },
+  cel: { label: 'Finish celebration', plural: 'Finish celebrations', col: '#3ddbb8', sell: 200 },
+  boost: { label: 'Boost', plural: 'Boosts', col: '#ff8a3d', sell: 100 },
+  wheel: { label: 'Wheels', plural: 'Wheels', col: '#7ee06a', sell: 200 },
+  title: { label: 'Title', plural: 'Titles', col: '#cdd6e3', sell: 100 },
+  icon: { label: 'Profile icon', plural: 'Profile icons', col: '#cdd6e3', sell: 100 },
+  hue: { label: 'Hue pack', col: '#ff6fae' },
+  credits: { label: 'Credits', col: '#9aa1aa' }
+};
+const PROFILE_ICONS = {
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  flame: '<path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-3 2-4 2-7 1 1 2 2 2 4 1-2 1-5 1-8z"/>',
+  star: '<path d="M12 2l3 7 7 .6-5.3 4.6 1.7 7.2L12 17.6l-6.4 3.8 1.7-7.2L2 9.6 9 9z"/>',
+  skull: '<path fill-rule="evenodd" d="M12 2a8 8 0 0 0-8 8c0 3 1.5 5 3 6v4h10v-4c1.5-1 3-3 3-6a8 8 0 0 0-8-8zM9 10.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zm6 0a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z"/>',
+  rocket: '<path fill-rule="evenodd" d="M12 2c3 2 5 6 5 10l-2 3H9l-2-3c0-4 2-8 5-10zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM9 16l-2 5 3-2zm6 0l2 5-3-2z"/>',
+  diamond: '<path d="M6 3h12l4 6-10 12L2 9z"/>',
+  heart: '<path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-3 4.5 4.5 0 0 1 8 3c0 6-8 11-8 11z"/>',
+  ghost: '<path fill-rule="evenodd" d="M12 2a7 7 0 0 0-7 7v13l2.5-2 2.3 2 2.2-2 2.2 2 2.3-2 2.5 2V9a7 7 0 0 0-7-7zM9.5 8.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm5 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>',
+  wing: '<path d="M2 8c4 0 7 1 10 4 3-3 6-4 10-4-1 3-3 5-6 6 2 0 3 1 4 2-3 1-6 0-8-2-2 2-5 3-8 2 1-1 2-2 4-2-3-1-5-3-6-6z"/>',
+  target: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 3.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm0 3.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>',
+  flag: '<path d="M5 2h2v20H5zM8 3h3v3h3V3h3v3h3v3h-3v3h3v3h-3v-3h-3v3h-3v-3H8v-3h3V9H8zm3 3v3h3V6zm3 3v3h3V9z"/>',
+  wheel: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 3a7 7 0 0 1 6.7 5H14.8a3 3 0 0 0-5.6 0H5.3A7 7 0 0 1 12 5zm-6.7 9h3.9a3 3 0 0 0 1.8 1.8v3.9A7 7 0 0 1 5.3 14zm8.5 5.7v-3.9a3 3 0 0 0 1.8-1.8h3.9a7 7 0 0 1-5.7 5.7z"/>',
+  moon: '<path d="M14 2a10 10 0 1 0 8 15A8 8 0 0 1 14 2z"/>',
+  atom: '<circle cx="12" cy="12" r="2.2"/><g fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-60 12 12)"/></g>',
+  dice: '<path fill-rule="evenodd" d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm1.5 3.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-3.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>',
+  crown: '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>'
+};
+const Catalog = {
+  items: [], byId: {},
+  build() {
+    const add = (id, kind, name, note) => { const it = { id, kind, name, note: note || '', sell: ITEM_KIND[kind].sell }; this.items.push(it); this.byId[id] = it; };
+    CAR_MODELS.filter((m) => m.id !== 'classic').forEach((m) => add('car:' + m.id, 'car', m.name, m.note.replace(/<[^>]+>/g, '')));
+    [['stripes', 'Racing stripes', 'Twin outlined stripes over the top and down each side.'], ['number', 'Race number', 'A swoosh, and your number on the doors and roof.'],
+      ['flames', 'Flames', 'Hot-rod flames from the nose, over the hood and down the sides.'], ['lightning', 'Lightning', 'A bolt down each side and over the top.'],
+      ['checker', 'Checkered', 'A chequered roof, nose and sills.'], ['tiger', 'Tiger', 'Stripes running down from the top edges to sharp points.'],
+      ['shark', 'Shark', 'A mouth full of teeth round the nose, and an eye on each side.'], ['camo', 'Digital camo', 'Blocky camouflage in three tones.']]
+      .forEach(([k, n, d]) => add('decal:' + k, 'decal', n, d));
+    [['arrows', 'Arrows', 'Bright arrows with fading trails, streaming from nose to tail.'], ['aurora', 'Aurora', 'Soft ribbons drifting over the car.'],
+      ['pulse', 'Pulse', 'Neon lines with pulses of light racing back.'], ['inferno', 'Inferno', 'Flames that flicker and burn.'],
+      ['glint', 'Glint', 'A sheen sweeping the paint, and sparkling flakes.'], ['lava', 'Lava', 'Dark rock split by glowing, throbbing cracks.'],
+      ['starfield', 'Starfield', 'Drifting nebula clouds and twinkling stars.'], ['shockwave', 'Shockwave', 'Rings of energy rippling out over a glowing grid.']]
+      .forEach(([k, n, d]) => add('anim:' + k, 'anim', n, d));
+    [['confetti', 'Confetti', 'A cannon of confetti in your colours.'], ['fireworks', 'Fireworks', 'Three shells bursting over the line.'],
+      ['shockwave', 'Shockwave ring', 'Rings blasting out along the ground.'], ['starburst', 'Starburst', 'Streaks of light shooting out every way.'],
+      ['lightning', 'Thunderstrike', 'Lightning strikes your car.'], ['pixels', 'Pixel blast', 'Your car bursts into glowing pixels.'],
+      ['fountain', 'Spark fountain', 'A fountain of sparks pours out of the car.'], ['halo', 'Halo', 'A ring of light and a beam from the sky.']]
+      .forEach(([k, n, d]) => add('cel:' + k, 'cel', n, d));
+    [['jet', 'Jet'], ['plasma', 'Plasma'], ['twin', 'Twin turbo'], ['quad', 'Quad'], ['afterburner', 'Afterburner'], ['ion', 'Ion'], ['comet', 'Comet'],
+      ['pixel', 'Pixel'], ['sparkler', 'Sparkler'], ['inferno', 'Hellfire'], ['ghost', 'Phantom'], ['pulse', 'Pulsar'], ['nova', 'Nova'], ['static', 'Static'],
+      ['vortex', 'Vortex'], ['dragon', 'Dragon']].forEach(([k, n]) => add('boost:' + k, 'boost', n, 'A boost plume in your colours.'));
+    [['five', 'Five-spoke'], ['six', 'Six-spoke'], ['dish', 'Dish'], ['turbine', 'Turbine'], ['mesh', 'Mesh'], ['tri', 'Tri-blade'], ['split', 'Split ten'],
+      ['deep', 'Deep lip'], ['star', 'Star'], ['blade', 'Blades'], ['beadlock', 'Beadlock'], ['hex', 'Hex'], ['cross', 'Cross'], ['ring', 'Hollow ring'],
+      ['aero', 'Aero disc'], ['gear', 'Gear']].forEach(([k, n]) => add('wheel:' + k, 'wheel', n, 'Rims in your two colours.'));
+    [['speed-demon', 'Speed Demon'], ['drift-king', 'Drift King'], ['apex-hunter', 'Apex Hunter'], ['night-rider', 'Night Rider'], ['throttle-junkie', 'Throttle Junkie'],
+      ['corner-carver', 'Corner Carver'], ['late-braker', 'Late Braker'], ['pole-sitter', 'Pole Sitter'], ['ghost-buster', 'Ghost Buster'], ['road-rocket', 'Road Rocket'],
+      ['turbo-legend', 'Turbo Legend'], ['gravity-defier', 'Gravity Defier'], ['slipstreamer', 'Slipstreamer'], ['the-machine', 'The Machine'],
+      ['photo-finish', 'Photo Finish'], ['full-send', 'Full Send']].forEach(([k, n]) => add('title:' + k, 'title', n, 'Shown by your name everywhere.'));
+    [['bolt', 'Bolt'], ['flame', 'Flame'], ['star', 'Star'], ['skull', 'Skull'], ['rocket', 'Rocket'], ['diamond', 'Diamond'], ['heart', 'Heart'], ['ghost', 'Ghost'],
+      ['wing', 'Wings'], ['target', 'Target'], ['flag', 'Flag'], ['wheel', 'Wheel'], ['moon', 'Moon'], ['atom', 'Atom'], ['dice', 'Dice'], ['crown', 'Crown']]
+      .forEach(([k, n]) => add('icon:' + k, 'icon', n, 'Shown by your name everywhere, in your colours.'));
+  },
+  get(id) { if (!this.items.length) this.build(); return this.byId[id] || null; },
+  ofKind(k) { if (!this.items.length) this.build(); return this.items.filter((i) => i.kind === k); },
+  /** an item's picture, as HTML: the car wearing it, or its symbol */
+  pic(it, colors) {
+    const col = colors || Look.mine();
+    const E = escapeHtml;
+    if (it.kind === 'car' || it.kind === 'decal' || it.kind === 'anim' || it.kind === 'wheel') {
+      const slot = it.kind === 'anim' ? 'decal' : it.kind;
+      const url = CarThumbs.draw({ primary: col.primary, secondary: col.secondary, loadout: Object.assign({}, col.loadout || {}, { [slot]: it.id }) });
+      return url ? '<img alt="" src="' + url + '">' : '';
+    }
+    if (it.kind === 'icon') return Flair.badge(it.id, col, 54);
+    if (it.kind === 'title') return '<span class="fTitle big">' + E(it.name) + '</span>';
+    const c1 = hslCss(col.primary.h, col.primary.s, col.primary.l), c2 = hslCss(col.secondary.h, col.secondary.s, col.secondary.l);
+    if (it.kind === 'boost') return '<svg class="kPic" viewBox="0 0 48 32"><defs><linearGradient id="bg' + it.id.replace(/\W/g, '') + '" x1="0" x2="1"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="' + c2 + '"/><stop offset="1" stop-color="' + c1 + '" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="M2 16c8-9 20-11 44-6-10 2-10 10 0 12-24 5-36 3-44-6z" fill="url(#bg' + it.id.replace(/\W/g, '') + ')"/></svg>';
+    if (it.kind === 'cel') return '<svg class="kPic" viewBox="0 0 48 32">' + [0, 1, 2, 3, 4, 5, 6, 7].map((k) => {
+      const a = k * Math.PI / 4, x = 24 + Math.cos(a) * 12, y = 16 + Math.sin(a) * 11;
+      return '<rect x="' + (x - 2).toFixed(1) + '" y="' + (y - 2).toFixed(1) + '" width="4" height="4" rx="1" fill="' + (k % 2 ? c1 : c2) + '" transform="rotate(' + k * 25 + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')"/>';
+    }).join('') + '<circle cx="24" cy="16" r="4" fill="#fff"/></svg>';
+    return '';
+  }
+};
+
+/**
+ * Everyone's title and profile icon, shown by their name on the boards, the
+ * profile card and the menu. Read for all players at once (one small query),
+ * refreshed every few minutes.
+ */
+const Flair = {
+  map: {}, at: 0, busy: false,
+  async load(force) {
+    if (!Cloud.on || !Cloud.user || this.busy || (!force && Date.now() - this.at < 180000)) return;
+    this.busy = true;
+    try {
+      const rows = await Cloud.q(Cloud.sb.from('car_customization').select('uid, loadout, primary_color, secondary_color'));
+      this.map = {};
+      for (const r of rows || []) this.map[r.uid] = { lo: r.loadout || {}, primary: r.primary_color, secondary: r.secondary_color };
+      this.at = Date.now();
+      this.mine();
+      Profiles.refresh();
+    } catch (e) { /* names show without flair */ }
+    this.busy = false;
+  },
+  /** the signed-in player's own, straight from the garage */
+  mine() {
+    if (!Cloud.user) return;
+    this.map[Cloud.user.uid] = { lo: Look.own, primary: CarColor.primary, secondary: CarColor.secondary };
+  },
+  of(uid) { return uid ? this.map[uid] || null : null; },
+  /** a profile icon as a badge in someone's colours */
+  badge(iconId, col, size) {
+    const k = String(iconId || '').replace(/^icon:/, '');
+    if (!PROFILE_ICONS[k]) return '';
+    const P = col && col.primary ? hslCss(col.primary.h, col.primary.s, col.primary.l) : '#e83030';
+    // the symbol in the secondary colour, lightened; in white when the two colours are too alike to tell apart
+    const near = col && col.primary && col.secondary && Math.min(Math.abs(col.primary.h - col.secondary.h), 360 - Math.abs(col.primary.h - col.secondary.h)) < 40
+      && Math.abs(col.primary.l - col.secondary.l) < 30;
+    const S = col && col.secondary && !near ? hslCss(col.secondary.h, Math.max(col.secondary.s, 30), Math.max(col.secondary.l, 62)) : '#fff';
+    return '<span class="fIcon" style="--fs:' + (size || 18) + 'px;--fa:' + P + ';--fb:' + S + '"><svg viewBox="0 0 24 24" fill="currentColor">' + PROFILE_ICONS[k] + '</svg></span>';
+  },
+  icon(uid, size) {
+    const f = this.of(uid);
+    return f && f.lo.icon ? this.badge(f.lo.icon, f, size) : '';
+  },
+  /** the title text: an unboxed one, or their season title if that is what they wear */
+  title(uid) {
+    const f = this.of(uid);
+    if (!f || !f.lo.title) return '';
+    if (f.lo.title === 'season') { const a = Profiles.award(uid); return a ? a.title : ''; }
+    const it = Catalog.get(f.lo.title);
+    return it ? it.name : '';
+  }
+};
+
+/** Coach tells everyone when someone unboxes a car or an animated decal */
+const UnboxNews = {
+  last: null, timer: 0,
+  start() {
+    clearInterval(this.timer);
+    this.last = null;
+    this.poll();
+    this.timer = setInterval(() => this.poll(), 45000);
+  },
+  async poll() {
+    if (!Cloud.on || !Cloud.user) return;
+    try {
+      const r = await Cloud.rpc('unbox_news', { p_since: this.last });
+      const first = this.last === null;
+      this.last = r.last;
+      if (first) return;
+      for (const n of r.news || []) {
+        if (Cloud.user && n.uid === Cloud.user.uid) continue;
+        CoachAlerts.queue.push({ unbox: true, uid: n.uid, n: n.name, item: n.item, kind: n.kind, itemName: n.item_name });
+      }
+      if (CoachAlerts.queue.length && !['play', 'spectate', 'section', 'result', 'multi', 'practice'].includes(Game.state)) CoachAlerts.flush();
+    } catch (e) { /* a database from before boxes: nothing to hear */ }
+  }
+};
+
+const Garage = {
+  data: null, tab: 'boxes', busy: false,
+  owned(id) { const r = this.data && this.data.inventory.find((i) => i.item === id); return r ? r.count : 0; },
+  freeBoxes() { return (this.data && this.data.free_boxes) || 0; },
+  async load() {
+    if (!Cloud.on || !Cloud.user) return;
+    try { this.data = await Cloud.rpc('my_garage'); } catch (e) { return; }
+    Look.own = this.data.loadout || {};
+    if (Array.isArray(this.data.unlocked)) {
+      const cells = this.data.unlocked.map((u) => (typeof u === 'number' ? u : (u && typeof u.h === 'number' ? CarColor.hueCellOf(u.h) : null))).filter((c) => c !== null);
+      CarColor.unlocked = [...new Set(cells)];
+    }
+    if (typeof this.data.balance === 'number') { Records.credits = this.data.balance; UI.who(Cloud.name(), Records.credits); }
+    Look.refreshOwn();
+    Flair.mine();
+    this.badge();
+    if (Game.state === 'garage') this.render();
+  },
+  /** the menu tile: how many free boxes are waiting */
+  badge() {
+    const n = this.freeBoxes(), el = $('gFreeMenu');
+    if (el) { el.hidden = !n; el.textContent = n > 9 ? '9+' : String(n); }
+    const t = $('gFreeBadge');
+    if (t) { t.hidden = !n; t.textContent = String(n); }
+  },
+  /** after a counted finish: progress toward a free box */
+  onFinish(f) {
+    if (!f || !this.data) return;
+    if (typeof f.box_runs === 'number') this.data.runs = f.box_runs;
+    if (f.free_box) {
+      this.data.free_boxes = (this.data.free_boxes || 0) + 1;
+      this.badge();
+      UI.toast('50 runs: a free box! Open it in the garage.');
+    }
+  },
+  /** your finish celebration, at the line */
+  celebrate() {
+    const id = (Look.own.cel || '').replace(/^cel:/, '');
+    if (!id || !Game.car || !Game.car.mesh) return;
+    const m = Game.car.mesh.userData.mats;
+    Celebrate.play(id, Game.car.mesh.position.clone(), m.body.color, m.dark.color);
+  },
+  async equip(slot, id) {
+    if (this.busy) return;
+    const lo = Object.assign({}, Look.own, { [slot]: id || '' });
+    this.busy = true;
+    try {
+      Look.own = await Cloud.rpc('set_loadout', { p_loadout: lo });
+      if (this.data) this.data.loadout = Look.own;
+      Look.refreshOwn();
+      Flair.mine();
+      Profiles.refresh();
+      if (Cloud._colorCache && Cloud.user) Cloud._colorCache.delete(Cloud.user.uid);
+    } catch (e) { UI.toast(Cloud.errText(e)); }
+    this.busy = false;
+    this.render();
+  },
+  async sell(id, n) {
+    const it = Catalog.get(id);
+    if (!it || this.busy) return;
+    const have = this.owned(id);
+    if (have <= 0) return;
+    const worn = Object.values(Look.own).includes(id);
+    if (n >= have && worn && !confirm('Sell your last ' + it.name + '? It comes off your car or profile.')) return;
+    this.busy = true;
+    try {
+      const r = await Cloud.rpc('sell_item', { p_item: id, p_count: n });
+      Records.credits = r.balance;
+      UI.who(Cloud.name(), Records.credits);
+      Sound.creditWin();
+      UI.toast('Sold ' + (n > 1 ? n + '× ' : '') + it.name + ' for ' + fmtCredits(r.credits) + ' credits.');
+    } catch (e) { UI.toast(Cloud.errText(e)); }
+    this.busy = false;
+    await this.load();
+  },
+
+  // ------------------------------------------------------------- the screen
+  show(tab) {
+    this.tab = tab || this.tab || 'boxes';
+    this.render();
+    this.load();
+  },
+  setTab(tab) { this.tab = tab; this.render(); },
+  render() {
+    document.querySelectorAll('#gTabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === this.tab));
+    document.querySelectorAll('#garage .gPane').forEach((p) => { p.hidden = p.dataset.pane !== this.tab; });
+    $('gCredits').textContent = Cloud.on && Cloud.user ? fmtCredits(Records.credits) : 'offline';
+    GaragePreview.boost = this.tab === 'car';
+    if (this.tab === 'paint') UI.garage();
+    else if (this.tab === 'boxes') this.renderBoxes();
+    else if (this.tab === 'car') this.renderCar();
+    else if (this.tab === 'profile') this.renderProfile();
+    else if (this.tab === 'collection') this.renderCollection();
+    this.renderSide();
+  },
+  /** under the preview: what you have on */
+  renderSide() {
+    const lo = Look.own, E = escapeHtml;
+    const line = (k, id, def) => { const it = id && Catalog.get(id); return '<div><span>' + k + '</span><b>' + E(it ? it.name : def) + '</b></div>'; };
+    const me = Cloud.user && Cloud.user.uid;
+    $('gLoadout').innerHTML = '<div class="gCardMini">' + (Flair.badge(lo.icon, Look.mine(), 34) || '<span class="fIcon none" style="--fs:34px"></span>') +
+      '<div><b>' + E(Cloud.name()) + '</b><small>' + E(me ? Flair.title(me) || 'No title' : '') + '</small></div></div>' +
+      '<div class="gLines">' + line('Car', lo.car, 'Classic') + line('Decal', lo.decal, 'None') + line('Wheels', lo.wheel, 'Standard') +
+      line('Boost', lo.boost, 'Standard flame') + line('Finish', lo.cel, 'None') + '</div>';
+  },
+  renderBoxes() {
+    const d = this.data, signed = Cloud.on && Cloud.user;
+    const free = this.freeBoxes(), runs = d ? d.runs : 0;
+    $('gBoxBuy').disabled = !signed || BoxOpen.on || (Records.credits || 0) < 100;
+    $('gBoxFree').disabled = !signed || BoxOpen.on || !free;
+    $('gBoxFree').textContent = free ? 'Open a free box (' + free + ')' : 'No free box yet';
+    $('gBoxRuns').textContent = signed ? runs + ' / 50 runs' : 'Sign in to open boxes';
+    $('gBoxRunsBar').style.width = Math.min(100, runs / 50 * 100).toFixed(1) + '%';
+    $('gBoxOpened').textContent = d ? 'Boxes opened: ' + fmtCredits(d.opened || 0) : '';
+  },
+  /** the Car tab: a row of what you own for each slot */
+  renderCar() {
+    const E = escapeHtml, lo = Look.own;
+    const slots = [['car', 'Body', ['car'], 'Classic'], ['decal', 'Decal', ['decal', 'anim'], 'None'], ['wheel', 'Wheels', ['wheel'], 'Standard'],
+      ['boost', 'Boost', ['boost'], 'Standard flame'], ['cel', 'Finish celebration', ['cel'], 'None']];
+    let h = '';
+    for (const [slot, label, kinds, def] of slots) {
+      const all = kinds.flatMap((k) => Catalog.ofKind(k)), mine = all.filter((it) => this.owned(it.id));
+      h += '<h3 class="gh">' + label.toUpperCase() + ' <small>' + mine.length + ' / ' + all.length + ' collected</small></h3><div class="gPick">' +
+        '<button class="gOpt' + (!lo[slot] ? ' on' : '') + '" data-slot="' + slot + '" data-id="">' + E(def) + '</button>' +
+        mine.map((it) => '<button class="gOpt' + (lo[slot] === it.id ? ' on' : '') + '" data-slot="' + slot + '" data-id="' + it.id + '" style="--kc:' + ITEM_KIND[it.kind].col + '">' +
+          E(it.name) + (it.kind === 'anim' ? ' <i>animated</i>' : '') + '</button>').join('') + '</div>';
+      if (slot === 'decal' && lo.decal === 'decal:number') {
+        h += '<label class="gNum">Your number <input type="number" id="gNumIn" min="0" max="99" value="' + (lo.num === undefined ? 7 : lo.num) + '"></label>';
+      }
+      if (!mine.length) h += '<p class="lede gNone">None yet: they come out of boxes.</p>';
+    }
+    const pane = document.querySelector('#garage .gPane[data-pane="car"]');
+    pane.innerHTML = h;
+    pane.querySelectorAll('.gOpt').forEach((b) => b.addEventListener('click', () => this.equip(b.dataset.slot, b.dataset.id)));
+    const num = $('gNumIn');
+    if (num) num.addEventListener('change', async () => {
+      const v = Math.max(0, Math.min(99, Math.floor(+num.value || 0)));
+      try { Look.own = await Cloud.rpc('set_loadout', { p_loadout: Object.assign({}, Look.own, { num: v }) }); Look.refreshOwn(); } catch (e) { UI.toast(Cloud.errText(e)); }
+    });
+  },
+  /** the Profile tab: the card, and the title and icon to wear */
+  renderProfile() {
+    const E = escapeHtml, lo = Look.own, me = Cloud.user && Cloud.user.uid;
+    const aw = me ? Profiles.award(me) : null;
+    const titles = Catalog.ofKind('title').filter((it) => this.owned(it.id));
+    const icons = Catalog.ofKind('icon').filter((it) => this.owned(it.id));
+    let h = '<div class="gProfile">' + (Flair.badge(lo.icon, Look.mine(), 64) || Profiles.icon(me, 64) || '<span class="fIcon none" style="--fs:64px"></span>') +
+      '<div><b>' + E(Cloud.name()) + '</b><span class="fTitle big">' + E((me && Flair.title(me)) || 'No title') + '</span></div></div>' +
+      '<p class="lede">Your title and icon show by your name on every leaderboard, on your profile card and on the menu.</p>' +
+      '<h3 class="gh">TITLE <small>' + titles.length + ' / 16 collected</small></h3><div class="gPick">' +
+      '<button class="gOpt' + (!lo.title ? ' on' : '') + '" data-slot="title" data-id="">None</button>' +
+      (aw ? '<button class="gOpt' + (lo.title === 'season' ? ' on' : '') + '" data-slot="title" data-id="season" style="--kc:#ffcf5c">' + E(aw.title) + '</button>' : '') +
+      titles.map((it) => '<button class="gOpt' + (lo.title === it.id ? ' on' : '') + '" data-slot="title" data-id="' + it.id + '">' + E(it.name) + '</button>').join('') + '</div>' +
+      '<h3 class="gh">ICON <small>' + icons.length + ' / 16 collected</small></h3><div class="gPick icons">' +
+      '<button class="gOpt' + (!lo.icon ? ' on' : '') + '" data-slot="icon" data-id="">' + (aw ? 'Season icon' : 'None') + '</button>' +
+      icons.map((it) => '<button class="gOpt ic' + (lo.icon === it.id ? ' on' : '') + '" data-slot="icon" data-id="' + it.id + '" title="' + E(it.name) + '">' + Flair.badge(it.id, Look.mine(), 30) + '</button>').join('') + '</div>';
+    if (!titles.length && !icons.length) h += '<p class="lede gNone">Titles and icons come out of boxes.</p>';
+    const pane = document.querySelector('#garage .gPane[data-pane="profile"]');
+    pane.innerHTML = h;
+    pane.querySelectorAll('.gOpt').forEach((b) => b.addEventListener('click', () => this.equip(b.dataset.slot, b.dataset.id)));
+  },
+  /** the Collection tab: every item, what you own of each, and selling */
+  renderCollection() {
+    const E = escapeHtml;
+    const pane = document.querySelector('#garage .gPane[data-pane="collection"]');
+    let have = 0, total = 0;
+    let h = '';
+    for (const k of ['car', 'anim', 'decal', 'cel', 'wheel', 'boost', 'title', 'icon']) {
+      const list = Catalog.ofKind(k);
+      const own = list.filter((it) => this.owned(it.id)).length;
+      have += own; total += list.length;
+      h += '<h3 class="gh" style="color:' + ITEM_KIND[k].col + '">' + ITEM_KIND[k].plural.toUpperCase() + ' <small>' + own + ' / ' + list.length + ' · sell for ' + ITEM_KIND[k].sell + ' each</small></h3><div class="gColl">' +
+        list.map((it) => {
+          const n = this.owned(it.id);
+          if (!n) return '<div class="gItem locked" title="Not found yet"><div class="gPic">?</div><b>' + E(it.name) + '</b><small>Not found yet</small></div>';
+          return '<div class="gItem" style="--kc:' + ITEM_KIND[k].col + '"><div class="gPic">' + Catalog.pic(it) + '</div><b>' + E(it.name) + '</b>' +
+            '<small>' + (n > 1 ? '× ' + n : 'Owned') + '</small><div class="gAct">' +
+            '<button class="small ghost" data-sell="' + it.id + '" data-n="1">Sell 1 · ' + it.sell + '</button>' +
+            (n > 1 ? '<button class="small ghost" data-sell="' + it.id + '" data-n="' + (n - 1) + '">Sell extras · ' + fmtCredits(it.sell * (n - 1)) + '</button>' : '') + '</div></div>';
+        }).join('') + '</div>';
+    }
+    pane.innerHTML = '<p class="lede">' + have + ' of ' + total + ' found. Duplicates can be sold for credits (hue packs can\'t).</p>' + h;
+    pane.querySelectorAll('[data-sell]').forEach((b) => b.addEventListener('click', () => this.sell(b.dataset.sell, +b.dataset.n)));
+  }
+};
+
+/**
+ * Opening a box. The server opens it first (so nothing can be faked); this
+ * only plays it back: the box rattles while light leaks out in the colour of
+ * what's inside, splits on screen when it split, bursts, and shows each
+ * thing; then a summary to equip or sell from.
+ */
+const BoxOpen = {
+  on: false, skip: false, res: null,
+  wait(ms) { return new Promise((r) => { const t = setTimeout(r, this.skip ? 0 : ms); this._t = t; }); },
+  crate(depth) {
+    const el = document.createElement('div');
+    el.className = 'crate d' + Math.min(depth, 3);
+    el.innerHTML = '<div class="cLid"></div><div class="cBody"><i></i><i></i></div><div class="cGlow"></div>';
+    return el;
+  },
+  kindOf(r) { return r.kind || (r.hue !== undefined ? 'hue' : 'credits'); },
+  async open(free) {
+    if (this.on || !Cloud.on || !Cloud.user) return;
+    let res;
+    try { res = await Cloud.rpc('open_box', { p_free: !!free }); } catch (e) { UI.toast(Cloud.errText(e)); return; }
+    this.on = true; this.skip = false; this.res = res;
+    Records.credits = res.balance;
+    UI.who(Cloud.name(), Records.credits);
+    if (Garage.data) Garage.data.free_boxes = res.free_boxes;
+    Garage.badge();
+    const ov = $('boxOpen'), stage = $('boStage');
+    stage.innerHTML = ''; $('boCard').hidden = true; $('boSum').hidden = true; $('boSkip').hidden = false;
+    ov.hidden = false;
+    ov.className = 'boxOpen';
+    const queue = [this.crate(0)];
+    stage.appendChild(queue[0]);
+    await this.wait(350);
+    const got = [];
+    for (const r of res.results) {
+      const c = queue.shift();
+      if (!c) break;
+      if (r.split) {
+        // the box splits in two
+        c.classList.add('shake');
+        Sound.tone(220, 0, 0.18, 0.05, 'square');
+        await this.wait(520);
+        const a = this.crate(r.depth + 1), b = this.crate(r.depth + 1);
+        a.classList.add('born'); b.classList.add('born');
+        stage.replaceChild(a, c); a.after(b);
+        queue.push(a, b);
+        Sound.tone(660, 0, 0.12, 0.06, 'triangle'); Sound.tone(990, 0.08, 0.16, 0.06, 'triangle');
+        this.flash('#ffffff', 'Split!');
+        await this.wait(650);
+        continue;
+      }
+      await this.reveal(c, r);
+      got.push(r);
+    }
+    this.summary(got);
+  },
+  flash(col, text) {
+    const f = $('boFlash');
+    f.style.setProperty('--fc', col);
+    f.textContent = text || '';
+    f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  },
+  async reveal(c, r) {
+    const k = this.kindOf(r), K = ITEM_KIND[k];
+    const big = k === 'car' || k === 'anim';
+    c.style.setProperty('--gc', K.col);
+    c.classList.add('shake', 'glow');
+    if (big) c.classList.add('rare');
+    for (let i = 0; i < (big ? 8 : 5); i++) { Sound.tone(150 + i * (big ? 40 : 25), i * 0.11, 0.06, 0.05, 'square'); }
+    await this.wait(big ? 1300 : 800);
+    c.classList.remove('shake');
+    c.classList.add('burst');
+    this.burst(c, K.col, big);
+    if (big) Sound.finish(true); else if (k === 'credits') Sound.creditTick(); else Sound.creditWin();
+    $('boRays').style.setProperty('--rc', K.col);
+    $('boRays').classList.add('on');
+    this.card(r);
+    await this.wait(big ? 2600 : 1500);
+    $('boRays').classList.remove('on');
+    $('boCard').hidden = true;
+    c.classList.add('done');
+  },
+  card(r) {
+    const k = this.kindOf(r), K = ITEM_KIND[k], E = escapeHtml;
+    let pic = '', name = '', sub = '';
+    if (k === 'credits') { pic = '<span class="boGem"><span class="gem2d"></span></span>'; name = '+' + r.credits + ' credits'; }
+    else if (k === 'hue') { const h = CarColor.hueAt(r.hue); pic = '<span class="boHue" style="background:' + hslCss(h, CarColor.HUE_S, CarColor.HUE_L) + '"></span>'; name = 'A new hue'; sub = 'Use it in Paint'; }
+    else {
+      const it = Catalog.get(r.item) || { id: r.item, kind: k, name: r.name };
+      pic = Catalog.pic(it); name = it.name;
+      sub = r.count > 1 ? 'Duplicate (you have ' + r.count + ') · sells for ' + K.sell : 'New!';
+    }
+    const card = $('boCard');
+    card.style.setProperty('--kc', K.col);
+    card.innerHTML = '<small>' + E(K.label.toUpperCase()) + '</small><div class="boPic">' + pic + '</div><b>' + E(name) + '</b>' + (sub ? '<span>' + E(sub) + '</span>' : '');
+    card.hidden = false;
+    card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop');
+  },
+  /** a burst of pieces from the box, in the colour of what came out */
+  burst(c, col, big) {
+    const cv = $('boFx'), ctx = cv.getContext('2d');
+    const W = cv.width = cv.clientWidth * (devicePixelRatio || 1), H = cv.height = cv.clientHeight * (devicePixelRatio || 1);
+    const r = c.getBoundingClientRect(), d = devicePixelRatio || 1;
+    const x0 = (r.left + r.width / 2) * d, y0 = (r.top + r.height / 2) * d;
+    const ps = [];
+    for (let i = 0; i < (big ? 160 : 70); i++) {
+      const a = Math.random() * Math.PI * 2, v = (big ? 9 : 6) * (0.4 + Math.random()) * d;
+      ps.push({ x: x0, y: y0, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4 * d, s: (3 + Math.random() * 5) * d, c: Math.random() < 0.3 ? '#ffffff' : col, r: Math.random() * 6 });
+    }
+    let t = 0;
+    const step = () => {
+      ctx.clearRect(0, 0, W, H);
+      t++;
+      for (const p of ps) {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.35 * d; p.vx *= 0.985;
+        ctx.globalAlpha = Math.max(0, 1 - t / 70);
+        ctx.fillStyle = p.c;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r + t * 0.1); ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6); ctx.restore();
+      }
+      if (t < 70) requestAnimationFrame(step); else ctx.clearRect(0, 0, W, H);
+    };
+    requestAnimationFrame(step);
+  },
+  summary(got) {
+    const E = escapeHtml;
+    $('boSkip').hidden = true;
+    $('boStage').innerHTML = '';
+    const rows = got.map((r) => {
+      const k = this.kindOf(r), K = ITEM_KIND[k];
+      if (k === 'credits') return '<li style="--kc:' + K.col + '"><span class="k">Credits</span><b>+' + r.credits + '</b></li>';
+      if (k === 'hue') return '<li style="--kc:' + K.col + '"><span class="k">Hue pack</span><b><i class="sw" style="background:' + hslCss(CarColor.hueAt(r.hue), CarColor.HUE_S, CarColor.HUE_L) + '"></i>A new hue</b></li>';
+      const it = Catalog.get(r.item) || { name: r.name };
+      const slot = { car: 'car', decal: 'decal', anim: 'decal', cel: 'cel', boost: 'boost', wheel: 'wheel', title: 'title', icon: 'icon' }[k];
+      return '<li style="--kc:' + K.col + '"><span class="k">' + E(K.label) + '</span><b>' + E(it.name) + (r.count > 1 ? ' <small>× ' + r.count + '</small>' : ' <small class="new">new</small>') + '</b>' +
+        '<span class="a"><button class="small" data-eq="' + slot + '" data-id="' + r.item + '">Use</button><button class="small ghost" data-sell="' + r.item + '">Sell · ' + K.sell + '</button></span></li>';
+    }).join('');
+    const free = Garage.freeBoxes();
+    $('boSum').innerHTML = '<h3>' + (got.length > 1 ? 'Your ' + got.length + ' boxes gave' : 'Your box gave') + '</h3><ul>' + rows + '</ul>' +
+      '<div class="row"><button class="ghost" id="boClose">Done</button>' + (free ? '<button id="boFree">Open a free box (' + free + ')</button>' : '') +
+      '<button class="primary" id="boAgain"' + ((Records.credits || 0) < 100 ? ' disabled' : '') + '>Open another · 100</button></div>';
+    $('boSum').hidden = false;
+    const end = () => { $('boxOpen').hidden = true; this.on = false; Garage.load(); };
+    $('boClose').addEventListener('click', end);
+    $('boAgain').addEventListener('click', () => { this.on = false; this.open(false); });
+    if ($('boFree')) $('boFree').addEventListener('click', () => { this.on = false; this.open(true); });
+    $('boSum').querySelectorAll('[data-eq]').forEach((b) => b.addEventListener('click', async () => { await Garage.equip(b.dataset.eq, b.dataset.id); b.textContent = 'On'; b.disabled = true; }));
+    $('boSum').querySelectorAll('[data-sell]').forEach((b) => b.addEventListener('click', async () => { await Garage.sell(b.dataset.sell, 1); b.textContent = 'Sold'; b.disabled = true; }));
+    Garage.load();
+  }
+};
+
 /** a crossed-out eye: a hidden run */
 const EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
 /** Coach's picture: a race engineer's headset */
@@ -11178,8 +12700,11 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
   // everyone who saw an earlier list sees it again
-  SEASON: 3, EDITION: 3.1, KEY: 'whatsNew',
+  SEASON: 3, EDITION: 3.2, KEY: 'whatsNew',
   ITEMS: [
+    ['gem', 'Boxes in the garage', '100 credits a box, or a free one every 50 runs: cars, decals, boosts, wheels, finish celebrations, titles and icons. One box in ten splits in two.'],
+    ['photo', 'Eight cars, sixteen decals', 'From a razor-sharp wedge to an open-wheel racer, and decals from flames to living lava and starfields, all in your colours. Sell what you don\'t want.'],
+    ['crown', 'Titles and profile icons', 'Wear them by your name on every leaderboard. Edit your profile in the garage.'],
     ['map', 'Sixteen new maps', 'Most were built by players in the track builder (three by Julian Svoboda), from a 280 m sprint to Black Diamond\'s three ski jumps down a mountain.'],
     ['build', 'Track builder', 'Build up to 3 tracks of your own, make them public, and race everyone else\'s. Each track has its own leaderboard.'],
     ['target', 'Practise any part of a map', 'Pick a moment of your best run and start right there, at the same speed, after a 3-2-1. Practice times never count.'],
@@ -11188,7 +12713,6 @@ const WhatsNew = {
     ['clock', 'Opening hours', 'Open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), Pacific time. When it\'s closed, Coach has ideas for what to do instead.'],
     ['key', 'Your own keys', 'In Settings, pick the keys for Play again (R) and Next map (N) on the finish screen.'],
     ['crown', 'Season 2 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
-    ['flag', 'Thousandths and quicker credits', 'Every time and gap is shown to the thousandth of a second, and big payouts land in under two seconds.'],
     ['card', 'Always the latest version', 'When aiPolytrack is updated, it reloads itself the next time you\'re on the menu. No more old tabs.']
   ],
   ICON: {
@@ -11307,15 +12831,20 @@ const Profiles = {
     }
     return null;
   },
-  /** the square icon: the season's number in gold, silver or bronze ('' without a title) */
+  /** the icon by a name: the profile icon they wear, else their season's
+   *  number in gold, silver or bronze ('' with neither) */
   icon(uid, size) {
+    const fi = Flair.icon(uid, size || 28);
+    if (fi) return fi;
     const a = this.award(uid);
     if (!a) return '';
     return '<span class="pIcon t' + a.tier + '" style="--ps:' + (size || 28) + 'px" title="' + escapeHtml(a.title) + '"><b>' + escapeHtml(a.num) + '</b></span>';
   },
   /** a name on a board: icon, then the name as a link to the card */
   name(uid, n, size) {
-    return '<a href="#" class="pLink" data-uid="' + escapeHtml(uid || '') + '" data-n="' + escapeHtml(n) + '">' + this.icon(uid, size || 18) + escapeHtml(n) + '</a>';
+    const t = Flair.title(uid);
+    return '<a href="#" class="pLink" data-uid="' + escapeHtml(uid || '') + '" data-n="' + escapeHtml(n) + '">' + this.icon(uid, size || 18) + escapeHtml(n) +
+      (t ? '<span class="fTitle">' + escapeHtml(t) + '</span>' : '') + '</a>';
   },
   /** Perfection for any driver: null unless they have every map */
   perfection(uid, n) {
@@ -11337,8 +12866,9 @@ const Profiles = {
     this.cur = { uid, n };
     $('pcIcon').innerHTML = this.icon(uid, 56) || '<span class="pIcon none" style="--ps:56px"><b>' + E(n.charAt(0).toUpperCase()) + '</b></span>';
     $('pcName').textContent = n;
-    $('pcTitle').textContent = aw ? aw.title : 'No title yet';
-    $('pcTitle').classList.toggle('none', !aw);
+    const wt = Flair.title(uid);
+    $('pcTitle').textContent = wt || (aw ? aw.title : 'No title yet');
+    $('pcTitle').classList.toggle('none', !wt && !aw);
     $('pcCard').className = 'pcCard' + (aw ? ' t' + aw.tier : '');
     const rows = Records.overall(COURSE_IDS), ri = rows.findIndex(Insight.finder(uid, n)), r = ri >= 0 ? rows[ri] : null;
     let wins = 0, pods = 0;
@@ -11580,6 +13110,7 @@ const CoachCam = {
     if (!col) return;
     c.body.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l));
     c.dark.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l));
+    Look.paint(c.mesh, col);
   },
   /** both cars at the moment the player's car was at distance d; returns the picture's canvas */
   shot(lab, lt, opts) {
@@ -11865,6 +13396,21 @@ const CoachAlerts = {
     for (const a of this.queue.splice(0, 3)) {
       const el = document.createElement('div');
       el.className = 'alertCard';
+      if (a.unbox) {
+        const K = ITEM_KIND[a.kind] || ITEM_KIND.car;
+        el.classList.add('unbox');
+        el.style.setProperty('--kc', K.col);
+        el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
+          '<p><b>' + escapeHtml(a.n) + '</b> just unboxed ' + (a.kind === 'car' ? 'a car: the <b>' : 'the animated decal <b>') + escapeHtml(a.itemName) + '</b>! ' +
+          (a.kind === 'car' ? 'One box in a hundred has a car.' : 'One box in fifty has one.') + ' Yours could be next.</p>' +
+          '<div class="ab"><button class="primary small">Open a box</button></div>';
+        const closeU = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+        el.querySelector('.ah button').addEventListener('click', closeU);
+        el.querySelector('.ab button').addEventListener('click', () => { closeU(); Game.toGarage('boxes'); });
+        stack.appendChild(el);
+        setTimeout(closeU, 25000);
+        continue;
+      }
       if (a.win) {
         el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
           '<p>You won the daily on <b>' + escapeHtml(Daily.pretty(a.day)) + '</b> (' + escapeHtml(a.name) + ', ' + formatTime(a.t) + '). <b>+300 credits.</b> Now defend it in the next one.</p>';
@@ -13506,6 +15052,7 @@ const TopTen = {
       if (col) {
         c.bodyMat.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l));
         c.darkMat.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l));
+        Look.paint(c.car, col);
       } else { c.bodyMat.color.setHex(0x9aa6b8); c.darkMat.color.setHex(0x55606f); }
     });
     if (key !== this.key) { this.key = key; this.t0 = performance.now(); }   // the ten changed: rise again
@@ -13615,6 +15162,7 @@ const CarThumbs = {
       const car = buildCarMesh(this.bodyMat, this.darkMat).group;
       car.rotation.y = deg(28);
       this.scene.add(car);
+      this.car = car;
       return true;
     } catch (e) {
       this.failed = true;
@@ -13623,11 +15171,12 @@ const CarThumbs = {
   },
   /** a picture (data URL) of the car in these colours */
   draw(colors) {
-    const key = JSON.stringify([colors.primary, colors.secondary]);
+    const key = JSON.stringify([colors.primary, colors.secondary, colors.loadout || {}]);
     if (this.cache.has(key)) return this.cache.get(key);
     if (!this.ensure()) return null;
     this.bodyMat.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
     this.darkMat.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
+    Look.paint(this.car, colors);
     this.renderer.render(this.scene, this.camera);
     const url = this.renderer.domElement.toDataURL('image/png');
     this.cache.set(key, url);
@@ -13635,7 +15184,7 @@ const CarThumbs = {
   },
   /** a driver's car by uid (no uid: this device's own car) */
   async forUid(uid) {
-    const colors = uid ? await Cloud.fetchCarColorsOf(uid) : { primary: CarColor.primary, secondary: CarColor.secondary };
+    const colors = uid ? await Cloud.fetchCarColorsOf(uid) : Look.mine();
     return colors ? this.draw(colors) : null;
   }
 };
@@ -14314,6 +15863,7 @@ const TrophyRoom = {
     const col = data.colors;
     if (col) { this.bodyMat.color.setHex(hslToHex(col.primary.h, col.primary.s, col.primary.l)); this.darkMat.color.setHex(hslToHex(col.secondary.h, col.secondary.s, col.secondary.l)); }
     else { this.bodyMat.color.copy(MAT.body.color); this.darkMat.color.copy(MAT.bodyDark.color); }
+    Look.paint(this.car, col || Look.mine());
     this.build(data);
     this.resize();
     if (this.running) return;
@@ -15472,7 +17022,7 @@ const UI = {
           h += ok ? '<td><input type="checkbox" class="selBox" data-uid="' + escapeHtml(r.uid) + '"' + (checked ? ' checked' : '') +
             ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all four maps (and not every one of those runs hidden)">—</td>';
         }
-        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(r.n) +
+        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + Profiles.name(r.uid, r.n, 18) +
           (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="d">' + r.count + ' / ' + ids.length +
           '</td><td class="t">' + formatTime(r.total) + '</td></tr>';
       });
@@ -15684,10 +17234,7 @@ const UI = {
     $('gSatLightSlotName').textContent = slot;
     const signedIn = !!(Cloud.on && Cloud.user);
     $('gCredits').textContent = signedIn ? fmtCredits(Records.credits) : 'offline';
-    const hueMaxed = CarColor.lockedHueCells().length === 0;
-    $('gBuyHue').disabled = !signedIn || hueMaxed;
-    $('gBuyHue').textContent = hueMaxed ? 'Every hue already unlocked' : 'Buy a hue pack — 10 credits';
-    $('gBuyMsg').textContent = signedIn ? '' : 'Sign in to buy colors.';
+    $('gBuyMsg').textContent = signedIn ? '' : 'Sign in to keep your colours.';
 
     // HUE grid: 256 cells, one per hue, at the pack's own fixed reference
     // s/l — a hue you own reads as unlocked here regardless of which
@@ -15906,6 +17453,7 @@ const SectionView = {
       const meshes = this.quads.map((q) => {
         const built = buildCarMesh(bodyMat, darkMat);
         const m = built.group;
+        Look.paint(m, c.colors);
         m.userData.flame = built.flame; m.userData.flameLights = built.flameLights;
         m.userData.flamePhase = 0; m.userData.flameAmt = 0;
         m.visible = false;
@@ -17294,6 +18842,7 @@ const Game = {
       }
     }
     if (!Cloud.user || Cloud.user.uid !== uid) return;
+    if (fresh) { Garage.load(); Flair.load(true); UnboxNews.start(); }
     UI.who(Cloud.name(), Records.credits);
     this.onBoardsChanged();
     if (this.state === 'garage') UI.garage();
@@ -17430,7 +18979,10 @@ const Game = {
     $('bGarageBack').addEventListener('click', () => this.toMenu());
     $('gSlotPrimary').addEventListener('click', () => this.setGarageSlot('primary'));
     $('gSlotSecondary').addEventListener('click', () => this.setGarageSlot('secondary'));
-    $('gBuyHue').addEventListener('click', () => this.buyCarColorPack());
+    document.querySelectorAll('#gTabs button').forEach((b) => b.addEventListener('click', () => Garage.setTab(b.dataset.tab)));
+    $('gBoxBuy').addEventListener('click', () => BoxOpen.open(false));
+    $('gBoxFree').addEventListener('click', () => BoxOpen.open(true));
+    $('boSkip').addEventListener('click', () => { BoxOpen.skip = true; });
     $('gSatSlider').addEventListener('input', () =>
       this.setGarageSatLight($('gSatSlider').value, $('gLightSlider').value));
     $('gLightSlider').addEventListener('input', () =>
@@ -17873,6 +19425,7 @@ const Game = {
       slot.bodyMat.color.setHex(hslToHex(r.colors.primary.h, r.colors.primary.s, r.colors.primary.l));
       slot.darkMat.color.setHex(hslToHex(r.colors.secondary.h, r.colors.secondary.s, r.colors.secondary.l));
       slot.bodyMat.opacity = slot.darkMat.opacity = 0.55;
+      Look.paint(slot.mesh, r.colors);
       slot.mesh.visible = false; // shown per-frame in updateGhost once the run actually starts
     });
     for (let k = extra.length; k < this.extraSpecMeshes.length; k++) this.extraSpecMeshes[k].mesh.visible = false;
@@ -18239,6 +19792,7 @@ const Game = {
       c.mats.body.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
       c.mats.dark.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
       c.mats.body.opacity = c.mats.dark.opacity = 0.55;
+      Look.paint(c.mesh, colors);
       c.mesh.visible = true;
     });
     // hide any spare meshes beyond what this session actually uses
@@ -18471,11 +20025,11 @@ const Game = {
     this.flushPendingAuth();
   },
 
-  toGarage() {
+  toGarage(tab) {
     this.state = 'garage'; this.running = false;
     Sound.stopEngine();
     this.garageSlot = 'primary';
-    UI.garage();
+    Garage.show(tab);
     UI.show('garage');
     GaragePreview.start();
     this.flushPendingAuth();
@@ -18604,6 +20158,7 @@ const Game = {
       outcome: 'unsaved', reason: String(why || 'unknown').slice(0, 200), timeMs: time * 1000, record: isBest });
     if (Cloud.on && Cloud.user && !Cloud.banned()) {
       fin.then((f) => {
+        if (f && f.ok) Garage.onFinish(f);
         if (!f || !f.ok) {
           if (isBest) { Records.revertBest(id, prevBest); this.onBoardsChanged(); }
           if (f && f.message) UI.toast(f.message);
@@ -18629,6 +20184,7 @@ const Game = {
     }
     Sound.stopEngine();
     Sound.finish(res.rank === 1);
+    Garage.celebrate();
 
     $('rKick').textContent = this.levelIndex === DAILY_I ? (res.rank === 1 ? 'Leading today’s daily' : 'Daily run')
       : res.rank === 1 ? 'Course record' : 'Course clear';
@@ -18753,7 +20309,7 @@ const Game = {
     $('rBoardHd').textContent = lv && lv.daily ? 'Today’s daily · the fastest at noon wins 300 credits' : 'Course leaderboard — ' + (lv ? lv.name : '');
     $('rBoard').innerHTML = list.map((e, i) =>
       '<li class="' + ((uid ? e.uid === uid : e.n === Records.driver()) ? 'me' : '') + '"><span>' +
-      (i + 1) + '. ' + escapeHtml(e.n) + freshTag(e) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
+      (i + 1) + '. ' + Profiles.name(e.uid, e.n, 16) + freshTag(e) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
   },
   /** +1 credit for any finished course that isn't a race attempt */
   async awardCompletion() {
@@ -19142,6 +20698,7 @@ const Game = {
     this.specBodyMat.color.setHex(hslToHex(colors.primary.h, colors.primary.s, colors.primary.l));
     this.specBodyDarkMat.color.setHex(hslToHex(colors.secondary.h, colors.secondary.s, colors.secondary.l));
     this.specBodyMat.opacity = this.specBodyDarkMat.opacity = OPACITY;
+    Look.paint(this.specMesh, colors);
   },
 
   updateProgress() {
@@ -19423,6 +20980,7 @@ const Game = {
     // stays correct through camera-mode switches without its own case here.
     else if (this.state === 'spectate') App.aimLight(this.chase.look);
     UI.tick(dt);
+    Look.tick(dt);
     Input.endFrame();
     if (this.state !== 'section') App.render();    // the section replay draws its own four views
   }
