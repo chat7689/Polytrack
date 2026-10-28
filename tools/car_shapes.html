@@ -4,41 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Car shapes</title>
-<!-- Candidate looks for the car, side by side. Visual only: every one sits on
+<!-- Candidate looks for the car, with decals. Visual only: every one sits on
      the game's real wheels (CAR.wheelR/X/Z, mountY, susRest) inside the same
-     collision hull (CAR.hull), drawn as the aqua box. Not part of the game. -->
+     collision hull (CAR.hull). Not part of the game. -->
 <style>
-:root{--bg:#121417;--panel:#16191d;--ink:#ebedf0;--dim:#9aa1aa;--rule:rgba(255,255,255,.08);--ember:#f2733f;--aqua:#3ddbb8}
+:root{--bg:#121417;--panel:#16191d;--ink:#ebedf0;--dim:#9aa1aa;--rule:rgba(255,255,255,.08);--ember:#f2733f;--aqua:#3ddbb8;--signal:#e8c26a}
 *{box-sizing:border-box;margin:0}
 body{background:var(--bg);color:var(--ink);font:14px/1.5 Inter,"Segoe UI",system-ui,sans-serif;padding:22px 16px 40px}
 #gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
-.wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto}
-header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between;margin-bottom:18px}
+.wrap{position:relative;z-index:1;max-width:1320px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between;margin-bottom:14px}
 h1{font-size:20px;letter-spacing:-.02em}
 h1 span{color:var(--ember)}
-p.lede{color:var(--dim);font-size:13px;max-width:640px}
+p.lede{color:var(--dim);font-size:13px;max-width:700px}
 .ctl{display:flex;gap:8px;flex-wrap:wrap}
 button{font:500 12.5px inherit;font-family:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:rgba(255,255,255,.22)}
 button.on{border-color:var(--ember);color:var(--ember)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
-.card{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:transparent}
-.view{height:230px;cursor:grab;touch-action:none}
-.view:active{cursor:grabbing}
-.txt{padding:10px 14px 13px;background:rgba(22,25,29,.92);border-top:1px solid var(--rule)}
-.txt h2{font-size:15px;display:flex;gap:8px;align-items:baseline}
-.txt h2 small{font-size:11px;color:var(--ember);letter-spacing:.08em;font-weight:600}
-.txt p{color:var(--dim);font-size:12.5px;margin-top:3px}
-.txt p b{color:var(--ink);font-weight:500}
-.paint{border:1px solid var(--rule);border-radius:10px;background:rgba(22,25,29,.92);padding:12px 14px;margin-bottom:14px}
-.decals{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.decals button small{font-size:10px;letter-spacing:.06em;color:var(--aqua);margin-left:6px;text-transform:uppercase}
-.picks{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center}
+.paint{position:sticky;top:8px;z-index:2;border:1px solid var(--rule);border-radius:10px;background:rgba(22,25,29,.96);padding:12px 14px;margin-bottom:14px}
+.drow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.drow > span{font-size:10.5px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;width:76px}
+.picks{display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center;margin-top:4px}
 .picks label{display:flex;align-items:center;gap:8px;cursor:pointer}
 .picks span{font-size:12.5px;line-height:1.2}
 .picks small{display:block;color:var(--dim);font-size:11px}
 .picks input[type=color]{width:34px;height:28px;border:1px solid var(--rule);border-radius:6px;background:none;padding:2px;cursor:pointer}
 .picks input[type=number]{width:58px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:5px 8px}
-.dnote{color:var(--dim);font-size:12.5px;margin-top:10px;min-height:1.5em}
+.presets{display:flex;gap:5px}
+.presets i{width:22px;height:22px;border-radius:50%;cursor:pointer;border:1px solid rgba(255,255,255,.25)}
+.dnote{color:var(--dim);font-size:12.5px;margin-left:auto;max-width:420px}
+@media (max-width:760px), (max-height:620px){.paint{position:static}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:14px}
+.card{border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.view{height:240px;cursor:grab;touch-action:none}
+.view:active{cursor:grabbing}
+.txt{padding:10px 14px 12px;background:rgba(22,25,29,.94);border-top:1px solid var(--rule)}
+.txt h2{font-size:15px;display:flex;gap:8px;align-items:baseline}
+.txt h2 small{font-size:11px;color:var(--ember);letter-spacing:.08em;font-weight:600}
+.txt h2 em{font-style:normal;font-size:11.5px;color:var(--dim);font-weight:400;margin-left:auto}
+.txt p{color:var(--dim);font-size:12.5px;margin-top:3px}
+.txt p b{color:var(--ink);font-weight:500}
+.fit{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--dim);margin-top:6px}
+.fit b{color:var(--aqua);font-weight:500}
+.fit b.warn{color:var(--signal)}
 </style>
 </head>
 <body>
@@ -46,26 +54,28 @@ button.on{border-color:var(--ember);color:var(--ember)}
 <div class="wrap">
   <header>
     <div>
-      <h1>ai<span>Polytrack</span> · car shapes</h1>
-      <p class="lede">Candidate new looks, with decals. Each one stays on the same wheels and inside the same hitbox
-        (Hitbox shows it), so handling, collisions and flips are unchanged. Pick a decal and any colours; drag a car to turn it.</p>
+      <h1>ai<span>Polytrack</span> · cars and decals</h1>
+      <p class="lede">Every car stays on the same wheels and inside the same hitbox (Hitbox shows it), so handling,
+        collisions and flips are unchanged; each card says how far the body reaches past the box. Decals are painted
+        in your own primary and secondary colours. Drag a car to turn it.</p>
     </div>
     <div class="ctl">
       <button id="bHull">Hitbox</button>
       <button id="bSpin" class="on">Spin</button>
       <button id="bSide">Side view</button>
+      <button id="bTop">From above</button>
     </div>
   </header>
   <section class="paint">
-    <div class="decals" id="decals"></div>
+    <div class="drow" id="rowNormal"><span>Decals</span></div>
+    <div class="drow" id="rowAnim"><span>Animated</span></div>
     <div class="picks">
-      <label><input type="color" id="cPrimary" value="#e83030"><span>Primary<small>body</small></span></label>
-      <label><input type="color" id="cSecondary" value="#972626"><span>Secondary<small>splitter, skirts, wing</small></span></label>
-      <label><input type="color" id="cDecalA" value="#ffffff"><span>Decal 1<small>main</small></span></label>
-      <label><input type="color" id="cDecalB" value="#ffc628"><span>Decal 2<small>outline, second</small></span></label>
+      <label><input type="color" id="cPrimary" value="#e83030"><span>Primary<small>the body</small></span></label>
+      <label><input type="color" id="cSecondary" value="#f2f2f2"><span>Secondary<small>trim parts, and the decal</small></span></label>
+      <div class="presets" id="presets" title="Colour ideas"></div>
       <label id="numWrap"><input type="number" id="num" min="0" max="99" value="7"><span>Number<small>0 to 99</small></span></label>
+      <p class="dnote" id="dnote"></p>
     </div>
-    <p class="dnote" id="dnote"></p>
   </section>
   <div class="grid" id="grid"></div>
 </div>
@@ -75,12 +85,14 @@ button.on{border-color:var(--ember);color:var(--ember)}
 // --- the game's numbers (index.html CAR) -----------------------------------
 const CAR = { hull: { hw: 0.92, hh: 0.30, hl: 1.86, cy: 0.26 }, wheelR: 0.33, wheelX: 0.92, wheelZ: 1.25, mountY: 0.14, susRest: 0.26 };
 const WY = CAR.mountY - CAR.susRest;            // wheel centre height, -0.12
+const FZ = CAR.wheelZ;
 const deg = (d) => d * Math.PI / 180;
 const std = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.72, metalness: 0.04, flatShading: true }, o || {}));
 const M = {
   B: std(0xe83030, { roughness: 0.42, metalness: 0.1 }),       // body (primary)
   D: std(0x972626, { roughness: 0.5, metalness: 0.08 }),        // body dark (secondary)
   T: std(0x2b3442, { roughness: 0.6, metalness: 0.12 }),        // trim
+  K: std(0x161a21, { roughness: 0.8 }),                         // black (grilles, vents)
   G: std(0x9fd4f2, { roughness: 0.24, metalness: 0.2 }),        // glass
   L: std(0xfff0c6, { emissive: 0xffd77a, emissiveIntensity: 1.0 }),
   R: std(0x50121a, { emissive: 0xff2d2d, emissiveIntensity: 0.15 }),
@@ -89,81 +101,338 @@ const M = {
   rim: std(0xf2f5f8, { roughness: 0.42, metalness: 0.3, flatShading: false })
 };
 
-// --- building blocks --------------------------------------------------------
-/** a box, baked into car coordinates (as the game's mergeParts does), so a
- *  decal pattern reads the same position on every part */
-function box(g, mat, s, p, r) {
-  const geo = new THREE.BoxGeometry(s[0], s[1], s[2]);
-  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0));
-  geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(p[0], p[1], p[2]), q, new THREE.Vector3(1, 1, 1)));
-  const m = new THREE.Mesh(geo, mat);
-  g.add(m);
-  return m;
-}
+// --- building blocks (everything baked into car coordinates, as the game's
+//     mergeParts does, so a decal reads the same position on every part) -----
+const place = (geo, p, r) => geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(p[0], p[1], p[2]),
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0)), new THREE.Vector3(1, 1, 1)));
+const add = (g, geo, mat) => { const m = new THREE.Mesh(geo, mat); g.add(m); return m; };
 /** a side-view outline (z, y points) pushed out to width w, edges chamfered */
-function side(g, mat, pts, w, o) {
-  o = o || {};
-  const bt = o.bt == null ? 0.035 : o.bt, bs = o.bs == null ? 0.03 : o.bs;
+function prism(pts, w, bt, bs) {
   const shape = new THREE.Shape(pts.map((p) => new THREE.Vector2(p[0], p[1])));
   const depth = Math.max(0.001, w - 2 * bt);
   const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bt > 0, bevelThickness: bt, bevelSize: bs, bevelSegments: 1, steps: 1, curveSegments: 4 });
   geo.rotateY(-Math.PI / 2);                    // shape x -> car z, extrusion -> car x
-  geo.translate(depth / 2 + (o.x || 0), 0, 0);
-  const m = new THREE.Mesh(geo, mat);
-  g.add(m);
-  return m;
+  geo.translate(depth / 2, 0, 0);
+  return geo;
+}
+function side(g, mat, pts, w, o) {
+  o = o || {};
+  const geo = prism(pts, w, o.bt == null ? 0.035 : o.bt, o.bs == null ? 0.03 : o.bs);
+  geo.translate(o.x || 0, 0, 0);
+  return add(g, geo, mat);
+}
+const both = (fn) => { fn(-1); fn(1); };
+/** the same piece on both sides of the car */
+const pair = (g, mat, pts, w, x, o) => both((s) => side(g, mat, pts, w, Object.assign({}, o, { x: s * x })));
+/** a box with chamfered edges (c), rotated (r, radians) and placed (p) */
+function cbox(g, mat, s, p, r, c) {
+  c = c == null ? Math.min(0.025, s[1] / 4, s[2] / 4, s[0] / 4) : c;
+  const hz = s[2] / 2 - c, hy = s[1] / 2 - c;
+  const geo = c > 0.002 ? prism([[-hz, -hy], [hz, -hy], [hz, hy], [-hz, hy]], s[0], c, c) : new THREE.BoxGeometry(s[0], s[1], s[2]);
+  return add(g, place(geo, p, r), mat);
+}
+/** a cylinder along x, y or z */
+function cyl(g, mat, r, len, p, axis, seg) {
+  const geo = new THREE.CylinderGeometry(r, r, len, seg || 12);
+  if (axis === 'z') geo.rotateX(Math.PI / 2); else if (axis === 'x') geo.rotateZ(Math.PI / 2);
+  return add(g, place(geo, p), mat);
 }
 /** the bottom edge from rear (zR) to front (zF) at height yb, with a round
  *  wheel arch of radius r cut out over each axle */
 function bottom(zR, zF, yb, r, only) {
   const out = [[zR, yb]];
-  const a = Math.asin(Math.min(1, (WY - yb) / r));      // where the arch meets the bottom
-  for (const c of (only || [-CAR.wheelZ, CAR.wheelZ])) {
+  const a = Math.asin(Math.max(-1, Math.min(1, (yb - WY) / r)));     // where the arch meets the bottom
+  for (const c of (only || [-FZ, FZ])) {
     if (c - r < zR || c + r > zF) continue;
-    const f0 = Math.PI - a, f1 = a;                     // (yb is below the wheel centre: a < 0)
-    for (let k = 0; k <= 12; k++) {
-      const f = f0 + (f1 - f0) * k / 12;
-      out.push([c + r * Math.cos(f), WY + r * Math.sin(f)]);
-    }
+    const f0 = Math.PI - a, f1 = a;
+    for (let k = 0; k <= 14; k++) { const f = f0 + (f1 - f0) * k / 14; out.push([c + r * Math.cos(f), WY + r * Math.sin(f)]); }
   }
   out.push([zF, yb]);
   return out;
+}
+/** an arch trim around a wheel: a half ring from radius r0 to r1 */
+function flare(g, mat, c, r0, r1, x, w) {
+  const pts = [];
+  for (let k = 0; k <= 14; k++) { const f = Math.PI + 0.18 - (Math.PI + 0.36) * k / 14; pts.push([c + r1 * Math.cos(f), WY + r1 * Math.sin(f)]); }
+  for (let k = 14; k >= 0; k--) { const f = Math.PI + 0.18 - (Math.PI + 0.36) * k / 14; pts.push([c + r0 * Math.cos(f), WY + r0 * Math.sin(f)]); }
+  pair(g, mat, pts, w, x, { bt: 0.012, bs: 0.01 });
+}
+function mirrors(g, x, y, z) {
+  both((s) => { cbox(g, M.T, [0.12, 0.03, 0.05], [s * (x - 0.06), y - 0.03, z]); cbox(g, M.B, [0.07, 0.08, 0.15], [s * x, y, z], null, 0.015); });
+}
+/** a row of thin slats across a dark recess, on a side (x) */
+function sideVent(g, x, y, z, h, len, n) {
+  both((s) => {
+    cbox(g, M.K, [0.02, h, len], [s * x, y, z], null, 0.004);
+    for (let k = 0; k < n; k++) cbox(g, M.T, [0.03, 0.012, len * 0.92], [s * (x + 0.006), y - h / 2 + h * (k + 0.5) / n, z], null, 0);
+  });
 }
 function wheels(g) {
   const R = CAR.wheelR;
   for (const sx of [-1, 1]) for (const sz of [1, -1]) {
     const w = new THREE.Group();
-    w.position.set(sx * CAR.wheelX, WY, sz * CAR.wheelZ);
+    w.position.set(sx * CAR.wheelX, WY, sz * FZ);
     const tyre = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.28, 16), M.tyre);
     tyre.rotation.z = Math.PI / 2;
     w.add(tyre);
     const rim = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.62, R * 0.62, 0.30, 12), M.rim);
     rim.rotation.z = Math.PI / 2;
     w.add(rim);
-    for (let k = 0; k < 4; k++) box(w, M.rim, [0.30, R * 1.28, 0.075], [0, 0, 0], [(k * Math.PI) / 4, 0, 0]);
+    for (let k = 0; k < 4; k++) {
+      const sp = new THREE.Mesh(new THREE.BoxGeometry(0.30, R * 1.28, 0.075), M.rim);
+      sp.rotation.x = (k * Math.PI) / 4;
+      w.add(sp);
+    }
+    w.userData.wheel = true;
     g.add(w);
   }
 }
-const both = (fn) => { fn(-1); fn(1); };
+
+// --- the cars -------------------------------------------------------------------
+const CARS = [
+  {
+    name: 'Classic', tag: 'TODAY, REWORKED', like: '',
+    note: 'The car you drive now, rebuilt: the same boxy hatch with a dark cabin and a wing, now with chamfered panels, real wheel arches with trims, hood vents, a grille and a diffuser.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.98, 1.98, -0.21, 0.37),
+        [1.99, -0.12], [1.99, 0.14], [1.86, 0.25], [0.80, 0.30], [-1.30, 0.31], [-1.92, 0.33], [-1.99, 0.29], [-1.99, -0.08]], 1.98, { bs: 0.015 });
+      cbox(g, M.T, [1.34, 0.27, 1.35], [0, 0.42, -0.275], null, 0.03);
+      cbox(g, M.G, [1.20, 0.43, 0.04], [0, 0.425, 0.575], [deg(-54), 0, 0]);
+      cbox(g, M.G, [1.20, 0.46, 0.04], [0, 0.43, -1.05], [deg(59), 0, 0]);
+      both((s) => cbox(g, M.G, [0.03, 0.17, 1.02], [s * 0.675, 0.43, -0.28], null, 0.01));
+      cbox(g, M.B, [1.24, 0.045, 1.22], [0, 0.552, -0.27], null, 0.02);
+      cbox(g, M.D, [1.74, 0.05, 0.34], [0, 0.50, -1.82], [deg(-6), 0, 0]);
+      both((s) => { cbox(g, M.D, [0.04, 0.15, 0.38], [s * 0.88, 0.48, -1.82]); cbox(g, M.T, [0.06, 0.16, 0.08], [s * 0.52, 0.40, -1.80]); });
+      cbox(g, M.D, [1.94, 0.05, 0.30], [0, -0.20, 1.88]);
+      cbox(g, M.D, [1.80, 0.10, 0.26], [0, -0.16, -1.90]);
+      for (const x of [-0.45, 0, 0.45]) cbox(g, M.T, [0.03, 0.12, 0.24], [x, -0.17, -1.90], null, 0);
+      both((s) => cbox(g, M.D, [0.06, 0.07, 1.20], [s * 0.975, -0.17, 0]));
+      flare(g, M.D, FZ, 0.37, 0.42, 0.955, 0.07); flare(g, M.D, -FZ, 0.37, 0.42, 0.955, 0.07);
+      cbox(g, M.K, [1.00, 0.11, 0.03], [0, 0.02, 1.995], null, 0.01);
+      for (const y of [-0.01, 0.03]) cbox(g, M.T, [0.96, 0.012, 0.035], [0, y, 2.0], null, 0);
+      both((s) => { cbox(g, M.L, [0.38, 0.09, 0.04], [s * 0.70, 0.08, 1.995]); cbox(g, M.R, [0.46, 0.08, 0.03], [s * 0.62, 0.18, -1.995]); });
+      both((s) => cbox(g, M.K, [0.30, 0.012, 0.20], [s * 0.36, 0.296, 1.20], [deg(2.5), 0, 0], 0));
+      both((s) => cyl(g, M.C, 0.05, 0.14, [s * 0.32, -0.10, -1.99], 'z'));
+      mirrors(g, 0.80, 0.40, 0.30);
+    }
+  },
+  {
+    name: 'Wedge', tag: 'A', like: '',
+    note: 'One sharp line from a low nose to a high, cut-off tail: pop-up lights, a low glass canopy, intakes behind the doors and louvres over the engine. <b>Decals:</b> a huge flat side and a long flat hood.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.12], [2.0, 0.10], [1.25, 0.32], [0.55, 0.40], [-1.70, 0.45], [-1.98, 0.45], [-1.99, 0.02]], 1.98);
+      side(g, M.G, [[0.66, 0.36], [0.02, 0.555], [-0.80, 0.555], [-1.42, 0.44], [-1.42, 0.38], [0.66, 0.38]], 1.36, { bs: 0.015, bt: 0.02 });
+      cbox(g, M.B, [1.30, 0.03, 0.74], [0, 0.563, -0.40], null, 0.01);
+      both((s) => cbox(g, M.D, [0.36, 0.05, 0.22], [s * 0.58, 0.255, 1.62], [deg(16), 0, 0], 0.012));
+      for (let k = 0; k < 4; k++) cbox(g, M.K, [1.20, 0.02, 0.05], [0, 0.49, -1.50 - k * 0.09], null, 0);
+      sideVent(g, 0.99, 0.22, -0.95, 0.14, 0.40, 3);
+      cbox(g, M.D, [1.92, 0.05, 0.30], [0, -0.21, 1.84]);
+      both((s) => cbox(g, M.D, [0.05, 0.07, 1.62], [s * 0.975, -0.15, 0]));
+      both((s) => cbox(g, M.L, [0.44, 0.035, 0.16], [s * 0.60, 0.16, 1.80], [deg(16), 0, 0], 0.008));
+      cbox(g, M.R, [1.70, 0.07, 0.04], [0, 0.36, -1.995]);
+      cbox(g, M.K, [1.20, 0.10, 0.03], [0, 0.17, -1.995]);
+      cbox(g, M.D, [1.86, 0.035, 0.16], [0, 0.48, -1.90], [deg(-10), 0, 0]);
+      both((s) => cyl(g, M.T, 0.055, 0.12, [s * 0.28, -0.08, -1.99], 'z'));
+    }
+  },
+  {
+    name: 'GT Fastback', tag: 'B', like: '',
+    note: 'Long hood, cabin set back, glass sloping to a ducktail: an oval grille, round lamps, vents behind the front wheels and four round tail lights. <b>Decals:</b> stripes nose to tail, numbers on the doors.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.99, 0.12], [1.82, 0.27], [1.25, 0.33], [0.70, 0.37], [-1.30, 0.40], [-1.92, 0.44], [-1.99, 0.37], [-1.99, 0.02]], 1.98);
+      side(g, M.G, [[0.72, 0.35], [0.06, 0.555], [-0.42, 0.555], [-1.44, 0.41], [-1.44, 0.36], [0.72, 0.36]], 1.42, { bs: 0.015, bt: 0.02 });
+      cbox(g, M.B, [1.36, 0.03, 0.46], [0, 0.565, -0.18], null, 0.01);
+      cbox(g, M.D, [1.80, 0.035, 0.18], [0, 0.465, -1.88], [deg(-12), 0, 0], 0.01);
+      cbox(g, M.D, [1.92, 0.05, 0.28], [0, -0.21, 1.85]);
+      cbox(g, M.D, [1.84, 0.10, 0.24], [0, -0.16, -1.88]);
+      both((s) => cbox(g, M.D, [0.05, 0.07, 1.62], [s * 0.975, -0.15, 0]));
+      cbox(g, M.K, [0.66, 0.11, 0.03], [0, 0.02, 1.995], null, 0.03);
+      both((s) => { cyl(g, M.L, 0.085, 0.05, [s * 0.66, 0.11, 1.975], 'z', 14); cyl(g, M.L, 0.05, 0.04, [s * 0.44, 0.10, 1.985], 'z', 12); });
+      both((s) => { cyl(g, M.R, 0.06, 0.03, [s * 0.46, 0.30, -1.99], 'z'); cyl(g, M.R, 0.06, 0.03, [s * 0.74, 0.30, -1.99], 'z'); });
+      sideVent(g, 0.99, 0.12, 0.62, 0.10, 0.24, 3);
+      both((s) => cyl(g, M.C, 0.05, 0.12, [s * 0.36, -0.09, -1.99], 'z'));
+      mirrors(g, 0.80, 0.41, 0.50);
+    }
+  },
+  {
+    name: 'Prototype', tag: 'C', like: '',
+    note: 'A Le Mans racer: a low middle with each wheel under its own fender, a glass bubble, an air intake, a shark fin, dive planes and a big wing. <b>Decals:</b> the fin and fenders, made for numbers.',
+    build(g) {
+      side(g, M.B, [[-1.96, -0.18], [1.90, -0.18], [1.99, -0.12], [1.97, 0.04], [0.80, 0.22], [-1.55, 0.30], [-1.98, 0.30], [-1.98, -0.06]], 1.10);
+      both((s) => {
+        side(g, M.B, [...bottom(0.56, 1.98, -0.17, 0.39, [FZ]), [1.99, -0.08], [1.96, 0.08], [1.55, 0.30], [1.05, 0.36], [0.62, 0.22], [0.56, 0.0]], 0.46, { x: s * 0.765 });
+        side(g, M.B, [...bottom(-1.98, -0.56, -0.17, 0.39, [-FZ]), [-0.56, 0.0], [-0.70, 0.30], [-1.20, 0.39], [-1.80, 0.36], [-1.98, 0.28], [-1.99, -0.05]], 0.46, { x: s * 0.765 });
+        side(g, M.D, [[-0.60, -0.16], [0.60, -0.16], [0.60, 0.06], [0.20, 0.17], [-0.60, 0.24]], 0.40, { x: s * 0.77 });
+        cbox(g, M.D, [0.22, 0.02, 0.16], [s * 0.86, 0.06, 1.84], [0, 0, s * deg(-12)], 0);
+        cbox(g, M.K, [0.02, 0.10, 0.20], [s * 0.975, 0.02, 0.45], null, 0.004);
+      });
+      side(g, M.G, [[0.62, 0.20], [0.14, 0.50], [-0.52, 0.525], [-1.02, 0.30], [-1.02, 0.20]], 0.96, { bs: 0.02, bt: 0.02 });
+      cbox(g, M.B, [0.62, 0.03, 0.52], [0, 0.54, -0.20], null, 0.01);
+      side(g, M.B, [[-0.52, 0.30], [-0.62, 0.52], [-1.70, 0.545], [-1.92, 0.44], [-1.92, 0.30]], 0.05, { bs: 0.008, bt: 0.008 });
+      cbox(g, M.K, [0.22, 0.08, 0.03], [0, 0.47, -0.56], null, 0.008);
+      cbox(g, M.D, [1.84, 0.04, 0.30], [0, 0.555, -1.80], [deg(-6), 0, 0], 0.012);
+      both((s) => { cbox(g, M.D, [0.04, 0.24, 0.50], [s * 0.93, 0.46, -1.78]); cbox(g, M.L, [0.30, 0.05, 0.14], [s * 0.70, 0.17, 1.72], [deg(20), 0, 0], 0.01); });
+      cbox(g, M.D, [1.96, 0.04, 0.26], [0, -0.17, 1.86]);
+      cbox(g, M.R, [1.0, 0.06, 0.04], [0, 0.22, -1.99]);
+      for (const x of [-0.30, 0, 0.30]) cbox(g, M.T, [0.03, 0.12, 0.26], [x, -0.12, -1.86], null, 0);
+      mirrors(g, 0.72, 0.30, 0.70);
+    }
+  },
+  {
+    name: 'Rally Hatch', tag: 'D', like: '',
+    note: 'A short, chunky hatchback with flared arches, a roof spoiler, a light pod, mud flaps and a tow hook. <b>Decals:</b> tall flat doors and a big roof, the classic rally canvas.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.98, 0.18], [1.80, 0.27], [1.10, 0.32], [0.85, 0.33], [-1.74, 0.35], [-1.97, 0.33], [-1.99, -0.06]], 1.94, { bs: 0.04, bt: 0.05 });
+      side(g, M.G, [[0.86, 0.31], [0.30, 0.545], [-1.62, 0.545], [-1.88, 0.40], [-1.88, 0.31]], 1.62, { bs: 0.02, bt: 0.03 });
+      cbox(g, M.B, [1.64, 0.035, 1.80], [0, 0.56, -0.66], null, 0.012);
+      cbox(g, M.D, [1.60, 0.03, 0.26], [0, 0.562, -1.62], [deg(-8), 0, 0], 0.01);
+      cbox(g, M.K, [0.40, 0.008, 0.26], [0, 0.578, 0.0], null, 0);
+      flare(g, M.D, FZ, 0.39, 0.46, 0.95, 0.10); flare(g, M.D, -FZ, 0.39, 0.46, 0.95, 0.10);
+      for (const x of [-0.45, -0.15, 0.15, 0.45]) cyl(g, M.L, 0.075, 0.05, [x, 0.25, 2.0], 'z', 14);
+      cbox(g, M.T, [1.10, 0.05, 0.06], [0, 0.17, 2.0]);
+      both((s) => { cbox(g, M.R, [0.20, 0.20, 0.04], [s * 0.78, 0.18, -1.995]); cbox(g, M.K, [0.26, 0.17, 0.02], [s * 0.84, -0.13, FZ - 0.48], null, 0); cbox(g, M.K, [0.26, 0.17, 0.02], [s * 0.84, -0.13, -FZ - 0.48], null, 0); });
+      cbox(g, M.T, [1.96, 0.08, 0.14], [0, -0.15, 1.94]);
+      cbox(g, M.T, [1.96, 0.08, 0.14], [0, -0.15, -1.94]);
+      cbox(g, M.R, [0.06, 0.06, 0.10], [0.55, -0.12, 2.02], null, 0.01);
+      both((s) => cyl(g, M.C, 0.03, 0.03, [s * 0.40, 0.335, 1.62], 'y', 10));
+      cyl(g, M.C, 0.055, 0.14, [0.70, -0.12, -1.99], 'z');
+      mirrors(g, 0.90, 0.40, 0.78);
+    }
+  },
+  {
+    name: 'Muscle', tag: 'E', like: '',
+    note: 'Blunt nose with four round lamps, a long flat hood with a raised scoop, side pipes, louvres over the rear glass and chrome bumpers. <b>Decals:</b> stripes over the scoop and flames down the sides.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.08], [1.99, 0.30], [1.90, 0.35], [0.56, 0.37], [-1.22, 0.39], [-1.95, 0.39], [-1.99, 0.34], [-1.99, -0.06]], 1.98);
+      side(g, M.G, [[0.58, 0.35], [0.20, 0.555], [-0.78, 0.555], [-1.24, 0.38], [0.58, 0.36]], 1.50, { bs: 0.015, bt: 0.02 });
+      cbox(g, M.B, [1.46, 0.03, 0.96], [0, 0.565, -0.29], null, 0.01);
+      side(g, M.B, [[1.72, 0.36], [1.52, 0.44], [0.78, 0.45], [0.64, 0.37]], 0.56, { bs: 0.02, bt: 0.02 });
+      cbox(g, M.K, [0.40, 0.045, 0.06], [0, 0.43, 1.55], null, 0.008);
+      for (let k = 0; k < 3; k++) cbox(g, M.K, [1.36, 0.018, 0.04], [0, 0.505 - k * 0.055, -0.92 - k * 0.12], [deg(20), 0, 0], 0);
+      cbox(g, M.D, [1.80, 0.04, 0.18], [0, 0.42, -1.92], [deg(-14), 0, 0], 0.01);
+      cbox(g, M.C, [2.0, 0.09, 0.10], [0, -0.07, 1.99], null, 0.03);
+      cbox(g, M.C, [2.0, 0.09, 0.10], [0, -0.07, -1.99], null, 0.03);
+      cbox(g, M.K, [1.00, 0.16, 0.03], [0, 0.15, 1.995], null, 0.01);
+      for (let k = 0; k < 3; k++) cbox(g, M.T, [0.96, 0.012, 0.035], [0, 0.10 + k * 0.05, 2.0], null, 0);
+      both((s) => { cyl(g, M.L, 0.075, 0.04, [s * 0.66, 0.16, 1.99], 'z', 14); cyl(g, M.L, 0.075, 0.04, [s * 0.84, 0.16, 1.99], 'z', 14); cbox(g, M.R, [0.60, 0.10, 0.04], [s * 0.52, 0.24, -2.0]); });
+      both((s) => cyl(g, M.C, 0.04, 1.30, [s * 0.985, -0.17, 0], 'z'));
+    }
+  },
+  {
+    name: 'Stinger', tag: 'F', like: 'like a Breakout',
+    note: 'Low and sharp: an arrow nose, the wheels under angular pods, a narrow canopy, twin tail fins with a wing between them. <b>Decals:</b> the pods and fins.',
+    build(g) {
+      side(g, M.B, [[-1.98, -0.16], [1.80, -0.16], [2.0, -0.06], [1.98, 0.02], [0.60, 0.24], [-1.40, 0.32], [-1.98, 0.32], [-1.99, -0.05]], 1.30);
+      both((s) => {
+        side(g, M.B, [...bottom(0.60, 1.98, -0.16, 0.39, [FZ]), [1.99, -0.10], [1.96, 0.02], [1.45, 0.32], [0.95, 0.35], [0.65, 0.18], [0.60, 0.0]], 0.40, { x: s * 0.79 });
+        side(g, M.B, [...bottom(-1.98, -0.60, -0.16, 0.39, [-FZ]), [-0.60, 0.0], [-0.70, 0.24], [-1.05, 0.38], [-1.70, 0.38], [-1.98, 0.30], [-1.99, -0.04]], 0.40, { x: s * 0.79 });
+        side(g, M.D, [[-0.62, -0.15], [0.62, -0.15], [0.62, 0.0], [-0.62, 0.14]], 0.36, { x: s * 0.80 });
+        side(g, M.B, [[-1.10, 0.30], [-1.30, 0.40], [-1.80, 0.56], [-1.97, 0.56], [-1.97, 0.30]], 0.05, { x: s * 0.55, bs: 0.008, bt: 0.008 });
+        cbox(g, M.L, [0.24, 0.03, 0.14], [s * 0.80, 0.23, 1.62], [deg(31), 0, 0], 0.008);
+        cbox(g, M.R, [0.05, 0.18, 0.04], [s * 0.55, 0.42, -1.97]);
+        cbox(g, M.K, [0.02, 0.10, 0.30], [s * 0.985, -0.06, 0.10], [deg(-8), 0, 0], 0.004);
+      });
+      side(g, M.G, [[0.70, 0.18], [0.20, 0.46], [-0.55, 0.49], [-1.15, 0.31], [-1.15, 0.18]], 0.90, { bs: 0.02, bt: 0.02 });
+      cbox(g, M.B, [0.56, 0.03, 0.46], [0, 0.505, -0.20], null, 0.01);
+      cbox(g, M.D, [1.12, 0.035, 0.24], [0, 0.53, -1.80], [deg(-5), 0, 0], 0.01);
+      cbox(g, M.D, [1.30, 0.03, 0.30], [0, -0.17, 1.88], null, 0.01);
+      cyl(g, M.C, 0.07, 0.14, [0, 0.10, -1.99], 'z');
+    }
+  },
+  {
+    name: 'Bulldog', tag: 'G', like: 'like an Octane',
+    note: 'Cab-forward and chunky: a short nose, a steep windshield, big round fenders, a hood scoop, a bumper bar and a roof spoiler. <b>Decals:</b> the round fenders and the doors.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.99, 0.22], [1.78, 0.31], [1.15, 0.35], [-1.70, 0.37], [-1.96, 0.35], [-1.99, -0.06]], 1.80);
+      for (const c of [-FZ, FZ]) {
+        pair(g, M.B, [...bottom(c - 0.60, c + 0.60, -0.08, 0.41, [c]),
+          [c + 0.60, 0.06], [c + 0.48, 0.28], [c + 0.22, 0.39], [c - 0.22, 0.39], [c - 0.48, 0.28], [c - 0.60, 0.06]], 0.26, 0.86);
+      }
+      side(g, M.G, [[1.15, 0.33], [0.55, 0.545], [-1.30, 0.545], [-1.62, 0.40], [-1.62, 0.33]], 1.60, { bs: 0.02, bt: 0.03 });
+      cbox(g, M.B, [1.62, 0.035, 1.70], [0, 0.558, -0.38], null, 0.012);
+      cbox(g, M.D, [1.56, 0.03, 0.26], [0, 0.55, -1.42], [deg(-12), 0, 0], 0.01);
+      cbox(g, M.B, [0.50, 0.06, 0.40], [0, 0.37, 1.40], null, 0.02);
+      cbox(g, M.K, [0.38, 0.035, 0.02], [0, 0.385, 1.605], null, 0.004);
+      cbox(g, M.T, [1.84, 0.10, 0.10], [0, -0.08, 2.0], null, 0.03);
+      cbox(g, M.K, [0.70, 0.12, 0.03], [0, 0.10, 1.995], null, 0.01);
+      both((s) => { cyl(g, M.L, 0.10, 0.05, [s * 0.62, 0.15, 1.98], 'z', 16); cyl(g, M.R, 0.08, 0.04, [s * 0.70, 0.22, -1.985], 'z', 14); });
+      cyl(g, M.C, 0.06, 0.14, [-0.40, -0.10, -1.99], 'z');
+      mirrors(g, 0.88, 0.40, 0.92);
+    }
+  },
+  {
+    name: 'Brute', tag: 'H', like: 'like a Merc',
+    note: 'A boxy van: a flat roof the whole way back, slab sides, a big grille, a bull bar, a roof rack and side steps. <b>Decals:</b> the biggest sides of any car.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
+        [1.99, -0.10], [1.99, 0.30], [1.66, 0.34], [1.22, 0.525], [-1.92, 0.525], [-1.99, 0.48], [-1.99, -0.08]], 1.96, { bt: 0.04, bs: 0.025 });
+      cbox(g, M.G, [1.70, 0.47, 0.04], [0, 0.462, 1.452], [deg(-66.6), 0, 0], 0.01);
+      both((s) => { cbox(g, M.G, [0.02, 0.13, 0.80], [s * 0.985, 0.42, 0.70], null, 0.006); cbox(g, M.G, [0.02, 0.10, 0.40], [s * 0.985, 0.43, -0.55], null, 0.006); });
+      both((s) => { cbox(g, M.T, [0.05, 0.025, 2.60], [s * 0.70, 0.565, -0.45], null, 0.008); cbox(g, M.D, [0.10, 0.04, 1.30], [s * 0.94, -0.17, 0], null, 0.01); });
+      for (const z of [0.60, -0.45, -1.50]) cbox(g, M.T, [1.40, 0.02, 0.04], [0, 0.56, z], null, 0);
+      cbox(g, M.K, [1.30, 0.20, 0.03], [0, 0.11, 1.995], null, 0.01);
+      for (let k = 0; k < 4; k++) cbox(g, M.T, [1.26, 0.014, 0.035], [0, 0.04 + k * 0.045, 2.0], null, 0);
+      both((s) => { cbox(g, M.L, [0.22, 0.14, 0.03], [s * 0.82, 0.17, 1.995], null, 0.01); cbox(g, M.R, [0.10, 0.28, 0.03], [s * 0.88, 0.26, -1.995]); });
+      both((s) => cbox(g, M.T, [0.06, 0.30, 0.06], [s * 0.55, 0.02, 2.04], null, 0.015));
+      cbox(g, M.T, [1.30, 0.06, 0.06], [0, 0.16, 2.04], null, 0.015);
+      cbox(g, M.T, [1.30, 0.06, 0.06], [0, -0.06, 2.04], null, 0.015);
+      flare(g, M.D, FZ, 0.39, 0.47, 0.95, 0.10); flare(g, M.D, -FZ, 0.39, 0.47, 0.95, 0.10);
+      cbox(g, M.K, [0.01, 0.40, 0.01], [0, 0.20, -1.996], null, 0);
+      mirrors(g, 0.92, 0.42, 1.20);
+    }
+  },
+  {
+    name: 'Manta', tag: 'I', like: 'like a Plank',
+    note: 'Flat as a board: a thin, wide slab with the wheels showing underneath, a small bubble cockpit, intakes beside it, side blades and two tail fins. <b>Decals:</b> the whole top is one big flat canvas.',
+    build(g) {
+      side(g, M.B, [...bottom(-1.98, 1.98, -0.05, 0.37),
+        [1.99, 0.0], [1.99, 0.08], [1.30, 0.24], [-1.70, 0.29], [-1.99, 0.27], [-1.99, -0.03]], 1.98, { bs: 0.015 });
+      side(g, M.G, [[0.55, 0.22], [0.10, 0.42], [-0.55, 0.43], [-1.05, 0.27], [-1.05, 0.22]], 0.84, { bs: 0.02, bt: 0.02 });
+      cbox(g, M.B, [0.50, 0.025, 0.50], [0, 0.44, -0.22], null, 0.008);
+      both((s) => {
+        cbox(g, M.D, [0.04, 0.06, 3.40], [s * 0.975, 0.10, 0], null, 0.012);
+        side(g, M.D, [[-1.30, 0.26], [-1.60, 0.46], [-1.95, 0.50], [-1.97, 0.27]], 0.05, { x: s * 0.80, bs: 0.008, bt: 0.008 });
+        cbox(g, M.K, [0.20, 0.014, 0.50], [s * 0.60, 0.29, -0.40], [deg(1), 0, 0], 0);
+        cbox(g, M.L, [0.50, 0.025, 0.10], [s * 0.55, 0.115, 1.78], [deg(13), 0, 0], 0.006);
+        cyl(g, M.C, 0.06, 0.12, [s * 0.30, 0.10, -1.99], 'z');
+      });
+      cbox(g, M.D, [1.96, 0.03, 0.30], [0, -0.05, 1.86], null, 0.01);
+      cbox(g, M.R, [1.60, 0.04, 0.03], [0, 0.20, -1.995]);
+    }
+  }
+];
 
 // --- decals -------------------------------------------------------------------
 // A decal is a pattern over the car's own space (x across, y up, z forward),
 // worked out per pixel in the body paint's shader. It doesn't care what the
 // body is made of, so the same decal fits every shape and carries on across
-// every edge (hood to nose, roof to tail) with no seam. Two colours of its
-// own (uDA, uDB) on top of the body's primary and secondary; the animated
-// ones also glow a little.
+// every edge with no seam. On the body it is painted in the secondary colour,
+// on the secondary parts in the primary, each with a light or dark accent
+// made from it (whichever shows up better).
 const DECALS = [
-  { id: 0, name: 'None' },
-  { id: 1, name: 'Racing stripes', kind: 'normal', note: 'Twin stripes over the top with an outline, and a stripe along each side.' },
-  { id: 2, name: 'Race number', kind: 'normal', note: 'A swoosh that rises toward the tail, and your number on both doors and the roof.' },
-  { id: 3, name: 'Chevrons', kind: 'animated', note: 'Glowing arrows that stream from the nose to the tail.' },
-  { id: 4, name: 'Aurora', kind: 'animated', note: 'Ribbons of your two colours drifting over the whole car.' }
+  { id: 0, name: 'None', note: 'Just your two colours.' },
+  { id: 1, name: 'Racing stripes', note: 'Twin stripes over the top with an outline, carried down the nose and tail, and a stripe along each side.' },
+  { id: 2, name: 'Race number', note: 'A swoosh rising toward the tail, and your number on both doors and the roof.' },
+  { id: 3, name: 'Flames', note: 'Hot-rod flames from the nose, over the hood and down both sides.' },
+  { id: 4, name: 'Lightning', note: 'A bolt down each side and over the top, thick at the nose and thinning to the tail.' },
+  { id: 5, name: 'Checkered', note: 'A chequered roof, nose band and sill band.' },
+  { id: 6, name: 'Tiger', note: 'Stripes that run down from the top edges, sharpening to points.' },
+  { id: 7, name: 'Two-tone', note: 'The lower half in the second colour, the line rising toward the tail.' },
+  { id: 8, name: 'Arrows', anim: true, note: 'Glowing arrows, each with a fading trail, streaming from the nose to the tail.' },
+  { id: 9, name: 'Aurora', anim: true, note: 'Soft ribbons drifting over the whole car.' },
+  { id: 10, name: 'Pulse', anim: true, note: 'Thin neon lines with pulses of light racing back along them.' },
+  { id: 11, name: 'Inferno', anim: true, note: 'The flames, alive: they flicker and glow.' },
+  { id: 12, name: 'Glint', anim: true, note: 'A sheen of light that sweeps over the paint.' }
 ];
 const numCanvas = document.createElement('canvas');
 numCanvas.width = numCanvas.height = 256;
 const U = {
-  uDecal: { value: 1 }, uDA: { value: new THREE.Color(0xffffff) }, uDB: { value: new THREE.Color(0xffc628) },
+  uDecal: { value: 1 }, uP: { value: new THREE.Color() }, uS: { value: new THREE.Color() },
   uTime: { value: 0 }, uNum: { value: new THREE.CanvasTexture(numCanvas) }
 };
 function drawNumber(n) {
@@ -177,202 +446,154 @@ function drawNumber(n) {
 }
 drawNumber(7);
 const DECAL_GLSL = `
-uniform int uDecal; uniform vec3 uDA; uniform vec3 uDB; uniform float uTime; uniform sampler2D uNum;
+uniform int uDecal; uniform vec3 uP; uniform vec3 uS; uniform float uTime; uniform sampler2D uNum;
 varying vec3 vDecalPos;
 float dBand(float v, float a, float b) { float w = max(fwidth(v), 1e-4); return smoothstep(a - w, a + w, v) - smoothstep(b - w, b + w, v); }
 float dLess(float v, float a) { float w = max(fwidth(v), 1e-4); return 1.0 - smoothstep(a - w, a + w, v); }
+// hot-rod flames: along = metres back from the nose, across = 0..1 over the
+// panel; tongues of different lengths ending in points
+float dFlame(float along, float across, float n, float off, float t, float anim, out float edge, out float core) {
+  float k = across * n + off, id = floor(k), s = fract(k);
+  float tip = pow(1.0 - abs(2.0 * s - 1.0), 1.4);
+  float len = 0.45 + 0.95 * tip * (0.78 + 0.22 * sin(id * 2.31 + 1.3)) + 0.05 * sin(along * 8.0 + id * 1.7)
+            + anim * (0.16 * sin(t * 6.3 + id * 1.9 + along * 2.0) + 0.07 * sin(t * 11.0 + id * 4.1));
+  edge = dBand(along, len, len + 0.045);
+  core = dLess(along, len - 0.26);
+  return dLess(along, len);
+}
+// a chevron train moving back: the bright head and its fading trail
+void dArrow(float v, float sp, out float head, out float trail) {
+  float ph = fract(v * 1.3 - sp), aw = max(fwidth(v * 1.3), 1e-4);
+  head = smoothstep(0.0, aw, ph) * (1.0 - smoothstep(0.085 - aw, 0.085 + aw, ph));
+  trail = (1.0 - smoothstep(0.085, 0.6, ph)) * step(0.085, ph) * 0.6;
+}
 `;
 const DECAL_PAINT = `
 if (uDecal > 0) {
   vec3 dp = vDecalPos;
   vec3 dn = normalize(cross(dFdx(dp), dFdy(dp)));
-  float sideF = smoothstep(0.55, 0.8, abs(dn.x));      // the car's flanks
+  vec3 an = abs(dn);
+  float sideF = smoothstep(0.55, 0.8, an.x);           // the flanks
   float topF = 1.0 - sideF;                            // the top, nose and tail
-  float ax = abs(dp.x);
+  float ax = abs(dp.x), u = 1.97 - dp.z, t = uTime;    // u: metres back from the nose
+#ifdef DECAL_DARK
+  vec3 C1 = uP;
+#else
+  vec3 C1 = uS;
+#endif
+  float lum = dot(C1, vec3(0.299, 0.587, 0.114));
+  vec3 C2 = lum > 0.42 ? C1 * 0.36 : mix(C1, vec3(1.0), 0.62);     // its accent
+  vec3 LT = mix(C1, vec3(1.0), 0.55);                                 // a light version, to glow
   vec3 dc = diffuseColor.rgb, glow = vec3(0.0);
+  float roofF = step(0.75, an.y) * step(0.40, dp.y);
   if (uDecal == 1) {
-    // twin stripes over everything facing up, forward or back, outlined in B
     float s = dBand(ax, 0.10, 0.30) * topF;
     float o = (dBand(ax, 0.075, 0.10) + dBand(ax, 0.30, 0.325)) * topF;
-    float ss = dBand(dp.y, 0.06, 0.13) * sideF;
-    float so = dBand(dp.y, 0.145, 0.165) * sideF;
-    dc = mix(dc, uDB, clamp(o + so, 0.0, 1.0));
-    dc = mix(dc, uDA, clamp(s + ss, 0.0, 1.0));
+    float ss = dBand(dp.y, 0.05, 0.12) * sideF;
+    float so = (dBand(dp.y, 0.03, 0.05) + dBand(dp.y, 0.12, 0.14)) * sideF;
+    dc = mix(dc, C2, clamp(o + so, 0.0, 1.0));
+    dc = mix(dc, C1, clamp(s + ss, 0.0, 1.0));
   } else if (uDecal == 2) {
-    // a swoosh along each side, widening and rising toward the tail
-    float t = clamp((1.95 - dp.z) / 3.9, 0.0, 1.0);
-    float lo = -0.10 + 0.13 * t, hi = lo + 0.06 + 0.07 * t;
-    dc = mix(dc, uDA, dBand(dp.y, lo, hi) * sideF);
-    dc = mix(dc, uDB, dBand(dp.y, hi + 0.02, hi + 0.04) * sideF);
-    // number roundels on the doors (reading the right way on both sides)...
+    float tt = clamp(u / 3.9, 0.0, 1.0);
+    float lo = -0.10 + 0.13 * tt, hi = lo + 0.06 + 0.07 * tt;
+    dc = mix(dc, C1, dBand(dp.y, lo, hi) * sideF);
+    dc = mix(dc, C2, dBand(dp.y, hi + 0.02, hi + 0.04) * sideF);
     vec2 q = vec2(dp.z + 0.12, dp.y - 0.08);
     float r = length(q);
     float disc = dLess(r, 0.20) * sideF, ring = dBand(r, 0.20, 0.23) * sideF;
     float dig = texture2D(uNum, clamp(vec2(0.5 - sign(dp.x) * q.x / 0.40, 0.5 + q.y / 0.40), 0.0, 1.0)).a * disc;
-    // ...and on the roof, upright from the chase camera
-    float roofF = step(0.75, abs(dn.y)) * step(0.44, dp.y);
     vec2 q2 = vec2(dp.x, dp.z + 0.24);
     float r2 = length(q2);
     float disc2 = dLess(r2, 0.20) * roofF, ring2 = dBand(r2, 0.20, 0.225) * roofF;
     float dig2 = texture2D(uNum, clamp(vec2(0.5 - q2.x / 0.40, 0.5 + q2.y / 0.40), 0.0, 1.0)).a * disc2;
-    dc = mix(dc, uDB, max(disc, disc2));
-    dc = mix(dc, uDA, clamp(ring + ring2 + dig + dig2, 0.0, 1.0));
-  } else if (uDecal == 3) {
-    // arrows pointing forward, streaming back; every other one in B
-    float sp = uTime * 1.4;
-    float v = dp.z + ax * 0.9;
-    float d = abs(fract(v * 1.5 + sp) - 0.5);
-    float m = dLess(d, 0.17) * dLess(ax, 0.44) * topF;
-    vec3 col = mix(uDA, uDB, mod(floor(v * 1.5 + sp), 2.0));
-    float vs = dp.z + abs(dp.y - 0.06) * 1.3;
-    float ds = abs(fract(vs * 1.5 + sp) - 0.5);
-    float ms = dLess(ds, 0.15) * dLess(abs(dp.y - 0.06), 0.13) * sideF;
-    vec3 cols = mix(uDA, uDB, mod(floor(vs * 1.5 + sp), 2.0));
-    dc = mix(dc, col, m); dc = mix(dc, cols, ms);
-    glow += col * m * 0.5 + cols * ms * 0.5;
+    vec3 paper = lum > 0.42 ? mix(C1, vec3(1.0), 0.6) : mix(C1, vec3(1.0), 0.88);
+    vec3 ink = lum > 0.42 ? C1 * 0.3 : C1;
+    dc = mix(dc, paper, max(disc, disc2));
+    dc = mix(dc, ink, clamp(dig + dig2, 0.0, 1.0));
+    dc = mix(dc, C1, clamp(ring + ring2, 0.0, 1.0));
+  } else if (uDecal == 3 || uDecal == 11) {
+    float anim = uDecal == 11 ? 1.0 : 0.0, e1, c1, e2, c2;
+    float acrossS = (dp.y + 0.21) / 0.52;
+    float fS = dFlame(u, acrossS, 3.0, 0.0, t, anim, e1, c1) * sideF * step(0.0, acrossS) * step(acrossS, 1.0);
+    float acrossT = ax / 0.80;
+    float fT = dFlame(u, acrossT, 2.5, 0.5, t, anim, e2, c2) * topF * step(acrossT, 1.0);
+    float m = max(fS, fT), core = max(c1 * fS, c2 * fT), edge = max(e1 * sideF, e2 * topF);
+    vec3 hot = mix(C1, vec3(1.0), 0.35);
+    dc = mix(dc, C2, edge * (1.0 - m));
+    dc = mix(dc, C1, m);
+    dc = mix(dc, hot, core);
+    if (anim > 0.5) glow += C1 * m * 0.18 + C1 * core * (0.22 + 0.14 * sin(t * 9.0 + u * 3.0));
   } else if (uDecal == 4) {
-    // ribbons that drift over the whole car, shading from A to B
-    float w = sin(dp.z * 1.9 - dp.y * 3.4 - uTime * 1.2 + 1.7 * sin(dp.x * 1.8 + uTime * 0.55));
+    float tri1 = abs(fract(u * 1.7) - 0.5) * 2.0, tri2 = abs(fract(u * 4.1 + 0.3) - 0.5) * 2.0;
+    float w = mix(0.065, 0.012, clamp(u / 3.8, 0.0, 1.0));
+    float yc = 0.06 + 0.11 * (tri1 - 0.5) + 0.035 * (tri2 - 0.5);
+    float xc = 0.16 * (tri1 - 0.5) + 0.05 * (tri2 - 0.5);
+    float b = dLess(abs(dp.y - yc), w) * sideF + dLess(abs(dp.x - xc), w * 1.4) * topF;
+    float bo = dBand(abs(dp.y - yc), w, w + 0.022) * sideF + dBand(abs(dp.x - xc), w * 1.4, w * 1.4 + 0.022) * topF;
+    dc = mix(dc, C2, clamp(bo, 0.0, 1.0));
+    dc = mix(dc, C1, clamp(b, 0.0, 1.0));
+  } else if (uDecal == 5) {
+    vec2 cc = an.x > max(an.y, an.z) ? dp.zy : (an.y > an.z ? dp.xz : dp.xy);
+    float ck = mod(floor(cc.x / 0.09) + floor(cc.y / 0.09), 2.0);
+    float region = max(max(roofF, step(dp.y, -0.03) * sideF), step(u, 0.36) * topF);
+    dc = mix(dc, mix(C1, C2, ck), region);
+  } else if (uDecal == 6) {
+    float ph = u * 2.1 + 0.22 * sin(u * 4.7 + 1.0);
+    float s = abs(fract(ph) - 0.5);
+    float h = sideF * clamp((0.36 - dp.y) / 0.46, 0.0, 1.0) + topF * clamp((0.92 - ax) / 0.75, 0.0, 1.0);
+    float wd = 0.17 * (1.0 - h) * (0.8 + 0.2 * sin(floor(ph) * 3.1));
+    dc = mix(dc, C1, dLess(s, wd) * step(h, 0.97));
+  } else if (uDecal == 7) {
+    float yl = 0.16 * clamp(u / 3.9, 0.0, 1.0);
+    dc = mix(dc, C1, dLess(dp.y, yl));
+    dc = mix(dc, C2, dBand(dp.y, yl, yl + 0.02));
+  } else if (uDecal == 8) {
+    float sp = t * 2.0, h1, t1, h2, t2;
+    float dy = abs(dp.y - 0.07);
+    dArrow(u - dy * 1.15, sp, h1, t1);
+    dArrow(u - ax * 1.15, sp, h2, t2);
+    float bs = dLess(dy, 0.14) * sideF, bt = dLess(ax, 0.42) * topF;
+    float H = h1 * bs + h2 * bt, T = t1 * bs + t2 * bt;
+    dc = mix(dc, C1, clamp(T, 0.0, 1.0));
+    dc = mix(dc, LT, clamp(H, 0.0, 1.0));
+    glow += C1 * T * 0.5 + LT * H * 1.1;
+  } else if (uDecal == 9) {
+    float w = sin(dp.z * 1.9 - dp.y * 3.4 - t * 1.2 + 1.7 * sin(dp.x * 1.8 + t * 0.55));
     float rib = smoothstep(0.1, 0.8, w);
-    vec3 col = mix(uDA, uDB, 0.5 + 0.5 * sin(dp.z * 0.9 - dp.y * 2.0 + uTime * 0.8));
-    dc = mix(dc, col, rib * 0.92);
+    vec3 col = mix(C1, LT, 0.5 + 0.5 * sin(dp.z * 0.9 - dp.y * 2.0 + t * 0.8));
+    dc = mix(dc, col, rib * 0.9);
     glow += col * rib * 0.3;
+  } else if (uDecal == 10) {
+    float lines = dLess(abs(dp.y - 0.14), 0.011) * sideF + dLess(abs(dp.y + 0.10), 0.008) * sideF
+                + dLess(abs(ax - 0.30), 0.011) * topF + dLess(ax, 0.008) * topF;
+    lines = clamp(lines, 0.0, 1.0);
+    float p = fract(u / 1.3 - t * 0.8);
+    float lit = 0.3 + 1.6 * pow(p, 8.0);
+    dc = mix(dc, LT, lines);
+    glow += LT * lines * lit;
+  } else if (uDecal == 12) {
+    float s = dp.z * 0.7 + dp.y * 1.3 + ax * 0.25;
+    float g = exp(-pow((fract(s * 0.22 - t * 0.28) - 0.5) * 9.0, 2.0));
+    vec3 gc = mix(C1, vec3(1.0), 0.65);
+    dc = mix(dc, gc, g * 0.55);
+    glow += gc * g * 0.6;
   }
   diffuseColor.rgb = dc;
   totalEmissiveRadiance += glow;
 }
 `;
-/** the body paints (primary and secondary) take the decal */
-function decalify(mat) {
+/** the two paints take the decal (the secondary parts in the primary colour) */
+function decalify(mat, dark) {
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec3 vDecalPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvDecalPos = transformed;');
-    sh.fragmentShader = DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT);
+    sh.fragmentShader = (dark ? '#define DECAL_DARK\n' : '') + DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT);
   };
-  mat.customProgramCacheKey = () => 'decal';
+  mat.customProgramCacheKey = () => (dark ? 'decalDark' : 'decal');
   mat.needsUpdate = true;
 }
-decalify(M.B);
-decalify(M.D);
-
-// --- the candidates -----------------------------------------------------------
-const CARS = [
-  {
-    name: 'Today', tag: 'CURRENT',
-    note: 'The car as it is: 24 boxes. Decals would have to sit on lots of small, separate faces.',
-    build(g) {
-      const B = M.B, D = M.D, T = M.T, G = M.G;
-      box(g, T, [1.74, 0.14, 3.46], [0, -0.18, 0]);
-      box(g, B, [1.98, 0.34, 3.62], [0, 0.02, 0]);
-      box(g, B, [1.82, 0.22, 1.00], [0, 0.06, 1.48], [deg(-5), 0, 0]);
-      box(g, B, [1.90, 0.22, 0.95], [0, 0.13, -1.40]);
-      box(g, D, [1.90, 0.10, 0.34], [0, -0.20, 1.86]);
-      box(g, D, [1.82, 0.12, 0.30], [0, -0.17, -1.88]);
-      box(g, D, [2.00, 0.10, 1.90], [0, -0.06, 0]);
-      box(g, T, [1.30, 0.42, 1.46], [0, 0.34, -0.20]);
-      box(g, G, [1.22, 0.42, 0.17], [0, 0.32, 0.58], [deg(34), 0, 0]);
-      box(g, G, [1.20, 0.38, 0.15], [0, 0.32, -0.96], [deg(-38), 0, 0]);
-      box(g, G, [0.06, 0.26, 1.16], [-0.66, 0.36, -0.18]);
-      box(g, G, [0.06, 0.26, 1.16], [0.66, 0.36, -0.18]);
-      box(g, B, [1.18, 0.09, 1.20], [0, 0.53, -0.30]);
-      box(g, T, [0.09, 0.10, 0.20], [-0.99, 0.30, 0.46]);
-      box(g, T, [0.09, 0.10, 0.20], [0.99, 0.30, 0.46]);
-      box(g, D, [1.70, 0.07, 0.34], [0, 0.47, -1.82]);
-      box(g, T, [0.10, 0.22, 0.10], [-0.56, 0.37, -1.80]);
-      box(g, T, [0.10, 0.22, 0.10], [0.56, 0.37, -1.80]);
-      both((s) => { box(g, M.L, [0.42, 0.13, 0.07], [s * 0.64, 0.08, 1.95]); box(g, M.R, [0.46, 0.11, 0.07], [s * 0.62, 0.16, -1.90]); });
-    }
-  },
-  {
-    name: 'Wedge', tag: 'A',
-    note: 'One sharp line from a low nose to a high, cut-off tail, with a low glass canopy. <b>Decals:</b> a huge flat side and a long flat hood.',
-    build(g) {
-      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
-        [1.99, -0.12], [2.0, 0.10], [1.25, 0.32], [0.55, 0.40], [-1.70, 0.45], [-1.98, 0.45], [-1.99, 0.02]], 1.98);
-      side(g, M.G, [[0.66, 0.36], [0.02, 0.555], [-0.80, 0.555], [-1.42, 0.44], [-1.42, 0.38], [0.66, 0.38]], 1.36, { bs: 0.015, bt: 0.02 });
-      box(g, M.B, [1.30, 0.03, 0.74], [0, 0.565, -0.40]);
-      box(g, M.D, [1.92, 0.05, 0.30], [0, -0.21, 1.84]);
-      both((s) => box(g, M.D, [0.05, 0.07, 1.62], [s * 0.995, -0.15, 0]));
-      both((s) => box(g, M.L, [0.44, 0.035, 0.16], [s * 0.60, 0.16, 1.78], [deg(16), 0, 0]));
-      box(g, M.R, [1.70, 0.07, 0.04], [0, 0.36, -1.995]);
-      box(g, M.D, [1.86, 0.035, 0.16], [0, 0.465, -1.90], [deg(-10), 0, 0]);
-      both((s) => box(g, M.T, [0.14, 0.09, 0.08], [s * 0.32, -0.08, -1.99]));
-    }
-  },
-  {
-    name: 'GT Fastback', tag: 'B',
-    note: 'Long hood, cabin set back, glass sloping to a ducktail. Classic and friendly. <b>Decals:</b> stripes run nose to tail, numbers on the doors.',
-    build(g) {
-      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
-        [1.99, -0.10], [1.99, 0.12], [1.82, 0.27], [1.25, 0.33], [0.70, 0.37], [-1.30, 0.40], [-1.92, 0.44], [-1.99, 0.37], [-1.99, 0.02]], 1.98);
-      side(g, M.G, [[0.72, 0.35], [0.06, 0.555], [-0.42, 0.555], [-1.44, 0.41], [-1.44, 0.36], [0.72, 0.36]], 1.42, { bs: 0.015, bt: 0.02 });
-      box(g, M.B, [1.36, 0.03, 0.46], [0, 0.565, -0.18]);
-      box(g, M.D, [1.92, 0.05, 0.28], [0, -0.21, 1.85]);
-      box(g, M.D, [1.84, 0.10, 0.24], [0, -0.16, -1.88]);
-      both((s) => box(g, M.D, [0.05, 0.07, 1.62], [s * 0.995, -0.15, 0]));
-      both((s) => { box(g, M.L, [0.30, 0.12, 0.05], [s * 0.66, 0.16, 1.93], [deg(-30), 0, 0]); box(g, M.R, [0.42, 0.09, 0.04], [s * 0.60, 0.30, -1.985]); });
-      both((s) => box(g, M.T, [0.10, 0.07, 0.18], [s * 0.80, 0.41, 0.50]));
-      both((s) => box(g, M.T, [0.12, 0.09, 0.08], [s * 0.36, -0.09, -1.99]));
-    }
-  },
-  {
-    name: 'Prototype', tag: 'C',
-    note: 'A Le Mans racer: a low middle with the wheels under their own fenders, a glass bubble, a fin and a big wing. <b>Decals:</b> the fin and fenders, made for numbers and sponsors.',
-    build(g) {
-      // the middle tub (the wheels sit outside it)
-      side(g, M.B, [[-1.96, -0.18], [1.90, -0.18], [1.99, -0.12], [1.97, 0.04], [0.80, 0.22], [-1.55, 0.30], [-1.98, 0.30], [-1.98, -0.06]], 1.10);
-      // a fender over each wheel, and a side pod between them
-      both((s) => {
-        side(g, M.B, [...bottom(0.56, 1.98, -0.17, 0.39, [CAR.wheelZ]), [1.99, -0.08], [1.96, 0.08], [1.55, 0.30], [1.05, 0.36], [0.62, 0.22], [0.56, 0.0]], 0.46, { x: s * 0.765 });
-        side(g, M.B, [...bottom(-1.98, -0.56, -0.17, 0.39, [-CAR.wheelZ]), [-0.56, 0.0], [-0.70, 0.30], [-1.20, 0.39], [-1.80, 0.36], [-1.98, 0.28], [-1.99, -0.05]], 0.46, { x: s * 0.765 });
-        side(g, M.D, [[-0.60, -0.16], [0.60, -0.16], [0.60, 0.06], [0.20, 0.17], [-0.60, 0.24]], 0.40, { x: s * 0.77 });
-      });
-      side(g, M.G, [[0.62, 0.20], [0.14, 0.50], [-0.52, 0.525], [-1.02, 0.30], [-1.02, 0.20]], 0.96, { bs: 0.02, bt: 0.02 });
-      box(g, M.B, [0.62, 0.03, 0.52], [0, 0.54, -0.20]);
-      side(g, M.B, [[-0.52, 0.30], [-0.62, 0.52], [-1.70, 0.545], [-1.92, 0.44], [-1.92, 0.30]], 0.05, { bs: 0.008, bt: 0.008 });
-      box(g, M.D, [1.84, 0.04, 0.30], [0, 0.555, -1.80], [deg(-6), 0, 0]);
-      both((s) => { box(g, M.D, [0.04, 0.24, 0.50], [s * 0.93, 0.46, -1.78]); box(g, M.L, [0.30, 0.05, 0.14], [s * 0.70, 0.17, 1.72], [deg(20), 0, 0]); });
-      box(g, M.D, [1.96, 0.04, 0.26], [0, -0.17, 1.86]);
-      box(g, M.R, [1.0, 0.06, 0.04], [0, 0.22, -1.99]);
-    }
-  },
-  {
-    name: 'Rally Hatch', tag: 'D',
-    note: 'A short, chunky hatchback with flared arches, a roof spoiler and a light pod. <b>Decals:</b> tall flat doors and a big roof, the classic rally-car canvas.',
-    build(g) {
-      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
-        [1.99, -0.10], [1.98, 0.18], [1.80, 0.27], [1.10, 0.32], [0.85, 0.33], [-1.74, 0.35], [-1.97, 0.33], [-1.99, -0.06]], 1.94, { bs: 0.04, bt: 0.05 });
-      side(g, M.G, [[0.86, 0.31], [0.30, 0.545], [-1.62, 0.545], [-1.88, 0.40], [-1.88, 0.31]], 1.62, { bs: 0.02, bt: 0.03 });
-      box(g, M.B, [1.64, 0.035, 1.80], [0, 0.56, -0.66]);
-      box(g, M.D, [1.60, 0.03, 0.26], [0, 0.565, -1.62], [deg(-8), 0, 0]);
-      // flared arches
-      both((s) => { for (const c of [-CAR.wheelZ, CAR.wheelZ]) side(g, M.D, [...[...Array(13)].map((_, k) => { const f = Math.PI - k * Math.PI / 12; return [c + 0.46 * Math.cos(f), WY + 0.46 * Math.sin(f)]; }),
-        ...[...Array(13)].map((_, k) => { const f = k * Math.PI / 12; return [c + 0.39 * Math.cos(f), WY + 0.39 * Math.sin(f)]; })], 0.10, { x: s * 0.95, bs: 0.01, bt: 0.01 }); });
-      for (const x of [-0.45, -0.15, 0.15, 0.45]) box(g, M.L, [0.20, 0.13, 0.05], [x, 0.24, 2.0]);
-      box(g, M.T, [1.10, 0.05, 0.06], [0, 0.17, 2.0]);
-      both((s) => box(g, M.R, [0.20, 0.20, 0.04], [s * 0.78, 0.18, -1.995]));
-      box(g, M.T, [1.96, 0.08, 0.14], [0, -0.15, 1.94]);
-      box(g, M.T, [1.96, 0.08, 0.14], [0, -0.15, -1.94]);
-    }
-  },
-  {
-    name: 'Muscle', tag: 'E',
-    note: 'Blunt nose, long flat hood with a raised scoop, short tail and chrome bumpers. <b>Decals:</b> twin stripes over the scoop and flames along the sides.',
-    build(g) {
-      side(g, M.B, [...bottom(-1.96, 1.96, -0.21, 0.39),
-        [1.99, -0.08], [1.99, 0.30], [1.90, 0.35], [0.56, 0.37], [-1.22, 0.39], [-1.95, 0.39], [-1.99, 0.34], [-1.99, -0.06]], 1.98);
-      side(g, M.G, [[0.58, 0.35], [0.20, 0.555], [-0.78, 0.555], [-1.24, 0.38], [0.58, 0.36]], 1.50, { bs: 0.015, bt: 0.02 });
-      box(g, M.B, [1.46, 0.03, 0.96], [0, 0.565, -0.29]);
-      side(g, M.B, [[1.72, 0.36], [1.52, 0.44], [0.78, 0.45], [0.64, 0.37]], 0.56, { bs: 0.02, bt: 0.02 });
-      box(g, M.T, [0.40, 0.045, 0.06], [0, 0.43, 1.55]);
-      box(g, M.C, [2.02, 0.09, 0.10], [0, -0.07, 2.0]);
-      box(g, M.C, [2.02, 0.09, 0.10], [0, -0.07, -2.0]);
-      both((s) => { box(g, M.L, [0.24, 0.20, 0.04], [s * 0.70, 0.17, 2.0]); box(g, M.R, [0.60, 0.10, 0.04], [s * 0.52, 0.24, -2.0]); });
-      box(g, M.T, [1.10, 0.14, 0.04], [0, 0.15, 2.0]);
-      both((s) => box(g, M.C, [0.14, 0.10, 0.10], [s * 0.42, -0.14, -2.02]));
-    }
-  }
-];
+decalify(M.B, false);
+decalify(M.D, true);
 
 // --- the page -----------------------------------------------------------------
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: true, alpha: true });
@@ -384,13 +605,13 @@ renderer.setScissorTest(true);
 const hullBox = new THREE.BoxGeometry(CAR.hull.hw * 2, CAR.hull.hh * 2, CAR.hull.hl * 2);
 const hullMat = new THREE.LineBasicMaterial({ color: 0x3ddbb8, transparent: true, opacity: 0.9, depthTest: false });
 const views = [];
-let showHull = true, spin = true, sideView = false;
+let showHull = false, spin = true, viewMode = 'turn';
+const $ = (id) => document.getElementById(id);
+const cm = (m) => (m <= 0.005 ? '0' : '+' + Math.round(m * 100)) + ' cm';
 
 for (const c of CARS) {
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = '<div class="view"></div><div class="txt"><h2><small>' + c.tag + '</small>' + c.name + '</h2><p>' + c.note + '</p></div>';
-  document.getElementById('grid').appendChild(card);
   const scene = new THREE.Scene();
   const key = new THREE.DirectionalLight(0xfff6e8, 1.4); key.position.set(4, 6, 4);
   const rim = new THREE.DirectionalLight(0x6fa8ff, 0.5); rim.position.set(-5, 3, -4);
@@ -400,12 +621,21 @@ for (const c of CARS) {
   scene.add(ground);
   const car = new THREE.Group();
   c.build(car);
+  // how far the body reaches past the hitbox (the wheels are the same on every car)
+  car.updateMatrixWorld(true);
+  const bb = new THREE.Box3().setFromObject(car);
+  const h = CAR.hull, top = h.cy + h.hh;
+  const over = { top: bb.max.y - top, sides: Math.max(bb.max.x, -bb.min.x) - h.hw, nose: bb.max.z - h.hl, tail: -bb.min.z - h.hl };
   wheels(car);
   const hull = new THREE.LineSegments(new THREE.EdgesGeometry(hullBox), hullMat);
-  hull.position.y = CAR.hull.cy;
+  hull.position.y = h.cy;
   hull.renderOrder = 10;
   car.add(hull);
   scene.add(car);
+  card.innerHTML = '<div class="view"></div><div class="txt"><h2><small>' + c.tag + '</small>' + c.name + (c.like ? '<em>' + c.like + '</em>' : '') +
+    '</h2><p>' + c.note + '</p><div class="fit">Past the hitbox: top <b' + (over.top > 0.03 ? ' class="warn"' : '') + '>' + cm(over.top) + '</b> · sides <b>' + cm(over.sides) +
+    '</b> · nose <b>' + cm(over.nose) + '</b> · tail <b>' + cm(over.tail) + '</b></div></div>';
+  $('grid').appendChild(card);
   const camera = new THREE.PerspectiveCamera(30, 1, 0.5, 60);
   const v = { el: card.querySelector('.view'), scene, car, hull, camera, angle: deg(200) + views.length * 0.35, drag: null };
   v.el.addEventListener('pointerdown', (e) => { v.drag = e.clientX; v.el.setPointerCapture(e.pointerId); });
@@ -413,32 +643,37 @@ for (const c of CARS) {
   v.el.addEventListener('pointerup', () => { v.drag = null; });
   views.push(v);
 }
-showHull = false;
-const $ = (id) => document.getElementById(id);
 const toggle = (id, fn) => $(id).addEventListener('click', (e) => { e.currentTarget.classList.toggle('on', fn()); });
 toggle('bHull', () => (showHull = !showHull));
-// the paint: a decal, the body's two colours and the decal's two
+toggle('bSpin', () => (spin = !spin));
+const setView = (m) => { viewMode = viewMode === m ? 'turn' : m; $('bSide').classList.toggle('on', viewMode === 'side'); $('bTop').classList.toggle('on', viewMode === 'top'); };
+$('bSide').addEventListener('click', () => setView('side'));
+$('bTop').addEventListener('click', () => setView('top'));
+
+// the paint: a decal and the car's two colours
 function pickDecal(id) {
   U.uDecal.value = id;
-  document.querySelectorAll('#decals button').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
-  const d = DECALS.find((x) => x.id === id);
-  $('dnote').textContent = d.note || 'Just the body colours.';
+  document.querySelectorAll('.drow button').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
+  $('dnote').textContent = DECALS.find((x) => x.id === id).note;
   $('numWrap').style.display = id === 2 ? '' : 'none';
 }
-$('decals').innerHTML = DECALS.map((d) => '<button data-id="' + d.id + '">' + d.name + (d.kind === 'animated' ? '<small>animated</small>' : '') + '</button>').join('');
-$('decals').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) pickDecal(+b.dataset.id); });
-const paint = () => {
+const btn = (d) => '<button data-id="' + d.id + '">' + d.name + '</button>';
+$('rowNormal').insertAdjacentHTML('beforeend', DECALS.filter((d) => !d.anim).map(btn).join(''));
+$('rowAnim').insertAdjacentHTML('beforeend', DECALS.filter((d) => d.anim).map(btn).join(''));
+document.querySelectorAll('.drow').forEach((r) => r.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) pickDecal(+b.dataset.id); }));
+const PRESETS = [['#e83030', '#f2f2f2'], ['#1f5fd6', '#ffc628'], ['#121418', '#f2733f'], ['#f2f2f2', '#1a1d24'], ['#2e9e5b', '#f2f2f2'], ['#7a3cf0', '#3ddbb8'], ['#ffc628', '#121418']];
+$('presets').innerHTML = PRESETS.map((p, k) => '<i data-k="' + k + '" style="background:linear-gradient(135deg,' + p[0] + ' 50%,' + p[1] + ' 50%)"></i>').join('');
+$('presets').addEventListener('click', (e) => { const i = e.target.closest('i'); if (!i) return; const p = PRESETS[+i.dataset.k]; $('cPrimary').value = p[0]; $('cSecondary').value = p[1]; paint(); });
+function paint() {
   M.B.color.set($('cPrimary').value);
   M.D.color.set($('cSecondary').value);
-  U.uDA.value.set($('cDecalA').value);
-  U.uDB.value.set($('cDecalB').value);
-};
-for (const id of ['cPrimary', 'cSecondary', 'cDecalA', 'cDecalB']) $(id).addEventListener('input', paint);
+  U.uP.value.copy(M.B.color);
+  U.uS.value.copy(M.D.color);
+}
+for (const id of ['cPrimary', 'cSecondary']) $(id).addEventListener('input', paint);
 $('num').addEventListener('input', () => drawNumber(Math.max(0, Math.min(99, Math.floor(+$('num').value || 0)))));
 paint();
 pickDecal(1);
-toggle('bSpin', () => (spin = !spin));
-toggle('bSide', () => (sideView = !sideView));
 
 function frame(ms) {
   U.uTime.value = (ms || 0) / 1000;
@@ -446,20 +681,25 @@ function frame(ms) {
   const cv = renderer.domElement;
   if (cv.width !== Math.floor(W * renderer.getPixelRatio()) || cv.height !== Math.floor(H * renderer.getPixelRatio())) renderer.setSize(W, H, false);
   renderer.setScissor(0, 0, W, H); renderer.setViewport(0, 0, W, H); renderer.clear();
+  const cover = document.querySelector('.paint').getBoundingClientRect();
   for (const v of views) {
     const r = v.el.getBoundingClientRect();
     if (r.bottom < 0 || r.top > H) continue;
-    if (spin && v.drag === null && !sideView) v.angle += 0.006;
-    v.car.rotation.y = sideView ? -Math.PI / 2 : v.angle;
+    if (spin && v.drag === null && viewMode === 'turn') v.angle += 0.006;
+    v.car.rotation.y = viewMode === 'side' ? -Math.PI / 2 : viewMode === 'top' ? Math.PI : v.angle;
     v.hull.visible = showHull;
     v.camera.aspect = r.width / r.height;
     const back = Math.max(1, 1.9 / v.camera.aspect);
-    if (sideView) v.camera.position.set(0, 0.35, 9.2 * back); else v.camera.position.set(0, 1.7 * back, 6.4 * back);
-    v.camera.lookAt(0, sideView ? 0.12 : 0.15, 0);
+    if (viewMode === 'side') { v.camera.position.set(0, 0.35, 9.2 * back); v.camera.lookAt(0, 0.12, 0); }
+    else if (viewMode === 'top') { v.camera.position.set(0, 9.5 * back, 0.01); v.camera.lookAt(0, 0, 0); v.camera.up.set(0, 0, -1); }
+    else { v.camera.up.set(0, 1, 0); v.camera.position.set(0, 1.7 * back, 6.4 * back); v.camera.lookAt(0, 0.15, 0); }
+    if (viewMode !== 'top') v.camera.up.set(0, 1, 0);
     v.camera.updateProjectionMatrix();
-    const y = H - r.bottom;
-    renderer.setViewport(r.left, y, r.width, r.height);
-    renderer.setScissor(r.left, y, r.width, r.height);
+    // not under the sticky paint bar
+    const top = Math.max(r.top, cover.bottom);
+    if (top >= r.bottom) continue;
+    renderer.setViewport(r.left, H - r.bottom, r.width, r.height);
+    renderer.setScissor(r.left, H - r.bottom, r.width, r.bottom - top);
     renderer.render(v.scene, v.camera);
   }
   requestAnimationFrame(frame);
