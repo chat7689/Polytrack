@@ -2458,7 +2458,7 @@ begin
   return l at time zone 'America/Los_Angeles';
 end $$;
 -- hide the calling player's run on a map for p_days more school days, at
--- 100 credits a day; paying again adds to the end of the time already paid
+-- 50 credits a day; paying again adds to the end of the time already paid
 create or replace function public.hide_run(p_course text, p_days integer) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); cost integer; cur timestamptz; t timestamptz;
@@ -2469,7 +2469,7 @@ begin
   if not exists (select 1 from public.ghosts where uid = p.id and course_id = p_course) then
     return jsonb_build_object('ok', false, 'error', 'You have no run on this map to hide.');
   end if;
-  cost := 100 * p_days;
+  cost := 50 * p_days;
   perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
   if public._balance(p.id) < cost then
     return jsonb_build_object('ok', false, 'error', 'That costs ' || cost || ' credits and you have ' || public._balance(p.id) || '.');

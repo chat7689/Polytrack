@@ -2669,7 +2669,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
     <div class="hidePanel" role="dialog" aria-labelledby="hideTitle">
       <h3 id="hideTitle">Hide your run</h3>
       <p class="dNote">Other players won't be able to watch, race or compare your run on this map. Your time stays on the leaderboard.
-        It costs 100 credits for each school day; Saturdays and Sundays are free.</p>
+        It costs 50 credits for each school day; Saturdays and Sundays are free.</p>
       <p class="hideNow" id="hideNow"></p>
       <div class="hideRow"><span>Days</span>
         <div class="hideStep"><button class="small" id="bHideMinus" aria-label="One day fewer">&minus;</button><b id="hideDays">1 day</b><button class="small" id="bHidePlus" aria-label="One day more">+</button></div>
@@ -3195,7 +3195,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <section id="i-hide">
           <h3>Hiding your run</h3>
           <p>Next to your own time on a map's leaderboard, <b>Hide my run</b> keeps your run private: nobody else can watch, race or
-            compare it. Your time stays on the leaderboard as usual. It costs <b>100 credits for each school day</b>; Saturdays and
+            compare it. Your time stays on the leaderboard as usual. It costs <b>50 credits for each school day</b>; Saturdays and
             Sundays are free and don't count. Paying again adds the days on to the end.</p>
           <p>A run someone else has hidden shows a crossed-out eye: hover or click it to see until when.</p>
         </section>
@@ -3225,7 +3225,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
             an animated decal (1 in 50), a decal, a finish celebration, a boost, wheels, a title, a profile icon, or 1 to 25
             credits or a hue pack. One box in ten splits into two more, up to eight. Anything but a hue can be sold for
             credits in the Collection. Cars, decals, wheels and boosts are painted in your two colours, and other players
-            see them on your ghost; your title and icon show by your name on every leaderboard.</p>
+            see them on your ghost. Your title and icon are on your profile card, which anyone can open by clicking your name.</p>
         </section>
         <section id="i-account">
           <h3>Account</h3>
@@ -10564,7 +10564,7 @@ const Daily = {
     $('dBal').innerHTML = Cloud.user ? 'You have <span class="gem2d"></span><b>' + fmtCredits(Records.credits) + '</b> credits' +
       (this.attempts ? ' · ' + this.attempts + ' attempt' + (this.attempts === 1 ? '' : 's') + ' today' : '') : 'Sign in to drive the daily';
     $('dBoard').innerHTML = b.length ? b.slice(0, 12).map((e, n) => '<li class="' + (e.uid === uid ? 'me' : '') + '"><span class="p">' + (n === 0 ? '♛' : n + 1) +
-      '</span><span class="n">' + Profiles.name(e.uid, e.n, 16) + freshTag(e) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
+      '</span><span class="n">' + escapeHtml(e.n) + freshTag(e) + '</span><span class="t">' + formatTime(e.t) + '</span></li>').join('')
       : '<li class="none">Nobody yet. Be the first.</li>';
     $('dWinners').innerHTML = this.results.length ? this.results.map((r) => '<li><span class="dd">' + this.pretty(r.day) + '</span><span class="n">' +
       (r.uid ? escapeHtml(r.display_name || 'Driver') + (r.held ? ' <i>(under review)</i>' : r.paid === false ? ' <i>(not paid)</i>' : '') : '<i>no entries</i>') + '</span><span class="t">' + (r.time_ms ? formatTime(r.time_ms / 1000) : '') + '</span></li>').join('')
@@ -12245,10 +12245,10 @@ const Catalog = {
     [['speed-demon', 'Speed Demon'], ['drift-king', 'Drift King'], ['apex-hunter', 'Apex Hunter'], ['night-rider', 'Night Rider'], ['throttle-junkie', 'Throttle Junkie'],
       ['corner-carver', 'Corner Carver'], ['late-braker', 'Late Braker'], ['pole-sitter', 'Pole Sitter'], ['ghost-buster', 'Ghost Buster'], ['road-rocket', 'Road Rocket'],
       ['turbo-legend', 'Turbo Legend'], ['gravity-defier', 'Gravity Defier'], ['slipstreamer', 'Slipstreamer'], ['the-machine', 'The Machine'],
-      ['photo-finish', 'Photo Finish'], ['full-send', 'Full Send']].forEach(([k, n]) => add('title:' + k, 'title', n, 'Shown by your name everywhere.'));
+      ['photo-finish', 'Photo Finish'], ['full-send', 'Full Send']].forEach(([k, n]) => add('title:' + k, 'title', n, 'Shown on your profile card.'));
     [['bolt', 'Bolt'], ['flame', 'Flame'], ['star', 'Star'], ['skull', 'Skull'], ['rocket', 'Rocket'], ['diamond', 'Diamond'], ['heart', 'Heart'], ['ghost', 'Ghost'],
       ['wing', 'Wings'], ['target', 'Target'], ['flag', 'Flag'], ['wheel', 'Wheel'], ['moon', 'Moon'], ['atom', 'Atom'], ['dice', 'Dice'], ['crown', 'Crown']]
-      .forEach(([k, n]) => add('icon:' + k, 'icon', n, 'Shown by your name everywhere, in your colours.'));
+      .forEach(([k, n]) => add('icon:' + k, 'icon', n, 'Shown on your profile card and the menu, in your colours.'));
   },
   get(id) { if (!this.items.length) this.build(); return this.byId[id] || null; },
   ofKind(k) { if (!this.items.length) this.build(); return this.items.filter((i) => i.kind === k); },
@@ -12499,7 +12499,7 @@ const Garage = {
     const icons = Catalog.ofKind('icon').filter((it) => this.owned(it.id));
     let h = '<div class="gProfile">' + (Flair.badge(lo.icon, Look.mine(), 64) || Profiles.icon(me, 64) || '<span class="fIcon none" style="--fs:64px"></span>') +
       '<div><b>' + E(Cloud.name()) + '</b><span class="fTitle big">' + E((me && Flair.title(me)) || 'No title') + '</span></div></div>' +
-      '<p class="lede">Your title and icon show by your name on every leaderboard, on your profile card and on the menu.</p>' +
+      '<p class="lede">Your title and icon show on your profile card (anyone can open it by clicking your name) and on the menu.</p>' +
       '<h3 class="gh">TITLE <small>' + titles.length + ' / 16 collected</small></h3><div class="gPick">' +
       '<button class="gOpt' + (!lo.title ? ' on' : '') + '" data-slot="title" data-id="">None</button>' +
       (aw ? '<button class="gOpt' + (lo.title === 'season' ? ' on' : '') + '" data-slot="title" data-id="season" style="--kc:#ffcf5c">' + E(aw.title) + '</button>' : '') +
@@ -12704,11 +12704,11 @@ const WhatsNew = {
   ITEMS: [
     ['gem', 'Boxes in the garage', '100 credits a box, or a free one every 50 runs: cars, decals, boosts, wheels, finish celebrations, titles and icons. One box in ten splits in two.'],
     ['photo', 'Eight cars, sixteen decals', 'From a razor-sharp wedge to an open-wheel racer, and decals from flames to living lava and starfields, all in your colours. Sell what you don\'t want.'],
-    ['crown', 'Titles and profile icons', 'Wear them by your name on every leaderboard. Edit your profile in the garage.'],
+    ['crown', 'Titles and profile icons', 'Show them off on your profile card. Edit your profile in the garage.'],
     ['map', 'Sixteen new maps', 'Most were built by players in the track builder (three by Julian Svoboda), from a 280 m sprint to Black Diamond\'s three ski jumps down a mountain.'],
     ['build', 'Track builder', 'Build up to 3 tracks of your own, make them public, and race everyone else\'s. Each track has its own leaderboard.'],
     ['target', 'Practise any part of a map', 'Pick a moment of your best run and start right there, at the same speed, after a 3-2-1. Practice times never count.'],
-    ['eye', 'Hide your run', 'Keep your racing line to yourself: 100 credits a school day hides a run from everyone else (weekends are free).'],
+    ['eye', 'Hide your run', 'Keep your racing line to yourself: 50 credits a school day hides a run from everyone else (weekends are free).'],
     ['photo', 'Watch a whole section or season', 'One big view follows the action, a lane per driver shows where everyone is, and one click watches the top 3.'],
     ['clock', 'Opening hours', 'Open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), Pacific time. When it\'s closed, Coach has ideas for what to do instead.'],
     ['key', 'Your own keys', 'In Settings, pick the keys for Play again (R) and Next map (N) on the finish screen.'],
@@ -12831,20 +12831,22 @@ const Profiles = {
     }
     return null;
   },
-  /** the icon by a name: the profile icon they wear, else their season's
-   *  number in gold, silver or bronze ('' with neither) */
+  /** the icon by a name on a card: the profile icon they wear, else their
+   *  season's number in gold, silver or bronze ('' with neither) */
   icon(uid, size) {
     const fi = Flair.icon(uid, size || 28);
     if (fi) return fi;
+    return this.seasonIcon(uid, size);
+  },
+  /** just the season icon: what the leaderboards show by a name */
+  seasonIcon(uid, size) {
     const a = this.award(uid);
     if (!a) return '';
     return '<span class="pIcon t' + a.tier + '" style="--ps:' + (size || 28) + 'px" title="' + escapeHtml(a.title) + '"><b>' + escapeHtml(a.num) + '</b></span>';
   },
   /** a name on a board: icon, then the name as a link to the card */
   name(uid, n, size) {
-    const t = Flair.title(uid);
-    return '<a href="#" class="pLink" data-uid="' + escapeHtml(uid || '') + '" data-n="' + escapeHtml(n) + '">' + this.icon(uid, size || 18) + escapeHtml(n) +
-      (t ? '<span class="fTitle">' + escapeHtml(t) + '</span>' : '') + '</a>';
+    return '<a href="#" class="pLink" data-uid="' + escapeHtml(uid || '') + '" data-n="' + escapeHtml(n) + '">' + this.seasonIcon(uid, size || 18) + escapeHtml(n) + '</a>';
   },
   /** Perfection for any driver: null unless they have every map */
   perfection(uid, n) {
@@ -14238,7 +14240,7 @@ const Coach = {
         let hh = '<div class="figList">';
         list.slice(0, 12).forEach((x, k) => {
           const mine = I.uid && x.r.uid === I.uid;
-          hh += '<div class="figRow' + (mine ? ' me' : '') + '"><span class="tg" style="color:' + (k < 3 ? ['#ffcf5c', '#dfe7f2', '#e3a36f'][k] : 'var(--dimmer)') + '">' + (k + 1) + '</span><span class="nm">' + Profiles.icon(x.r.uid, 16) + escapeHtml(x.r.n) +
+          hh += '<div class="figRow' + (mine ? ' me' : '') + '"><span class="tg" style="color:' + (k < 3 ? ['#ffcf5c', '#dfe7f2', '#e3a36f'][k] : 'var(--dimmer)') + '">' + (k + 1) + '</span><span class="nm">' + Profiles.seasonIcon(x.r.uid, 16) + escapeHtml(x.r.n) +
             '</span><span class="v">' + Insight.perfText(x.p) + '</span><span class="fbar"><i style="background:' + (mine ? '#3ddbb8' : '#ffcf5c') + '" data-w="' + clamp((x.p - 80) * 5, 2, 100).toFixed(1) + '"></i></span></div>';
         });
         const fig = Figs.add('Perfection scores', hh + '</div>', 'Drivers with all ' + LEVELS.length + ' maps. Bars start at 80%.');
@@ -16950,7 +16952,7 @@ const UI = {
           (mine ? ' <small class="youTag">(you)</small>' : '') + freshTag(e) +
           (closed ? ' <small class="hidTag">run hidden</small>' : '') +
           (mine && actions ? ' <button class="eyeBtn' + (hid ? ' on' : '') + '" data-hide="1" title="' +
-            (hid ? 'Hidden until ' + escapeHtml(RunHides.when(hid)) + '. Click to add days or show it again.' : 'Hide your run from other players (100 credits a school day)') +
+            (hid ? 'Hidden until ' + escapeHtml(RunHides.when(hid)) + '. Click to add days or show it again.' : 'Hide your run from other players (50 credits a school day)') +
             '" aria-label="Hide your run">' + EYE_OFF + (hid ? '<span>until ' + escapeHtml(RunHides.when(hid)) + '</span>' : '<span>Hide my run</span>') + '</button>' : '') +
           '</td><td class="t">' + formatTime(e.t) +
           '</td><td class="d">' + (isFinite(when.getTime()) && e.d ? when.toLocaleDateString() : '') + '</td></tr>';
@@ -17022,7 +17024,7 @@ const UI = {
           h += ok ? '<td><input type="checkbox" class="selBox" data-uid="' + escapeHtml(r.uid) + '"' + (checked ? ' checked' : '') +
             ' aria-label="Select ' + escapeHtml(r.n) + '"></td>' : '<td class="nope" title="Needs a time on all four maps (and not every one of those runs hidden)">—</td>';
         }
-        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + Profiles.name(r.uid, r.n, 18) +
+        h += '<td class="r">' + (k === 0 ? '♛' : k + 1) + '</td><td>' + escapeHtml(r.n) +
           (mine ? ' <small class="youTag">(you)</small>' : '') + '</td><td class="d">' + r.count + ' / ' + ids.length +
           '</td><td class="t">' + formatTime(r.total) + '</td></tr>';
       });
@@ -18428,14 +18430,14 @@ const Practice = {
 };
 
 /**
- * Hidden runs. A player can pay 100 credits per school day to keep their
+ * Hidden runs. A player can pay 50 credits per school day to keep their
  * run on a map private: nobody else can watch, race or compare it (the
  * server won't hand out its recording), while the time stays on the
  * leaderboard. Weekends are free and don't count; paying again adds days
  * to the end. RunHides knows whose runs are hidden right now.
  */
 const RunHides = {
-  map: new Map(), at: 0, PRICE: 100,
+  map: new Map(), at: 0, PRICE: 50,
   key(uid, id) { return uid + '|' + id; },
   /** until when (ms) a run is hidden, or 0 */
   until(uid, id) { const u = this.map.get(this.key(uid, id)) || 0; return u > Date.now() ? u : 0; },
@@ -20309,7 +20311,7 @@ const Game = {
     $('rBoardHd').textContent = lv && lv.daily ? 'Today’s daily · the fastest at noon wins 300 credits' : 'Course leaderboard — ' + (lv ? lv.name : '');
     $('rBoard').innerHTML = list.map((e, i) =>
       '<li class="' + ((uid ? e.uid === uid : e.n === Records.driver()) ? 'me' : '') + '"><span>' +
-      (i + 1) + '. ' + Profiles.name(e.uid, e.n, 16) + freshTag(e) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
+      (i + 1) + '. ' + escapeHtml(e.n) + freshTag(e) + '</span><span>' + formatTime(e.t) + '</span></li>').join('');
   },
   /** +1 credit for any finished course that isn't a race attempt */
   async awardCompletion() {

@@ -1,4 +1,4 @@
-// Hidden runs: the school-day arithmetic, paying for days (100 credits
+// Hidden runs: the school-day arithmetic, paying for days (50 credits
 // each, stacking), and that nobody but the owner (and the admin) gets the
 // recording of a hidden run while its time stays on the leaderboard.
 import { makeDb, ok, done } from './db.mjs';
@@ -15,7 +15,7 @@ await t.mkUser('Hider'); await t.mkUser('Peeker'); await t.mkUser('Broke');
 const uid = async (n) => (await t.owner('select id from public.profiles where display_name = $1', [n])).rows[0].id;
 const H = await uid('Hider'), B = await uid('Broke');
 await t.owner("insert into public.credit_events (uid, delta, kind) values ($1, 1000, 'test')", [H]);
-await t.owner("insert into public.credit_events (uid, delta, kind) values ($1, 50, 'test')", [B]);
+await t.owner("insert into public.credit_events (uid, delta, kind) values ($1, 30, 'test')", [B]);
 for (const [u, n] of [[H, 'Hider'], [B, 'Broke']]) {
   await t.owner("insert into public.bests (uid, course_id, display_name, time_ms) values ($1, 's4c1', $2, 9000)", [u, n]);
   await t.owner("insert into public.ghosts (uid, course_id, time_ms, samples) values ($1, 's4c1', 9000, '1,2,3,4,5,6,7,8')", [u]);
@@ -23,7 +23,7 @@ for (const [u, n] of [[H, 'Hider'], [B, 'Broke']]) {
 const sees = async (who, owner) => (await t.as(who, "select uid from public.ghosts where course_id = 's4c1' and uid = $1", [owner])).rows.length === 1;
 ok(await sees('Peeker', H), 'before hiding, anyone can load the run');
 const r1 = (await t.one('Hider', "select public.hide_run('s4c1', 2) as j")).j;
-ok(r1.ok && r1.cost === 200 && r1.balance === 800, 'hiding for 2 days costs 200 credits ' + JSON.stringify(r1));
+ok(r1.ok && r1.cost === 100 && r1.balance === 900, 'hiding for 2 days costs 100 credits ' + JSON.stringify(r1));
 ok(!(await sees('Peeker', H)), 'now nobody else gets the recording');
 ok(await sees('Hider', H), 'but its owner does');
 ok((await t.admin("select count(*)::int n from public.ghosts where uid = $1", [H])).rows[0].n === 1, 'and the admin does');
@@ -31,10 +31,10 @@ ok((await t.as('Peeker', "select time_ms from public.bests where uid = $1 and co
 ok((await t.as('Peeker', "select until from public.run_hides where uid = $1", [H])).rows.length === 1, 'everyone can see that it is hidden, and until when');
 const r2 = (await t.one('Hider', "select public.hide_run('s4c1', 1) as j")).j;
 const more = (await t.owner("select public._add_weekdays(to_timestamp($1 / 1000.0), 1) as v", [r1.until])).rows[0].v;
-ok(r2.ok && r2.until === new Date(more).getTime() && r2.balance === 700, 'paying again adds a day to the end of the time already paid');
+ok(r2.ok && r2.until === new Date(more).getTime() && r2.balance === 850, 'paying again adds a day to the end of the time already paid');
 const r3 = (await t.one('Broke', "select public.hide_run('s4c1', 1) as j")).j;
-ok(!r3.ok && /100 credits/.test(r3.error), 'not enough credits: refused, nothing taken: ' + r3.error);
-ok((await t.one('Broke', 'select public.my_balance() as j')).j === 50, 'and the balance is untouched');
+ok(!r3.ok && /50 credits/.test(r3.error), 'not enough credits: refused, nothing taken: ' + r3.error);
+ok((await t.one('Broke', 'select public.my_balance() as j')).j === 30, 'and the balance is untouched');
 ok(!(await t.one('Hider', "select public.hide_run('s4m3', 1) as j")).j.ok, 'a map with no run of yours cannot be hidden');
 ok(!(await t.one('Hider', "select public.hide_run('s4c1', 0) as j")).j.ok && !(await t.one('Hider', "select public.hide_run('s4c1', 31) as j")).j.ok, '1 to 30 days only');
 ok(/permission denied|row-level security/.test(await t.err('Peeker', "insert into public.run_hides (uid, course_id, until) values (auth.uid(), 's4c1', now() + interval '9 days')")), 'nobody writes a hide without paying');
