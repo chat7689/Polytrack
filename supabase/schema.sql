@@ -1253,6 +1253,7 @@ create or replace function public.finish_run(p_run uuid, p_time_ms integer, p_fo
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); r public.runs; el numeric; fl integer; credited boolean := false; bonus integer := 0;
   day_runs integer := 0; day_bonus integer := 0; d text := to_char(now() at time zone 'America/Los_Angeles', 'YYYYMMDD');
+  box_runs integer := 0; free_box boolean := false;
 begin
   select * into r from public.runs where id = p_run and uid = p.id for update;
   if not found then return jsonb_build_object('ok', false, 'message', 'This run wasn''t registered with the server, so the time stays on this device only.'); end if;
@@ -1276,6 +1277,11 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Not counted: the game window wasn''t in focus for the run.');
   end if;
   update public.runs set status = 'done', counted = true, ended_at = now(), time_ms = p_time_ms, focus = p_focus where id = r.id;
+  insert into public.garage (uid, runs) values (p.id, 1) on conflict (uid) do update set runs = public.garage.runs + 1 returning runs into box_runs;
+  if box_runs >= 50 then
+    update public.garage set runs = runs - 50, free_boxes = free_boxes + 1 where uid = p.id;
+    box_runs := box_runs - 50; free_box := true;
+  end if;
   if r.course_id !~ '^d[0-9]{8}$' and r.course_id !~ '^u[0-9]+$' then
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
     if not exists (select 1 from public.credit_events where uid = p.id and kind = 'grind' and created_at > now() - interval '10 seconds') then
@@ -1298,7 +1304,7 @@ begin
     end if;
   end if;
   return jsonb_build_object('ok', true, 'credited', credited, 'bonus', bonus, 'day_runs', day_runs, 'day_bonus', day_bonus,
-    'balance', public._balance(p.id));
+    'balance', public._balance(p.id), 'box_runs', box_runs, 'free_box', free_box);
 end $$;
 
 -- A run's recording against the map: the right number of samples for the
@@ -1848,6 +1854,312 @@ begin
       'at', (extract(epoch from s.at) * 1000)::bigint, 'device', s.device_id) order by s.at desc)
     from public.signup_log s left join public.profiles p on p.id = s.uid
     where s.flag is not null and s.at > now() - interval '60 days'), '[]'::jsonb);
+end $$;
+
+-- ------------------------------------------------------------ the garage
+-- Boxes, and what comes out of them: cars, decals, finish celebrations,
+-- boost trails, wheels, titles and profile icons, all owned in `inventory`
+-- (duplicates count up) and sellable for credits; and hue packs, which go
+-- straight onto the colour list and can't be sold. A box costs 100 credits
+-- (or a free box, one per 50 counted finishes). The server rolls everything.
+--
+-- One box, rolled 0-100:
+--   0-10 splits into two new boxes (only three times deep: at most 8
+--        boxes from one; the deepest ones can't split, and that 10% goes
+--        to credits-or-hue instead)
+--   10-11 a car   11-13 an animated decal   13-16 a decal
+--   16-20 a finish celebration   20-25 a boost trail   25-30 a wheel
+--   30-40 a title   40-50 a profile icon
+--   50-100 1-25 credits or a hue pack, half and half (a hue when every hue
+--          is owned: credits instead)
+-- Selling everything a box gives back is worth at most about 98 credits on
+-- average (with every hue owned), under the 100 it costs, so no amount of
+-- buying and selling makes credits. tools/db/boxes.test.mjs works it out
+-- from these tables.
+create table if not exists public.items (
+  id text primary key,
+  kind text not null check (kind in ('car', 'decal', 'anim', 'cel', 'boost', 'wheel', 'title', 'icon')),
+  name text not null,
+  sell integer not null check (sell > 0)
+);
+insert into public.items (id, kind, name, sell) values
+  ('car:wedge', 'car', 'Wedge', 1000), ('car:gt', 'car', 'GT Fastback', 1000), ('car:proto', 'car', 'Prototype', 1000),
+  ('car:rally', 'car', 'Rally Hatch', 1000), ('car:muscle', 'car', 'Muscle', 1000), ('car:stinger', 'car', 'Stinger', 1000),
+  ('car:bulldog', 'car', 'Bulldog', 1000), ('car:manta', 'car', 'Manta', 1000),
+  ('decal:stripes', 'decal', 'Racing stripes', 300), ('decal:number', 'decal', 'Race number', 300), ('decal:flames', 'decal', 'Flames', 300),
+  ('decal:lightning', 'decal', 'Lightning', 300), ('decal:checker', 'decal', 'Checkered', 300), ('decal:tiger', 'decal', 'Tiger', 300),
+  ('decal:shark', 'decal', 'Shark', 300), ('decal:camo', 'decal', 'Digital camo', 300),
+  ('anim:arrows', 'anim', 'Arrows', 500), ('anim:aurora', 'anim', 'Aurora', 500), ('anim:pulse', 'anim', 'Pulse', 500),
+  ('anim:inferno', 'anim', 'Inferno', 500), ('anim:glint', 'anim', 'Glint', 500), ('anim:lava', 'anim', 'Lava', 500),
+  ('anim:starfield', 'anim', 'Starfield', 500), ('anim:shockwave', 'anim', 'Shockwave', 500),
+  ('cel:confetti', 'cel', 'Confetti', 200), ('cel:fireworks', 'cel', 'Fireworks', 200), ('cel:shockwave', 'cel', 'Shockwave ring', 200),
+  ('cel:starburst', 'cel', 'Starburst', 200), ('cel:lightning', 'cel', 'Thunderstrike', 200), ('cel:pixels', 'cel', 'Pixel blast', 200),
+  ('cel:fountain', 'cel', 'Spark fountain', 200), ('cel:halo', 'cel', 'Halo', 200),
+  ('boost:jet', 'boost', 'Jet', 100), ('boost:plasma', 'boost', 'Plasma', 100), ('boost:twin', 'boost', 'Twin turbo', 100),
+  ('boost:quad', 'boost', 'Quad', 100), ('boost:afterburner', 'boost', 'Afterburner', 100), ('boost:ion', 'boost', 'Ion', 100),
+  ('boost:comet', 'boost', 'Comet', 100), ('boost:pixel', 'boost', 'Pixel', 100), ('boost:sparkler', 'boost', 'Sparkler', 100),
+  ('boost:inferno', 'boost', 'Hellfire', 100), ('boost:ghost', 'boost', 'Phantom', 100), ('boost:pulse', 'boost', 'Pulsar', 100),
+  ('boost:nova', 'boost', 'Nova', 100), ('boost:static', 'boost', 'Static', 100), ('boost:vortex', 'boost', 'Vortex', 100),
+  ('boost:dragon', 'boost', 'Dragon', 100),
+  ('wheel:five', 'wheel', 'Five-spoke', 200), ('wheel:six', 'wheel', 'Six-spoke', 200), ('wheel:dish', 'wheel', 'Dish', 200),
+  ('wheel:turbine', 'wheel', 'Turbine', 200), ('wheel:mesh', 'wheel', 'Mesh', 200), ('wheel:tri', 'wheel', 'Tri-blade', 200),
+  ('wheel:split', 'wheel', 'Split ten', 200), ('wheel:deep', 'wheel', 'Deep lip', 200), ('wheel:star', 'wheel', 'Star', 200),
+  ('wheel:blade', 'wheel', 'Blades', 200), ('wheel:beadlock', 'wheel', 'Beadlock', 200), ('wheel:hex', 'wheel', 'Hex', 200),
+  ('wheel:cross', 'wheel', 'Cross', 200), ('wheel:ring', 'wheel', 'Hollow ring', 200), ('wheel:aero', 'wheel', 'Aero disc', 200),
+  ('wheel:gear', 'wheel', 'Gear', 200),
+  ('title:speed-demon', 'title', 'Speed Demon', 100), ('title:drift-king', 'title', 'Drift King', 100), ('title:apex-hunter', 'title', 'Apex Hunter', 100),
+  ('title:night-rider', 'title', 'Night Rider', 100), ('title:throttle-junkie', 'title', 'Throttle Junkie', 100), ('title:corner-carver', 'title', 'Corner Carver', 100),
+  ('title:late-braker', 'title', 'Late Braker', 100), ('title:pole-sitter', 'title', 'Pole Sitter', 100), ('title:ghost-buster', 'title', 'Ghost Buster', 100),
+  ('title:road-rocket', 'title', 'Road Rocket', 100), ('title:turbo-legend', 'title', 'Turbo Legend', 100), ('title:gravity-defier', 'title', 'Gravity Defier', 100),
+  ('title:slipstreamer', 'title', 'Slipstreamer', 100), ('title:the-machine', 'title', 'The Machine', 100), ('title:photo-finish', 'title', 'Photo Finish', 100),
+  ('title:full-send', 'title', 'Full Send', 100),
+  ('icon:bolt', 'icon', 'Bolt', 100), ('icon:flame', 'icon', 'Flame', 100), ('icon:star', 'icon', 'Star', 100), ('icon:skull', 'icon', 'Skull', 100),
+  ('icon:rocket', 'icon', 'Rocket', 100), ('icon:diamond', 'icon', 'Diamond', 100), ('icon:heart', 'icon', 'Heart', 100), ('icon:ghost', 'icon', 'Ghost', 100),
+  ('icon:wing', 'icon', 'Wings', 100), ('icon:target', 'icon', 'Target', 100), ('icon:flag', 'icon', 'Flag', 100), ('icon:wheel', 'icon', 'Wheel', 100),
+  ('icon:moon', 'icon', 'Moon', 100), ('icon:atom', 'icon', 'Atom', 100), ('icon:dice', 'icon', 'Dice', 100), ('icon:crown', 'icon', 'Crown', 100)
+on conflict (id) do update set kind = excluded.kind, name = excluded.name, sell = excluded.sell;
+
+create table if not exists public.inventory (
+  uid uuid not null,
+  item text not null references public.items(id),
+  count integer not null default 1 check (count >= 0),
+  first_at timestamptz not null default now(),
+  primary key (uid, item)
+);
+-- free boxes owed, and counted finishes toward the next one
+create table if not exists public.garage (
+  uid uuid primary key,
+  free_boxes integer not null default 0,
+  runs integer not null default 0,
+  opened integer not null default 0
+);
+create table if not exists public.box_log (
+  id bigserial primary key,
+  uid uuid not null,
+  at timestamptz not null default now(),
+  free boolean not null default false,
+  boxes integer not null,
+  results jsonb not null
+);
+create index if not exists box_log_at on public.box_log (at desc);
+-- cars and animated decals coming out of boxes, for Coach to tell everyone
+create table if not exists public.unbox_news (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  uid uuid,
+  name text,
+  item text,
+  kind text,
+  item_name text
+);
+-- what a player has on: {car, decal, num, wheel, boost, cel, title, icon}
+alter table public.car_customization add column if not exists loadout jsonb not null default '{}'::jsonb;
+
+-- a hue list's grid cells (the list may still hold old {h, s, l} entries)
+create or replace function public._hue_cells(p jsonb) returns integer[]
+language sql immutable set search_path = public, pg_temp as $$
+  select coalesce(array_agg(distinct c), '{}') from (
+    select case when jsonb_typeof(e) = 'number' then (e #>> '{}')::numeric::int
+                when jsonb_typeof(e) = 'object' and (e ->> 'h') ~ '^-?[0-9.]+$' then (round((e ->> 'h')::numeric * 256 / 360))::int % 256 end as c
+    from jsonb_array_elements(coalesce(p, '[]'::jsonb)) e) x where c between 0 and 255
+$$;
+create or replace function public._hue_cell(p_color jsonb) returns integer
+language sql immutable set search_path = public, pg_temp as $$
+  select (round(coalesce((p_color ->> 'h')::numeric, 0) * 256 / 360))::int % 256
+$$;
+-- The colour list and the loadout are the server's to change: a player's
+-- own save keeps them as they were, and a colour only goes on the car if
+-- its hue is owned. (A new account starts with its two starter hues.)
+create or replace function public._garage_guard() returns trigger
+language plpgsql set search_path = public, pg_temp as $$
+declare cells integer[];
+begin
+  if coalesce(current_setting('app.garage', true), '') = 'on' then return new; end if;
+  if tg_op = 'INSERT' then
+    new.loadout := '{}'::jsonb;
+    if jsonb_typeof(new.unlocked) <> 'array' or jsonb_array_length(new.unlocked) > 2 then
+      new.unlocked := jsonb_build_array(public._hue_cell(new.primary_color), public._hue_cell(new.secondary_color));
+    end if;
+    return new;
+  end if;
+  new.unlocked := old.unlocked;
+  new.loadout := old.loadout;
+  cells := public._hue_cells(new.unlocked);
+  if not (public._hue_cell(new.primary_color) = any(cells)) then new.primary_color := old.primary_color; end if;
+  if not (public._hue_cell(new.secondary_color) = any(cells)) then new.secondary_color := old.secondary_color; end if;
+  return new;
+end $$;
+drop trigger if exists car_customization_guard on public.car_customization;
+create trigger car_customization_guard before insert or update on public.car_customization
+  for each row execute function public._garage_guard();
+
+-- hue packs aren't sold any more: they come out of boxes
+create or replace function public.buy_color() returns integer
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  raise exception 'Hue packs come out of boxes now: open one in the garage.' using errcode = 'P0001';
+end $$;
+
+-- the chances, in one place (the game shows them)
+create or replace function public.box_odds() returns jsonb
+language sql immutable as $$
+  select '{"price": 100, "split": 10, "maxBoxes": 8, "car": 1, "anim": 2, "decal": 3, "cel": 4, "boost": 5, "wheel": 5, "title": 10, "icon": 10, "rest": 50, "credits": [1, 25], "freeEvery": 50}'::jsonb
+$$;
+
+/** one box, opened; p_free spends a free box instead of 100 credits */
+create or replace function public.open_box(p_free boolean) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); g public.garage;
+  queue integer[] := array[0]; d integer; r double precision; k text; it public.items; cnt integer;
+  res jsonb := '[]'::jsonb; boxes integer := 0; cells integer[]; locked integer[]; cell integer; cr integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  insert into public.garage (uid) values (p.id) on conflict (uid) do nothing;
+  select * into g from public.garage where uid = p.id for update;
+  if coalesce(p_free, false) then
+    if g.free_boxes < 1 then raise exception 'No free boxes yet: finish 50 runs to earn one.' using errcode = 'P0001'; end if;
+    update public.garage set free_boxes = free_boxes - 1 where uid = p.id;
+  else
+    if public._balance(p.id) < 100 then raise exception 'A box costs 100 credits.' using errcode = 'P0001'; end if;
+    insert into public.credit_events (uid, delta, kind, note) values (p.id, -100, 'box', 'a box');
+  end if;
+  perform set_config('app.garage', 'on', true);
+  while coalesce(array_length(queue, 1), 0) > 0 loop
+    d := queue[1]; queue := queue[2:];
+    r := random() * 100;
+    if r < 10 and d < 3 then
+      queue := queue || array[d + 1, d + 1];
+      res := res || jsonb_build_array(jsonb_build_object('split', true, 'depth', d));
+      continue;
+    end if;
+    boxes := boxes + 1;                 -- (a box that split isn't one: the two it became are)
+    k := case when r < 10 then null when r < 11 then 'car' when r < 13 then 'anim' when r < 16 then 'decal' when r < 20 then 'cel'
+              when r < 25 then 'boost' when r < 30 then 'wheel' when r < 40 then 'title' when r < 50 then 'icon' else null end;
+    if k is not null then
+      select * into it from public.items where kind = k order by random() limit 1;
+      insert into public.inventory (uid, item) values (p.id, it.id)
+        on conflict (uid, item) do update set count = public.inventory.count + 1
+        returning count into cnt;
+      res := res || jsonb_build_array(jsonb_build_object('item', it.id, 'kind', it.kind, 'name', it.name, 'sell', it.sell, 'count', cnt, 'depth', d));
+      if it.kind in ('car', 'anim') then
+        insert into public.unbox_news (uid, name, item, kind, item_name) values (p.id, p.display_name, it.id, it.kind, it.name);
+      end if;
+      continue;
+    end if;
+    -- credits or a hue pack (a hue only while some hue is still locked)
+    cell := null;
+    if random() < 0.5 then
+      select coalesce(public._hue_cells(unlocked), '{}') into cells from public.car_customization where uid = p.id;
+      select array_agg(c) into locked from generate_series(0, 255) c where not (c = any(coalesce(cells, '{}')));
+      if coalesce(array_length(locked, 1), 0) > 0 then
+        cell := locked[1 + floor(random() * array_length(locked, 1))::int];
+        insert into public.car_customization (uid, unlocked, primary_color, secondary_color)
+          values (p.id, jsonb_build_array(cell), '{"h":0,"s":80,"l":55}', '{"h":0,"s":60,"l":37}')
+          on conflict (uid) do update set unlocked = public.car_customization.unlocked || to_jsonb(cell), updated_at = now();
+        res := res || jsonb_build_array(jsonb_build_object('hue', cell, 'depth', d));
+      end if;
+    end if;
+    if cell is null then
+      cr := 1 + floor(random() * 25)::int;
+      insert into public.credit_events (uid, delta, kind, note) values (p.id, cr, 'box_credits', 'from a box');
+      res := res || jsonb_build_array(jsonb_build_object('credits', cr, 'depth', d));
+    end if;
+  end loop;
+  update public.garage set opened = opened + boxes where uid = p.id;
+  insert into public.box_log (uid, free, boxes, results) values (p.id, coalesce(p_free, false), boxes, res);
+  return jsonb_build_object('results', res, 'boxes', boxes, 'balance', public._balance(p.id),
+    'free_boxes', (select free_boxes from public.garage where uid = p.id));
+end $$;
+
+-- the loadout's slots, and what an empty one means
+create or replace function public._loadout_slot(p_kind text) returns text
+language sql immutable as $$
+  select case p_kind when 'car' then 'car' when 'decal' then 'decal' when 'anim' then 'decal' when 'cel' then 'cel'
+    when 'boost' then 'boost' when 'wheel' then 'wheel' when 'title' then 'title' when 'icon' then 'icon' end
+$$;
+
+/** sell n of an item (not hues): its price each, straight to credits */
+create or replace function public.sell_item(p_item text, p_count integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); it public.items; have integer; n integer := greatest(coalesce(p_count, 1), 1); slot text;
+begin
+  select * into it from public.items where id = p_item;
+  if not found then raise exception 'That can''t be sold.' using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  select count into have from public.inventory where uid = p.id and item = p_item for update;
+  if coalesce(have, 0) < n then raise exception 'You don''t have that many to sell.' using errcode = 'P0001'; end if;
+  if have = n then delete from public.inventory where uid = p.id and item = p_item;
+  else update public.inventory set count = count - n where uid = p.id and item = p_item; end if;
+  insert into public.credit_events (uid, delta, kind, note) values (p.id, it.sell * n, 'sell', it.id || ' x' || n);
+  -- the last one sold comes off the car or the profile
+  if have = n then
+    slot := public._loadout_slot(it.kind);
+    perform set_config('app.garage', 'on', true);
+    update public.car_customization set loadout = loadout - slot where uid = p.id and loadout ->> slot = it.id;
+  end if;
+  return jsonb_build_object('ok', true, 'sold', n, 'credits', it.sell * n, 'left', have - n, 'balance', public._balance(p.id));
+end $$;
+
+/** put things on: only what is owned (or the defaults: '' empties a slot) */
+create or replace function public.set_loadout(p_loadout jsonb) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); v jsonb := '{}'::jsonb; slot text; val text; kinds text[]; num integer;
+begin
+  for slot, kinds in select * from (values ('car', array['car']), ('decal', array['decal', 'anim']), ('cel', array['cel']), ('boost', array['boost']),
+                                          ('wheel', array['wheel']), ('title', array['title']), ('icon', array['icon'])) s(a, b) loop
+    val := p_loadout ->> slot;
+    if coalesce(val, '') = '' then continue; end if;
+    if slot = 'title' and val = 'season' then v := v || jsonb_build_object(slot, val); continue; end if;
+    if not exists (select 1 from public.inventory i join public.items t on t.id = i.item
+                   where i.uid = p.id and i.item = val and i.count > 0 and t.kind = any(kinds)) then
+      raise exception 'You don''t own that.' using errcode = 'P0001';
+    end if;
+    v := v || jsonb_build_object(slot, val);
+  end loop;
+  num := coalesce((p_loadout ->> 'num')::int, 7);
+  v := v || jsonb_build_object('num', least(greatest(num, 0), 99));
+  perform set_config('app.garage', 'on', true);
+  insert into public.car_customization (uid, unlocked, primary_color, secondary_color, loadout)
+    values (p.id, '[]', '{"h":0,"s":80,"l":55}', '{"h":0,"s":60,"l":37}', v)
+    on conflict (uid) do update set loadout = excluded.loadout, updated_at = now();
+  return v;
+end $$;
+
+/** everything the garage shows */
+create or replace function public.my_garage() returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); g public.garage;
+begin
+  select * into g from public.garage where uid = p.id;
+  return jsonb_build_object(
+    'inventory', coalesce((select jsonb_agg(jsonb_build_object('item', item, 'count', count) order by first_at) from public.inventory where uid = p.id and count > 0), '[]'::jsonb),
+    'free_boxes', coalesce(g.free_boxes, 0), 'runs', coalesce(g.runs, 0), 'opened', coalesce(g.opened, 0),
+    'loadout', coalesce((select loadout from public.car_customization where uid = p.id), '{}'::jsonb),
+    'unlocked', coalesce((select unlocked from public.car_customization where uid = p.id), '[]'::jsonb),
+    'balance', public._balance(p.id));
+end $$;
+
+/** cars and animated decals unboxed since p_since (null: just the newest id), for Coach */
+create or replace function public.unbox_news(p_since bigint) returns jsonb
+language sql stable security definer set search_path = public, pg_temp as $$
+  select case when p_since is null then jsonb_build_object('last', coalesce((select max(id) from public.unbox_news), 0), 'news', '[]'::jsonb)
+  else jsonb_build_object('last', coalesce((select max(id) from public.unbox_news), p_since),
+    'news', coalesce((select jsonb_agg(jsonb_build_object('id', id, 'uid', uid, 'name', name, 'item', item, 'kind', kind, 'item_name', item_name) order by id)
+                      from (select * from public.unbox_news where id > p_since and at > now() - interval '2 hours' order by id desc limit 10) x), '[]'::jsonb)) end
+$$;
+
+/** the admin: what boxes have given, today and in all */
+create or replace function public.admin_box_stats() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return jsonb_build_object(
+    'opened', (select count(*) from public.box_log), 'boxes', (select coalesce(sum(boxes), 0) from public.box_log),
+    'today', (select count(*) from public.box_log where at > now() - interval '1 day'),
+    'spent', (select coalesce(-sum(delta), 0) from public.credit_events where kind = 'box'),
+    'sold', (select coalesce(sum(delta), 0) from public.credit_events where kind = 'sell'),
+    'news', coalesce((select jsonb_agg(jsonb_build_object('at', (extract(epoch from at) * 1000)::bigint, 'name', name, 'item', item_name) order by id desc)
+                      from (select * from public.unbox_news order by id desc limit 30) x), '[]'::jsonb));
 end $$;
 
 -- ------------------------------------------------------------ opening hours
@@ -2543,6 +2855,8 @@ begin
   perform public._track_reset('u' || t.id, true) from public.user_tracks t where t.uid = p_uid;
   delete from public.track_limits where uid = p_uid;
   delete from public.run_hides where uid = p_uid;
+  delete from public.inventory where uid = p_uid;
+  delete from public.garage where uid = p_uid;
   perform public._log('delete account', (select display_name from public.profiles where id = p_uid), '');
   delete from public.user_tracks where uid = p_uid; get diagnostics added = row_count; n := n + added;
   delete from public.admins where user_id = p_uid;
@@ -2571,6 +2885,7 @@ declare
   added integer;
 begin
   perform public._require_admin();
+  perform set_config('app.garage', 'on', true);
 
   -- players first, so everything else can be mapped to them
   n := 0;
@@ -2742,6 +3057,11 @@ alter table public.run_hides enable row level security;
 alter table public.account_bans enable row level security;
 alter table public.admin_log enable row level security;
 alter table public.security_events enable row level security;
+alter table public.items enable row level security;
+alter table public.inventory enable row level security;
+alter table public.garage enable row level security;
+alter table public.box_log enable row level security;
+alter table public.unbox_news enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -2756,7 +3076,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -2777,6 +3097,14 @@ create policy player_read on public.ghosts for select to authenticated
 -- a banned player may read why, and until when
 drop policy if exists own_ban on public.account_bans;
 create policy own_ban on public.account_bans for select to authenticated using (uid = auth.uid());
+
+-- the item list is public; a player reads their own items and garage
+drop policy if exists items_read on public.items;
+create policy items_read on public.items for select to anon, authenticated using (true);
+drop policy if exists own_items on public.inventory;
+create policy own_items on public.inventory for select to authenticated using (uid = auth.uid());
+drop policy if exists own_garage on public.garage;
+create policy own_garage on public.garage for select to authenticated using (uid = auth.uid());
 
 drop policy if exists own_admin_row on public.admins;
 create policy own_admin_row on public.admins for select to authenticated using (user_id = auth.uid());
@@ -2835,7 +3163,8 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
   public._track_json(public.user_tracks) to anon;
 grant execute on function public.name_check(text), public.device_status(text, text), public.admin_ban_player(uuid, text, integer, boolean, boolean, boolean, boolean),
   public.admin_unban_player(uuid, boolean), public.admin_player_links(uuid), public.admin_actions(integer), public.admin_evaders(),
-  public.admin_security_events(integer), public.admin_set_signups(boolean), public.admin_blocked_players(), public.admin_unblock_player(uuid) to anon;
+  public.admin_security_events(integer), public.admin_set_signups(boolean), public.admin_blocked_players(), public.admin_unblock_player(uuid),
+  public.admin_box_stats() to anon;
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;
