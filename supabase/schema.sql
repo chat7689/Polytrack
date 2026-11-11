@@ -2162,6 +2162,89 @@ begin
                       from (select * from public.unbox_news order by id desc limit 30) x), '[]'::jsonb));
 end $$;
 
+-- ------------------------------------------------------------ buying credits
+-- 100 000 credits for each US dollar, paid on Stripe's own checkout page (a
+-- Payment Link the admin pastes in, opened with the player's id as its
+-- client_reference_id). Stripe tells the stripe-webhook Edge Function
+-- (supabase/functions/stripe-webhook), which checks Stripe's signature and
+-- calls grant_purchase with the service role: no player can call it, and a
+-- checkout is only ever paid out once. A refund takes the credits back.
+create table if not exists public.purchases (
+  id bigserial primary key,
+  session_id text unique not null,
+  payment_intent text,
+  uid uuid,                                -- null: the checkout named no player we know
+  credits integer not null default 0,
+  amount_cents integer not null,
+  currency text not null,
+  at timestamptz not null default now(),
+  refunded boolean not null default false
+);
+create index if not exists purchases_intent on public.purchases (payment_intent);
+
+/** a paid checkout: its credits, once (the webhook only) */
+create or replace function public.grant_purchase(p_session text, p_uid text, p_amount integer, p_currency text, p_intent text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare who uuid; n integer := 0;
+begin
+  if coalesce(p_session, '') = '' then return jsonb_build_object('ok', false, 'error', 'no session'); end if;
+  if coalesce(p_uid, '') ~ '^[0-9a-fA-F-]{36}$' then select id into who from public.profiles where id = p_uid::uuid; end if;
+  if who is not null and lower(coalesce(p_currency, '')) = 'usd' and coalesce(p_amount, 0) >= 100 then
+    n := (p_amount / 100) * 100000;
+  end if;
+  insert into public.purchases (session_id, payment_intent, uid, credits, amount_cents, currency)
+    values (p_session, p_intent, who, n, coalesce(p_amount, 0), lower(coalesce(p_currency, '')))
+    on conflict (session_id) do nothing;
+  if not found then return jsonb_build_object('ok', true, 'duplicate', true); end if;
+  if n > 0 then
+    insert into public.credit_events (uid, delta, kind, note) values (who, n, 'purchase', 'Stripe ' || p_session);
+  end if;
+  return jsonb_build_object('ok', true, 'credits', n, 'matched', who is not null);
+end $$;
+
+/** a refunded payment: its credits come back off (the webhook only) */
+create or replace function public.refund_purchase(p_intent text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare r public.purchases;
+begin
+  select * into r from public.purchases where payment_intent = p_intent and not refunded for update;
+  if not found then return jsonb_build_object('ok', true, 'found', false); end if;
+  update public.purchases set refunded = true where id = r.id;
+  if r.uid is not null and r.credits > 0 then
+    insert into public.credit_events (uid, delta, kind, note) values (r.uid, -r.credits, 'refund', 'Stripe refund ' || r.session_id);
+  end if;
+  return jsonb_build_object('ok', true, 'found', true, 'credits', r.credits);
+end $$;
+
+/** the Payment Link to send players to ('' while the shop is off) */
+create or replace function public.shop_link() returns text
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select value ->> 'link' from public.settings where key = 'shop'), '')
+$$;
+/** the admin: the Payment Link ('' switches the shop off) */
+create or replace function public.admin_set_shop(p_link text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare l text := btrim(coalesce(p_link, ''));
+begin
+  perform public._require_admin();
+  if l <> '' and l !~ '^https://buy\.stripe\.com/[A-Za-z0-9_]+$' then
+    raise exception 'That isn''t a Stripe Payment Link (they start https://buy.stripe.com/).' using errcode = 'P0001';
+  end if;
+  insert into public.settings (key, value) values ('shop', jsonb_build_object('link', l))
+    on conflict (key) do update set value = excluded.value;
+  perform public._log(case when l = '' then 'shop off' else 'shop link' end, '', l);
+end $$;
+/** the admin: every purchase, newest first */
+create or replace function public.admin_purchases(p_limit integer) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return coalesce((select jsonb_agg(jsonb_build_object('at', (extract(epoch from x.at) * 1000)::bigint, 'name', p.display_name, 'uid', x.uid,
+      'credits', x.credits, 'cents', x.amount_cents, 'currency', x.currency, 'refunded', x.refunded, 'session', x.session_id) order by x.id desc)
+    from (select * from public.purchases order by id desc limit least(greatest(coalesce(p_limit, 100), 1), 1000)) x
+    left join public.profiles p on p.id = x.uid), '[]'::jsonb);
+end $$;
+
 -- ------------------------------------------------------------ opening hours
 -- Open (Pacific time, daylight saving included) Monday, Tuesday, Thursday and
 -- Friday 8:30 AM to 3:30 PM, Wednesday 8:30 AM to 2:30 PM; closed at weekends.
@@ -3062,6 +3145,7 @@ alter table public.inventory enable row level security;
 alter table public.garage enable row level security;
 alter table public.box_log enable row level security;
 alter table public.unbox_news enable row level security;
+alter table public.purchases enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -3076,7 +3160,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -3103,6 +3187,8 @@ drop policy if exists items_read on public.items;
 create policy items_read on public.items for select to anon, authenticated using (true);
 drop policy if exists own_items on public.inventory;
 create policy own_items on public.inventory for select to authenticated using (uid = auth.uid());
+drop policy if exists own_purchases on public.purchases;
+create policy own_purchases on public.purchases for select to authenticated using (uid = auth.uid());
 drop policy if exists own_garage on public.garage;
 create policy own_garage on public.garage for select to authenticated using (uid = auth.uid());
 
@@ -3164,7 +3250,11 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
 grant execute on function public.name_check(text), public.device_status(text, text), public.admin_ban_player(uuid, text, integer, boolean, boolean, boolean, boolean),
   public.admin_unban_player(uuid, boolean), public.admin_player_links(uuid), public.admin_actions(integer), public.admin_evaders(),
   public.admin_security_events(integer), public.admin_set_signups(boolean), public.admin_blocked_players(), public.admin_unblock_player(uuid),
-  public.admin_box_stats() to anon;
+  public.admin_box_stats(), public.admin_set_shop(text), public.admin_purchases(integer), public.shop_link() to anon;
+-- paying out and taking back purchases: only the Stripe webhook (the service role)
+revoke execute on function public.grant_purchase(text, text, integer, text, text) from public, anon, authenticated;
+revoke execute on function public.refund_purchase(text) from public, anon, authenticated;
+grant execute on function public.grant_purchase(text, text, integer, text, text), public.refund_purchase(text) to service_role;
 -- only the database owner (you, in the SQL Editor) sets the admin login,
 -- and the internal device helpers are not for calling directly
 revoke execute on function public.admin_set_login(text, text) from public, anon, authenticated;

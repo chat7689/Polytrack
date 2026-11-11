@@ -145,3 +145,43 @@ automatically. Until a player comes back, the admin page lists them as
 | `supabase/schema.sql` | The database: tables, security rules and server functions. All the checks live here: invite codes, best times only getting faster, credit balances and the admin login. |
 | `index.html` → `Cloud` | Sign-in, live leaderboards, credits, ghosts and colours, through supabase-js. |
 | `admin.html` | The admin panel. It signs in with the admin login, never as a player. Settings → Messages sets the boxes on the game's menu and sign-in screen. |
+
+## Selling credits with Stripe
+
+Players can buy 100 000 credits for each $1 on Stripe's checkout page. The
+game only sends them there with their player id; the credits are paid by a
+Supabase Edge Function once Stripe confirms the payment, so nobody can give
+themselves credits. The Stripe account must belong to an adult. Do it all in
+Stripe's **test mode** first.
+
+1. **Database.** Run `supabase/schema.sql` again (it adds the purchases table).
+2. **Product and Payment Link.** In Stripe: **Product catalog → Add product**,
+   "100,000 credits", one-off price **$1.00 USD**. Then **Payment Links →
+   New** for that product. Under **After payment**, choose to redirect
+   customers to your website and enter the address you open the game at,
+   followed by `?purchase=done` (for example
+   `https://your-site/?purchase=done`). Leave quantity changes off. Copy the
+   link (`https://buy.stripe.com/...`).
+3. **The webhook function.** In Supabase: **Edge Functions → Deploy a new
+   function → Via editor**, name it `stripe-webhook`, paste the whole of
+   `supabase/functions/stripe-webhook/index.ts` and deploy. Open the function's
+   **Details** and turn **Enforce JWT verification** off (Stripe can't send a
+   Supabase login; it signs its messages instead, and the function checks
+   that signature).
+4. **Stripe calls it.** In Stripe: **Developers → Webhooks → Add endpoint**:
+   `https://tkjiivodmmjeruhxspcz.supabase.co/functions/v1/stripe-webhook`,
+   with the events `checkout.session.completed`,
+   `checkout.session.async_payment_succeeded` and `charge.refunded`. Copy its
+   **Signing secret** (`whsec_...`).
+5. **The secret.** In Supabase: **Edge Functions → Secrets → Add**:
+   `STRIPE_WEBHOOK_SECRET` = the signing secret. That is the only Stripe
+   secret it needs (it never calls Stripe), and it never goes in the game's
+   files.
+6. **Open the shop.** Admin page → **Settings → Credit shop**: paste the
+   Payment Link and save. **+ Buy credits** appears in the game's garage.
+7. **Test it** in test mode with the card `4242 4242 4242 4242` (any future
+   date, any CVC): the credits should arrive within a minute and the purchase
+   should show on the admin page. Then make the same product, Payment Link
+   and webhook in live mode, update the secret and the link, and you're live.
+
+A refund made in Stripe takes the credits back off automatically.

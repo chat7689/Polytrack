@@ -506,6 +506,27 @@ button.primary{background:var(--ink);color:#121417}
         <div class="row" style="margin-top:12px"><button class="primary" id="btnNotice">Save messages</button></div>
         <div class="msg" id="noticeMsg"></div>
       </div>
+      <h2>Credit shop (Stripe)</h2>
+      <div class="card">
+        <p class="note">Players buy <b>100 000 credits for each $1</b> on Stripe's checkout page. Make a Stripe Payment Link
+          for a $1.00 product and paste it here (it starts https://buy.stripe.com/). Its success page should be this
+          game's address followed by <span class="mono">?purchase=done</span>. The credits are paid by the
+          stripe-webhook function once Stripe confirms the payment; supabase/SETUP.md has every step. Leave empty to
+          close the shop.</p>
+        <label for="shopLink">Payment Link</label>
+        <div class="row"><input type="text" id="shopLink" style="width:420px" placeholder="https://buy.stripe.com/…">
+          <button class="primary" id="btnShop">Save</button></div>
+        <div class="msg" id="shopMsg"></div>
+        <div class="tableWrap" style="margin-top:12px">
+          <table>
+            <thead><tr><th>When</th><th>Player</th><th class="r">Paid</th><th class="r">Credits</th><th></th></tr></thead>
+            <tbody id="shopBuys"></tbody>
+          </table>
+        </div>
+        <small class="hint">A purchase with no player means the checkout wasn't opened from the game (no player id came
+          with it): find who paid in Stripe and give them the credits with <b>Credits</b> on the Players page. Refund in
+          Stripe and the credits come back off by themselves.</small>
+      </div>
       <h2>Human check (Cloudflare Turnstile)</h2>
       <div class="card">
         <p class="note">Stops scripts from making accounts in bulk. Make a free Turnstile widget at
@@ -1932,8 +1953,25 @@ $('page-security').addEventListener('click', async (ev) => {
 });
 
 let pcCfg = null;
+/** the credit shop: its Payment Link and every purchase */
+async function loadShop() {
+  try { $('shopLink').value = (await rpc('shop_link')) || ''; } catch (e) { say('shopMsg', 'Run supabase/schema.sql to set up the shop.', 'err'); return; }
+  try {
+    const list = await rpc('admin_purchases', { p_limit: 200 });
+    $('shopBuys').innerHTML = list.map((b) => '<tr><td class="mono">' + esc(fmtWhen(b.at)) + '</td><td>' + (b.name ? '<b>' + esc(b.name) + '</b>' + realTag(b.uid) : '<span class="pill trm">no player</span>') +
+      '</td><td class="mono r">$' + (b.cents / 100).toFixed(2) + ' ' + esc(String(b.currency).toUpperCase()) + '</td><td class="mono r">' + fmtCredits(b.credits) +
+      '</td><td>' + (b.refunded ? '<span class="pill trm">refunded</span>' : '') + '</td></tr>').join('') || '<tr><td colspan="5" class="empty">No purchases yet.</td></tr>';
+  } catch (e) { $('shopBuys').innerHTML = '<tr><td colspan="5" class="empty">' + esc(e.message) + '</td></tr>'; }
+}
+$('btnShop').addEventListener('click', async () => {
+  try {
+    await rpc('admin_set_shop', { p_link: $('shopLink').value });
+    say('shopMsg', $('shopLink').value.trim() ? 'Saved: the shop is open.' : 'The shop is closed.', 'ok');
+  } catch (e) { say('shopMsg', e.message, 'err'); }
+});
 async function loadSettings() {
   loadNotice();
+  loadShop();
   try { pcCfg = await readPasscode(); } catch (e) { pcCfg = null; }
   const has = !!(pcCfg && pcCfg.passHash);
   $('pcOldWrap').classList.toggle('hide', !has);

@@ -2262,6 +2262,11 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 .hidTag{color:var(--dimmer);font-size:11px;margin-left:4px}
 .hideBox{position:fixed;inset:0;z-index:87;display:flex;align-items:center;justify-content:center;background:rgba(10,11,13,.66);padding:16px}
 .hideBox[hidden]{display:none}
+.shopDeal{display:flex;align-items:center;gap:10px;margin:6px 0 14px;padding:14px 16px;border-radius:12px;border:1px solid var(--ember);
+  background:rgba(242,115,63,.08)}
+.shopDeal b{font-size:22px;letter-spacing:-.02em}
+.shopDeal span:last-child{margin-left:auto;font-size:16px;font-weight:600;color:var(--ember)}
+.shopAsk{color:var(--ink)}
 .hidePanel{width:min(460px,100%);background:#16181c;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:20px 22px}
 .hidePanel h3{font-size:18px;margin-bottom:6px}
 .hideNow{font-size:13.5px;margin:12px 0 10px;color:var(--dim)}
@@ -2701,6 +2706,21 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   </div>
 
   <!-- hiding your run on a map (paid) -->
+  <div class="hideBox" id="shopBox" hidden>
+    <div class="hidePanel" role="dialog" aria-labelledby="shopTitle">
+      <h3 id="shopTitle">Buy credits</h3>
+      <div class="shopDeal"><span class="gem2d"></span><b>100 000 credits</b><span>for $1.00</span></div>
+      <p class="dNote">You pay on Stripe's secure checkout page, then come straight back here. The credits arrive on
+        this account (<b id="shopWho"></b>) within a minute.</p>
+      <p class="dNote shopAsk"><b>Under 18? Ask a parent or guardian before you buy.</b></p>
+      <div class="hideBtns">
+        <span style="flex:1"></span>
+        <button id="bShopClose">Cancel</button>
+        <button class="primary" id="bShopGo">Pay $1 on Stripe</button>
+      </div>
+    </div>
+  </div>
+
   <div class="hideBox" id="hideBox" hidden>
     <div class="hidePanel" role="dialog" aria-labelledby="hideTitle">
       <h3 id="hideTitle">Hide your run</h3>
@@ -3319,6 +3339,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <h2 class="big">Garage</h2>
         <div class="row" style="gap:14px;align-items:center">
           <span class="gCred"><span class="gem2d"></span> <b id="gCredits">0</b></span>
+          <button class="small primary" id="gShop" hidden>+ Buy credits</button>
           <button class="ghost" id="bGarageBack">← Menu</button>
         </div>
       </div>
@@ -12373,6 +12394,41 @@ const Flair = {
   }
 };
 
+/**
+ * Buying credits: 100 000 for $1 on Stripe's own checkout page (a Payment
+ * Link the admin sets up). The link gets the player's id, and Stripe's
+ * webhook pays the credits on the server (supabase/functions/stripe-webhook):
+ * nothing here can give credits. Stripe sends the player back with
+ * ?purchase=done, and the credits show up by themselves (watchAdjust).
+ */
+const Shop = {
+  link: '', at: 0,
+  async load() {
+    if (!Cloud.on || !Cloud.user || Date.now() - this.at < 120000) { this.show(); return; }
+    this.at = Date.now();
+    try { this.link = (await Cloud.rpc('shop_link')) || ''; } catch (e) { this.link = ''; }
+    this.show();
+  },
+  show() { const b = $('gShop'); if (b) b.hidden = !(this.link && Cloud.on && Cloud.user); },
+  open() {
+    if (!this.link || !Cloud.user) return;
+    $('shopWho').textContent = Cloud.name();
+    $('shopBox').hidden = false;
+  },
+  go() {
+    if (!this.link || !Cloud.user) return;
+    location.href = this.link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid);
+  },
+  /** back from Stripe */
+  welcomeBack() {
+    let q = null;
+    try { q = new URLSearchParams(location.search).get('purchase'); } catch (e) { /* no query */ }
+    if (!q) return;
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* fine */ }
+    setTimeout(() => UI.toast(q === 'done' ? 'Thanks! Your 100 000 credits arrive in a moment.' : 'No payment was made.'), 1500);
+  }
+};
+
 /** Coach tells everyone when someone unboxes a car or an animated decal */
 const UnboxNews = {
   last: null, timer: 0,
@@ -12490,6 +12546,7 @@ const Garage = {
   // ------------------------------------------------------------- the screen
   show(tab) {
     this.tab = tab || this.tab || 'boxes';
+    Shop.load();
     Prefs.set('garageSeen', true);
     this.badge();
     this.render();
@@ -19083,6 +19140,7 @@ const Game = {
     Device.ready();
     Updater.start();
     Updater.greet();
+    Shop.welcomeBack();
     buildMaterials();
     buildGeometry();
     App.init();
@@ -19482,6 +19540,10 @@ const Game = {
     $('gSlotSecondary').addEventListener('click', () => this.setGarageSlot('secondary'));
     document.querySelectorAll('#gTabs button').forEach((b) => b.addEventListener('click', () => Garage.setTab(b.dataset.tab)));
     $('gBoxBuy').addEventListener('click', () => BoxOpen.open(false));
+    $('gShop').addEventListener('click', () => Shop.open());
+    $('bShopClose').addEventListener('click', () => { $('shopBox').hidden = true; });
+    $('bShopGo').addEventListener('click', () => Shop.go());
+    $('shopBox').addEventListener('click', (e) => { if (e.target.id === 'shopBox') $('shopBox').hidden = true; });
     $('gBoxFree').addEventListener('click', () => BoxOpen.open(true));
     $('boxOpen').addEventListener('click', (e) => { if (!e.target.closest('#boSum') && BoxOpen.next) BoxOpen.next(); });
     $('gSatSlider').addEventListener('input', () =>
