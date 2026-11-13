@@ -16,11 +16,13 @@ const g2 = await grant('cs_test_1', t.users.Buyer, 100, 'usd', 'pi_1');
 ok(g2.duplicate && (await bal('Buyer')) === b0 + 100000, 'the same checkout told twice (Stripe retries) pays once');
 const g3 = await grant('cs_test_2', t.users.Buyer, 300, 'usd', 'pi_2');
 ok(g3.credits === 300000, '$3 (three of them) buys 300 000');
+const g6 = await grant('cs_test_5', t.users.Buyer, 500, 'usd', 'pi_5');
+ok(g6.credits === 600000, 'the $5 pack is 600 000 (one pack free) ' + JSON.stringify(g6));
 const g4 = await grant('cs_test_3', 'not-a-player', 100, 'usd', 'pi_3');
 ok(g4.ok && g4.credits === 0 && g4.matched === false, 'a checkout naming nobody pays nobody, but is recorded for the admin');
 const g5 = await grant('cs_test_4', t.users.Buyer, 100, 'eur', 'pi_4');
 ok(g5.credits === 0, 'only US dollars count');
-ok((await t.admin('select public.admin_purchases(50) as j')).rows[0].j.length === 4, 'the admin sees every purchase');
+ok((await t.admin('select public.admin_purchases(50) as j')).rows[0].j.length === 5, 'the admin sees every purchase');
 
 // refunds
 const before = await bal('Buyer');
@@ -41,4 +43,11 @@ await t.admin("select public.admin_set_shop('https://buy.stripe.com/test_abc123'
 ok((await t.one('Buyer', 'select public.shop_link() as l')).l === 'https://buy.stripe.com/test_abc123', 'the admin pastes a Payment Link and everyone gets it');
 ok(/Payment Link/.test((await t.admin("select public.admin_set_shop('https://evil.example.com/pay')").catch((e) => e)).message || ''), 'only a Stripe Payment Link is accepted');
 ok(/admin/i.test(await t.err('Buyer', "select public.admin_set_shop('https://buy.stripe.com/x')")), 'and only by the admin');
+await t.admin("select public.admin_set_shop_links('https://buy.stripe.com/one1', 'https://buy.stripe.com/five5')");
+const links = (await t.one('Buyer', 'select public.shop_links() as l')).l;
+ok(links.one === 'https://buy.stripe.com/one1' && links.five === 'https://buy.stripe.com/five5', 'the links of both packs reach the game ' + JSON.stringify(links));
+await t.admin("select public.admin_set_shop('https://buy.stripe.com/one2')");
+ok((await t.one('Buyer', 'select public.shop_links() as l')).l.five === 'https://buy.stripe.com/five5', 'changing the $1 link keeps the $5 one');
+ok(/different/.test((await t.admin("select public.admin_set_shop_links('https://buy.stripe.com/same', 'https://buy.stripe.com/same')").catch((e) => e)).message || ''), 'the two packs need different links');
+ok(/admin/i.test(await t.err('Buyer', "select public.admin_set_shop_links('https://buy.stripe.com/a', '')")), 'only the admin sets them');
 done();

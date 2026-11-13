@@ -2215,8 +2215,9 @@ begin
 end $$;
 
 -- ------------------------------------------------------------ buying credits
--- 100 000 credits for each US dollar, paid on Stripe's own checkout page (a
--- Payment Link the admin pastes in, opened with the player's id as its
+-- 100 000 credits for each US dollar, and 100 000 more for every $5 (so the
+-- $5 pack is 600 000), paid on Stripe's own checkout page (one of two
+-- Payment Links the admin pastes in, opened with the player's id as its
 -- client_reference_id). Stripe tells the stripe-webhook Edge Function
 -- (supabase/functions/stripe-webhook), which checks Stripe's signature and
 -- calls grant_purchase with the service role: no player can call it, and a
@@ -2242,7 +2243,7 @@ begin
   if coalesce(p_session, '') = '' then return jsonb_build_object('ok', false, 'error', 'no session'); end if;
   if coalesce(p_uid, '') ~ '^[0-9a-fA-F-]{36}$' then select id into who from public.profiles where id = p_uid::uuid; end if;
   if who is not null and lower(coalesce(p_currency, '')) = 'usd' and coalesce(p_amount, 0) >= 100 then
-    n := (p_amount / 100) * 100000;
+    n := (p_amount / 100) * 100000 + (p_amount / 500) * 100000;   -- $1: 100 000, $5: 600 000
   end if;
   insert into public.purchases (session_id, payment_intent, uid, credits, amount_cents, currency)
     values (p_session, p_intent, who, n, coalesce(p_amount, 0), lower(coalesce(p_currency, '')))
@@ -2268,23 +2269,39 @@ begin
   return jsonb_build_object('ok', true, 'found', true, 'credits', r.credits);
 end $$;
 
-/** the Payment Link to send players to ('' while the shop is off) */
+/** the $1 Payment Link ('' while the shop is off; older games ask for this) */
 create or replace function public.shop_link() returns text
 language sql stable security definer set search_path = public, pg_temp as $$
   select coalesce((select value ->> 'link' from public.settings where key = 'shop'), '')
 $$;
-/** the admin: the Payment Link ('' switches the shop off) */
-create or replace function public.admin_set_shop(p_link text) returns void
+/** both Payment Links: {one: the $1 pack, five: the $5 pack} ('' when not set) */
+create or replace function public.shop_links() returns jsonb
+language sql stable security definer set search_path = public, pg_temp as $$
+  select jsonb_build_object(
+    'one', coalesce((select value ->> 'link' from public.settings where key = 'shop'), ''),
+    'five', coalesce((select value ->> 'link5' from public.settings where key = 'shop'), ''))
+$$;
+/** the admin: both Payment Links ('' leaves that pack out; both '' closes the shop) */
+create or replace function public.admin_set_shop_links(p_link text, p_link5 text) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare l text := btrim(coalesce(p_link, ''));
+declare l text := btrim(coalesce(p_link, '')); l5 text := btrim(coalesce(p_link5, ''));
 begin
   perform public._require_admin();
-  if l <> '' and l !~ '^https://buy\.stripe\.com/[A-Za-z0-9_]+$' then
+  if (l <> '' and l !~ '^https://buy\.stripe\.com/[A-Za-z0-9_]+$') or (l5 <> '' and l5 !~ '^https://buy\.stripe\.com/[A-Za-z0-9_]+$') then
     raise exception 'That isn''t a Stripe Payment Link (they start https://buy.stripe.com/).' using errcode = 'P0001';
   end if;
-  insert into public.settings (key, value) values ('shop', jsonb_build_object('link', l))
+  if l <> '' and l = l5 then
+    raise exception 'The $1 and $5 packs need two different Payment Links.' using errcode = 'P0001';
+  end if;
+  insert into public.settings (key, value) values ('shop', jsonb_build_object('link', l, 'link5', l5))
     on conflict (key) do update set value = excluded.value;
-  perform public._log(case when l = '' then 'shop off' else 'shop link' end, '', l);
+  perform public._log(case when l = '' and l5 = '' then 'shop off' else 'shop links' end, '', l || ' ' || l5);
+end $$;
+/** the admin: just the $1 link (the $5 one stays as it is) */
+create or replace function public.admin_set_shop(p_link text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public.admin_set_shop_links(p_link, coalesce((select value ->> 'link5' from public.settings where key = 'shop'), ''));
 end $$;
 /** the admin: every purchase, newest first */
 create or replace function public.admin_purchases(p_limit integer) returns jsonb
@@ -3373,6 +3390,7 @@ grant execute on function public.name_check(text), public.device_status(text, te
   public.admin_unban_player(uuid, boolean), public.admin_player_links(uuid), public.admin_actions(integer), public.admin_evaders(),
   public.admin_security_events(integer), public.admin_set_signups(boolean), public.admin_blocked_players(), public.admin_unblock_player(uuid),
   public.admin_box_stats(), public.admin_set_shop(text), public.admin_purchases(integer), public.shop_link(),
+  public.admin_set_shop_links(text, text), public.shop_links(),
   public.admin_set_open_signups(boolean), public.admin_open_signups(), public.admin_invite_stats(), public.online_now(),
   public._open_signups() to anon;
 -- paying out and taking back purchases: only the Stripe webhook (the service role)

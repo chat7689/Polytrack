@@ -160,10 +160,11 @@ Stripe's **test mode** first.
    New** for that product. Under **After payment**, choose to redirect
    customers to your website and enter the address you open the game at,
    followed by `?purchase=done` (for example
-   `https://your-site/?purchase=done`). Turn on **Let customers adjust
-   quantity** (1 to 50): each $1 still pays 100 000 credits, and one $5
-   payment loses far less to Stripe's fee (2.9% + 30 cents a payment) than
-   five $1 payments. Copy the link (`https://buy.stripe.com/...`).
+   `https://your-site/?purchase=done`). Leave quantity changes off. Copy the
+   link (`https://buy.stripe.com/...`). Then do the same for a second
+   product, "600,000 credits" at **$5.00 USD** (the deal: one pack free),
+   and copy its link too. The server pays by the amount paid: $1 is 100 000
+   credits and every $5 adds 100 000 more.
 3. **The webhook function.** In Supabase: **Edge Functions → Deploy a new
    function → Via editor**, name it `stripe-webhook`, paste the whole of
    `supabase/functions/stripe-webhook/index.ts` and deploy. Open the function's
@@ -181,11 +182,11 @@ Stripe's **test mode** first.
    secret it needs (it never calls Stripe), and it never goes in the game's
    files.
 6. **Open the shop.** Admin page → **Settings → Credit shop**: paste the
-   Payment Link and save. **+ Buy credits** appears in the game's garage.
+   $1 link and the $5 link and save. **+ Buy credits** appears in the game's garage.
 7. **Test it** in test mode with the card `4242 4242 4242 4242` (any future
    date, any CVC): the credits should arrive within a minute and the purchase
-   should show on the admin page. Then make the same product, Payment Link
-   and webhook in live mode, update the secret and the link, and you're live.
+   should show on the admin page. Then make the same products, Payment Links
+   and webhook in live mode, update the secret and both links, and you're live.
 
 A refund made in Stripe, or a chargeback (a disputed payment), takes the
 credits back off automatically.

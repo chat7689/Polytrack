@@ -2301,6 +2301,19 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   background:rgba(242,115,63,.08)}
 .shopDeal b{font-size:22px;letter-spacing:-.02em}
 .shopDeal span:last-child{margin-left:auto;font-size:16px;font-weight:600;color:var(--ember)}
+.shopOpts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 14px}
+.shopOpt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 12px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:var(--ink);text-align:left;cursor:pointer}
+.shopOpt[hidden]{display:none}
+.shopOpt:hover{border-color:rgba(255,255,255,.3)}
+.shopOpt.on{border-color:var(--ember);background:rgba(242,115,63,.1);box-shadow:0 0 0 1px var(--ember)}
+.shopAmt{display:flex;align-items:center;gap:7px}
+.shopAmt b{font-size:22px;letter-spacing:-.02em}
+.shopOpt small{font-size:12px;color:var(--dim)}
+.shopPrice{margin-top:8px;font-size:18px;font-weight:700;color:var(--ember)}
+.shopTag{position:absolute;top:-9px;left:12px;padding:2px 7px;border-radius:999px;font-style:normal;font-size:10px;font-weight:700;
+  letter-spacing:.04em;color:#1a0d05;background:var(--ember);white-space:nowrap}
+.shopOpts.one{grid-template-columns:1fr}
 .hidePanel{width:min(460px,100%);background:#16181c;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:20px 22px}
 .hidePanel h3{font-size:18px;margin-bottom:6px}
 .hideNow{font-size:13.5px;margin:12px 0 10px;color:var(--dim)}
@@ -2487,7 +2500,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <div class="who" id="who" hidden>
           <button class="whoName" id="whoCard" title="Your profile card"><span id="whoIcon"></span><span class="whoTxt"><b id="whoName">—</b><small id="whoTitle"></small></span></button>
           <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
-          <button class="small crBuy" id="bBuyCr" hidden title="Buy credits: 100 000 for $1">+ Buy</button>
+          <button class="small crBuy" id="bBuyCr" hidden title="Buy credits: 100 000 for $1, or 600 000 for $5">+ Buy</button>
           <button class="small refBtn" id="bInvite">Invite friends <span class="refGift">free boxes</span></button>
           <button class="small topBtn" id="bSettings">Settings</button>
           <button class="ghost small" id="whoOut">Sign out</button>
@@ -2746,7 +2759,11 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   <div class="hideBox" id="shopBox" hidden>
     <div class="hidePanel" role="dialog" aria-labelledby="shopTitle">
       <h3 id="shopTitle">Buy credits</h3>
-      <div class="shopDeal"><span class="gem2d"></span><b>100 000 credits</b><span>for $1.00</span></div>
+      <div class="shopOpts">
+        <button class="shopOpt" data-pack="1"><span class="shopAmt"><span class="gem2d"></span><b>100 000</b></span><small>credits</small><span class="shopPrice">$1</span></button>
+        <button class="shopOpt shopBest" data-pack="5" id="shopFive"><i class="shopTag">BEST DEAL · 1 PACK FREE</i>
+          <span class="shopAmt"><span class="gem2d"></span><b>600 000</b></span><small>credits</small><span class="shopPrice">$5</span></button>
+      </div>
       <p class="dNote">You pay on Stripe's secure checkout page, then come straight back here. The credits arrive on
         this account (<b id="shopWho"></b>) within a minute.</p>
       <div class="hideBtns">
@@ -3407,7 +3424,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
               <button class="primary gBig" id="gBoxBuy"><span>Open a box</span><small><span class="gem2d"></span> 100 credits</small></button>
               <button class="gBig" id="gBoxFree"><span>Open a free box</span><small>none yet</small></button>
             </div>
-            <button class="gTopUp" id="gTopUp" hidden>Out of credits? <b>Get 100 000 for $1</b></button>
+            <button class="gTopUp" id="gTopUp" hidden>Out of credits? <b>Get 100 000 for $1, or 600 000 for $5</b></button>
             <div class="gRuns"><span>Next free box: every 50 finished runs</span><b id="gBoxRuns">0 / 50 runs</b><div class="gBar"><i id="gBoxRunsBar"></i></div></div>
             <h3 class="gh" style="margin-top:20px">WHAT'S IN A BOX</h3>
             <div class="gOdds" id="gOdds"></div>
@@ -12454,27 +12471,45 @@ const Flair = {
  * ?purchase=done, and the credits show up by themselves (watchAdjust).
  */
 const Shop = {
-  link: '', at: 0,
+  link: '', link5: '', pack: 5, at: 0,
   async load() {
     if (!Cloud.on || !Cloud.user || Date.now() - this.at < 120000) { this.show(); return; }
     this.at = Date.now();
-    try { this.link = (await Cloud.rpc('shop_link')) || ''; } catch (e) { this.link = ''; }
+    try {
+      const l = await Cloud.rpc('shop_links');
+      this.link = (l && l.one) || ''; this.link5 = (l && l.five) || '';
+    } catch (e) {
+      // a database from before the $5 pack
+      this.link5 = '';
+      try { this.link = (await Cloud.rpc('shop_link')) || ''; } catch (e2) { this.link = ''; }
+    }
     this.show();
   },
   show() {
-    const on = !!(this.link && Cloud.on && Cloud.user);
+    const on = !!((this.link || this.link5) && Cloud.on && Cloud.user);
     const b = $('gShop'); if (b) b.hidden = !on;
     const m = $('bBuyCr'); if (m) m.hidden = !on;
     const t = $('gTopUp'); if (t) t.hidden = !on || (Records.credits || 0) >= 100;
   },
   open() {
-    if (!this.link || !Cloud.user) return;
+    if (!(this.link || this.link5) || !Cloud.user) return;
     $('shopWho').textContent = Cloud.name();
+    document.querySelector('.shopOpt[data-pack="1"]').hidden = !this.link;
+    $('shopFive').hidden = !this.link5;
+    document.querySelector('.shopOpts').classList.toggle('one', !(this.link && this.link5));
+    this.pick(this.link5 ? 5 : 1);
     $('shopBox').hidden = false;
   },
+  /** the pack to pay for: 1 ($1) or 5 ($5) */
+  pick(n) {
+    this.pack = n;
+    document.querySelectorAll('.shopOpt').forEach((b) => b.classList.toggle('on', Number(b.dataset.pack) === n));
+    $('bShopGo').textContent = 'Pay $' + n + ' on Stripe';
+  },
   go() {
-    if (!this.link || !Cloud.user) return;
-    location.href = this.link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid);
+    const link = this.pack === 5 ? this.link5 : this.link;
+    if (!link || !Cloud.user) return;
+    location.href = link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid);
   },
   /** back from Stripe */
   welcomeBack() {
@@ -12482,7 +12517,7 @@ const Shop = {
     try { q = new URLSearchParams(location.search).get('purchase'); } catch (e) { /* no query */ }
     if (!q) return;
     try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* fine */ }
-    setTimeout(() => UI.toast(q === 'done' ? 'Thanks! Your 100 000 credits arrive in a moment.' : 'No payment was made.'), 1500);
+    setTimeout(() => UI.toast(q === 'done' ? 'Thanks! Your credits arrive in a moment.' : 'No payment was made.'), 1500);
   }
 };
 
@@ -19738,6 +19773,7 @@ const Game = {
     $('bChallenge').addEventListener('click', () => Challenge.copy(Game.resultBoardId));
     $('bShopClose').addEventListener('click', () => { $('shopBox').hidden = true; });
     $('bShopGo').addEventListener('click', () => Shop.go());
+    document.querySelectorAll('.shopOpt').forEach((b) => b.addEventListener('click', () => Shop.pick(Number(b.dataset.pack))));
     $('shopBox').addEventListener('click', (e) => { if (e.target.id === 'shopBox') $('shopBox').hidden = true; });
     $('gBoxFree').addEventListener('click', () => BoxOpen.open(true));
     $('boxOpen').addEventListener('click', (e) => { if (!e.target.closest('#boSum') && BoxOpen.next) BoxOpen.next(); });
