@@ -12482,7 +12482,7 @@ const Catalog = {
     [['speed-demon', 'Speed Demon'], ['drift-king', 'Drift King'], ['apex-hunter', 'Apex Hunter'], ['night-rider', 'Night Rider'], ['throttle-junkie', 'Throttle Junkie'],
       ['corner-carver', 'Corner Carver'], ['late-braker', 'Late Braker'], ['pole-sitter', 'Pole Sitter'], ['ghost-buster', 'Ghost Buster'], ['road-rocket', 'Road Rocket'],
       ['turbo-legend', 'Turbo Legend'], ['gravity-defier', 'Gravity Defier'], ['slipstreamer', 'Slipstreamer'], ['the-machine', 'The Machine'],
-      ['photo-finish', 'Photo Finish'], ['full-send', 'Full Send']].forEach(([k, n]) => add('title:' + k, 'title', n, 'Shown on your profile card.'));
+      ['photo-finish', 'Photo Finish'], ['full-send', 'Full Send'], ['slick', 'Slick']].forEach(([k, n]) => add('title:' + k, 'title', n, 'Shown on your profile card.'));
     [['bolt', 'Bolt'], ['flame', 'Flame'], ['star', 'Star'], ['skull', 'Skull'], ['rocket', 'Rocket'], ['diamond', 'Diamond'], ['heart', 'Heart'], ['ghost', 'Ghost'],
       ['wing', 'Wings'], ['target', 'Target'], ['flag', 'Flag'], ['wheel', 'Wheel'], ['moon', 'Moon'], ['atom', 'Atom'], ['dice', 'Dice'], ['crown', 'Crown']]
       .forEach(([k, n]) => add('icon:' + k, 'icon', n, 'Shown on your profile card and the menu, in your colours.'));
@@ -12967,7 +12967,7 @@ const Garage = {
     $('gStatOpened').textContent = fmtCredits((d && d.opened) || 0);
     $('gStatFound').textContent = (d ? d.inventory.length : 0) + ' / ' + (Catalog.ofKind('car') && Catalog.items.length);
     const odds = [['car', 1, '8 cars'], ['anim', 2, '8 animated decals'], ['decal', 3, '8 decals'], ['cel', 4, '8 finish celebrations'], ['boost', 5, '16 boosts'],
-      ['wheel', 5, '16 wheels'], ['title', 10, '16 titles'], ['icon', 10, '16 profile icons'], ['credits', 50, '1-25 credits, or a hue pack'], ['split', 10, 'splits into two more boxes (up to 8)']];
+      ['wheel', 5, '16 wheels'], ['title', 10, '17 titles'], ['icon', 10, '16 profile icons'], ['credits', 50, '1-25 credits, or a hue pack'], ['split', 10, 'splits into two more boxes (up to 8)']];
     $('gOdds').innerHTML = odds.map(([k, pc, what]) => {
       const K = k === 'split' ? { label: 'Split', col: '#ffffff' } : ITEM_KIND[k];
       return '<div class="gOddRow" style="--kc:' + K.col + '"><b>' + escapeHtml(k === 'credits' ? 'Credits or hue' : K.label) + '</b><div class="bar"><i style="width:' + Math.max(3, pc * 2) + '%"></i></div><span>' + pc + '%</span><small>' + escapeHtml(what) + '</small></div>';

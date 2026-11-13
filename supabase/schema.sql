@@ -2430,6 +2430,7 @@ insert into public.items (id, kind, name, sell, source) values
   ('finish:matte', 'finish', 'Matte', 400, 'shop'), ('finish:satin', 'finish', 'Satin', 400, 'shop'),
   ('finish:metallic', 'finish', 'Metallic', 400, 'shop'), ('finish:pearl', 'finish', 'Pearl', 400, 'shop'),
   ('finish:neon', 'finish', 'Neon', 400, 'pass'), ('finish:chrome', 'finish', 'Chrome', 400, 'pass'),
+  ('title:slick', 'title', 'Slick', 100, 'box'),
   ('title:pass-holder', 'title', 'Pass Holder', 100, 'pass'), ('title:velocity', 'title', 'Velocity', 100, 'pass'),
   ('icon:pass-bolt', 'icon', 'Storm', 100, 'pass'), ('icon:pass-gem', 'icon', 'Prism', 100, 'pass')
 on conflict (id) do update set kind = excluded.kind, name = excluded.name, sell = excluded.sell, source = excluded.source;

@@ -13,9 +13,9 @@ const boxes = async (name) => (await t.owner('select coalesce((select free_boxes
 
 // --- items
 const items = (await t.owner('select id, kind, source, sell from public.items')).rows;
-ok(items.length === 106, '96 box items + 6 paint finishes + 4 pass items = ' + items.length);
+ok(items.length === 107, '97 box items + 6 paint finishes + 4 pass items = ' + items.length);
 ok(items.filter((i) => i.kind === 'finish').length === 6 && items.filter((i) => i.source === 'pass').length === 6, 'finishes and pass-only items');
-ok(items.filter((i) => i.source === 'box').length === 96, 'boxes still hold the same 96');
+ok(items.filter((i) => i.source === 'box').length === 97, 'boxes hold the 96 from before and Slick');
 await t.mkUser('Box');
 await t.one('Box', "select public.redeem_access('OPENOPEN') as j");
 await give('Box', 100 * 400);
