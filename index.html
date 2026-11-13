@@ -640,6 +640,47 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .gOddRow span{text-align:right;font-family:var(--mono);color:var(--dim)}
 .gOddRow small{grid-column:2 / 3;color:var(--dimmer);margin-top:-3px}
 .gTiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin-bottom:18px}
+.gShopHead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
+.gShopHead small{font-size:12px;color:var(--dim)}
+.gShopGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gShopCard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px 12px 12px;border-radius:12px;border:1px solid var(--rule-2);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--kc) 10%,transparent),rgba(255,255,255,.015));border-top:2px solid var(--kc)}
+.gShopCard .gPic{height:74px;width:100%;display:flex;align-items:center;justify-content:center}
+.gShopCard .gPic img{max-width:100%;max-height:74px}
+.gShopCard .gPic .kPic{width:84px;height:56px}
+.gShopK{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--kc)}
+.gShopCard b{font-size:14px;margin-bottom:6px}
+.gShopCard button{margin-top:auto;display:inline-flex;align-items:center;gap:5px}
+.gShopCard button.short{opacity:.75}
+.gShopCard.owned{opacity:.55}
+.gShopNote{margin-top:14px;font-size:12.5px}
+.gPassHead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px}
+.gPassHead h3{font-size:22px;letter-spacing:-.02em;margin:0}
+.gPassHead small{font-size:12.5px;color:var(--dim)}
+.gPassHead button{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
+.pKick{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--ember)}
+.pPlus{font-family:var(--mono);font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;color:#1a0d05;background:linear-gradient(90deg,#ffcf5c,#f2733f)}
+.pBar{height:8px;margin-bottom:12px}
+.pClaim{width:100%;align-items:center;margin-bottom:12px}
+.pPitch{font-size:13px;padding:10px 12px;border-radius:10px;border:1px dashed rgba(255,207,92,.5);background:rgba(255,207,92,.06)}
+.pHead,.pRow{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;align-items:center}
+.pHead{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:0 0 6px}
+.pHead span:last-child{color:#ffcf5c}
+.pTrack{max-height:340px;overflow:auto;padding-right:4px;margin-bottom:12px}
+.pRow{padding:4px 0;border-top:1px solid rgba(255,255,255,.05)}
+.pTier{font-family:var(--mono);font-size:13px;color:var(--dim);text-align:center}
+.pRow.reached .pTier{color:var(--ink)}
+.pRow.next .pTier{color:var(--ember)}
+.pChip{display:flex;align-items:center;gap:7px;min-height:34px;padding:4px 9px;border-radius:9px;font-size:12.5px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025)}
+.pChip.item{border-color:rgba(143,227,255,.4);font-weight:600}
+.pChip.ready{border-color:var(--ember);background:rgba(242,115,63,.12);color:var(--ink)}
+.pChip.got{opacity:.45}
+.pChip.got span::after{content:' ✓'}
+.pChip.lock{color:var(--dim)}
+.pChip.plusLock{color:var(--dim);border-style:dashed}
+.pPic{display:inline-flex;width:40px;height:26px;align-items:center;justify-content:center}
+.pPic img{max-width:40px;max-height:26px}
+.pPic .kPic{width:36px;height:24px}
 .gTile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border-radius:10px;border:1px solid var(--rule-2);
   background:rgba(255,255,255,.02);font-size:12px;font-weight:600;color:var(--ink);text-align:center;transition:border-color .15s,transform .15s}
 .gTile .gPic{height:56px;display:flex;align-items:center;justify-content:center;width:100%}
@@ -2584,7 +2625,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 
         <button class="w wAct" id="bGarage">
           <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 15l2-5h14l2 5v3H3z"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/><path d="M7 10l2-4h6l2 4"/></svg></span>
-          <b>Garage</b><small>Boxes, cars and paint</small><i class="wBadge" id="gFreeMenu" hidden></i><span class="wNew" id="gNewMenu" hidden>NEW</span>
+          <b>Garage</b><small>Shop, Race Pass and boxes</small><i class="wBadge" id="gFreeMenu" hidden></i><span class="wNew" id="gNewMenu" hidden>NEW</span>
         </button>
         <button class="w wInfo wChamp" id="champCard" hidden title="Last season's champion: open their card">
           <span id="champIcon"></span>
@@ -3405,6 +3446,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       </div>
       <div class="gTabs" id="gTabs">
         <button data-tab="boxes">Boxes<i id="gFreeBadge" hidden></i></button>
+        <button data-tab="shop">Shop</button>
+        <button data-tab="pass">Race Pass<i id="gPassBadge" hidden></i></button>
         <button data-tab="car">Car</button>
         <button data-tab="paint">Paint</button>
         <button data-tab="profile">Profile</button>
@@ -3434,6 +3477,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
             <div class="gOdds" id="gOdds"></div>
             <small class="dim" id="gBoxOpened"></small>
           </section>
+          <section class="gPane" data-pane="shop" hidden></section>
+          <section class="gPane" data-pane="pass" hidden></section>
           <section class="gPane" data-pane="car" hidden></section>
           <section class="gPane" data-pane="paint" hidden>
             <p class="lede" style="margin-bottom:14px">Hue packs come out of boxes. Click any hue you own to use it; the sliders are free.
@@ -6753,15 +6798,56 @@ const DECAL_IDS = { 'decal:stripes': 1, 'decal:number': 2, 'decal:flames': 3, 'd
   'anim:lava': 14, 'anim:starfield': 15, 'anim:shockwave': 16 };
 /** the body paints take the decal (the secondary parts in the primary colour) */
 // (kept apart from the material's userData, which a clone copies as plain data)
+/**
+ * Paint finishes, on top of the lighting: a reflection of a simple sky (blue
+ * above, a bright horizon, dark ground, a sun glint) that follows the car's
+ * flat faces, so any renderer shows it with no environment map. uFin is
+ * (reflection, how much the reflection takes the paint's colour, glow,
+ * pearl: the second colour at glancing angles).
+ */
+const DECAL_FINISH = `
+{
+  vec3 fN = normalize(normal);
+  vec3 fV = normalize(vViewPosition);
+  vec3 fR = inverseTransformDirection(reflect(-fV, fN), viewMatrix);
+  float fres = pow(1.0 - clamp(dot(fN, fV), 0.0, 1.0), 3.0);
+  vec3 fSky = mix(vec3(0.05, 0.05, 0.06), mix(vec3(1.0, 0.96, 0.88), vec3(0.16, 0.36, 0.85), smoothstep(0.02, 0.5, fR.y)), smoothstep(-0.06, 0.02, fR.y));
+  fSky += vec3(1.0, 0.96, 0.88) * pow(max(dot(fR, normalize(vec3(0.35, 0.85, 0.4))), 0.0), 48.0) * 2.2;
+  vec3 fBase = diffuseColor.rgb;
+  vec3 fRefl = fSky * mix(vec3(1.0), fBase * 1.7 + 0.04, uFin.y);
+  float fK = uFin.x * mix(0.3 + 0.7 * fres, 1.0, uFin.y);
+  outgoingLight = mix(outgoingLight, fRefl, clamp(fK, 0.0, 1.0));
+  #ifdef DECAL_DARK
+  vec3 fOther = uP;
+  #else
+  vec3 fOther = uS;
+  #endif
+  outgoingLight = mix(outgoingLight, fOther * (0.75 + 0.45 * fSky.b), clamp(uFin.w * (0.25 + fres), 0.0, 1.0));
+  outgoingLight += fBase * uFin.z * (0.8 + 0.2 * sin(uTime * 3.0)) + fBase * uFin.z * fres * 1.2;
+}
+`;
+/** the finishes: roughness (null: the paint's own) and uFin */
+const FINISHES = {
+  '': { rough: null, fin: [0, 0, 0, 0] },
+  matte: { rough: 1, fin: [0, 0, 0, 0] },
+  satin: { rough: 0.62, fin: [0.13, 0.15, 0, 0] },
+  metallic: { rough: 0.3, fin: [0.42, 0.85, 0, 0] },
+  pearl: { rough: 0.22, fin: [0.26, 0, 0, 0.6] },
+  neon: { rough: 0.4, fin: [0.1, 0, 0.85, 0] },
+  chrome: { rough: 0.12, fin: [0.92, 0.3, 0, 0] }
+};
 const DECAL_U = new WeakMap();
 function decalify(mat, dark) {
   if (DECAL_U.has(mat)) return DECAL_U.get(mat);
-  const U = { uDecal: { value: 0 }, uP: { value: new THREE.Color() }, uS: { value: new THREE.Color() }, uTime: Look.time, uNum: { value: Look.numTex(7) } };
+  const U = { uDecal: { value: 0 }, uP: { value: new THREE.Color() }, uS: { value: new THREE.Color() }, uTime: Look.time, uNum: { value: Look.numTex(7) },
+    uFin: { value: new THREE.Vector4() } };
   DECAL_U.set(mat, U);
+  U.r0 = dark ? 0.5 : 0.42;                 // the paint's own (a copy of a car's material may carry its finish)
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec3 vDecalPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvDecalPos = transformed;');
-    sh.fragmentShader = (dark ? '#define DECAL_DARK\n' : '') + DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT);
+    sh.fragmentShader = (dark ? '#define DECAL_DARK\n' : '') + 'uniform vec4 uFin;\n' + DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT)
+      .replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );', DECAL_FINISH + 'gl_FragColor = vec4( outgoingLight, diffuseColor.a );');
   };
   mat.customProgramCacheKey = () => (dark ? 'decalDark' : 'decal');
   mat.needsUpdate = true;
@@ -6833,9 +6919,12 @@ const Look = {
     for (const r of [m.rimA, m.rimB]) { r.transparent = m.body.transparent; r.opacity = m.body.opacity; r.depthWrite = m.body.depthWrite; }
     if (u.flame) Boost.paint(u.flame, m.body.color, m.dark.color);
     const id = DECAL_IDS[lo.decal] || 0;
+    const F = FINISHES[String(lo.finish || '').replace(/^finish:/, '')] || FINISHES[''];
     for (const [mat, dark] of [[m.body, false], [m.dark, true]]) {
       const U = decalify(mat, dark);
       U.uDecal.value = id;
+      U.uFin.value.set(F.fin[0], F.fin[1], F.fin[2], F.fin[3]);
+      mat.roughness = F.rough === null ? U.r0 : F.rough;
       U.uP.value.copy(m.body.color);
       U.uS.value.copy(m.dark.color);
       U.uNum.value = this.numTex(lo.num === undefined ? 7 : lo.num);
@@ -12337,6 +12426,7 @@ const ITEM_KIND = {
   wheel: { label: 'Wheels', plural: 'Wheels', col: '#7ee06a', sell: 200 },
   title: { label: 'Title', plural: 'Titles', col: '#cdd6e3', sell: 100 },
   icon: { label: 'Profile icon', plural: 'Profile icons', col: '#cdd6e3', sell: 100 },
+  finish: { label: 'Paint finish', plural: 'Paint finishes', col: '#8fe3ff', sell: 400 },
   hue: { label: 'Hue pack', col: '#ff6fae' },
   credits: { label: 'Credits', col: '#9aa1aa' }
 };
@@ -12356,12 +12446,14 @@ const PROFILE_ICONS = {
   moon: '<path d="M14 2a10 10 0 1 0 8 15A8 8 0 0 1 14 2z"/>',
   atom: '<circle cx="12" cy="12" r="2.2"/><g fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-60 12 12)"/></g>',
   dice: '<path fill-rule="evenodd" d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm1.5 3.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-3.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>',
-  crown: '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>'
+  crown: '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>',
+  'pass-bolt': '<path d="M6.5 15A4.5 4.5 0 0 1 7 6a6 6 0 0 1 11 1.5A3.75 3.75 0 0 1 17.5 15h-3.2l1.2-2.5h-5.2L9 15z"/><path d="M10.6 13.5h3.6l-1.8 3.6h2.6L9.4 23l1.4-4.6H8.4z"/>',
+  'pass-gem': '<path d="M12 2l9.5 7.5L12 22 2.5 9.5z"/><path d="M2.5 9.5h19M12 2l-4.2 7.5L12 22l4.2-12.5z" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="1.1" stroke-linejoin="round"/>'
 };
 const Catalog = {
   items: [], byId: {},
   build() {
-    const add = (id, kind, name, note) => { const it = { id, kind, name, note: note || '', sell: ITEM_KIND[kind].sell }; this.items.push(it); this.byId[id] = it; };
+    const add = (id, kind, name, note, src) => { const it = { id, kind, name, note: note || '', sell: ITEM_KIND[kind].sell, src: src || 'box' }; this.items.push(it); this.byId[id] = it; };
     CAR_MODELS.filter((m) => m.id !== 'classic').forEach((m) => add('car:' + m.id, 'car', m.name, m.note.replace(/<[^>]+>/g, '')));
     [['stripes', 'Racing stripes', 'Twin outlined stripes over the top and down each side.'], ['number', 'Race number', 'A swoosh, and your number on the doors and roof.'],
       ['flames', 'Flames', 'Hot-rod flames from the nose, over the hood and down the sides.'], ['lightning', 'Lightning', 'A bolt down each side and over the top.'],
@@ -12391,6 +12483,15 @@ const Catalog = {
     [['bolt', 'Bolt'], ['flame', 'Flame'], ['star', 'Star'], ['skull', 'Skull'], ['rocket', 'Rocket'], ['diamond', 'Diamond'], ['heart', 'Heart'], ['ghost', 'Ghost'],
       ['wing', 'Wings'], ['target', 'Target'], ['flag', 'Flag'], ['wheel', 'Wheel'], ['moon', 'Moon'], ['atom', 'Atom'], ['dice', 'Dice'], ['crown', 'Crown']]
       .forEach(([k, n]) => add('icon:' + k, 'icon', n, 'Shown on your profile card and the menu, in your colours.'));
+    [['matte', 'Matte', 'Flat, chalky paint with no shine at all.', 'shop'], ['satin', 'Satin', 'A soft, low sheen.', 'shop'],
+      ['metallic', 'Metallic', 'Paint with metal flake: the sky shows in it, tinted your colour.', 'shop'],
+      ['pearl', 'Pearl', 'Your second colour shimmers in as the light catches the edges.', 'shop'],
+      ['neon', 'Neon', 'The paint itself glows, and breathes.', 'pass'], ['chrome', 'Chrome', 'A mirror: the whole sky in your bodywork.', 'pass']]
+      .forEach(([k, n, d, src]) => add('finish:' + k, 'finish', n, d, src));
+    add('title:pass-holder', 'title', 'Pass Holder', 'A Race Pass+ reward.', 'pass');
+    add('title:velocity', 'title', 'Velocity', 'A Race Pass+ reward.', 'pass');
+    add('icon:pass-bolt', 'icon', 'Storm', 'A Race Pass+ reward.', 'pass');
+    add('icon:pass-gem', 'icon', 'Prism', 'A Race Pass+ reward.', 'pass');
   },
   get(id) { if (!this.items.length) this.build(); return this.byId[id] || null; },
   ofKind(k) { if (!this.items.length) this.build(); return this.items.filter((i) => i.kind === k); },
@@ -12398,7 +12499,7 @@ const Catalog = {
   pic(it, colors) {
     const col = colors || Look.mine();
     const E = escapeHtml;
-    if (it.kind === 'car' || it.kind === 'decal' || it.kind === 'anim' || it.kind === 'wheel') {
+    if (it.kind === 'car' || it.kind === 'decal' || it.kind === 'anim' || it.kind === 'wheel' || it.kind === 'finish') {
       const slot = it.kind === 'anim' ? 'decal' : it.kind;
       const url = CarThumbs.draw({ primary: col.primary, secondary: col.secondary, loadout: Object.assign({}, col.loadout || {}, { [slot]: it.id }) });
       return url ? '<img alt="" src="' + url + '">' : '';
@@ -12567,7 +12668,7 @@ const UnboxNews = {
 };
 
 const Garage = {
-  data: null, tab: 'boxes', busy: false,
+  data: null, tab: 'boxes', busy: false, pass: null, shop: null,
   owned(id) { const r = this.data && this.data.inventory.find((i) => i.item === id); return r ? r.count : 0; },
   freeBoxes() { return (this.data && this.data.free_boxes) || 0; },
   async load() {
@@ -12581,9 +12682,31 @@ const Garage = {
     if (typeof this.data.balance === 'number') { Records.credits = this.data.balance; UI.who(Cloud.name(), Records.credits); }
     Look.refreshOwn();
     Flair.mine();
+    try { this.pass = await Cloud.rpc('my_pass'); } catch (e) { /* a database from before the pass */ }
     this.badge();
     this.intro();
     if (Game.state === 'garage') this.render();
+  },
+  /** Race Pass rewards reached and not collected yet */
+  passWaiting() {
+    const P = this.pass;
+    if (!P) return 0;
+    return Math.max(0, P.tier - P.free_upto) + (P.plus ? Math.max(0, P.tier - P.plus_upto) : 0);
+  },
+  /** today's shop (again when the day has turned) */
+  async loadShop(force) {
+    if (!Cloud.on || !Cloud.user) return;
+    if (!force && this.shop && Date.now() < this.shop.ends) return;
+    try { this.shop = await Cloud.rpc('shop_today'); } catch (e) { this.shop = null; }
+    if (Game.state === 'garage' && this.tab === 'shop') this.renderShop();
+  },
+  /** what a pass reward is, in words */
+  rewardText(r) {
+    if (!r) return '';
+    if (r.credits) return fmtCredits(r.credits) + ' credits';
+    if (r.boxes) return r.boxes > 1 ? r.boxes + ' free boxes' : 'Free box';
+    const it = r.item && Catalog.get(r.item);
+    return it ? it.name : '';
   },
   /** the menu tile: how many free boxes are waiting, and an orange outline
    *  while there's one to open (or you haven't opened your first box yet) */
@@ -12594,7 +12717,10 @@ const Garage = {
     if (t) { t.hidden = !n; t.textContent = String(n); }
     const signed = Cloud.on && Cloud.user;
     const first = !this.data || !(this.data.opened > 0);
-    $('bGarage').classList.toggle('wHot', !!signed && (n > 0 || first));
+    const pw = this.passWaiting();
+    const pb = $('gPassBadge');
+    if (pb) { pb.hidden = !pw; pb.textContent = String(pw); }
+    $('bGarage').classList.toggle('wHot', !!signed && (n > 0 || first || pw > 0));
     $('gNewMenu').hidden = !signed || !!Prefs.get('garageSeen', false);
   },
   /** Coach tells you about the boxes, once */
@@ -12607,6 +12733,15 @@ const Garage = {
   /** after a counted finish: progress toward a free box */
   onFinish(f) {
     if (!f || !this.data) return;
+    if (this.pass && typeof f.pass_runs === 'number') {
+      const before = this.pass.tier;
+      this.pass.runs = f.pass_runs;
+      this.pass.tier = Math.min(this.pass.tiers, Math.floor(f.pass_runs / this.pass.perTier));
+      if (this.pass.tier > before) {
+        this.badge();
+        UI.toast('Race Pass tier ' + this.pass.tier + '! Collect your reward in the garage.');
+      }
+    }
     if (typeof f.box_runs === 'number') this.data.runs = f.box_runs;
     if (f.free_box) {
       this.data.free_boxes = (this.data.free_boxes || 0) + 1;
@@ -12665,6 +12800,7 @@ const Garage = {
   show(tab) {
     this.tab = tab || this.tab || 'boxes';
     Shop.load();
+    this.loadShop();
     Prefs.set('garageSeen', true);
     this.badge();
     this.render();
@@ -12679,6 +12815,8 @@ const Garage = {
     GaragePreview.box = this.tab === 'boxes';
     if (this.tab === 'paint') UI.garage();
     else if (this.tab === 'boxes') this.renderBoxes();
+    else if (this.tab === 'shop') this.renderShop();
+    else if (this.tab === 'pass') this.renderPass();
     else if (this.tab === 'car') this.renderCar();
     else if (this.tab === 'profile') this.renderProfile();
     else if (this.tab === 'collection') this.renderCollection();
@@ -12691,8 +12829,126 @@ const Garage = {
     const me = Cloud.user && Cloud.user.uid;
     $('gLoadout').innerHTML = '<div class="gCardMini">' + (Flair.badge(lo.icon, Look.mine(), 34) || '<span class="fIcon none" style="--fs:34px"></span>') +
       '<div><b>' + E(Cloud.name()) + '</b><small>' + E(me ? Flair.title(me) || 'No title' : '') + '</small></div></div>' +
-      '<div class="gLines">' + line('Car', lo.car, 'Classic') + line('Decal', lo.decal, 'None') + line('Wheels', lo.wheel, 'Standard') +
-      line('Boost', lo.boost, 'Standard flame') + line('Finish', lo.cel, 'None') + '</div>';
+      '<div class="gLines">' + line('Car', lo.car, 'Classic') + line('Paint', lo.finish, 'Gloss') + line('Decal', lo.decal, 'None') + line('Wheels', lo.wheel, 'Standard') +
+      line('Boost', lo.boost, 'Standard flame') + line('Celebration', lo.cel, 'None') + '</div>';
+  },
+  /** the Shop tab: today's six, at a fixed price */
+  renderShop() {
+    const pane = document.querySelector('#garage .gPane[data-pane="shop"]'), E = escapeHtml;
+    if (!Cloud.on || !Cloud.user) { pane.innerHTML = '<p class="lede">Sign in to see the shop.</p>'; return; }
+    const S = this.shop;
+    if (!S) { pane.innerHTML = '<p class="lede">Loading today\'s shop…</p>'; this.loadShop(true); return; }
+    const left = Math.max(0, S.ends - Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60;
+    const have = Records.credits || 0;
+    pane.innerHTML = '<div class="gShopHead"><div><h3 class="gh">TODAY\'S SHOP</h3><small>Six new items in <b>' + hh + 'h ' + mm + 'm</b> (midnight Pacific)</small></div></div>' +
+      '<div class="gShopGrid">' + S.items.map((x) => {
+        const it = Catalog.get(x.item) || { id: x.item, kind: x.kind, name: x.name };
+        const K = ITEM_KIND[x.kind] || ITEM_KIND.credits;
+        const btn = x.owned ? '<button class="small" disabled>Owned</button>'
+          : '<button class="small ' + (have >= x.price ? 'primary' : 'short') + '" data-buy="' + E(x.item) + '" data-price="' + x.price + '"><span class="gem2d"></span> ' + fmtCredits(x.price) + '</button>';
+        return '<div class="gShopCard' + (x.owned ? ' owned' : '') + '" style="--kc:' + K.col + '"><div class="gPic">' + Catalog.pic(it) + '</div>' +
+          '<small class="gShopK">' + E(K.label) + (it.src === 'shop' ? ' · shop only' : '') + '</small><b>' + E(x.name) + '</b>' + btn + '</div>';
+      }).join('') + '</div>' +
+      '<p class="lede gShopNote">Pick exactly what you want: no luck needed. Paint finishes are only ever in the shop (and Chrome and Neon only in the Race Pass). ' +
+      'Everything here can also be sold in your collection, for much less.</p>';
+    pane.querySelectorAll('[data-buy]').forEach((b) => b.addEventListener('click', () => this.buy(b.dataset.buy, +b.dataset.price)));
+  },
+  async buy(id, price) {
+    const it = Catalog.get(id);
+    if (this.busy || !it) return;
+    const have = Records.credits || 0;
+    if (have < price) {
+      UI.toast(it.name + ' costs ' + fmtCredits(price) + ' credits: you have ' + fmtCredits(have) + '.');
+      if (Shop.link || Shop.link5) Shop.open();
+      return;
+    }
+    if (!confirm('Buy ' + it.name + ' for ' + fmtCredits(price) + ' credits?')) return;
+    this.busy = true;
+    try {
+      const r = await Cloud.rpc('buy_item', { p_item: id });
+      Records.credits = r.balance;
+      UI.who(Cloud.name(), Records.credits);
+      Sound.creditWin();
+      UI.toast(it.name + ' is yours! ' + (it.kind === 'title' || it.kind === 'icon' ? 'Wear it in the Profile tab.' : 'Put it on in the Car tab.'));
+    } catch (e) { UI.toast(Cloud.errText(e)); }
+    this.busy = false;
+    await this.load();
+    await this.loadShop(true);
+  },
+  /** the Race Pass tab: every tier, both tracks */
+  renderPass() {
+    const pane = document.querySelector('#garage .gPane[data-pane="pass"]'), E = escapeHtml;
+    if (!Cloud.on || !Cloud.user) { pane.innerHTML = '<p class="lede">Sign in to use the Race Pass.</p>'; return; }
+    const P = this.pass;
+    if (!P) { pane.innerHTML = '<p class="lede">The Race Pass isn\'t set up on the server yet.</p>'; return; }
+    const into = P.tier >= P.tiers ? P.perTier : P.runs - P.tier * P.perTier;
+    const wait = this.passWaiting();
+    const chip = (r, cls) => {
+      const it = r.item && Catalog.get(r.item);
+      const pic = it ? (it.kind === 'icon' ? Flair.badge(it.id, Look.mine(), 22) : it.kind === 'title' ? '' : '<span class="pPic">' + Catalog.pic(it) + '</span>') : '';
+      return '<span class="pChip ' + cls + (it ? ' item' : r.boxes ? ' box' : '') + '">' + pic + '<span>' + E(this.rewardText(r)) + '</span></span>';
+    };
+    let rows = '';
+    for (const r of P.rewards) {
+      const reached = r.tier <= P.tier;
+      const fCls = r.tier <= P.free_upto ? 'got' : reached ? 'ready' : 'lock';
+      const pCls = !P.plus ? 'plusLock' : r.tier <= P.plus_upto ? 'got' : reached ? 'ready' : 'lock';
+      rows += '<div class="pRow' + (reached ? ' reached' : '') + (r.tier === P.tier + 1 ? ' next' : '') + '"><b class="pTier">' + r.tier + '</b>' +
+        chip(r.free, fCls) + chip(r.plus, pCls) + '</div>';
+    }
+    pane.innerHTML = '<div class="gPassHead"><div><div class="pKick">SEASON ' + SEASON + '</div><h3>Race Pass</h3>' +
+      '<small>' + (P.tier >= P.tiers ? 'Every tier reached!' : 'Tier ' + P.tier + ' of ' + P.tiers + ' · ' + into + ' / ' + P.perTier + ' finished runs to the next') + '</small></div>' +
+      (P.plus ? '<span class="pPlus on">PASS+</span>' : '<button class="primary" id="bPassBuy">Get Pass+ · <span class="gem2d"></span> ' + fmtCredits(P.price) + '</button>') + '</div>' +
+      '<div class="gBar pBar"><i style="width:' + (P.tier >= P.tiers ? 100 : into / P.perTier * 100).toFixed(1) + '%"></i></div>' +
+      (wait ? '<button class="primary gBig pClaim" id="bPassClaim"><span>Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</span></button>' : '') +
+      (P.plus ? '' : '<p class="lede pPitch"><b>Pass+</b> adds a free box at every tier, <b>Chrome</b> and <b>Neon</b> paint, and pass-only titles and icons. ' +
+        'Tiers you\'ve already reached pay out the moment you get it.</p>') +
+      '<div class="pHead"><span>Tier</span><span>Free</span><span>Pass+</span></div><div class="pTrack">' + rows + '</div>' +
+      '<p class="lede">Every counted finish on any map moves you along: one tier every ' + P.perTier + ' runs. The pass starts again each season.</p>';
+    const buy = $('bPassBuy'), claim = $('bPassClaim');
+    if (buy) buy.addEventListener('click', () => this.buyPass());
+    if (claim) claim.addEventListener('click', () => this.claimPass());
+    const next = pane.querySelector('.pRow.next');
+    if (next) next.scrollIntoView({ block: 'nearest' });
+  },
+  passToast(got) {
+    if (!got || !got.length) return;
+    let cr = 0, bx = 0; const its = [];
+    for (const g of got) { if (g.credits) cr += g.credits; else if (g.boxes) bx += g.boxes; else if (g.item) its.push((Catalog.get(g.item) || {}).name || g.item); }
+    const parts = [];
+    if (cr) parts.push(fmtCredits(cr) + ' credits');
+    if (bx) parts.push(bx + ' free box' + (bx === 1 ? '' : 'es'));
+    parts.push(...its);
+    Sound.creditWin();
+    UI.toast('Collected: ' + parts.join(', ') + '.');
+  },
+  async claimPass() {
+    if (this.busy) return;
+    this.busy = true;
+    try { const r = await Cloud.rpc('claim_pass'); Records.credits = r.balance; UI.who(Cloud.name(), Records.credits); this.passToast(r.got); }
+    catch (e) { UI.toast(Cloud.errText(e)); }
+    this.busy = false;
+    await this.load();
+  },
+  async buyPass() {
+    const P = this.pass;
+    if (this.busy || !P) return;
+    const have = Records.credits || 0;
+    if (have < P.price) {
+      UI.toast('Pass+ costs ' + fmtCredits(P.price) + ' credits: you have ' + fmtCredits(have) + '.');
+      if (Shop.link || Shop.link5) Shop.open();
+      return;
+    }
+    if (!confirm('Get Pass+ for this season for ' + fmtCredits(P.price) + ' credits?')) return;
+    this.busy = true;
+    try {
+      const r = await Cloud.rpc('buy_pass');
+      Records.credits = r.balance; UI.who(Cloud.name(), Records.credits);
+      UI.toast('Pass+ is yours for Season ' + SEASON + '!');
+      this.passToast(r.got);
+    } catch (e) { UI.toast(Cloud.errText(e)); }
+    this.busy = false;
+    await this.load();
   },
   renderBoxes() {
     const d = this.data, signed = Cloud.on && Cloud.user;
@@ -12717,12 +12973,12 @@ const Garage = {
   /** the Car tab: a row of what you own for each slot */
   renderCar() {
     const E = escapeHtml, lo = Look.own;
-    const slots = [['car', 'Body', ['car'], 'Classic'], ['decal', 'Decal', ['decal', 'anim'], 'None'], ['wheel', 'Wheels', ['wheel'], 'Standard'],
+    const slots = [['car', 'Body', ['car'], 'Classic'], ['finish', 'Paint finish', ['finish'], 'Gloss'], ['decal', 'Decal', ['decal', 'anim'], 'None'], ['wheel', 'Wheels', ['wheel'], 'Standard'],
       ['boost', 'Boost', ['boost'], 'Standard flame'], ['cel', 'Finish celebration', ['cel'], 'None']];
     let h = '';
     for (const [slot, label, kinds, def] of slots) {
       const all = kinds.flatMap((k) => Catalog.ofKind(k)), mine = all.filter((it) => this.owned(it.id));
-      const defPic = slot === 'car' ? Catalog.pic({ id: '', kind: 'car' }) : '—';
+      const defPic = slot === 'car' || slot === 'finish' ? Catalog.pic({ id: '', kind: slot }) : '—';
       h += '<h3 class="gh">' + label.toUpperCase() + ' <small>' + mine.length + ' / ' + all.length + ' collected</small></h3><div class="gTiles">' +
         '<button class="gTile def gOpt' + (!lo[slot] ? ' on' : '') + '" data-slot="' + slot + '" data-id=""><div class="gPic">' + defPic + '</div>' + E(def) + '</button>' +
         mine.map((it) => '<button class="gTile gOpt' + (lo[slot] === it.id ? ' on' : '') + '" data-slot="' + slot + '" data-id="' + it.id + '" style="--kc:' + ITEM_KIND[it.kind].col + '">' +
@@ -12730,7 +12986,7 @@ const Garage = {
       if (slot === 'decal' && lo.decal === 'decal:number') {
         h += '<label class="gNum">Your number <input type="number" id="gNumIn" min="0" max="99" value="' + (lo.num === undefined ? 7 : lo.num) + '"></label>';
       }
-      if (!mine.length) h += '<p class="lede gNone">None yet: they come out of boxes.</p>';
+      if (!mine.length) h += '<p class="lede gNone">' + (slot === 'finish' ? 'None yet: paint finishes are in the Shop and the Race Pass.' : 'None yet: they come out of boxes.') + '</p>';
     }
     const pane = document.querySelector('#garage .gPane[data-pane="car"]');
     pane.innerHTML = h;
@@ -12750,11 +13006,11 @@ const Garage = {
     let h = '<div class="gProfile">' + (Flair.badge(lo.icon, Look.mine(), 64) || Profiles.icon(me, 64) || '<span class="fIcon none" style="--fs:64px"></span>') +
       '<div><b>' + E(Cloud.name()) + '</b><span class="fTitle big">' + E((me && Flair.title(me)) || 'No title') + '</span></div></div>' +
       '<p class="lede">Your title and icon show on your profile card (anyone can open it by clicking your name) and on the menu.</p>' +
-      '<h3 class="gh">TITLE <small>' + titles.length + ' / 16 collected</small></h3><div class="gPick">' +
+      '<h3 class="gh">TITLE <small>' + titles.length + ' / ' + Catalog.ofKind('title').length + ' collected</small></h3><div class="gPick">' +
       '<button class="gOpt' + (!lo.title ? ' on' : '') + '" data-slot="title" data-id="">None</button>' +
       (aw ? '<button class="gOpt' + (lo.title === 'season' ? ' on' : '') + '" data-slot="title" data-id="season" style="--kc:#ffcf5c">' + E(aw.title) + '</button>' : '') +
       titles.map((it) => '<button class="gOpt' + (lo.title === it.id ? ' on' : '') + '" data-slot="title" data-id="' + it.id + '">' + E(it.name) + '</button>').join('') + '</div>' +
-      '<h3 class="gh">ICON <small>' + icons.length + ' / 16 collected</small></h3><div class="gPick icons">' +
+      '<h3 class="gh">ICON <small>' + icons.length + ' / ' + Catalog.ofKind('icon').length + ' collected</small></h3><div class="gPick icons">' +
       '<button class="gOpt' + (!lo.icon ? ' on' : '') + '" data-slot="icon" data-id="">' + (aw ? 'Season icon' : 'None') + '</button>' +
       icons.map((it) => '<button class="gOpt ic' + (lo.icon === it.id ? ' on' : '') + '" data-slot="icon" data-id="' + it.id + '" title="' + E(it.name) + '">' + Flair.badge(it.id, Look.mine(), 30) + '</button>').join('') + '</div>';
     if (!titles.length && !icons.length) h += '<p class="lede gNone">Titles and icons come out of boxes.</p>';
@@ -12768,14 +13024,15 @@ const Garage = {
     const pane = document.querySelector('#garage .gPane[data-pane="collection"]');
     let have = 0, total = 0;
     let h = '';
-    for (const k of ['car', 'anim', 'decal', 'cel', 'wheel', 'boost', 'title', 'icon']) {
+    for (const k of ['car', 'finish', 'anim', 'decal', 'cel', 'wheel', 'boost', 'title', 'icon']) {
       const list = Catalog.ofKind(k);
       const own = list.filter((it) => this.owned(it.id)).length;
       have += own; total += list.length;
       h += '<h3 class="gh" style="color:' + ITEM_KIND[k].col + '">' + ITEM_KIND[k].plural.toUpperCase() + ' <small>' + own + ' / ' + list.length + ' · sell for ' + ITEM_KIND[k].sell + ' each</small></h3><div class="gColl">' +
         list.map((it) => {
           const n = this.owned(it.id);
-          if (!n) return '<div class="gItem locked" title="Not found yet"><div class="gPic">?</div><b>' + E(it.name) + '</b><small>Not found yet</small></div>';
+          if (!n) return '<div class="gItem locked" title="Not found yet"><div class="gPic">?</div><b>' + E(it.name) + '</b><small>' +
+            (it.src === 'pass' ? 'Race Pass+' : it.src === 'shop' ? 'In the shop' : 'Not found yet') + '</small></div>';
           return '<div class="gItem" style="--kc:' + ITEM_KIND[k].col + '"><div class="gPic">' + Catalog.pic(it) + '</div><b>' + E(it.name) + '</b>' +
             '<small>' + (n > 1 ? '× ' + n : 'Owned') + '</small><div class="gAct">' +
             '<button class="small ghost" data-sell="' + it.id + '" data-n="1">Sell 1 · ' + it.sell + '</button>' +
@@ -13357,8 +13614,11 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
   // everyone who saw an earlier list sees it again
-  SEASON: 3, EDITION: 3.3, KEY: 'whatsNew',
+  SEASON: 3, EDITION: 3.4, KEY: 'whatsNew',
   ITEMS: [
+    ['crown', 'Race Pass', '30 tiers of rewards just for finishing runs this season. Pass+ adds a box at every tier, Chrome and Neon paint, and pass-only titles and icons.'],
+    ['gem', 'The daily shop', 'Six items a day in the garage at a fixed price: get exactly the car or paint you want.'],
+    ['photo', 'Paint finishes', 'Matte, Satin, Metallic, Pearl, Neon and Chrome. Everyone you race sees them.'],
     ['fire', 'Daily streaks', 'Finish a run every day: 25 credits a day of streak (up to 175 a day), and a free box every 7th day in a row.'],
     ['friend', 'Invite friends, get boxes', 'Send your link from the top of the menu. When a friend finishes 10 runs, you both get a free box.'],
     ['flag', 'Challenge a friend', 'After a run, copy a link that drops your friend straight onto that map against your ghost.'],
@@ -13369,7 +13629,6 @@ const WhatsNew = {
     ['build', 'Track builder', 'Build up to 3 tracks of your own, make them public, and race everyone else\'s. Each track has its own leaderboard.'],
     ['target', 'Practise any part of a map', 'Pick a moment of your best run and start right there, at the same speed, after a 3-2-1. Practice times never count.'],
     ['eye', 'Hide your run', 'Keep your racing line to yourself: 50 credits a school day hides a run from everyone else (weekends are free).'],
-    ['photo', 'Watch a whole section or season', 'One big view follows the action, a lane per driver shows where everyone is, and one click watches the top 3.'],
     ['clock', 'Opening hours', 'Open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), Pacific time. When it\'s closed, Coach has ideas for what to do instead.'],
     ['crown', 'Season 2 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
     ['card', 'Always the latest version', 'When aiPolytrack is updated, it reloads itself the next time you\'re on the menu. No more old tabs.']
@@ -14663,6 +14922,7 @@ const Coach = {
       '\n' + Daily.facts() +
       '\nGARAGE: boxes cost 100 credits, or one is free every 50 finished runs. A box holds a car (1%), an animated decal (2%), a decal (3%), a finish celebration (4%), a boost (5%), wheels (5%), a title (10%), a profile icon (10%), or 1-25 credits or a hue pack (50%); 10% of boxes split into two more (up to 8). Items sell for credits in the Collection; hues can\'t be sold or bought.' +
       '\nSTREAKS: finishing at least one run every day (Pacific time) builds a streak: 25 credits a day of streak, up to 175 a day, and a free box every 7th day in a row. Missing a day starts it again. The streak shows on the daily challenge tile.' +
+      '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 100 000 for $1 or 600 000 for $5, from the + Buy button.' +
       '\nINVITES: "Invite friends" at the top of the menu gives a link; a friend who makes an account with it needs no invite code, and when they finish 10 runs both of you get a free box. After a run, "Challenge a friend" on the finish screen copies a link that puts a friend on that map against your ghost.';
   },
   async ensureSession(I, onProgress) {

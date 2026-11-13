@@ -10,12 +10,12 @@ const open = async (name, free) => (await t.one(name, 'select public.open_box($1
 
 // --- the arithmetic: selling everything a box gives is worth less than the box
 const odds = (await t.owner('select public.box_odds() as j')).rows[0].j;
-const items = (await t.owner('select kind, sell, count(*) over (partition by kind) n from public.items')).rows;
+const items = (await t.owner('select kind, sell, source, count(*) over (partition by kind) n from public.items')).rows;
 const sellOf = (k) => Number(items.find((i) => i.kind === k).sell);
 for (const k of ['car', 'anim', 'decal', 'cel', 'boost', 'wheel', 'title', 'icon']) ok(items.every((i) => i.kind !== k || Number(i.sell) === sellOf(k)), 'every ' + k + ' sells for the same: ' + sellOf(k));
 ok(items.filter((i) => i.kind === 'car').length === 8 && items.filter((i) => i.kind === 'decal').length === 8 && items.filter((i) => i.kind === 'anim').length === 8
   && items.filter((i) => i.kind === 'boost').length === 16 && items.filter((i) => i.kind === 'wheel').length === 16
-  && items.filter((i) => i.kind === 'title').length === 16 && items.filter((i) => i.kind === 'icon').length === 16, '8 cars, 8 decals, 8 animated, 16 boosts, wheels, titles and icons');
+  && items.filter((i) => i.kind === 'title' && i.source === 'box').length === 16 && items.filter((i) => i.kind === 'icon' && i.source === 'box').length === 16, '8 cars, 8 decals, 8 animated, 16 boosts, wheels, titles and icons');
 const credAvg = (odds.credits[0] + odds.credits[1]) / 2;
 for (const allHues of [false, true]) {
   const a = ['car', 'anim', 'decal', 'cel', 'boost', 'wheel', 'title', 'icon'].reduce((s, k) => s + odds[k] / 100 * sellOf(k), 0)
