@@ -2219,8 +2219,9 @@ begin
 end $$;
 
 -- ------------------------------------------------------------ buying credits
--- 100 000 credits for each US dollar, and 100 000 more for every $5 (so the
--- $5 pack is 600 000), paid on Stripe's own checkout page (one of two
+-- 30 000 credits and 3 free boxes for each US dollar, and that again for
+-- every $5 (so the $5 pack is 180 000 and 18 boxes: one pack free), paid on
+-- Stripe's own checkout page (one of two
 -- Payment Links the admin pastes in, opened with the player's id as its
 -- client_reference_id). Stripe tells the stripe-webhook Edge Function
 -- (supabase/functions/stripe-webhook), which checks Stripe's signature and
@@ -2238,25 +2239,32 @@ create table if not exists public.purchases (
   refunded boolean not null default false
 );
 create index if not exists purchases_intent on public.purchases (payment_intent);
+alter table public.purchases add column if not exists boxes integer not null default 0;
 
 /** a paid checkout: its credits, once (the webhook only) */
 create or replace function public.grant_purchase(p_session text, p_uid text, p_amount integer, p_currency text, p_intent text) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare who uuid; n integer := 0;
+declare who uuid; n integer := 0; bx integer := 0;
 begin
   if coalesce(p_session, '') = '' then return jsonb_build_object('ok', false, 'error', 'no session'); end if;
   if coalesce(p_uid, '') ~ '^[0-9a-fA-F-]{36}$' then select id into who from public.profiles where id = p_uid::uuid; end if;
   if who is not null and lower(coalesce(p_currency, '')) = 'usd' and coalesce(p_amount, 0) >= 100 then
-    n := (p_amount / 100) * 100000 + (p_amount / 500) * 100000;   -- $1: 100 000, $5: 600 000
+    n := (p_amount / 100) * 30000 + (p_amount / 500) * 30000;     -- $1: 30 000, $5: 180 000
+    bx := (p_amount / 100) * 3 + (p_amount / 500) * 3;            -- $1: 3 boxes, $5: 18
   end if;
-  insert into public.purchases (session_id, payment_intent, uid, credits, amount_cents, currency)
-    values (p_session, p_intent, who, n, coalesce(p_amount, 0), lower(coalesce(p_currency, '')))
+  insert into public.purchases (session_id, payment_intent, uid, credits, boxes, amount_cents, currency)
+    values (p_session, p_intent, who, n, bx, coalesce(p_amount, 0), lower(coalesce(p_currency, '')))
     on conflict (session_id) do nothing;
   if not found then return jsonb_build_object('ok', true, 'duplicate', true); end if;
+  if bx > 0 then
+    insert into public.garage (uid, free_boxes) values (who, bx)
+      on conflict (uid) do update set free_boxes = public.garage.free_boxes + bx;
+  end if;
   if n > 0 then
+    -- (after the boxes, so the game that hears of it sees them too)
     insert into public.credit_events (uid, delta, kind, note) values (who, n, 'purchase', 'Stripe ' || p_session);
   end if;
-  return jsonb_build_object('ok', true, 'credits', n, 'matched', who is not null);
+  return jsonb_build_object('ok', true, 'credits', n, 'boxes', bx, 'matched', who is not null);
 end $$;
 
 /** a refunded payment: its credits come back off (the webhook only) */
@@ -2270,7 +2278,11 @@ begin
   if r.uid is not null and r.credits > 0 then
     insert into public.credit_events (uid, delta, kind, note) values (r.uid, -r.credits, 'refund', 'Stripe refund ' || r.session_id);
   end if;
-  return jsonb_build_object('ok', true, 'found', true, 'credits', r.credits);
+  -- the boxes too, as many as are still unopened
+  if r.uid is not null and r.boxes > 0 then
+    update public.garage set free_boxes = greatest(free_boxes - r.boxes, 0) where uid = r.uid;
+  end if;
+  return jsonb_build_object('ok', true, 'found', true, 'credits', r.credits, 'boxes', r.boxes);
 end $$;
 
 /** the $1 Payment Link ('' while the shop is off; older games ask for this) */

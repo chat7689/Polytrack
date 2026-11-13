@@ -11,13 +11,14 @@ const grant = async (session, uid, cents, cur, intent) =>
 await t.mkUser('Buyer');
 const b0 = await bal('Buyer');
 const g1 = await grant('cs_test_1', t.users.Buyer, 100, 'usd', 'pi_1');
-ok(g1.ok && g1.credits === 100000 && (await bal('Buyer')) === b0 + 100000, '$1 buys 100 000 credits ' + JSON.stringify(g1));
+const fb = async () => (await t.owner('select coalesce((select free_boxes from public.garage where uid = $1), 0) as n', [t.users.Buyer])).rows[0].n;
+ok(g1.ok && g1.credits === 30000 && g1.boxes === 3 && (await bal('Buyer')) === b0 + 30000 && (await fb()) === 3, '$1 buys 30 000 credits and 3 boxes ' + JSON.stringify(g1));
 const g2 = await grant('cs_test_1', t.users.Buyer, 100, 'usd', 'pi_1');
-ok(g2.duplicate && (await bal('Buyer')) === b0 + 100000, 'the same checkout told twice (Stripe retries) pays once');
+ok(g2.duplicate && (await bal('Buyer')) === b0 + 30000 && (await fb()) === 3, 'the same checkout told twice (Stripe retries) pays once');
 const g3 = await grant('cs_test_2', t.users.Buyer, 300, 'usd', 'pi_2');
-ok(g3.credits === 300000, '$3 (three of them) buys 300 000');
+ok(g3.credits === 90000 && g3.boxes === 9, '$3 (three of them) buys 90 000 and 9 boxes');
 const g6 = await grant('cs_test_5', t.users.Buyer, 500, 'usd', 'pi_5');
-ok(g6.credits === 600000, 'the $5 pack is 600 000 (one pack free) ' + JSON.stringify(g6));
+ok(g6.credits === 180000 && g6.boxes === 18 && (await fb()) === 30, 'the $5 pack is 180 000 and 18 boxes (one pack free) ' + JSON.stringify(g6));
 const g4 = await grant('cs_test_3', 'not-a-player', 100, 'usd', 'pi_3');
 ok(g4.ok && g4.credits === 0 && g4.matched === false, 'a checkout naming nobody pays nobody, but is recorded for the admin');
 const g5 = await grant('cs_test_4', t.users.Buyer, 100, 'eur', 'pi_4');
@@ -27,8 +28,11 @@ ok((await t.admin('select public.admin_purchases(50) as j')).rows[0].j.length ==
 // refunds
 const before = await bal('Buyer');
 const r1 = (await svc('select public.refund_purchase($1) as j', ['pi_2'])).rows[0].j;
-ok(r1.found && (await bal('Buyer')) === before - 300000, 'a refund takes the credits back');
-ok(!(await svc('select public.refund_purchase($1) as j', ['pi_2'])).rows[0].j.found && (await bal('Buyer')) === before - 300000, 'and only once');
+ok(r1.found && (await bal('Buyer')) === before - 90000 && (await fb()) === 21, 'a refund takes the credits and the boxes back');
+ok(!(await svc('select public.refund_purchase($1) as j', ['pi_2'])).rows[0].j.found && (await bal('Buyer')) === before - 90000, 'and only once');
+await t.owner('update public.garage set free_boxes = 5 where uid = $1', [t.users.Buyer]);
+await svc('select public.refund_purchase($1) as j', ['pi_5']);
+ok((await fb()) === 0, 'boxes already opened can\'t come back: it takes what is left, never below 0');
 
 // nobody else can pay out
 ok(/permission denied/.test(await t.err('Buyer', "select public.grant_purchase('cs_x', auth.uid()::text, 100000, 'usd', 'pi_x')")), 'a player can\'t give themselves credits');
@@ -54,7 +58,7 @@ ok(/admin/i.test(await t.err('Buyer', "select public.admin_set_shop_links('https
 const st = async () => (await t.one('Buyer', 'select public.shop_links() as l')).l;
 let s = await st();
 ok(s.limit === 20, 'a $20 a day limit unless the admin changes it ' + JSON.stringify(s));
-ok(Number(s.spent) === 6, 'today counts what was paid and not refunded ($1 + $5; the $3 was refunded, euros are left out) ' + s.spent);
+ok(Number(s.spent) === 1, 'today counts what was paid and not refunded (the $1; the $3 and $5 were refunded, euros are left out) ' + s.spent);
 await t.admin('select public.admin_set_shop_limit(10)');
 ok((await st()).limit === 10, 'the admin sets the limit');
 await t.admin('select public.admin_set_shop_limit(0)');

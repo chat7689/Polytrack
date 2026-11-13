@@ -2352,6 +2352,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 .shopAmt b{font-size:22px;letter-spacing:-.02em}
 .shopOpt small{font-size:12px;color:var(--dim)}
 .shopPrice{margin-top:8px;font-size:18px;font-weight:700;color:var(--ember)}
+.shopBoxes{margin-top:4px;font-size:12.5px;font-weight:700;color:#ffcf5c}
 .shopTag{position:absolute;top:-9px;left:12px;padding:2px 7px;border-radius:999px;font-style:normal;font-size:10px;font-weight:700;
   letter-spacing:.04em;color:#1a0d05;background:var(--ember);white-space:nowrap}
 .shopOpts.one{grid-template-columns:1fr}
@@ -2544,7 +2545,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <div class="who" id="who" hidden>
           <button class="whoName" id="whoCard" title="Your profile card"><span id="whoIcon"></span><span class="whoTxt"><b id="whoName">—</b><small id="whoTitle"></small></span></button>
           <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
-          <button class="small crBuy" id="bBuyCr" hidden title="Buy credits: 100 000 for $1, or 600 000 for $5">+ Buy</button>
+          <button class="small crBuy" id="bBuyCr" hidden title="Buy credits: 30 000 and 3 boxes for $1, or 180 000 and 18 boxes for $5">+ Buy</button>
           <button class="small refBtn" id="bInvite">Invite friends <span class="refGift">free boxes</span></button>
           <button class="small topBtn" id="bSettings">Settings</button>
           <button class="ghost small" id="whoOut">Sign out</button>
@@ -2804,9 +2805,9 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
     <div class="hidePanel" role="dialog" aria-labelledby="shopTitle">
       <h3 id="shopTitle">Buy credits</h3>
       <div class="shopOpts">
-        <button class="shopOpt" data-pack="1"><span class="shopAmt"><span class="gem2d"></span><b>100 000</b></span><small>credits</small><span class="shopPrice">$1</span></button>
+        <button class="shopOpt" data-pack="1"><span class="shopAmt"><span class="gem2d"></span><b>30 000</b></span><small>credits</small><span class="shopBoxes">+ 3 free boxes</span><span class="shopPrice">$1</span></button>
         <button class="shopOpt shopBest" data-pack="5" id="shopFive"><i class="shopTag">BEST DEAL · 1 PACK FREE</i>
-          <span class="shopAmt"><span class="gem2d"></span><b>600 000</b></span><small>credits</small><span class="shopPrice">$5</span></button>
+          <span class="shopAmt"><span class="gem2d"></span><b>180 000</b></span><small>credits</small><span class="shopBoxes">+ 18 free boxes</span><span class="shopPrice">$5</span></button>
       </div>
       <p class="dNote shopCap" id="shopCap" hidden></p>
       <p class="dNote">You pay on Stripe's secure checkout page, then come straight back here. The credits arrive on
@@ -3471,7 +3472,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
               <button class="primary gBig" id="gBoxBuy"><span>Open a box</span><small><span class="gem2d"></span> 100 credits</small></button>
               <button class="gBig" id="gBoxFree"><span>Open a free box</span><small>none yet</small></button>
             </div>
-            <button class="gTopUp" id="gTopUp" hidden>Out of credits? <b>Get 100 000 for $1, or 600 000 for $5</b></button>
+            <button class="gTopUp" id="gTopUp" hidden>Out of credits? <b>Get 30 000 and 3 boxes for $1, or 180 000 and 18 boxes for $5</b></button>
             <div class="gRuns"><span>Next free box: every 50 finished runs</span><b id="gBoxRuns">0 / 50 runs</b><div class="gBar"><i id="gBoxRunsBar"></i></div></div>
             <h3 class="gh" style="margin-top:20px">WHAT'S IN A BOX</h3>
             <div class="gOdds" id="gOdds"></div>
@@ -5118,7 +5119,9 @@ const Cloud = {
           UI.toast((row.note || 'A friend') + ' finished 10 runs with your invite: a free box for you both!');
           Garage.load();
         } else if (row && row.kind === 'purchase' && Number(row.delta) > 0) {
-          UI.toast(fmtCredits(Number(row.delta)) + ' credits arrived. Thanks for supporting aiPolytrack!');
+          const bx = Math.round(Number(row.delta) / 10000);       // (3 boxes per 30 000)
+          UI.toast(fmtCredits(Number(row.delta)) + ' credits and ' + bx + ' free boxes arrived. Thanks for supporting aiPolytrack!');
+          Garage.load();
         }
       })
       .subscribe();
@@ -12569,7 +12572,8 @@ const Flair = {
 };
 
 /**
- * Buying credits: 100 000 for $1 on Stripe's own checkout page (a Payment
+ * Buying credits: 30 000 and 3 boxes for $1 (or 180 000 and 18 boxes for
+ * $5) on Stripe's own checkout page (a Payment
  * Link the admin sets up). The link gets the player's id, and Stripe's
  * webhook pays the credits on the server (supabase/functions/stripe-webhook):
  * nothing here can give credits. Stripe sends the player back with
@@ -14922,7 +14926,7 @@ const Coach = {
       '\n' + Daily.facts() +
       '\nGARAGE: boxes cost 100 credits, or one is free every 50 finished runs. A box holds a car (1%), an animated decal (2%), a decal (3%), a finish celebration (4%), a boost (5%), wheels (5%), a title (10%), a profile icon (10%), or 1-25 credits or a hue pack (50%); 10% of boxes split into two more (up to 8). Items sell for credits in the Collection; hues can\'t be sold or bought.' +
       '\nSTREAKS: finishing at least one run every day (Pacific time) builds a streak: 25 credits a day of streak, up to 175 a day, and a free box every 7th day in a row. Missing a day starts it again. The streak shows on the daily challenge tile.' +
-      '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 100 000 for $1 or 600 000 for $5, from the + Buy button.' +
+      '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 30 000 credits and 3 free boxes for $1, or 180 000 credits and 18 free boxes for $5, from the + Buy button.' +
       '\nINVITES: "Invite friends" at the top of the menu gives a link; a friend who makes an account with it needs no invite code, and when they finish 10 runs both of you get a free box. After a run, "Challenge a friend" on the finish screen copies a link that puts a friend on that map against your ghost.';
   },
   async ensureSession(I, onProgress) {

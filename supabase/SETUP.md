@@ -148,7 +148,8 @@ automatically. Until a player comes back, the admin page lists them as
 
 ## Selling credits with Stripe
 
-Players can buy 100 000 credits for each $1 on Stripe's checkout page. The
+Players buy credits on Stripe's checkout page: $1 for 30 000 credits and 3
+free boxes, or $5 for 180 000 credits and 18 free boxes. The
 game only sends them there with their player id; the credits are paid by a
 Supabase Edge Function once Stripe confirms the payment, so nobody can give
 themselves credits. The Stripe account must belong to an adult. Do it all in
@@ -156,15 +157,15 @@ Stripe's **test mode** first.
 
 1. **Database.** Run `supabase/schema.sql` again (it adds the purchases table).
 2. **Product and Payment Link.** In Stripe: **Product catalog → Add product**,
-   "100,000 credits", one-off price **$1.00 USD**. Then **Payment Links →
+   "30,000 credits + 3 boxes", one-off price **$1.00 USD**. Then **Payment Links →
    New** for that product. Under **After payment**, choose to redirect
    customers to your website and enter the address you open the game at,
    followed by `?purchase=done` (for example
    `https://your-site/?purchase=done`). Leave quantity changes off. Copy the
    link (`https://buy.stripe.com/...`). Then do the same for a second
-   product, "600,000 credits" at **$5.00 USD** (the deal: one pack free),
-   and copy its link too. The server pays by the amount paid: $1 is 100 000
-   credits and every $5 adds 100 000 more.
+   product, "180,000 credits + 18 boxes" at **$5.00 USD** (the deal: one pack
+   free), and copy its link too. The server pays by the amount paid: each $1
+   is 30 000 credits and 3 boxes, and every $5 adds that again.
 3. **The webhook function.** In Supabase: **Edge Functions → Deploy a new
    function → Via editor**, name it `stripe-webhook`, paste the whole of
    `supabase/functions/stripe-webhook/index.ts` and deploy. Open the function's

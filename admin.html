@@ -508,14 +508,14 @@ button.primary{background:var(--ink);color:#121417}
       </div>
       <h2>Credit shop (Stripe)</h2>
       <div class="card">
-        <p class="note">Two packs on Stripe's checkout page: <b>$1 for 100 000 credits</b> and <b>$5 for 600 000</b>
-          (one pack free). Make a Stripe Payment Link for each (they start https://buy.stripe.com/), both with this
+        <p class="note">Two packs on Stripe's checkout page: <b>$1 for 30 000 credits and 3 free boxes</b> and <b>$5 for
+          180 000 credits and 18 free boxes</b> (one pack free). Make a Stripe Payment Link for each (they start https://buy.stripe.com/), both with this
           game's address followed by <span class="mono">?purchase=done</span> as the page after payment. The server
           pays by the amount paid, so each link must charge exactly $1.00 or $5.00. supabase/SETUP.md has every step.
           Leave a box empty to leave that pack out; both empty closes the shop.</p>
         <div class="row">
-          <div><label for="shopLink">$1 pack (100 000 credits)</label><input type="text" id="shopLink" style="width:360px" placeholder="https://buy.stripe.com/…"></div>
-          <div><label for="shopLink5">$5 pack (600 000 credits)</label><input type="text" id="shopLink5" style="width:360px" placeholder="https://buy.stripe.com/…"></div>
+          <div><label for="shopLink">$1 pack (30 000 credits, 3 boxes)</label><input type="text" id="shopLink" style="width:360px" placeholder="https://buy.stripe.com/…"></div>
+          <div><label for="shopLink5">$5 pack (180 000 credits, 18 boxes)</label><input type="text" id="shopLink5" style="width:360px" placeholder="https://buy.stripe.com/…"></div>
           <button class="primary" id="btnShop">Save</button></div>
         <div class="row" style="margin-top:10px;align-items:flex-end">
           <div><label for="shopLimit">Daily limit per player ($, 0 = no limit)</label><input type="number" id="shopLimit" min="0" max="1000" step="1" style="width:120px"></div>

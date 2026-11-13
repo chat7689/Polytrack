@@ -1,6 +1,7 @@
 // Stripe's webhook: when a checkout is paid, the player named in its
-// client_reference_id gets their credits (grant_purchase, 100 000 per US
-// dollar, once per checkout); a refund or a chargeback takes them back.
+// client_reference_id gets their credits and boxes (grant_purchase: 30 000
+// and 3 a US dollar, once per checkout); a refund or a chargeback takes them
+// back.
 //
 // One secret (Supabase: Edge Functions, Secrets): STRIPE_WEBHOOK_SECRET, the
 // webhook's signing secret. It never calls Stripe, only checks Stripe's
