@@ -517,6 +517,13 @@ button.primary{background:var(--ink);color:#121417}
           <div><label for="shopLink">$1 pack (100 000 credits)</label><input type="text" id="shopLink" style="width:360px" placeholder="https://buy.stripe.com/…"></div>
           <div><label for="shopLink5">$5 pack (600 000 credits)</label><input type="text" id="shopLink5" style="width:360px" placeholder="https://buy.stripe.com/…"></div>
           <button class="primary" id="btnShop">Save</button></div>
+        <div class="row" style="margin-top:10px;align-items:flex-end">
+          <div><label for="shopLimit">Daily limit per player ($, 0 = no limit)</label><input type="number" id="shopLimit" min="0" max="1000" step="1" style="width:120px"></div>
+          <button id="btnShopLimit">Save limit</button>
+          <small class="hint" style="flex:1">Once a player has spent this much today (Pacific time), the game won't let them
+            buy more until tomorrow. It caps what one stolen card, or one kid on a parent's card, can cost you in refunds
+            and $15 dispute fees.</small>
+        </div>
         <div class="msg" id="shopMsg"></div>
         <div class="tableWrap" style="margin-top:12px">
           <table>
@@ -1974,7 +1981,7 @@ $('page-security').addEventListener('click', async (ev) => {
 let pcCfg = null;
 /** the credit shop: its Payment Link and every purchase */
 async function loadShop() {
-  try { const l = await rpc('shop_links'); $('shopLink').value = l.one || ''; $('shopLink5').value = l.five || ''; }
+  try { const l = await rpc('shop_links'); $('shopLink').value = l.one || ''; $('shopLink5').value = l.five || ''; $('shopLimit').value = l.limit; }
   catch (e) { say('shopMsg', 'Run supabase/schema.sql to set up the shop.', 'err'); return; }
   try {
     const list = await rpc('admin_purchases', { p_limit: 200 });
@@ -1983,6 +1990,11 @@ async function loadShop() {
       '</td><td>' + (b.refunded ? '<span class="pill trm">refunded</span>' : '') + '</td></tr>').join('') || '<tr><td colspan="5" class="empty">No purchases yet.</td></tr>';
   } catch (e) { $('shopBuys').innerHTML = '<tr><td colspan="5" class="empty">' + esc(e.message) + '</td></tr>'; }
 }
+$('btnShopLimit').addEventListener('click', async () => {
+  const n = Math.round(Number($('shopLimit').value));
+  try { await rpc('admin_set_shop_limit', { p_dollars: n }); say('shopMsg', n ? 'Players can now spend up to $' + n + ' a day.' : 'No daily limit.', 'ok'); }
+  catch (e) { say('shopMsg', e.message, 'err'); }
+});
 $('btnShop').addEventListener('click', async () => {
   try {
     await rpc('admin_set_shop_links', { p_link: $('shopLink').value, p_link5: $('shopLink5').value });

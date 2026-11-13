@@ -50,4 +50,16 @@ await t.admin("select public.admin_set_shop('https://buy.stripe.com/one2')");
 ok((await t.one('Buyer', 'select public.shop_links() as l')).l.five === 'https://buy.stripe.com/five5', 'changing the $1 link keeps the $5 one');
 ok(/different/.test((await t.admin("select public.admin_set_shop_links('https://buy.stripe.com/same', 'https://buy.stripe.com/same')").catch((e) => e)).message || ''), 'the two packs need different links');
 ok(/admin/i.test(await t.err('Buyer', "select public.admin_set_shop_links('https://buy.stripe.com/a', '')")), 'only the admin sets them');
+// the daily spending limit
+const st = async () => (await t.one('Buyer', 'select public.shop_links() as l')).l;
+let s = await st();
+ok(s.limit === 20, 'a $20 a day limit unless the admin changes it ' + JSON.stringify(s));
+ok(Number(s.spent) === 6, 'today counts what was paid and not refunded ($1 + $5; the $3 was refunded, euros are left out) ' + s.spent);
+await t.admin('select public.admin_set_shop_limit(10)');
+ok((await st()).limit === 10, 'the admin sets the limit');
+await t.admin('select public.admin_set_shop_limit(0)');
+ok((await st()).limit === 0, 'and 0 turns it off');
+ok(/0 \(none\) to 1000/.test((await t.admin('select public.admin_set_shop_limit(-5)').catch((e) => e)).message || ''), 'no negative limits');
+ok(/admin/i.test(await t.err('Buyer', 'select public.admin_set_shop_limit(1000)')), 'only the admin sets it');
+ok(Number((await t.one(null, 'select public.shop_links() as l')).l.spent) === 0, 'signed out: nothing spent');
 done();

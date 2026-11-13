@@ -2274,13 +2274,31 @@ create or replace function public.shop_link() returns text
 language sql stable security definer set search_path = public, pg_temp as $$
   select coalesce((select value ->> 'link' from public.settings where key = 'shop'), '')
 $$;
-/** both Payment Links: {one: the $1 pack, five: the $5 pack} ('' when not set) */
+/** both Payment Links: {one: the $1 pack, five: the $5 pack} ('' when not set),
+ *  the daily spending limit in dollars (0: none, settings 'shop_limit'), and
+ *  how much the calling player has spent today (Pacific, refunds left out) */
 create or replace function public.shop_links() returns jsonb
 language sql stable security definer set search_path = public, pg_temp as $$
   select jsonb_build_object(
     'one', coalesce((select value ->> 'link' from public.settings where key = 'shop'), ''),
-    'five', coalesce((select value ->> 'link5' from public.settings where key = 'shop'), ''))
+    'five', coalesce((select value ->> 'link5' from public.settings where key = 'shop'), ''),
+    'limit', coalesce((select (value ->> 'dollars')::int from public.settings where key = 'shop_limit'), 20),
+    'spent', coalesce((select sum(amount_cents) from public.purchases
+                       where uid = auth.uid() and not refunded and currency = 'usd'
+                         and at >= ((now() at time zone 'America/Los_Angeles')::date)::timestamp at time zone 'America/Los_Angeles'), 0) / 100.0)
 $$;
+/** the admin: how many dollars one player may spend a day (0: no limit) */
+create or replace function public.admin_set_shop_limit(p_dollars integer) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  if p_dollars is null or p_dollars < 0 or p_dollars > 1000 then
+    raise exception 'The daily limit is 0 (none) to 1000 dollars.' using errcode = 'P0001';
+  end if;
+  insert into public.settings (key, value) values ('shop_limit', jsonb_build_object('dollars', p_dollars))
+    on conflict (key) do update set value = excluded.value;
+  perform public._log('shop limit', '', p_dollars::text);
+end $$;
 /** the admin: both Payment Links ('' leaves that pack out; both '' closes the shop) */
 create or replace function public.admin_set_shop_links(p_link text, p_link5 text) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
@@ -3390,7 +3408,7 @@ grant execute on function public.name_check(text), public.device_status(text, te
   public.admin_unban_player(uuid, boolean), public.admin_player_links(uuid), public.admin_actions(integer), public.admin_evaders(),
   public.admin_security_events(integer), public.admin_set_signups(boolean), public.admin_blocked_players(), public.admin_unblock_player(uuid),
   public.admin_box_stats(), public.admin_set_shop(text), public.admin_purchases(integer), public.shop_link(),
-  public.admin_set_shop_links(text, text), public.shop_links(),
+  public.admin_set_shop_links(text, text), public.shop_links(), public.admin_set_shop_limit(integer),
   public.admin_set_open_signups(boolean), public.admin_open_signups(), public.admin_invite_stats(), public.online_now(),
   public._open_signups() to anon;
 -- paying out and taking back purchases: only the Stripe webhook (the service role)
