@@ -22,11 +22,20 @@ const db = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABA
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('POST only', { status: 405 });
   const body = await req.text();
+  // (trimmed: a secret pasted with a stray space or line break still works)
+  const secret = (Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '').trim();
+  if (!secret.startsWith('whsec_')) {
+    // a 500, so Stripe keeps the payment and tries again once the secret is set
+    console.error('STRIPE_WEBHOOK_SECRET is ' + (secret ? 'not a webhook signing secret (they start whsec_)' : 'not set') +
+      '. Add it under Edge Functions > Secrets.');
+    return new Response('Webhook secret not set up', { status: 500 });
+  }
   let event: Stripe.Event;
   try {
-    event = await stripe.webhooks.constructEventAsync(body, req.headers.get('Stripe-Signature') ?? '',
-      Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '', undefined, crypto);
-  } catch (_e) {
+    event = await stripe.webhooks.constructEventAsync(body, req.headers.get('Stripe-Signature') ?? '', secret, undefined, crypto);
+  } catch (e) {
+    console.error('Stripe signature check failed: the secret in STRIPE_WEBHOOK_SECRET is not this endpoint\'s signing secret ' +
+      '(test and live endpoints each have their own). ' + (e instanceof Error ? e.message : ''));
     return new Response('Bad signature', { status: 400 });
   }
 
