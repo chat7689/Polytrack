@@ -148,6 +148,10 @@ create table if not exists public.referrals (
   referrer uuid not null,
   at timestamptz not null default now()
 );
+-- an invite pays a free box to both once the friend has finished 10 runs
+-- ('boxes'), or nothing when both played on the same computer
+alter table public.referrals add column if not exists rewarded boolean not null default false;
+alter table public.referrals add column if not exists reward text;
 create index if not exists referrals_referrer on public.referrals (referrer, at);
 
 create table if not exists public.admin_notes (
@@ -1254,6 +1258,9 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); r public.runs; el numeric; fl integer; credited boolean := false; bonus integer := 0;
   day_runs integer := 0; day_bonus integer := 0; d text := to_char(now() at time zone 'America/Los_Angeles', 'YYYYMMDD');
   box_runs integer := 0; free_box boolean := false;
+  yday text := to_char((now() at time zone 'America/Los_Angeles')::date - 1, 'YYYYMMDD');
+  v_total integer := 0; v_streak integer := 0; g_day text; streak_bonus integer := 0; streak_box boolean := false;
+  v_ref public.referrals; ref_box boolean := false; ref_name text;
 begin
   select * into r from public.runs where id = p_run and uid = p.id for update;
   if not found then return jsonb_build_object('ok', false, 'message', 'This run wasn''t registered with the server, so the time stays on this device only.'); end if;
@@ -1277,10 +1284,48 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Not counted: the game window wasn''t in focus for the run.');
   end if;
   update public.runs set status = 'done', counted = true, ended_at = now(), time_ms = p_time_ms, focus = p_focus where id = r.id;
-  insert into public.garage (uid, runs) values (p.id, 1) on conflict (uid) do update set runs = public.garage.runs + 1 returning runs into box_runs;
+  insert into public.garage (uid, runs, total) values (p.id, 1, 1)
+    on conflict (uid) do update set runs = public.garage.runs + 1, total = public.garage.total + 1
+    returning runs, total, streak, streak_day into box_runs, v_total, v_streak, g_day;
   if box_runs >= 50 then
     update public.garage set runs = runs - 50, free_boxes = free_boxes + 1 where uid = p.id;
     box_runs := box_runs - 50; free_box := true;
+  end if;
+  -- the play streak: the first counted finish of a day (Pacific) keeps it
+  -- going (or starts it again after a missed day) and pays 25 credits a day
+  -- of streak, up to 175; every 7th day in a row is a free box too
+  if g_day is distinct from d then
+    v_streak := case when g_day = yday then coalesce(v_streak, 0) + 1 else 1 end;
+    update public.garage set streak = v_streak, streak_day = d, best_streak = greatest(best_streak, v_streak) where uid = p.id;
+    perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+    if not exists (select 1 from public.credit_events where uid = p.id and kind = 'streak' and note = 'day ' || d) then
+      streak_bonus := least(v_streak, 7) * 25;
+      insert into public.credit_events (uid, delta, kind, note) values (p.id, streak_bonus, 'streak', 'day ' || d);
+      if v_streak % 7 = 0 then
+        update public.garage set free_boxes = free_boxes + 1 where uid = p.id;
+        streak_box := true;
+      end if;
+    end if;
+  end if;
+  -- a friend's invite pays out at their 10th counted finish: a free box
+  -- each, unless they share a computer (one person with two accounts)
+  if v_total >= 10 then
+    select * into v_ref from public.referrals where uid = p.id and not rewarded for update;
+    if found then
+      if public._same_computer(p.id, v_ref.referrer)
+         or not exists (select 1 from public.profiles where id = v_ref.referrer and not banned) then
+        update public.referrals set rewarded = true, reward = 'none' where uid = p.id;
+      else
+        update public.referrals set rewarded = true, reward = 'boxes' where uid = p.id;
+        update public.garage set free_boxes = free_boxes + 1 where uid = p.id;
+        insert into public.garage (uid, free_boxes) values (v_ref.referrer, 1)
+          on conflict (uid) do update set free_boxes = public.garage.free_boxes + 1;
+        -- (a 0-credit line so the friend's game hears about it right away)
+        insert into public.credit_events (uid, delta, kind, note) values (v_ref.referrer, 0, 'invite_box', p.display_name);
+        ref_box := true;
+        select display_name into ref_name from public.profiles where id = v_ref.referrer;
+      end if;
+    end if;
   end if;
   if r.course_id !~ '^d[0-9]{8}$' and r.course_id !~ '^u[0-9]+$' then
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
@@ -1304,7 +1349,8 @@ begin
     end if;
   end if;
   return jsonb_build_object('ok', true, 'credited', credited, 'bonus', bonus, 'day_runs', day_runs, 'day_bonus', day_bonus,
-    'balance', public._balance(p.id), 'box_runs', box_runs, 'free_box', free_box);
+    'balance', public._balance(p.id), 'box_runs', box_runs, 'free_box', free_box,
+    'streak', v_streak, 'streak_bonus', streak_bonus, 'streak_box', streak_box, 'ref_box', ref_box, 'ref_name', ref_name);
 end $$;
 
 -- A run's recording against the map: the right number of samples for the
@@ -1509,7 +1555,9 @@ begin
       end if;
     else
       select value ->> 'code' into inv from public.settings where key = 'invite';
-      if inv is null or not (trim(typed) = inv or upper(regexp_replace(typed, '\s', '', 'g')) = upper(inv)) then why := 'invite'; end if;
+      if coalesce((select value ->> 'on' from public.settings where key = 'open_signups'), 'false') = 'true' then
+        null;                                       -- open sign-ups: anyone can join
+      elsif inv is null or not (trim(typed) = inv or upper(regexp_replace(typed, '\s', '', 'g')) = upper(inv)) then why := 'invite'; end if;
     end if;
   end if;
   if why is not null then
@@ -1543,7 +1591,11 @@ language plpgsql stable security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); d text := to_char(now() at time zone 'America/Los_Angeles', 'YYYYMMDD');
 begin
   return jsonb_build_object('runs', public._day_runs(p.id),
-    'paid', exists (select 1 from public.credit_events where uid = p.id and kind = 'daily_runs' and note = 'day ' || d));
+    'paid', exists (select 1 from public.credit_events where uid = p.id and kind = 'daily_runs' and note = 'day ' || d),
+    'streak', coalesce((select case when g.streak_day = d or g.streak_day = to_char((now() at time zone 'America/Los_Angeles')::date - 1, 'YYYYMMDD')
+                                    then g.streak else 0 end from public.garage g where g.uid = p.id), 0),
+    'today', coalesce((select g.streak_day = d from public.garage g where g.uid = p.id), false),
+    'best', coalesce((select g.best_streak from public.garage g where g.uid = p.id), 0));
 end $$;
 
 -- other players' credit balances, for their profile card, trophy room and
@@ -1671,8 +1723,8 @@ begin
   where (until is null or until > now())
     and ((kind = 'device' and value = coalesce(p_device, '')) or (kind = 'fp' and value = left(coalesce(p_fp, ''), 64) and coalesce(p_fp, '') <> '')
          or (kind = 'ip' and value = v_ip and v_ip <> ''));
-  if b.n = 0 then return jsonb_build_object('blocked', false, 'signupsPaused', paused); end if;
-  return jsonb_build_object('blocked', true, 'signupsPaused', paused,
+  if b.n = 0 then return jsonb_build_object('blocked', false, 'signupsPaused', paused, 'openSignups', public._open_signups()); end if;
+  return jsonb_build_object('blocked', true, 'signupsPaused', paused, 'openSignups', public._open_signups(),
     'until', case when b.forever then null else (extract(epoch from b.until) * 1000)::bigint end);
 end $$;
 -- the admin: pause (or reopen) new accounts, for a flood of fake sign-ups
@@ -2243,6 +2295,76 @@ begin
       'credits', x.credits, 'cents', x.amount_cents, 'currency', x.currency, 'refunded', x.refunded, 'session', x.session_id) order by x.id desc)
     from (select * from public.purchases order by id desc limit least(greatest(coalesce(p_limit, 100), 1), 1000)) x
     left join public.profiles p on p.id = x.uid), '[]'::jsonb);
+end $$;
+
+-- ------------------------------------------------- streaks, invites, open doors
+-- (finish_run pays streaks and invites; these are the counters and the views)
+alter table public.garage add column if not exists total integer not null default 0;
+alter table public.garage add column if not exists streak integer not null default 0;
+alter table public.garage add column if not exists streak_day text;
+alter table public.garage add column if not exists best_streak integer not null default 0;
+
+/** did two players ever use the same computer (sign-up or a run)? */
+create or replace function public._same_computer(a uuid, b uuid) returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  with da as (select device_id d from public.signup_log where uid = a union select device_id from public.runs where uid = a),
+       db as (select device_id d from public.signup_log where uid = b union select device_id from public.runs where uid = b)
+  select exists (select 1 from da join db using (d) where coalesce(d, '') <> '')
+$$;
+/** may anyone make an account without an invite code? */
+create or replace function public._open_signups() returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select value ->> 'on' from public.settings where key = 'open_signups'), 'false') = 'true'
+$$;
+/** the admin: let anyone join with no invite code (or close it again) */
+create or replace function public.admin_set_open_signups(p_on boolean) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  insert into public.settings (key, value) values ('open_signups', jsonb_build_object('on', coalesce(p_on, false)))
+    on conflict (key) do update set value = excluded.value;
+  perform public._log(case when p_on then 'open sign-ups' else 'invite-only sign-ups' end, '', '');
+end $$;
+create or replace function public.admin_open_signups() returns boolean
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return public._open_signups();
+end $$;
+/** the friends I brought: how far each is toward the free boxes */
+create or replace function public.my_invites() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  return jsonb_build_object(
+    'friends', coalesce((select jsonb_agg(jsonb_build_object('name', x.display_name, 'runs', least(x.total, 10), 'reward', x.reward) order by x.at desc)
+      from (select pr.display_name, coalesce(g.total, 0) as total, r.reward, r.at from public.referrals r
+            join public.profiles pr on pr.id = r.uid left join public.garage g on g.uid = r.uid
+            where r.referrer = p.id order by r.at desc limit 60) x), '[]'::jsonb),
+    'boxes', (select count(*) from public.referrals where referrer = p.id and reward = 'boxes'));
+end $$;
+/** how many drivers started a run in the last five minutes */
+create or replace function public.online_now() returns integer
+language sql stable security definer set search_path = public, pg_temp as $$
+  select count(distinct uid)::int from public.runs where started_at > now() - interval '5 minutes'
+$$;
+/** the admin: who brought the most friends, and how many were real */
+create or replace function public.admin_invite_stats() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return jsonb_build_object(
+    'total', (select count(*) from public.referrals),
+    'paid', (select count(*) from public.referrals where reward = 'boxes'),
+    'same', (select count(*) from public.referrals where reward = 'none'),
+    'top', coalesce((select jsonb_agg(x order by x.n desc) from (
+      select pr.display_name as name, count(*) as n, count(*) filter (where r.reward = 'boxes') as paid
+      from public.referrals r join public.profiles pr on pr.id = r.referrer
+      group by pr.display_name order by count(*) desc limit 15) x), '[]'::jsonb),
+    'streaks', coalesce((select jsonb_agg(x order by x.streak desc) from (
+      select pr.display_name as name, g.streak, g.best_streak as best from public.garage g join public.profiles pr on pr.id = g.uid
+      where g.streak_day >= to_char((now() at time zone 'America/Los_Angeles')::date - 1, 'YYYYMMDD') and g.streak > 1
+      order by g.streak desc limit 15) x), '[]'::jsonb));
 end $$;
 
 -- ------------------------------------------------------------ opening hours
@@ -3250,7 +3372,9 @@ grant execute on function public.admin_login(text, text), public.admin_logout(),
 grant execute on function public.name_check(text), public.device_status(text, text), public.admin_ban_player(uuid, text, integer, boolean, boolean, boolean, boolean),
   public.admin_unban_player(uuid, boolean), public.admin_player_links(uuid), public.admin_actions(integer), public.admin_evaders(),
   public.admin_security_events(integer), public.admin_set_signups(boolean), public.admin_blocked_players(), public.admin_unblock_player(uuid),
-  public.admin_box_stats(), public.admin_set_shop(text), public.admin_purchases(integer), public.shop_link() to anon;
+  public.admin_box_stats(), public.admin_set_shop(text), public.admin_purchases(integer), public.shop_link(),
+  public.admin_set_open_signups(boolean), public.admin_open_signups(), public.admin_invite_stats(), public.online_now(),
+  public._open_signups() to anon;
 -- paying out and taking back purchases: only the Stripe webhook (the service role)
 revoke execute on function public.grant_purchase(text, text, integer, text, text) from public, anon, authenticated;
 revoke execute on function public.refund_purchase(text) from public, anon, authenticated;
@@ -3264,6 +3388,7 @@ revoke execute on function public._track_reset(text, boolean) from public, anon,
 revoke execute on function public._log(text, text, text) from public, anon, authenticated;
 revoke execute on function public._player_keys(uuid) from public, anon, authenticated;
 revoke execute on function public._sec_event(text, text, text, text, text, text) from public, anon, authenticated;
+revoke execute on function public._same_computer(uuid, uuid) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- season 1, closed

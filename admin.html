@@ -568,6 +568,24 @@ button.primary{background:var(--ink);color:#121417}
           <button class="primary" id="btnSaveCode">Set code</button>
         </div>
         <div class="msg" id="codeMsg"></div>
+        <div class="row" style="margin-top:16px;align-items:center">
+          <span class="note" id="openState" style="margin:0;flex:1">Open sign-ups: …</span>
+          <button id="btnOpen">Open sign-ups</button>
+        </div>
+        <small class="hint">Open sign-ups let anyone make an account with no invite code: the quickest way to get a whole
+          school playing. Friends' invite links always work without a code. Pause sign-ups (Security) still stops everything.</small>
+      </div>
+      <h2>Invites and streaks</h2>
+      <div class="card">
+        <p class="note" id="invSum">…</p>
+        <p class="note">An invite pays a free box to both players when the friend finishes 10 runs, unless both accounts
+          were used on the same computer. A play streak pays 25 credits a day of streak (up to 175) and a free box every 7th day.</p>
+        <div class="row" style="align-items:flex-start;gap:24px">
+          <div class="tableWrap" style="flex:1"><table><thead><tr><th>Brought the most friends</th><th class="r">Joined</th><th class="r">Boxes</th></tr></thead>
+            <tbody id="invTop"></tbody></table></div>
+          <div class="tableWrap" style="flex:1"><table><thead><tr><th>Longest streaks now</th><th class="r">Days</th><th class="r">Best</th></tr></thead>
+            <tbody id="invStreaks"></tbody></table></div>
+        </div>
       </div>
       <h2>Admin passcode</h2>
       <div class="card">
@@ -1969,9 +1987,33 @@ $('btnShop').addEventListener('click', async () => {
     say('shopMsg', $('shopLink').value.trim() ? 'Saved: the shop is open.' : 'The shop is closed.', 'ok');
   } catch (e) { say('shopMsg', e.message, 'err'); }
 });
+/** open sign-ups, invites and streaks */
+async function loadGrowth() {
+  try {
+    const open = await rpc('admin_open_signups');
+    $('openState').innerHTML = open ? 'Open sign-ups: <b>on</b>. Anyone can make an account, no code needed.' : 'Open sign-ups: <b>off</b>. New players need the code above or a friend\'s link.';
+    $('btnOpen').textContent = open ? 'Back to invite-only' : 'Open sign-ups';
+    $('btnOpen').className = open ? '' : 'primary';
+    $('btnOpen').dataset.open = open ? '1' : '';
+  } catch (e) { $('openState').textContent = 'Run supabase/schema.sql to get open sign-ups.'; }
+  try {
+    const st = await rpc('admin_invite_stats');
+    $('invSum').innerHTML = '<b>' + st.total + '</b> players joined with a friend\'s link · <b>' + st.paid + '</b> invites paid out · ' + st.same + ' on the same computer (no boxes)';
+    $('invTop').innerHTML = st.top.map((r) => '<tr><td><b>' + esc(r.name) + '</b></td><td class="mono r">' + r.n + '</td><td class="mono r">' + r.paid + '</td></tr>').join('') ||
+      '<tr><td colspan="3" class="empty">No invites yet.</td></tr>';
+    $('invStreaks').innerHTML = st.streaks.map((r) => '<tr><td><b>' + esc(r.name) + '</b></td><td class="mono r">' + r.streak + '</td><td class="mono r">' + r.best + '</td></tr>').join('') ||
+      '<tr><td colspan="3" class="empty">No streaks yet.</td></tr>';
+  } catch (e) { $('invSum').textContent = e.message; }
+}
+$('btnOpen').addEventListener('click', async () => {
+  const opening = !$('btnOpen').dataset.open;
+  try { await rpc('admin_set_open_signups', { p_on: opening }); await loadGrowth(); say('codeMsg', opening ? 'Sign-ups are open: no code needed.' : 'Back to invite-only.', 'ok'); }
+  catch (e) { say('codeMsg', e.message, 'err'); }
+});
 async function loadSettings() {
   loadNotice();
   loadShop();
+  loadGrowth();
   try { pcCfg = await readPasscode(); } catch (e) { pcCfg = null; }
   const has = !!(pcCfg && pcCfg.passHash);
   $('pcOldWrap').classList.toggle('hide', !has);
