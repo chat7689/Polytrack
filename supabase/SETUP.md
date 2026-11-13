@@ -160,8 +160,10 @@ Stripe's **test mode** first.
    New** for that product. Under **After payment**, choose to redirect
    customers to your website and enter the address you open the game at,
    followed by `?purchase=done` (for example
-   `https://your-site/?purchase=done`). Leave quantity changes off. Copy the
-   link (`https://buy.stripe.com/...`).
+   `https://your-site/?purchase=done`). Turn on **Let customers adjust
+   quantity** (1 to 50): each $1 still pays 100 000 credits, and one $5
+   payment loses far less to Stripe's fee (2.9% + 30 cents a payment) than
+   five $1 payments. Copy the link (`https://buy.stripe.com/...`).
 3. **The webhook function.** In Supabase: **Edge Functions → Deploy a new
    function → Via editor**, name it `stripe-webhook`, paste the whole of
    `supabase/functions/stripe-webhook/index.ts` and deploy. Open the function's
@@ -171,7 +173,8 @@ Stripe's **test mode** first.
 4. **Stripe calls it.** In Stripe: **Developers → Webhooks → Add endpoint**:
    `https://tkjiivodmmjeruhxspcz.supabase.co/functions/v1/stripe-webhook`,
    with the events `checkout.session.completed`,
-   `checkout.session.async_payment_succeeded` and `charge.refunded`. Copy its
+   `checkout.session.async_payment_succeeded`, `charge.refunded` and
+   `charge.dispute.created`. Copy its
    **Signing secret** (`whsec_...`).
 5. **The secret.** In Supabase: **Edge Functions → Secrets → Add**:
    `STRIPE_WEBHOOK_SECRET` = the signing secret. That is the only Stripe
@@ -184,4 +187,5 @@ Stripe's **test mode** first.
    should show on the admin page. Then make the same product, Payment Link
    and webhook in live mode, update the secret and the link, and you're live.
 
-A refund made in Stripe takes the credits back off automatically.
+A refund made in Stripe, or a chargeback (a disputed payment), takes the
+credits back off automatically.

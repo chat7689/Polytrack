@@ -1,6 +1,6 @@
 // Stripe's webhook: when a checkout is paid, the player named in its
 // client_reference_id gets their credits (grant_purchase, 100 000 per US
-// dollar, once per checkout); a refunded payment takes them back.
+// dollar, once per checkout); a refund or a chargeback takes them back.
 //
 // One secret (Supabase: Edge Functions, Secrets): STRIPE_WEBHOOK_SECRET, the
 // webhook's signing secret. It never calls Stripe, only checks Stripe's
@@ -45,8 +45,10 @@ Deno.serve(async (req) => {
     return Response.json(data);
   }
 
-  if (event.type === 'charge.refunded') {
-    const c = event.data.object as Stripe.Charge;
+  // a refund, or a chargeback (the card's owner disputes it with their bank):
+  // the credits come back off, once
+  if (event.type === 'charge.refunded' || event.type === 'charge.dispute.created') {
+    const c = event.data.object as Stripe.Charge | Stripe.Dispute;
     const intent = typeof c.payment_intent === 'string' ? c.payment_intent : c.payment_intent?.id;
     if (intent) {
       const { error } = await db.rpc('refund_purchase', { p_intent: intent });
