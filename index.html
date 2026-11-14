@@ -593,7 +593,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 /* ---------- season menu ---------- */
 .menuPanel{width:min(1440px,95vw);padding:40px 48px 36px}
 .widePanel{width:min(1320px,94vw)}
-.garageCols{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:start}
+.garageCols{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:26px;align-items:start}
 @media(max-width:900px){.garageCols{grid-template-columns:1fr}}
 .garageBig{height:min(46vh,460px)}
 .gh{font-size:13px;font-weight:600;margin-bottom:8px}
@@ -602,6 +602,100 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .garagePanel{max-height:94vh;overflow:auto}
 .gCred{font-size:15px;display:flex;align-items:center;gap:6px}
 .gTabs{display:flex;gap:4px;border-bottom:1px solid var(--rule-2);margin:10px 0 18px;flex-wrap:wrap}
+.gNav{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 10px}
+.gGroup{display:flex;gap:2px;padding:4px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}
+.gNav button{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:0;border-radius:10px;background:none;color:var(--dim);font-weight:650;font-size:13.5px;position:relative}
+.gNav button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.gNav button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.gNav button.on{color:#fff;background:linear-gradient(180deg,rgba(242,115,63,.95),rgba(214,90,42,.95));box-shadow:0 6px 18px -8px var(--ember)}
+.gNav button i{font-style:normal;font-size:10.5px;font-weight:800;background:#fff;color:var(--ember);border-radius:9px;padding:0 6px;margin-left:2px}
+.gNav button:not(.on) i{background:var(--ember);color:#fff}
+.gSub{display:flex;gap:6px;margin:0 0 14px}
+.gSub[hidden]{display:none}
+.gSub button{padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--rule-2);background:none;color:var(--dim)}
+.gSub button.on{color:var(--ink);border-color:var(--ember);background:rgba(242,115,63,.12)}
+.gStage{position:relative}
+.gStageCap{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-radius:12px;
+  background:rgba(8,10,16,.72);border:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:600;backdrop-filter:blur(6px)}
+.gStageCap[hidden]{display:none}
+.gStageCap span{flex:1}
+.gStageBadge{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,rgba(10,12,20,.55),rgba(10,12,20,.15) 70%)}
+.gStageBadge[hidden]{display:none}
+.gStageBadge .fTitle.big{font-size:30px;padding:10px 22px}
+.gStageBadge img{width:220px}
+.gStageBadge b{font-family:var(--mono);font-size:26px;color:#9a78ff}
+.lazyThumb{opacity:0;transition:opacity .25s}
+.lazyThumb.ready{opacity:1}
+.bpTop{display:flex;align-items:center;gap:16px;margin-bottom:10px}
+.bpTitle{flex:1;min-width:0}
+.bpTitle h3{font-size:24px;letter-spacing:-.02em;margin:0}
+.bpTitle small{font-size:12.5px;color:var(--dim)}
+.bpTitle .pBar{margin:8px 0 0}
+.bpBuy{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 18px!important;border-radius:12px!important;white-space:nowrap}
+.bpBuy b{font-size:15px}
+.bpBuy span{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;opacity:.9}
+.bpActions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.bpActions button{display:inline-flex;align-items:center;gap:5px}
+.rwLv{width:74px;height:74px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;
+  background:linear-gradient(140deg,#8fe3ff,#3ddbb8);color:#06141a;box-shadow:0 10px 26px -12px #3ddbb8}
+.rwLv b{font-family:var(--mono);font-size:30px;line-height:1}
+.rwLv small{font-size:9.5px;font-weight:800;letter-spacing:.14em}
+.rwWrap{position:relative;display:grid;grid-template-columns:auto 1fr;gap:8px;margin-bottom:12px}
+.rwWrap.single{grid-template-columns:1fr}
+.rwLabels{display:grid;grid-template-rows:22px 1fr 1fr;gap:8px;padding-top:0}
+.rwLabels span{grid-row:auto;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--mono);font-size:10.5px;font-weight:800;letter-spacing:.14em;text-align:center;
+  border-radius:8px;padding:6px 3px}
+.rwLabels .lp{grid-row:2;color:#ffcf5c;background:rgba(255,207,92,.1)}
+.rwLabels .lf{grid-row:3;color:var(--dim);background:rgba(255,255,255,.04)}
+.rwTrack{overflow-x:auto;overflow-y:hidden;padding-bottom:8px;scroll-behavior:smooth}
+.rwTrack::-webkit-scrollbar{height:8px}
+.rwTrack::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:4px}
+.rwCols{display:flex;gap:8px;width:max-content}
+.rwCol{display:grid;grid-template-rows:22px auto auto;gap:8px;width:132px;flex:none}
+.rwWrap.single .rwCol{grid-template-rows:22px auto}
+.rwWrap.single .rwCol.big{width:170px}
+.rwNum{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--dimmer);border-bottom:2px solid rgba(255,255,255,.08)}
+.rwCol.reached .rwNum{color:var(--ink);border-bottom-color:var(--ember)}
+.rwCol.now .rwNum{color:#fff;background:var(--ember);border-radius:8px 8px 0 0}
+.rwCard{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:4px;height:172px;padding:8px;border-radius:14px;text-align:center;
+  border:1px solid rgba(255,255,255,.09);background:linear-gradient(170deg,rgba(255,255,255,.06),rgba(255,255,255,.015));color:var(--ink);cursor:pointer;
+  transition:transform .15s,box-shadow .15s,border-color .15s}
+.rwCard:hover{transform:translateY(-3px)}
+.rwCard.rwItem{border-color:color-mix(in srgb,var(--kc) 55%,transparent);background:linear-gradient(170deg,color-mix(in srgb,var(--kc) 20%,transparent),rgba(255,255,255,.015))}
+.rwWrap.single .rwCol.big .rwCard{height:196px;box-shadow:0 0 0 1px color-mix(in srgb,var(--kc) 40%,transparent),0 14px 30px -18px var(--kc)}
+.rwCard.sel{outline:2px solid #fff;outline-offset:2px}
+.rwCard.ready{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember),0 10px 26px -12px var(--ember)}
+.rwCard.ready .rwState{color:#fff;background:var(--ember)}
+.rwCard.got{opacity:.55}
+.rwCard.got .rwState{color:var(--aqua)}
+.rwCard.got .rwState::before{content:'✓ '}
+.rwCard.lock .rwPic,.rwCard.plusLock .rwPic{filter:saturate(.75) brightness(.85)}
+.rwCard.plusLock{border-style:dashed}
+.rwCard.plusLock .rwState{color:#ffcf5c}
+.rwPic{position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;border-radius:10px;
+  background:radial-gradient(ellipse at 50% 80%,rgba(255,255,255,.08),transparent 70%)}
+.rwPic img{max-width:100%;max-height:96px}
+.rwWrap.single .rwCol.big .rwPic img{max-height:118px}
+.rwPic .kPic{width:90px;height:60px}
+.rwX{position:absolute;right:4px;bottom:2px;font-family:var(--mono);font-size:14px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.rwIcon .fIcon{filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+.rwTitle span{display:inline-block;padding:7px 10px;border-radius:9px;font-weight:800;font-size:13.5px;letter-spacing:.02em;line-height:1.15;
+  background:linear-gradient(135deg,#ffe08a,#f2a33f);color:#2a1604;box-shadow:0 6px 16px -8px #f2a33f}
+.rwName{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rwState{align-self:center;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:2px 8px;border-radius:999px}
+.rwDetail{display:flex;gap:14px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03);margin-bottom:10px}
+.rwDetail[hidden]{display:none}
+.rwDPic{width:150px;flex:none}
+.rwDPic .rwPic{height:96px}
+.rwDetail b{display:block;font-size:18px;margin:2px 0}
+.rwDetail p{margin:0 0 6px;font-size:12.5px;color:var(--dim)}
+.rwDKind{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.rwDState{font-size:11.5px;font-weight:700;color:var(--dim)}
+.rwDState.ready{color:var(--ember)}
+.rwDState.got{color:var(--aqua)}
+.rwDState.plusLock{color:#ffcf5c}
+.rwHow{font-size:12.5px}
 .gTabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:9px 14px;color:var(--dim);font-weight:600;position:relative}
 .gTabs button.on{color:var(--ink);border-bottom-color:var(--ember)}
 .gTabs button i,.wBadge{font-style:normal;font-size:11px;font-weight:700;background:var(--ember);color:#fff;border-radius:9px;padding:1px 6px;margin-left:6px}
@@ -3581,21 +3675,30 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           <button class="ghost" id="bGarageBack">← Menu</button>
         </div>
       </div>
-      <div class="gTabs" id="gTabs">
-        <button data-tab="boxes">Boxes<i id="gFreeBadge" hidden></i></button>
-        <button data-tab="shop">Shop</button>
-        <button data-tab="pass">Race Pass<i id="gPassBadge" hidden></i></button>
-        <button data-tab="road">Driver Road<i id="gRoadBadge" hidden></i></button>
-        <button data-tab="auctions">Auctions</button>
-        <button data-tab="car">Car</button>
-        <button data-tab="paint">Paint</button>
-        <button data-tab="profile">Profile</button>
-        <button data-tab="collection">Collection</button>
+      <div class="gNav" id="gTabs">
+        <div class="gGroup">
+          <button data-tab="boxes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l9-5 9 5v8l-9 5-9-5z M3 8l9 5 9-5 M12 13v8"/></svg>Boxes<i id="gFreeBadge" hidden></i></button>
+          <button data-tab="shop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16l-1.5 12h-13z M8 7a4 4 0 0 1 8 0"/></svg>Shop</button>
+          <button data-tab="auctions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l6 6-3 3-6-6z M11 7l-7 7 3 3 7-7 M4 21h10"/></svg>Auctions</button>
+        </div>
+        <div class="gGroup">
+          <button data-tab="pass"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z M10 6v12"/></svg>Race Pass<i id="gPassBadge" hidden></i></button>
+          <button data-tab="road"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21l2-18 M16 21l-2-18 M12 6v2 M12 11v2 M12 16v2"/></svg>Driver Road<i id="gRoadBadge" hidden></i></button>
+        </div>
+        <div class="gGroup">
+          <button data-tab="custom" data-also="car paint profile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15l2-5h14l2 5v3H3z M7 10l2-4h6l2 4"/><circle cx="7.5" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Customize</button>
+          <button data-tab="collection"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z"/></svg>Collection</button>
+        </div>
+      </div>
+      <div class="gSub" id="gSub" hidden>
+        <button data-sub="car">Car parts</button><button data-sub="paint">Colours</button><button data-sub="profile">Title &amp; icon</button>
       </div>
       <div class="garageCols">
         <div>
-          <div class="garagePreviewWrap garageBig">
+          <div class="garagePreviewWrap garageBig gStage">
             <canvas id="gPreviewCanvas"></canvas>
+            <div class="gStageBadge" id="gStageBadge" hidden></div>
+            <div class="gStageCap" id="gStageCap" hidden><span id="gStageTxt"></span><button class="small" id="gStageBack">Back to my car</button></div>
           </div>
           <div id="gLoadout"></div>
         </div>
@@ -12730,8 +12833,9 @@ const Catalog = {
     const E = escapeHtml;
     if (it.kind === 'car' || it.kind === 'decal' || it.kind === 'anim' || it.kind === 'wheel' || it.kind === 'finish') {
       const slot = it.kind === 'anim' ? 'decal' : it.kind;
-      const url = CarThumbs.draw({ primary: col.primary, secondary: col.secondary, loadout: Object.assign({}, col.loadout || {}, { [slot]: it.id }) });
-      return url ? '<img alt="" src="' + url + '">' : '';
+      const r = CarThumbs.lazy({ primary: col.primary, secondary: col.secondary, loadout: Object.assign({}, col.loadout || {}, { [slot]: it.id }) });
+      if (typeof r === 'string') return r ? '<img alt="" src="' + r + '">' : '';
+      return '<img alt="" class="lazyThumb" data-tk="' + r.pending + '" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">';
     }
     if (it.kind === 'icon') return Flair.badge(it.id, col, 54);
     if (it.kind === 'title') return '<span class="fTitle big">' + E(it.name) + '</span>';
@@ -13081,34 +13185,71 @@ const Garage = {
     pane.querySelectorAll('[data-bid]').forEach((b) => b.addEventListener('click', () => bid(+b.dataset.bid, Math.floor(+pane.querySelector('[data-amt="' + b.dataset.bid + '"]').value || 0), false)));
     pane.querySelectorAll('[data-buy-now]').forEach((b) => b.addEventListener('click', () => bid(+b.dataset.buyNow, +b.dataset.price, true)));
   },
-  /** the Driver Road: every level's reward */
+  /** a reward's picture: the car wearing it, the box, a pile of credits, a big badge or a nameplate */
+  rewardPic(r) {
+    const it = r.item && Catalog.get(r.item);
+    if (it) {
+      if (it.kind === 'icon') return '<div class="rwPic rwIcon">' + Flair.badge(it.id, Look.mine(), 62) + '</div>';
+      if (it.kind === 'title') return '<div class="rwPic rwTitle"><span>' + escapeHtml(it.name) + '</span></div>';
+      return '<div class="rwPic">' + Catalog.pic(it) + '</div>';
+    }
+    if (r.boxes) return '<div class="rwPic"><img alt="" src="' + CarThumbs.prize('box') + '">' + (r.boxes > 1 ? '<b class="rwX">×' + r.boxes + '</b>' : '') + '</div>';
+    if (r.credits) return '<div class="rwPic"><img alt="" src="' + CarThumbs.prize('credits') + '"><b class="rwX">' + fmtCredits(r.credits) + '</b></div>';
+    return '<div class="rwPic"></div>';
+  },
+  /** one card: state is got, ready, lock or plusLock */
+  rewardCard(r, state, key, label) {
+    const it = r.item && Catalog.get(r.item);
+    const K = it ? ITEM_KIND[it.kind] : null;
+    const st = state === 'got' ? 'Collected' : state === 'ready' ? 'Ready!' : state === 'plusLock' ? 'Pass+ only' : label;
+    return '<button class="rwCard ' + state + (it ? ' rwItem' : '') + '" data-rw="' + key + '"' + (K ? ' style="--kc:' + K.col + '"' : '') + '>' +
+      this.rewardPic(r) + '<span class="rwName">' + escapeHtml(this.rewardText(r)) + '</span><span class="rwState">' + st + '</span></button>';
+  },
+  /** what a chosen reward is, under the track, and on the stage */
+  rewardDetail(r, where, state) {
+    const it = r.item && Catalog.get(r.item);
+    const K = it ? ITEM_KIND[it.kind] : null;
+    $('rwDetail').innerHTML = '<div class="rwDPic">' + this.rewardPic(r) + '</div><div><small class="rwDKind"' + (K ? ' style="color:' + K.col + '"' : '') + '>' +
+      escapeHtml(K ? K.label : r.boxes ? 'Free boxes' : 'Credits') + ' · ' + escapeHtml(where) + '</small><b>' + escapeHtml(this.rewardText(r)) + '</b>' +
+      '<p>' + escapeHtml(it ? it.note : r.boxes ? 'Open ' + (r.boxes > 1 ? 'them' : 'it') + ' on the Boxes tab: a car, decals, paint, wheels and more could be inside.' : 'Straight to your balance.') + '</p>' +
+      '<span class="rwDState ' + state + '">' + (state === 'got' ? 'Collected' : state === 'ready' ? 'Ready to collect' : state === 'plusLock' ? 'Needs Pass+' : 'Not reached yet') + '</span></div>';
+    $('rwDetail').hidden = false;
+    this.previewItem(r);
+  },
+  /** wire a track's cards to the detail and the stage; scroll to "now" */
+  wireTrack(pane, find) {
+    pane.querySelectorAll('[data-rw]').forEach((b) => b.addEventListener('click', () => {
+      pane.querySelectorAll('.rwCard.sel').forEach((c) => c.classList.remove('sel'));
+      b.classList.add('sel');
+      const f = find(b.dataset.rw);
+      if (f) this.rewardDetail(f.r, f.where, f.state);
+    }));
+    const tr = pane.querySelector('.rwTrack'), cur = pane.querySelector('.rwCol.now');
+    if (tr && cur) { tr.style.scrollBehavior = 'auto'; tr.scrollLeft = Math.max(0, cur.offsetLeft - tr.offsetLeft - tr.clientWidth / 2 + cur.offsetWidth / 2); tr.style.scrollBehavior = ''; }
+    if (tr) tr.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { tr.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  },
+  /** the Driver Road: every level's reward, as a road of cards */
   renderRoad() {
-    const pane = document.querySelector('#garage .gPane[data-pane="road"]'), E = escapeHtml;
+    const pane = document.querySelector('#garage .gPane[data-pane="road"]');
     if (!Cloud.on || !Cloud.user) { pane.innerHTML = '<p class="lede">Sign in to see your driver level.</p>'; return; }
     const R = this.road;
     if (!R) { pane.innerHTML = '<p class="lede">Driver levels aren\'t set up on the server yet.</p>'; return; }
     const wait = this.roadWaiting();
-    const chip = (r, cls) => {
-      const it = r.item && Catalog.get(r.item);
-      const pic = it ? (it.kind === 'icon' ? Flair.badge(it.id, Look.mine(), 22) : it.kind === 'title' ? '' : '<span class="pPic">' + Catalog.pic(it) + '</span>') : '';
-      return '<span class="pChip ' + cls + (it ? ' item' : r.boxes ? ' box' : '') + '">' + pic + '<span>' + E(this.rewardText(r)) + '</span></span>';
-    };
-    let rows = '';
-    for (const x of R.rewards) {
-      const cls = x.level <= R.upto ? 'got' : x.level <= R.level ? 'ready' : 'lock';
-      rows += '<div class="rRow' + (x.level <= R.level ? ' reached' : '') + (x.level === R.level + 1 ? ' next' : '') + (x.reward.item ? ' big' : '') + '"><b class="pTier">' + x.level + '</b>' + chip(x.reward, cls) + '</div>';
-    }
-    pane.innerHTML = '<div class="gPassHead"><div><div class="pKick">DRIVER ROAD</div><h3>Level ' + R.level + '</h3>' +
-      '<small>' + fmtCredits(R.xp - R.from) + ' / ' + fmtCredits(R.to - R.from) + ' XP to level ' + (R.level + 1) + '</small></div><span class="rBadge">LV ' + R.level + '</span></div>' +
-      '<div class="gBar pBar"><i style="width:' + Math.min(100, (R.xp - R.from) / Math.max(1, R.to - R.from) * 100).toFixed(1) + '%"></i></div>' +
+    const pct = Math.min(100, (R.xp - R.from) / Math.max(1, R.to - R.from) * 100);
+    const state = (l) => (l <= R.upto ? 'got' : l <= R.level ? 'ready' : 'lock');
+    const cols = R.rewards.map((x) => '<div class="rwCol' + (x.level <= R.level ? ' reached' : '') + (x.level === R.level + 1 ? ' now' : '') + (x.reward.item ? ' big' : '') + '">' +
+      '<span class="rwNum">' + x.level + '</span>' + this.rewardCard(x.reward, state(x.level), String(x.level), 'Level ' + x.level) + '</div>').join('');
+    pane.innerHTML = '<div class="bpTop"><div class="rwLv"><b>' + R.level + '</b><small>LEVEL</small></div><div class="bpTitle"><div class="pKick">DRIVER ROAD</div><h3>Level ' + R.level + '</h3>' +
+      '<small>' + fmtCredits(R.xp - R.from) + ' / ' + fmtCredits(R.to - R.from) + ' XP to level ' + (R.level + 1) + ' · it never resets</small>' +
+      '<div class="gBar pBar"><i style="width:' + pct.toFixed(1) + '%"></i></div></div></div>' +
       (wait ? '<button class="primary gBig pClaim" id="bRoadClaim"><span>Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</span></button>' : '') +
-      '<p class="lede pPitch">XP for everything you do: <b>10</b> a finished run, <b>25</b> a personal best, <b>20</b> a day of your streak, <b>100</b> for the daily challenge, ' +
-      'and up to <b>50</b> an Escape run. Every level pays something; levels 5, 10, 15, 20, 25, 30, 40 and 50 pay titles, icons and paint you can\'t get anywhere else. Your level never resets.</p>' +
-      '<div class="rTrack">' + rows + '</div>';
+      '<div class="rwWrap single"><div class="rwTrack"><div class="rwCols">' + cols + '</div></div></div>' +
+      '<div class="rwDetail" id="rwDetail" hidden></div>' +
+      '<p class="lede rwHow">XP: <b>10</b> a finished run · <b>25</b> a personal best · <b>20</b> a streak day · <b>100</b> the daily challenge · up to <b>50</b> an Escape run. ' +
+      'Levels 5 to 50 pay titles, icons and Gold and Obsidian paint found nowhere else.</p>';
     const c = $('bRoadClaim');
     if (c) c.addEventListener('click', () => this.claimRoad());
-    const next = pane.querySelector('.rRow.next');
-    if (next) next.scrollIntoView({ block: 'nearest' });
+    this.wireTrack(pane, (k) => { const x = R.rewards.find((y) => String(y.level) === k); return x && { r: x.reward, where: 'Level ' + x.level, state: state(x.level) }; });
   },
   async claimRoad() {
     if (this.busy) return;
@@ -13255,13 +13396,59 @@ const Garage = {
     this.render();
     this.load();
   },
-  setTab(tab) { this.tab = tab; this.render(); },
-  render() {
-    document.querySelectorAll('#gTabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === this.tab));
-    document.querySelectorAll('#garage .gPane').forEach((p) => { p.hidden = p.dataset.pane !== this.tab; });
-    $('gCredits').textContent = Cloud.on && Cloud.user ? fmtCredits(Records.credits) : 'offline';
+  setTab(tab) {
+    if (tab === 'custom') tab = this.lastCustom || 'car';
+    if (['car', 'paint', 'profile'].includes(tab)) this.lastCustom = tab;
+    if (tab !== this.tab) this.endPreview();
+    this.tab = tab;
+    this.render();
+  },
+  /** show something on the big car (or the box, or a big badge) until another tab or "Back to my car" */
+  previewItem(r) {
+    const it = r && r.item && Catalog.get(r.item);
+    const cap = $('gStageCap'), badge = $('gStageBadge');
+    badge.hidden = true;
+    GaragePreview.box = false; GaragePreview.boost = false;
+    if (it && ['car', 'decal', 'anim', 'wheel', 'finish', 'boost', 'cel'].includes(it.kind)) {
+      const slot = it.kind === 'anim' ? 'decal' : it.kind;
+      const mine = Look.mine();
+      if (GaragePreview.car) Look.paint(GaragePreview.car, { primary: mine.primary, secondary: mine.secondary, loadout: Object.assign({}, mine.loadout || {}, { [slot]: it.id }) });
+      GaragePreview.boost = it.kind === 'boost';
+    } else if (it && (it.kind === 'icon' || it.kind === 'title')) {
+      Look.refreshOwn();
+      badge.innerHTML = it.kind === 'icon' ? Flair.badge(it.id, Look.mine(), 120) : '<span class="fTitle big">' + escapeHtml(it.name) + '</span>';
+      badge.hidden = false;
+    } else if (r && r.boxes) {
+      Look.refreshOwn();
+      GaragePreview.box = true;
+    } else if (r && r.credits) {
+      Look.refreshOwn();
+      badge.innerHTML = '<img alt="" src="' + CarThumbs.prize('credits') + '"><b>◆ ' + fmtCredits(r.credits) + '</b>';
+      badge.hidden = false;
+    } else { this.endPreview(); return; }
+    this.previewing = true;
+    $('gStageTxt').textContent = 'Previewing: ' + this.rewardText(r);
+    cap.hidden = false;
+  },
+  endPreview() {
+    if (!this.previewing) return;
+    this.previewing = false;
+    $('gStageCap').hidden = true; $('gStageBadge').hidden = true;
+    Look.refreshOwn();
     GaragePreview.boost = this.tab === 'car';
     GaragePreview.box = this.tab === 'boxes';
+  },
+  render() {
+    document.querySelectorAll('#gTabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === this.tab || (b.dataset.also || '').split(' ').includes(this.tab)));
+    const custom = ['car', 'paint', 'profile'].includes(this.tab);
+    $('gSub').hidden = !custom;
+    document.querySelectorAll('#gSub button').forEach((b) => b.classList.toggle('on', b.dataset.sub === this.tab));
+    document.querySelectorAll('#garage .gPane').forEach((p) => { p.hidden = p.dataset.pane !== this.tab; });
+    $('gCredits').textContent = Cloud.on && Cloud.user ? fmtCredits(Records.credits) : 'offline';
+    if (!this.previewing) {
+      GaragePreview.boost = this.tab === 'car';
+      GaragePreview.box = this.tab === 'boxes';
+    }
     if (this.tab === 'paint') UI.garage();
     else if (this.tab === 'boxes') this.renderBoxes();
     else if (this.tab === 'shop') this.renderShop();
@@ -13344,44 +13531,39 @@ const Garage = {
   },
   /** the Race Pass tab: every tier, both tracks */
   renderPass() {
-    const pane = document.querySelector('#garage .gPane[data-pane="pass"]'), E = escapeHtml;
+    const pane = document.querySelector('#garage .gPane[data-pane="pass"]');
     if (!Cloud.on || !Cloud.user) { pane.innerHTML = '<p class="lede">Sign in to use the Race Pass.</p>'; return; }
     const P = this.pass;
     if (!P) { pane.innerHTML = '<p class="lede">The Race Pass isn\'t set up on the server yet.</p>'; return; }
     const into = P.tier >= P.tiers ? P.perTier : P.runs - P.tier * P.perTier;
     const wait = this.passWaiting();
-    const chip = (r, cls) => {
-      const it = r.item && Catalog.get(r.item);
-      const pic = it ? (it.kind === 'icon' ? Flair.badge(it.id, Look.mine(), 22) : it.kind === 'title' ? '' : '<span class="pPic">' + Catalog.pic(it) + '</span>') : '';
-      return '<span class="pChip ' + cls + (it ? ' item' : r.boxes ? ' box' : '') + '">' + pic + '<span>' + E(this.rewardText(r)) + '</span></span>';
-    };
-    let rows = '';
-    for (const r of P.rewards) {
-      const reached = r.tier <= P.tier;
-      const fCls = r.tier <= P.free_upto ? 'got' : reached ? 'ready' : 'lock';
-      const pCls = !P.plus ? 'plusLock' : r.tier <= P.plus_upto ? 'got' : reached ? 'ready' : 'lock';
-      rows += '<div class="pRow' + (reached ? ' reached' : '') + (r.tier === P.tier + 1 ? ' next' : '') + '"><b class="pTier">' + r.tier + '</b>' +
-        chip(r.free, fCls) + chip(r.plus, pCls) + '</div>';
-    }
-    pane.innerHTML = '<div class="gPassHead"><div><div class="pKick">SEASON ' + SEASON + '</div><h3>Race Pass</h3>' +
-      '<small>' + (P.tier >= P.tiers ? 'Every tier reached!' : 'Tier ' + P.tier + ' of ' + P.tiers + ' · ' + into + ' / ' + P.perTier + ' finished runs to the next') + '</small></div>' +
-      (P.plus ? '<span class="pPlus on">PASS+</span>' : '<button class="primary" id="bPassBuy">Get Pass+ · <span class="gem2d"></span> ' + fmtCredits(P.price) + '</button>') + '</div>' +
-      '<div class="gBar pBar"><i style="width:' + (P.tier >= P.tiers ? 100 : into / P.perTier * 100).toFixed(1) + '%"></i></div>' +
-      (P.tier < P.tiers ? '<div class="pSkip"><button class="small" id="bSkip1">Skip a tier · <span class="gem2d"></span> ' + fmtCredits(P.tierPrice || 2500) + '</button>' +
-        (P.tier + 5 <= P.tiers ? '<button class="small" id="bSkip5">Skip 5 · <span class="gem2d"></span> ' + fmtCredits(5 * (P.tierPrice || 2500)) + '</button>' : '') + '</div>' : '') +
-      (wait ? '<button class="primary gBig pClaim" id="bPassClaim"><span>Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</span></button>' : '') +
-      (P.plus ? '' : '<p class="lede pPitch"><b>Pass+</b> adds a free box at every tier (3 at tiers 10, 20, 30 and 40), four paints you can\'t get anywhere else (<b>Neon</b>, <b>Chrome</b>, <b>Frost</b> and <b>Aurora</b>), ' +
-        'and pass-only titles and icons. Tiers you\'ve already reached pay out the moment you get it.</p>') +
-      '<div class="pHead"><span>Tier</span><span>Free</span><span>Pass+</span></div><div class="pTrack">' + rows + '</div>' +
-      '<p class="lede">Every counted finish on any map moves you along: one tier every ' + P.perTier + ' runs. The pass starts again each season.</p>';
-    const buy = $('bPassBuy'), claim = $('bPassClaim');
+    const fs = (t) => (t <= P.free_upto ? 'got' : t <= P.tier ? 'ready' : 'lock');
+    const ps = (t) => (!P.plus ? 'plusLock' : t <= P.plus_upto ? 'got' : t <= P.tier ? 'ready' : 'lock');
+    const cols = P.rewards.map((r) => '<div class="rwCol' + (r.tier <= P.tier ? ' reached' : '') + (r.tier === P.tier + 1 ? ' now' : '') + '">' +
+      '<span class="rwNum">' + r.tier + '</span>' + this.rewardCard(r.plus, ps(r.tier), 'p' + r.tier, 'Tier ' + r.tier) +
+      this.rewardCard(r.free, fs(r.tier), 'f' + r.tier, 'Tier ' + r.tier) + '</div>').join('');
+    pane.innerHTML = '<div class="bpTop"><div class="bpTitle"><div class="pKick">SEASON ' + SEASON + '</div><h3>Race Pass</h3>' +
+      '<small>' + (P.tier >= P.tiers ? 'Every tier reached!' : 'Tier ' + P.tier + ' of ' + P.tiers + ' · ' + into + ' / ' + P.perTier + ' finished runs to the next') + '</small>' +
+      '<div class="gBar pBar"><i style="width:' + (P.tier >= P.tiers ? 100 : into / P.perTier * 100).toFixed(1) + '%"></i></div></div>' +
+      (P.plus ? '<span class="pPlus on">PASS+</span>' : '<button class="primary bpBuy" id="bPassBuy"><b>Get Pass+</b><span><span class="gem2d"></span> ' + fmtCredits(P.price) + '</span></button>') + '</div>' +
+      '<div class="bpActions">' + (wait ? '<button class="primary" id="bPassClaim">Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</button>' : '') +
+      (P.tier < P.tiers ? '<button class="small" id="bSkip1">Skip a tier · <span class="gem2d"></span> ' + fmtCredits(P.tierPrice || 2500) + '</button>' +
+        (P.tier + 5 <= P.tiers ? '<button class="small" id="bSkip5">Skip 5 · <span class="gem2d"></span> ' + fmtCredits(5 * (P.tierPrice || 2500)) + '</button>' : '') : '') + '</div>' +
+      '<div class="rwWrap"><div class="rwLabels"><span class="lp">PASS+</span><span class="lf">FREE</span></div><div class="rwTrack"><div class="rwCols">' + cols + '</div></div></div>' +
+      '<div class="rwDetail" id="rwDetail" hidden></div>' +
+      (P.plus ? '' : '<p class="lede pPitch"><b>Pass+</b> adds a free box at every tier (3 at tiers 10, 20, 30 and 40), four paints found nowhere else (<b>Neon</b>, <b>Chrome</b>, <b>Frost</b> and <b>Aurora</b>) ' +
+        'and pass-only titles and icons. Tiers already reached pay out the moment you get it.</p>') +
+      '<p class="lede rwHow">One tier every ' + P.perTier + ' finished runs on any map. Click a reward to see it on your car. The pass starts again each season.</p>';
+    const buy = $('bPassBuy'), claim = $('bPassClaim'), s1 = $('bSkip1'), s5 = $('bSkip5');
     if (buy) buy.addEventListener('click', () => this.buyPass());
     if (claim) claim.addEventListener('click', () => this.claimPass());
-    const s1 = $('bSkip1'), s5 = $('bSkip5');
     if (s1) s1.addEventListener('click', () => this.skipTiers(1));
     if (s5) s5.addEventListener('click', () => this.skipTiers(5));
-    const next = pane.querySelector('.pRow.next');
-    if (next) next.scrollIntoView({ block: 'nearest' });
+    this.wireTrack(pane, (k) => {
+      const t = +k.slice(1), r = P.rewards.find((x) => x.tier === t);
+      if (!r) return null;
+      return k[0] === 'p' ? { r: r.plus, where: 'Pass+ · tier ' + t, state: ps(t) } : { r: r.free, where: 'Free · tier ' + t, state: fs(t) };
+    });
   },
   passToast(got) {
     if (!got || !got.length) return;
@@ -17496,6 +17678,60 @@ const CarThumbs = {
       return false;
     }
   },
+  queue: [], ids: new Map(), nid: 0, pumping: false,
+  /** a picture, or {pending: id} while it's queued to be drawn a few a frame */
+  lazy(colors) {
+    const key = JSON.stringify([colors.primary, colors.secondary, colors.loadout || {}]);
+    if (this.cache.has(key)) return this.cache.get(key);
+    let id = this.ids.get(key);
+    if (!id) { id = 't' + (++this.nid); this.ids.set(key, id); this.queue.push({ id, colors }); this.pump(); }
+    return { pending: id };
+  },
+  pump() {
+    if (this.pumping) return;
+    this.pumping = true;
+    const step = () => {
+      const t0 = performance.now();
+      while (this.queue.length && performance.now() - t0 < 14) {
+        const j = this.queue.shift();
+        const url = this.draw(j.colors);
+        if (url) document.querySelectorAll('img[data-tk="' + j.id + '"]').forEach((im) => { im.src = url; im.classList.add('ready'); });
+      }
+      if (this.queue.length) setTimeout(step, 16); else this.pumping = false;
+    };
+    setTimeout(step, 0);
+  },
+  /** a box or a pile of credits, rendered once */
+  prize(kind) {
+    this.prizes = this.prizes || {};
+    if (this.prizes[kind]) return this.prizes[kind];
+    if (!this.ensure()) return '';
+    const sc = new THREE.Scene();
+    const key = new THREE.DirectionalLight(0xfff6e8, 1.6); key.position.set(4, 6, 5); sc.add(key);
+    sc.add(new THREE.AmbientLight(0xaac4e0, 0.75));
+    const rim = new THREE.DirectionalLight(0x6fa8ff, 0.6); rim.position.set(-5, 3, -4); sc.add(rim);
+    const cam = new THREE.PerspectiveCamera(30, 176 / 104, 0.1, 50);
+    let obj;
+    if (kind === 'box') {
+      const c = Box3D.crate(1);
+      c.seam.color.set('#ffcf5c'); c.seam.opacity = 1;
+      obj = c.group; obj.rotation.y = 0.6;
+      cam.position.set(2.2, 1.9, 3.4); cam.lookAt(0, 0.55, 0);
+    } else {
+      obj = new THREE.Group();
+      const spots = [[0, 0, 0, 2], [-0.55, 0, 0.25, 1], [0.55, 0, 0.2, 1], [-0.25, 0, -0.45, 0], [0.3, 0, -0.4, 1], [0, 0.45, 0.05, 2], [-0.8, 0, -0.2, 0]];
+      for (const [x, y, z, d] of spots) {
+        const D = GEM_DENOMS[d];
+        const g = new THREE.Mesh(new THREE.OctahedronGeometry(0.28 * D.scale, 0), new THREE.MeshStandardMaterial({ color: D.color, emissive: D.glow, emissiveIntensity: 0.6, metalness: 0.15, roughness: 0.18 }));
+        g.scale.y = 1.4; g.position.set(x, 0.35 + y, z); g.rotation.set(0.3 * x, x * 3 + z, 0.2);
+        obj.add(g);
+      }
+      cam.position.set(0.95, 1.25, 1.75); cam.lookAt(0, 0.38, 0);
+    }
+    sc.add(obj);
+    this.renderer.render(sc, cam);
+    return (this.prizes[kind] = this.renderer.domElement.toDataURL('image/png'));
+  },
   /** a picture (data URL) of the car in these colours */
   draw(colors) {
     const key = JSON.stringify([colors.primary, colors.secondary, colors.loadout || {}]);
@@ -21387,6 +21623,8 @@ const Game = {
     $('gSlotPrimary').addEventListener('click', () => this.setGarageSlot('primary'));
     $('gSlotSecondary').addEventListener('click', () => this.setGarageSlot('secondary'));
     document.querySelectorAll('#gTabs button').forEach((b) => b.addEventListener('click', () => Garage.setTab(b.dataset.tab)));
+    document.querySelectorAll('#gSub button').forEach((b) => b.addEventListener('click', () => Garage.setTab(b.dataset.sub)));
+    $('gStageBack').addEventListener('click', () => { Garage.endPreview(); document.querySelectorAll('.rwCard.sel').forEach((c) => c.classList.remove('sel')); });
     $('gBoxBuy').addEventListener('click', () => BoxOpen.open(false));
     $('gShop').addEventListener('click', () => Shop.open());
     $('gTopUp').addEventListener('click', () => Shop.open());
