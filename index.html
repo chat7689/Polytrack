@@ -374,7 +374,7 @@ h2.big{font-size:32px;letter-spacing:-.03em;margin-bottom:6px}
 .row[hidden]{display:none}
 button{font-family:inherit;font-size:14px;color:var(--ink);background:transparent;
   border:1px solid var(--rule);border-radius:9px;padding:11px 18px;cursor:pointer;
-  transition:background .14s,border-color .14s,color .14s,transform .08s}
+  transition:background .18s ease,border-color .18s ease,color .18s ease,transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,opacity .2s ease}
 button:hover{background:rgba(234,240,248,.07);border-color:rgba(234,240,248,.35)}
 button:active{transform:scale(.98)}
 button:focus-visible{outline:2px solid var(--aqua);outline-offset:2px}
@@ -620,11 +620,16 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .gStageCap[hidden]{display:none}
 .gStageCap span{flex:1}
 .gStageBadge{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 50%,rgba(10,12,20,.55),rgba(10,12,20,.15) 70%)}
+  background:radial-gradient(ellipse at 50% 50%,rgba(10,12,20,.35),rgba(10,12,20,0) 70%)}
 .gStageBadge[hidden]{display:none}
 .gStageBadge .fTitle.big{font-size:30px;padding:10px 22px}
-.gStageBadge img{width:220px}
-.gStageBadge b{font-family:var(--mono);font-size:26px;color:#9a78ff}
+.gStageBadge b.gStageAmt{position:absolute;bottom:64px;font-family:var(--mono);font-size:30px;font-weight:800;color:#fff;
+  padding:6px 18px;border-radius:999px;background:linear-gradient(135deg,#7b4dff,#2fb4ec);box-shadow:0 10px 30px -10px #7b4dff;animation:stageFloat 3s ease-in-out infinite}
+.gStageBadge .fTitle.big{font-size:32px;padding:12px 26px;border-radius:14px;background:linear-gradient(135deg,#ffe08a,#f2a33f);color:#2a1604;
+  box-shadow:0 18px 40px -16px #f2a33f;animation:stageFloat 3s ease-in-out infinite;position:relative;overflow:hidden}
+.gStageBadge .fTitle.big::after{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);animation:pShine 2.6s ease-in-out infinite}
+.gStageBadge .fIcon{animation:stageFloat 3s ease-in-out infinite;filter:drop-shadow(0 16px 26px rgba(0,0,0,.5))}
+@keyframes stageFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .lazyThumb{opacity:0;transition:opacity .25s}
 .lazyThumb.ready{opacity:1}
 .bpTop{display:flex;align-items:center;gap:16px;margin-bottom:10px}
@@ -675,7 +680,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .rwCard.plusLock .rwState{color:#ffcf5c}
 .rwPic{position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;border-radius:10px;
   background:radial-gradient(ellipse at 50% 80%,rgba(255,255,255,.08),transparent 70%)}
-.rwPic img{max-width:100%;max-height:96px}
+.rwPic img{max-width:100%;max-height:96px;image-rendering:auto}
 .rwWrap.single .rwCol.big .rwPic img{max-height:118px}
 .rwPic .kPic{width:90px;height:60px}
 .rwX{position:absolute;right:4px;bottom:2px;font-family:var(--mono);font-size:14px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8)}
@@ -853,6 +858,12 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .escMap[hidden]{display:none}
 .stormInk{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .stormInk[hidden]{display:none}
+.boostFlash{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:0;
+  background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(255,176,46,.35) 85%,rgba(255,140,30,.7) 100%)}
+.boostFlash.on{animation:boostFlash .6s ease-out}
+@keyframes boostFlash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.boostRow.refill{animation:boostRefill .7s ease-out}
+@keyframes boostRefill{0%{transform:scale(1)}20%{transform:scale(1.18);filter:drop-shadow(0 0 10px #ffb02e) brightness(1.6)}100%{transform:scale(1)}}
 .pSkip button{display:inline-flex;align-items:center;gap:5px}
 .pPlus.big{font-size:20px;padding:8px 16px}
 .rBadge{font-family:var(--mono);font-weight:800;font-size:22px;padding:6px 14px;border-radius:12px;color:#06141a;background:linear-gradient(135deg,#8fe3ff,#3ddbb8)}
@@ -2078,6 +2089,63 @@ h2.big{font-size:28px;letter-spacing:-.025em}
 .dList .t,.tkRec,.pvBest{color:var(--ink)}
 .dList li:first-child .p{color:var(--ember)}
 
+/* ---------- motion: every press, hover, panel and pop-up moves smoothly ---------- */
+@media (prefers-reduced-motion:no-preference){
+  :is(button.primary,button.small,button:not([class]),.gNav button,.gSub button,.aTabs button):not(:disabled):hover{transform:translateY(-1px)}
+  :is(button.primary,button.small,button:not([class]),.gNav button,.gSub button,.aTabs button,button.w,.modeCard,.rwCard):not(:disabled):active{transform:translateY(0) scale(.97);transition-duration:.06s}
+  button.primary:not(:disabled):hover{box-shadow:0 8px 22px -10px var(--ember)}
+  button.w,.gTile,.gItem,.gShopCard,.aItem,.modeCard,.rwCard,.pChip,.potCard,.dayCh,.lvChip,.gOddRow,.rwDetail{
+    transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .2s ease,background .2s ease,opacity .2s ease}
+  button.w:not(:disabled):hover{transform:translateY(-3px);box-shadow:0 14px 30px -18px rgba(0,0,0,.8)}
+  .gTile:hover,.gItem:not(.locked):hover,.gShopCard:hover,.aItem:hover{transform:translateY(-2px);box-shadow:0 12px 26px -16px rgba(0,0,0,.85)}
+  input,select,textarea{transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
+  input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px rgba(61,219,184,.18)}
+  /* pop-up windows: the dark fades in, the window rises */
+  .pcBox:not([hidden]),.refBox:not([hidden]),.hideBox:not([hidden]),.wnBox:not([hidden]),.captchaBox:not([hidden]){animation:boxFade .22s ease}
+  .pcBox:not([hidden])>*,.refBox:not([hidden])>*,.hideBox:not([hidden])>*,.captchaBox:not([hidden])>*{animation:boxPop .32s cubic-bezier(.2,.9,.25,1.12)}
+  /* garage tabs, Customize's sub-tabs, the auction views, the result card */
+  .gPane:not([hidden]){animation:paneIn .28s cubic-bezier(.2,.8,.2,1)}
+  .gSub:not([hidden]){animation:paneIn .22s ease}
+  .rwDetail:not([hidden]){animation:paneIn .25s ease}
+  .gStageCap:not([hidden]),.gStageBadge:not([hidden]){animation:boxFade .25s ease}
+  .rwCol{animation:cardIn .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:min(calc(var(--d,0) * 28ms),420ms)}
+  .gShopCard,.gItem,.gTile,.aItem,.modeCard{animation:cardIn .35s cubic-bezier(.2,.8,.2,1) both}
+  .gShopCard:nth-child(2),.gItem:nth-child(2),.gTile:nth-child(2),.aItem:nth-child(2),.modeCard:nth-child(2){animation-delay:.04s}
+  .gShopCard:nth-child(3),.gItem:nth-child(3),.gTile:nth-child(3),.aItem:nth-child(3),.modeCard:nth-child(3){animation-delay:.08s}
+  .gShopCard:nth-child(4),.gItem:nth-child(4),.gTile:nth-child(4),.aItem:nth-child(4),.modeCard:nth-child(4){animation-delay:.12s}
+  .gShopCard:nth-child(5),.gItem:nth-child(5),.gTile:nth-child(5),.aItem:nth-child(5){animation-delay:.16s}
+  .gShopCard:nth-child(n+6),.gItem:nth-child(n+6),.gTile:nth-child(n+6),.aItem:nth-child(n+6){animation-delay:.2s}
+  .potCard,.escBoard{animation:cardIn .4s .1s cubic-bezier(.2,.8,.2,1) both}
+  #menu:not([hidden]) .bento>.w{animation:cardIn .45s cubic-bezier(.2,.8,.2,1) both}
+  #menu:not([hidden]) .bento>.w:nth-child(2){animation-delay:35ms}
+  #menu:not([hidden]) .bento>.w:nth-child(3){animation-delay:70ms}
+  #menu:not([hidden]) .bento>.w:nth-child(4){animation-delay:105ms}
+  #menu:not([hidden]) .bento>.w:nth-child(5){animation-delay:140ms}
+  #menu:not([hidden]) .bento>.w:nth-child(6){animation-delay:175ms}
+  #menu:not([hidden]) .bento>.w:nth-child(7){animation-delay:210ms}
+  #menu:not([hidden]) .bento>.w:nth-child(8){animation-delay:245ms}
+  #menu:not([hidden]) .bento>.w:nth-child(9){animation-delay:280ms}
+  #menu:not([hidden]) .bento>.w:nth-child(10){animation-delay:315ms}
+  #menu:not([hidden]) .bento>.w:nth-child(11){animation-delay:350ms}
+  #menu:not([hidden]) .bento>.w:nth-child(12){animation-delay:385ms}
+  #menu:not([hidden]) .bento>.w:nth-child(13){animation-delay:420ms}
+  #menu:not([hidden]) .bento>.w:nth-child(14){animation-delay:455ms}
+
+  .gNav button.on{animation:tabOn .3s cubic-bezier(.2,.9,.25,1.2)}
+  .rwCard.ready{animation:readyPulse 2.2s ease-in-out infinite}
+  .gBar i,.pBar i,.dayChBar i,.lvChip s,.refBar i{transition:width .7s cubic-bezier(.2,.8,.2,1)}
+  .toast{transition:opacity .25s ease,transform .3s cubic-bezier(.2,.9,.25,1.2)}
+  .layer:not([hidden])>.scrim{animation:boxFade .3s ease}
+  .result:not(.morphIn) .bigtime{animation:resultTime .5s .05s cubic-bezier(.2,.9,.25,1.15) both}
+  .result:not(.morphIn) .mini,.result:not(.morphIn) .row{animation:cardIn .4s .12s cubic-bezier(.2,.8,.2,1) both}
+}
+@keyframes boxFade{from{opacity:0}to{opacity:1}}
+@keyframes boxPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes paneIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes tabOn{0%{transform:scale(.94)}100%{transform:scale(1)}}
+@keyframes readyPulse{0%,100%{box-shadow:0 0 0 1px var(--ember),0 10px 26px -12px var(--ember)}50%{box-shadow:0 0 0 2px var(--ember),0 12px 34px -8px var(--ember)}}
+@keyframes resultTime{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
 /* ---------- home ---------- */
 .menuPanel{width:min(1180px,95vw);padding:26px 36px 30px}
 .menuTop{padding-bottom:16px;border-bottom:1px solid var(--rule-2)}
@@ -2590,7 +2658,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <div class="heMsg" id="hEscMsg"></div>
       </div>
       <canvas class="escMap" id="escMap" width="170" height="460" hidden></canvas>
-      <canvas class="stormInk" id="stormInk" width="320" height="180" hidden></canvas>
+      <canvas class="stormInk" id="stormInk" width="640" height="360" hidden></canvas>
+      <div class="boostFlash" id="boostFlash"></div>
       <div class="hud-tc"><div class="clock" id="hClock">0:00.000</div><div class="split" id="hSplit"></div>
         <div class="hudTimes"><span class="pb" id="hPB">PB —</span><span class="wr" id="hWR"></span></div></div>
       <div class="hud-tr">
@@ -3159,7 +3228,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           <b>Quick race</b><small>You against 5 drivers at your level, on a random map.</small></button>
         <button class="modeCard" id="mKo" style="--mc:#f2733f">
           <span class="mIc"><svg viewBox="0 0 24 24"><path d="M5 3h14l-2 7H7z M8 10l4 11 4-11"/></svg></span>
-          <b>Knockout</b><small>7 rivals. After every map the slowest goes out. Last one standing wins.</small></button>
+          <b>Knockout</b><small>7 rivals near your level. After every map the slowest goes out, and it gets tighter each round.</small></button>
         <button class="modeCard" id="mEsc" style="--mc:#c45cff">
           <span class="mIc"><svg viewBox="0 0 24 24"><path d="M3 12c3-6 6-6 9 0s6 6 9 0 M3 18c3-6 6-6 9 0s6 6 9 0 M3 6c3-6 6-6 9 0s6 6 9 0"/></svg></span>
           <b>Escape</b><small>An endless road and a storm that never stops. How far can you get?</small><em class="mBest" id="mEscBest"></em></button>
@@ -10297,6 +10366,11 @@ const GaragePreview = {
     this.crate.group.position.y = disc.position.y + 0.06;
     this.crate.group.visible = false;
     this.scene.add(this.crate.group);
+    // a heap of credits, for previewing credit rewards
+    this.gemPile = makeGemPile(1.5);
+    this.gemPile.position.y = disc.position.y + 0.07;
+    this.gemPile.visible = false;
+    this.scene.add(this.gemPile);
     this.crateLight = new THREE.PointLight(0xffcf5c, 0, 6, 2);
     this.crateLight.position.set(0, 1.2, 0.6);
     this.scene.add(this.crateLight);
@@ -10320,8 +10394,10 @@ const GaragePreview = {
       this.angle += 0.008;
       this.car.rotation.y = deg(200) + this.angle;
       // the Boxes tab: the crate instead of the car, its seam glowing in every prize colour in turn
-      this.car.visible = !this.box;
+      this.car.visible = !this.box && !this.gems;
       this.crate.group.visible = !!this.box;
+      this.gemPile.visible = !!this.gems;
+      if (this.gems) { const t2 = performance.now() / 1000; this.gemPile.rotation.y = t2 * 0.5; this.gemPile.position.y = CAR.mountY - CAR.susRest - CAR.wheelR + 0.01 + Math.sin(t2 * 1.6) * 0.06; }
       if (this.box) {
         const t = performance.now() / 1000, cols = ['#ffcf5c', '#e45cff', '#4ea1ff', '#3ddbb8', '#ff8a3d', '#7ee06a'];
         this.crate.group.rotation.y = 0.5 + Math.sin(t * 0.5) * 0.5;
@@ -13237,7 +13313,7 @@ const Garage = {
     const wait = this.roadWaiting();
     const pct = Math.min(100, (R.xp - R.from) / Math.max(1, R.to - R.from) * 100);
     const state = (l) => (l <= R.upto ? 'got' : l <= R.level ? 'ready' : 'lock');
-    const cols = R.rewards.map((x) => '<div class="rwCol' + (x.level <= R.level ? ' reached' : '') + (x.level === R.level + 1 ? ' now' : '') + (x.reward.item ? ' big' : '') + '">' +
+    const cols = R.rewards.map((x) => '<div class="rwCol' + (x.level <= R.level ? ' reached' : '') + (x.level === R.level + 1 ? ' now' : '') + (x.reward.item ? ' big' : '') + '" style="--d:' + Math.abs(x.level - R.level - 1) + '">' +
       '<span class="rwNum">' + x.level + '</span>' + this.rewardCard(x.reward, state(x.level), String(x.level), 'Level ' + x.level) + '</div>').join('');
     pane.innerHTML = '<div class="bpTop"><div class="rwLv"><b>' + R.level + '</b><small>LEVEL</small></div><div class="bpTitle"><div class="pKick">DRIVER ROAD</div><h3>Level ' + R.level + '</h3>' +
       '<small>' + fmtCredits(R.xp - R.from) + ' / ' + fmtCredits(R.to - R.from) + ' XP to level ' + (R.level + 1) + ' · it never resets</small>' +
@@ -13408,7 +13484,7 @@ const Garage = {
     const it = r && r.item && Catalog.get(r.item);
     const cap = $('gStageCap'), badge = $('gStageBadge');
     badge.hidden = true;
-    GaragePreview.box = false; GaragePreview.boost = false;
+    GaragePreview.box = false; GaragePreview.boost = false; GaragePreview.gems = false;
     if (it && ['car', 'decal', 'anim', 'wheel', 'finish', 'boost', 'cel'].includes(it.kind)) {
       const slot = it.kind === 'anim' ? 'decal' : it.kind;
       const mine = Look.mine();
@@ -13423,7 +13499,8 @@ const Garage = {
       GaragePreview.box = true;
     } else if (r && r.credits) {
       Look.refreshOwn();
-      badge.innerHTML = '<img alt="" src="' + CarThumbs.prize('credits') + '"><b>◆ ' + fmtCredits(r.credits) + '</b>';
+      GaragePreview.gems = true;
+      badge.innerHTML = '<b class="gStageAmt">◆ ' + fmtCredits(r.credits) + '</b>';
       badge.hidden = false;
     } else { this.endPreview(); return; }
     this.previewing = true;
@@ -13434,6 +13511,7 @@ const Garage = {
     if (!this.previewing) return;
     this.previewing = false;
     $('gStageCap').hidden = true; $('gStageBadge').hidden = true;
+    GaragePreview.gems = false;
     Look.refreshOwn();
     GaragePreview.boost = this.tab === 'car';
     GaragePreview.box = this.tab === 'boxes';
@@ -13539,7 +13617,7 @@ const Garage = {
     const wait = this.passWaiting();
     const fs = (t) => (t <= P.free_upto ? 'got' : t <= P.tier ? 'ready' : 'lock');
     const ps = (t) => (!P.plus ? 'plusLock' : t <= P.plus_upto ? 'got' : t <= P.tier ? 'ready' : 'lock');
-    const cols = P.rewards.map((r) => '<div class="rwCol' + (r.tier <= P.tier ? ' reached' : '') + (r.tier === P.tier + 1 ? ' now' : '') + '">' +
+    const cols = P.rewards.map((r) => '<div class="rwCol' + (r.tier <= P.tier ? ' reached' : '') + (r.tier === P.tier + 1 ? ' now' : '') + '" style="--d:' + Math.abs(r.tier - P.tier - 1) + '">' +
       '<span class="rwNum">' + r.tier + '</span>' + this.rewardCard(r.plus, ps(r.tier), 'p' + r.tier, 'Tier ' + r.tier) +
       this.rewardCard(r.free, fs(r.tier), 'f' + r.tier, 'Tier ' + r.tier) + '</div>').join('');
     pane.innerHTML = '<div class="bpTop"><div class="bpTitle"><div class="pKick">SEASON ' + SEASON + '</div><h3>Race Pass</h3>' +
@@ -14573,7 +14651,7 @@ const Rivals = {
  * car back on it (the storm gains); boost refills float above the road.
  * The car and its physics are the game's own.
  */
-const ESC = { seed: 77003, d0: 300, v0: 10.4, acc: 0.57, vmax: 95, feel: 230, every: 420 };
+const ESC = { seed: 77003, d0: 300, v0: 10.4, acc: 0.57, vmax: 95, feel: 230, every: 1100 };
 const EscapeGen = {
   plan(seed) {
     const R = DailyGen.rng(seed);
@@ -14628,7 +14706,7 @@ const EscapeGen = {
 
 const Escape = {
   on: false, live: false, done: false, death: null, storm: -ESC.d0, t: 0, me: 0, mesh: null, ticket: null, cache: null,
-  pickups: [], respawns: [], maxIdx: 0, inkI: 0, exp0: 1,
+  pickups: [], respawns: [], maxIdx: 0, inkI: 0, exp0: 1, closing: 0, lastGap: null,
   /** the road, built once */
   build() {
     if (this.cache) return this.cache;
@@ -14648,11 +14726,15 @@ const Escape = {
     Game.ghostOverride = null; Game.ghostOverrideName = null; Game.extraGhosts = [];
     Modes.mode = 'escape'; Modes.ko = null;
     this.on = true; this.live = false; this.done = false; this.death = null; this.storm = -ESC.d0; this.t = 0; this.me = 0; this.ticket = null;
+    this.closing = 0; this.lastGap = null; this.inkI = 0;
     Game.startLevel(UTRACK_I);
     if (Game.state !== 'play') { this.stop(); return; }
     Game.car.mesh.visible = true;
     this.respawns = Multi.safeSpots(c.data, Game.course); this.maxIdx = 0;
     this.exp0 = App.renderer.toneMappingExposure;
+    // the streaks are drawn at half the screen's size (not a blurry 320 x 180)
+    const ink = $('stormInk');
+    ink.width = Math.round(Math.min(1280, innerWidth / 2)); ink.height = Math.round(ink.width * innerHeight / Math.max(innerWidth, 1));
     this.ensureMesh(); this.mesh.visible = true;
     this.makePickups();
     this.mapInit();
@@ -14672,6 +14754,11 @@ const Escape = {
     for (const id of ['hEscape', 'escMap', 'stormInk']) { const el = $(id); if (el) el.hidden = true; }
     if (App.renderer) { App.renderer.domElement.style.transform = ''; if (this.exp0) App.renderer.toneMappingExposure = this.exp0; }
     if (Game.car && Game.car.mesh) Game.car.mesh.visible = true;
+    this.glow(0);
+  },
+  /** the car's paint glowing violet (the moment the storm takes it) */
+  glow(v) {
+    for (const m of [MAT.body, MAT.bodyDark]) { if (m && m.emissive) { m.emissive.setRGB(0.55 * v, 0.2 * v, 1 * v); } }
   },
   /** the car launches: the storm starts, and the server gets a ticket */
   begin() {
@@ -14706,27 +14793,49 @@ const Escape = {
     this.me = this.dist();
     this.maxIdx = Math.max(this.maxIdx, Game.pathIdx);
     const gap = this.me - this.storm;
-    // boost refills
+    // boost refills: picked up, they burst (bigger, fading) and the boost bar flashes
     const cp = Game.car.pos, now = performance.now() / 1000;
     for (const pk of this.pickups) {
       if (!pk.mesh.visible) continue;
-      pk.mesh.rotation.y = now * 2.2;
-      pk.mesh.position.y = pk.y + Math.sin(now * 3 + pk.d) * 0.25;
-      if (Math.abs(pk.d - this.me) < 30 && cp.distanceToSquared(pk.mesh.position) < 5.5 * 5.5) {
-        pk.mesh.visible = false;
+      if (pk.got !== undefined) {
+        pk.got += dt;
+        const u = Math.min(1, pk.got / 0.5);
+        pk.mesh.scale.setScalar(1 + u * 2.6);
+        pk.mats.forEach((m) => { m.opacity = m.userData.o * (1 - u); });
+        if (u >= 1) pk.mesh.visible = false;
+        continue;
+      }
+      pk.ring.rotation.y = now * 2.2;
+      pk.core.rotation.y = -now * 3;
+      pk.mesh.position.y = pk.y + Math.sin(now * 3 + pk.d) * 0.2;
+      if (Math.abs(pk.d - this.me) < 30 && cp.distanceToSquared(pk.mesh.position) < 6 * 6) {
+        pk.got = 0;
         Game.car.boostLeft = CAR.boostTotal;
         Sound.boostFire();
         this.flash('BOOST REFILLED');
+        const fl = $('boostFlash'); fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
+        const br = document.querySelector('.boostRow'); if (br) { br.classList.remove('refill'); void br.offsetWidth; br.classList.add('refill'); }
       }
     }
     this.place();
     this.hud(gap);
-    const I = Math.pow(clamp(1 - (gap - 15) / ESC.feel, 0, 1), 1.7);
+    // how hard the storm presses: near AND gaining. The rate it is closing in
+    // (smoothed) sets it, scaled by how near it is; gaining fast is felt from
+    // far off; pulling away lets it fade even close by
+    if (this.lastGap !== null) {
+      const raw = (this.lastGap - gap) / Math.max(dt, 1e-3);
+      this.closing += (clamp(raw, -80, 80) - this.closing) * (1 - Math.exp(-dt * 3));
+    }
+    this.lastGap = gap;
+    const near = clamp(1 - (gap - 15) / ESC.feel, 0, 1), gain = clamp(this.closing / 22, 0, 1);
+    let target = Math.max(Math.pow(near, 1.2) * (0.15 + 0.85 * gain), clamp(this.closing / 45, 0, 1) * clamp(1 - gap / 500, 0, 1) * 0.55);
+    if (gap < 25) target = Math.max(target, 1 - gap / 25);
+    const I = this.inkI + (target - this.inkI) * (1 - Math.exp(-dt * 4));
     this.ink(I, now);
     this.drawMap();
     // the world darkens and shakes as it closes in
     App.renderer.toneMappingExposure = this.exp0 * (1 - 0.45 * I);
-    const sh = gap < 90 ? (1 - gap / 90) * 5 : 0;
+    const sh = gap < 90 ? (1 - gap / 90) * 5 * (0.3 + 0.7 * gain) : 0;
     App.renderer.domElement.style.transform = sh ? 'translate(' + ((Math.random() - 0.5) * sh).toFixed(1) + 'px,' + ((Math.random() - 0.5) * sh).toFixed(1) + 'px)' : '';
     if (gap <= 0) this.caught();
   },
@@ -14812,24 +14921,33 @@ const Escape = {
     this.bolt.material.opacity = this.boltT > 0 ? 0.9 : 0;
   },
   /* -------------------------------------------------- boost refills */
+  /** boost refills: about every ESC.every m, each on a flat, level stretch of deck (the safe
+   *  respawn spots, which never sit on a ramp, a jump, a crest or a banked turn), 2 m above it */
   makePickups() {
     if (!this.pickGeo) {
-      this.pickGeo = new THREE.TorusGeometry(1.2, 0.2, 8, 28);
-      this.pickCore = new THREE.OctahedronGeometry(0.55, 0);
-      this.pickMat = new THREE.MeshBasicMaterial({ color: 0xffb02e, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
-      this.pickMat2 = new THREE.MeshBasicMaterial({ color: 0xfff1b0, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+      this.pickGeo = new THREE.TorusGeometry(1.15, 0.16, 10, 32);
+      this.pickCore = new THREE.OctahedronGeometry(0.5, 0);
+      this.pickBeam = new THREE.CylinderGeometry(0.35, 0.9, 14, 16, 1, true);
     }
     for (const pk of this.pickups) App.scene.remove(pk.mesh);
     this.pickups = [];
-    const L = Game.course.length;
-    for (let d = 320; d < L - 200; d += ESC.every) {
-      const P = this.at(d);
+    const cum = Game.course.cum, spots = this.respawns.filter((sp) => sp.idx > 0);
+    const add = (c, o) => { const m = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }); m.userData.o = o; return m; };
+    let last = -1e9;
+    for (let d = 700; d < Game.course.length - 300; d += ESC.every) {
+      let best = null, bd = 480;
+      for (const sp of spots) { const dd = Math.abs(cum[sp.idx] - d); if (dd < bd && cum[sp.idx] - last > 750) { bd = dd; best = sp; } }
+      if (!best) continue;
+      last = cum[best.idx];
+      const deckY = best.pos.y - CAR.comHeight - 0.15;
+      const mats = [add(0xffb02e, 0.95), add(0xfff1b0, 0.9), add(0xffb02e, 0.16)];
       const g = new THREE.Group();
-      g.add(new THREE.Mesh(this.pickGeo, this.pickMat));
-      const core = new THREE.Mesh(this.pickCore, this.pickMat2); g.add(core);
-      g.position.set(P.x, P.y + 1.6, P.z);
+      const ring = new THREE.Mesh(this.pickGeo, mats[0]); g.add(ring);
+      const core = new THREE.Mesh(this.pickCore, mats[1]); g.add(core);
+      const beam = new THREE.Mesh(this.pickBeam, mats[2]); beam.position.y = 6; g.add(beam);
+      g.position.set(best.pos.x, deckY + 2.1, best.pos.z);
       App.scene.add(g);
-      this.pickups.push({ mesh: g, d, y: P.y + 1.6 });
+      this.pickups.push({ mesh: g, ring, core, mats, d: cum[best.idx], y: deckY + 2.1 });
     }
   },
   /* ---------------------------------------------- the map on the right */
@@ -14899,7 +15017,7 @@ const Escape = {
   ink(I, t) {
     const cv = $('stormInk');
     if (!cv) return;
-    const c = cv.getContext('2d'), W = cv.width, H = cv.height;
+    const c = cv.getContext('2d'), W = cv.width, H = cv.height, sc = W / 320;
     this.inkI = I;
     c.clearRect(0, 0, W, H);
     if (I <= 0.001) return;
@@ -14907,13 +15025,19 @@ const Escape = {
       this.tendrils = [];
       for (let k = 0; k < 46; k++) this.tendrils.push({ p: k / 46 + Math.random() * 0.015, w: 6 + Math.random() * 12, s: 0.6 + Math.random() * 1.6, ph: Math.random() * 6.3, f: 0.55 + Math.random() * 0.6, bend: (Math.random() - 0.5) * 0.9 });
     }
+    c.save(); c.scale(sc, sc);
+    const Wd = W / sc, Hd = H / sc;
+    this.inkDraw(c, Wd, Hd, I, t);
+    c.restore();
+  },
+  inkDraw(c, W, H, I, t) {
     // the edges darken
     const vg = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.62 - 0.3 * Math.min(I, 1.6)), W / 2, H / 2, Math.max(W, H) * 0.62);
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,' + Math.min(0.92, 0.75 * I).toFixed(2) + ')');
     c.fillStyle = vg; c.fillRect(0, 0, W, H);
     // tendrils reach in from every edge
     c.save();
-    c.shadowColor = 'rgba(140,40,255,0.75)'; c.shadowBlur = 5;
+    c.shadowColor = 'rgba(140,40,255,0.75)'; c.shadowBlur = 6 * (c.getTransform ? c.getTransform().a : 1);
     c.fillStyle = 'rgba(2,0,6,0.94)';
     const per = 2 * (W + H), reach = Math.min(W, H) * 0.62;
     for (const d of this.tendrils) {
@@ -14934,26 +15058,53 @@ const Escape = {
       c.closePath(); c.fill();
     }
     c.restore();
-    // past full: the dark swallows the screen
-    if (I > 1.2) { c.fillStyle = 'rgba(0,0,0,' + Math.min(0.97, (I - 1.2) * 0.9).toFixed(2) + ')'; c.fillRect(0, 0, W, H); }
+    // past full: an eclipse closes over the screen, cracked with violet lightning
+    if (I > 1.05) {
+      const u = Math.min(1, (I - 1.05) / 1.4);
+      const r0 = Math.hypot(W, H) * 0.55 * (1 - u * 0.95);
+      const g = c.createRadialGradient(W / 2, H * 0.55, r0 * 0.55, W / 2, H * 0.55, r0 + 30);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.7, 'rgba(10,0,20,' + (0.6 + 0.4 * u).toFixed(2) + ')'); g.addColorStop(1, 'rgba(0,0,0,1)');
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      if (u > 0.92) { c.fillStyle = 'rgba(0,0,0,' + ((u - 0.92) / 0.08).toFixed(2) + ')'; c.fillRect(0, 0, W, H); }
+      if (Math.random() < 0.35 && u < 0.85) {
+        c.save();
+        c.strokeStyle = 'rgba(205,160,255,0.85)'; c.lineWidth = 1.4; c.shadowColor = '#b46cff'; c.shadowBlur = 8;
+        let x = Math.random() * W, y = 0;
+        c.beginPath(); c.moveTo(x, y);
+        while (y < H) { x += (Math.random() - 0.5) * 34; y += 10 + Math.random() * 16; c.lineTo(x, y); }
+        c.stroke(); c.restore();
+      }
+    }
   },
   /* ------------------------------------------- caught: the car turns to dust */
   flakesInit() {
     if (this.flakes) { this.flakes.visible = true; this.flakes.material.uniforms.uT.value = -1; return; }
-    const N = 1600, geo = new THREE.BufferGeometry();
+    const N = 2600, geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
     geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
     geo.setAttribute('aRel', new THREE.BufferAttribute(new Float32Array(N), 1));
     geo.setAttribute('aDir', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+    const sz = new Float32Array(N);
+    for (let k = 0; k < N; k++) sz[k] = 0.55 + Math.random() * 0.9;
+    geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+    // each flake keeps the car's colour a moment, flares violet as it lifts off, then cools to ash and fades
     const mat = new THREE.ShaderMaterial({
       uniforms: { uT: { value: -1 }, uPx: { value: 60 } },
-      vertexShader: 'uniform float uT; uniform float uPx; attribute vec3 aCol; attribute float aRel; attribute vec3 aDir; varying vec3 vC; varying float vA;\n' +
-        'void main() { float k = max(0.0, uT - aRel); vec3 p = position + aDir * (k * k * 1.5 + k * 0.5) + vec3(sin(k * 6.0 + aRel * 40.0), 0.0, cos(k * 5.0 + aRel * 30.0)) * k * 0.35;\n' +
+      vertexShader: 'uniform float uT; uniform float uPx; attribute vec3 aCol; attribute float aRel; attribute vec3 aDir; attribute float aSize; varying vec3 vC; varying float vA; varying float vG;\n' +
+        'void main() { float k = max(0.0, uT - aRel);\n' +
+        '  vec3 swirl = vec3(sin(k * 5.0 + aRel * 40.0), 0.35 * sin(k * 3.0 + aRel * 17.0), cos(k * 4.0 + aRel * 30.0)) * k * 0.45;\n' +
+        '  vec3 p = position + aDir * (k * k * 1.3 + k * 0.45) + swirl;\n' +
         '  vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;\n' +
-        '  vA = uT < 0.0 ? 0.0 : clamp(1.0 - k / 1.4, 0.0, 1.0); vC = mix(aCol, vec3(0.06, 0.0, 0.1), clamp(k * 0.9, 0.0, 1.0));\n' +
-        '  gl_PointSize = uT < 0.0 ? 0.0 : uPx * (1.0 - 0.45 * clamp(k, 0.0, 1.0)) / max(-mv.z, 0.5); }',
-      fragmentShader: 'varying vec3 vC; varying float vA;\n' +
-        'void main() { vec2 d = gl_PointCoord - 0.5; if (vA < 0.01 || abs(d.x) + abs(d.y) > 0.5) discard; gl_FragColor = vec4(pow(vC, vec3(0.4545)), vA); }',
+        '  vG = smoothstep(0.0, 0.25, k) * (1.0 - smoothstep(0.35, 1.0, k));\n' +
+        '  vec3 c = mix(aCol, vec3(0.78, 0.42, 1.0), vG);\n' +
+        '  vC = mix(c, vec3(0.05, 0.03, 0.07), smoothstep(0.6, 1.5, k));\n' +
+        '  vA = uT < 0.0 ? 0.0 : 1.0 - smoothstep(1.0, 1.9, k);\n' +
+        '  gl_PointSize = uT < 0.0 ? 0.0 : uPx * aSize * (1.0 - 0.4 * clamp(k, 0.0, 1.0)) / max(-mv.z, 0.5); }',
+      fragmentShader: 'varying vec3 vC; varying float vA; varying float vG;\n' +
+        'void main() { float r = length(gl_PointCoord - 0.5); if (vA < 0.01 || r > 0.5) discard;\n' +
+        '  float soft = smoothstep(0.5, 0.15, r);\n' +
+        '  vec3 col = vC + vec3(0.5, 0.25, 0.8) * vG * smoothstep(0.35, 0.0, r);\n' +
+        '  gl_FragColor = vec4(pow(col, vec3(0.4545)), vA * soft); }',
       transparent: true, depthWrite: false
     });
     this.flakes = new THREE.Points(geo, mat);
@@ -15008,7 +15159,7 @@ const Escape = {
     }
     for (const name of ['position', 'aCol', 'aRel', 'aDir']) geo.attributes[name].needsUpdate = true;
     const H = App.renderer.domElement.height || 720;
-    this.flakes.material.uniforms.uPx.value = 0.13 * (H / 2) / Math.tan((App.camera.fov || 60) * Math.PI / 360);
+    this.flakes.material.uniforms.uPx.value = 0.12 * (H / 2) / Math.tan((App.camera.fov || 60) * Math.PI / 360);
     this.flakes.visible = true;
   },
   caught() {
@@ -15025,13 +15176,18 @@ const Escape = {
   stepDeath(dt) {
     const D = this.death;
     D.t += dt;
-    this.flakes.material.uniforms.uT.value = D.t;
-    if (!D.hid && D.t > 0.28) { D.hid = true; Game.car.mesh.visible = false; }
+    // the car flares violet, then it is only flakes
+    this.glow(D.hid ? 0 : Math.min(1, D.t / 0.3));
+    this.flakes.material.uniforms.uT.value = Math.max(0, D.t - 0.12);
+    if (!D.hid && D.t > 0.34) { D.hid = true; Game.car.mesh.visible = false; this.glow(0); }
     this.place();
     const t = performance.now() / 1000;
-    this.ink(Math.max(this.inkI, 1 + D.t * 0.75), t);
-    App.renderer.domElement.style.transform = D.t < 1 ? 'translate(' + ((Math.random() - 0.5) * 6).toFixed(1) + 'px,' + ((Math.random() - 0.5) * 6).toFixed(1) + 'px)' : '';
-    if (D.t > 2.5) this.finish('caught');
+    const ease = (x) => x * x * (3 - 2 * x);
+    this.ink(Math.max(this.inkI, 1 + ease(Math.min(1, D.t / 2.6)) * 1.5), t);
+    const shake = Math.max(0, 1 - D.t / 1.2) * 7;
+    App.renderer.domElement.style.transform = shake > 0.2 ? 'translate(' + ((Math.random() - 0.5) * shake).toFixed(1) + 'px,' + ((Math.random() - 0.5) * shake).toFixed(1) + 'px)' : '';
+    App.renderer.toneMappingExposure = this.exp0 * Math.max(0.35, 1 - D.t * 0.25);
+    if (D.t > 2.75) this.finish('caught');
   },
   /** the end of a run (caught, the player gave up, or the end of the road) */
   async finish(why) {
@@ -15121,9 +15277,34 @@ const Modes = {
     this.ko = { round: 1, field: 7, used: [], beaten: 0 };
     this.koRound();
   },
+  /** a Knockout field: on a map where you have a time, drivers spread from just faster than your
+   *  best to well slower, the spread tightening every round (a real duel at the end). Bests are
+   *  everyone's fastest ever, and so is yours; round 1 is meant to be survivable */
+  koPick(n, avoid, round) {
+    const me = Cloud.user && Cloud.user.uid;
+    const all = COURSE_IDS.filter((id) => Game.playable[courseIndexOf(id)] && !(avoid || []).includes(id)).map((id) => ({
+      id, mine: Records.best(id), b: (Records.board(id) || []).filter((e) => e.uid !== me && !RunHides.closed(e.uid, id))
+    })).filter((c) => c.b.length >= Math.min(n, 2));
+    if (!all.length) return null;
+    const withMine = all.filter((c) => c.mine && c.b.length >= n);
+    const pool = withMine.length ? withMine : all.filter((c) => c.b.length >= n).length ? all.filter((c) => c.b.length >= n) : all;
+    const c = pool[Math.floor(Math.random() * pool.length)];
+    const ts = c.b.map((e) => e.t).sort((a, b) => a - b);
+    // no time of yours here: aim at the slower part of the board
+    const ref = c.mine || ts[Math.floor(ts.length * 0.8)];
+    const lo = Math.max(0.99, 1.03 - 0.008 * (round - 1)), hi = Math.max(1.06, 1.3 - 0.04 * (round - 1));
+    const left = c.b.slice(), pick = [];
+    for (let k = 0; k < Math.min(n, left.length); k++) {
+      const want = ref * (n > 1 ? lo + (hi - lo) * k / (n - 1) : lo);
+      let bi = 0;
+      for (let j = 1; j < left.length; j++) if (Math.abs(left[j].t - want) < Math.abs(left[bi].t - want)) bi = j;
+      pick.push(left.splice(bi, 1)[0]);
+    }
+    return { id: c.id, uids: pick.map((e) => e.uid) };
+  },
   koRound() {
     const K = this.ko;
-    const p = this.pick(K.field, K.used) || this.pick(K.field);
+    const p = this.koPick(K.field, K.used, K.round) || this.koPick(K.field, [], K.round);
     if (!p) { UI.toast('Not enough times on the boards for a Knockout yet.'); this.ko = null; this.mode = null; return; }
     K.used.push(p.id);
     UI.toast('Knockout round ' + K.round + ': ' + p.uids.length + ' rival' + (p.uids.length === 1 ? '' : 's') + '. Don\'t finish last!');
@@ -17644,6 +17825,23 @@ const TopTen = {
  * winner of each map on the course cards. One hidden renderer draws every
  * one, and each colour pair is drawn once and kept as an image.
  */
+/** a pile of credit gems: the three biggest colours, heaped, glowing a little */
+function makeGemPile(scale) {
+  const g = new THREE.Group(), k = scale || 1;
+  const heap = [[0, 0.62, 0, 2], [-0.42, 0.2, 0.18, 2], [0.4, 0.2, 0.22, 1], [0.02, 0.22, -0.4, 2], [-0.2, 0.18, 0.5, 0], [0.56, 0.16, -0.2, 0],
+    [-0.62, 0.15, -0.3, 1], [0.2, 0.45, 0.25, 1], [-0.25, 0.48, -0.15, 0], [0.75, 0.12, 0.35, 0], [-0.8, 0.12, 0.2, 0], [0.28, 0.14, 0.62, 2], [-0.5, 0.14, -0.62, 1]];
+  heap.forEach(([x, y, z, d], i) => {
+    const D = GEM_DENOMS[d];
+    const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.22 * D.scale * k, 0),
+      new THREE.MeshStandardMaterial({ color: D.color, emissive: D.glow, emissiveIntensity: 0.55, metalness: 0.2, roughness: 0.12, flatShading: true }));
+    m.scale.y = 1.35; m.position.set(x * k, y * k, z * k); m.rotation.set(i * 0.7, i * 1.3, i * 0.4);
+    g.add(m);
+  });
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(1.3 * k, 40), new THREE.MeshBasicMaterial({ color: 0x7b4dff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.01;
+  g.add(glow);
+  return g;
+}
 const CarThumbs = {
   cache: new Map(), renderer: null, failed: false,
   ensure() {
@@ -17718,19 +17916,17 @@ const CarThumbs = {
       obj = c.group; obj.rotation.y = 0.6;
       cam.position.set(2.2, 1.9, 3.4); cam.lookAt(0, 0.55, 0);
     } else {
-      obj = new THREE.Group();
-      const spots = [[0, 0, 0, 2], [-0.55, 0, 0.25, 1], [0.55, 0, 0.2, 1], [-0.25, 0, -0.45, 0], [0.3, 0, -0.4, 1], [0, 0.45, 0.05, 2], [-0.8, 0, -0.2, 0]];
-      for (const [x, y, z, d] of spots) {
-        const D = GEM_DENOMS[d];
-        const g = new THREE.Mesh(new THREE.OctahedronGeometry(0.28 * D.scale, 0), new THREE.MeshStandardMaterial({ color: D.color, emissive: D.glow, emissiveIntensity: 0.6, metalness: 0.15, roughness: 0.18 }));
-        g.scale.y = 1.4; g.position.set(x, 0.35 + y, z); g.rotation.set(0.3 * x, x * 3 + z, 0.2);
-        obj.add(g);
-      }
-      cam.position.set(0.95, 1.25, 1.75); cam.lookAt(0, 0.38, 0);
+      obj = makeGemPile(1);
+      obj.rotation.y = 0.4;
+      cam.position.set(1.7, 1.75, 2.6); cam.lookAt(0, 0.32, 0);
     }
     sc.add(obj);
+    // twice the size, for a crisp picture wherever it's shown
+    this.renderer.setSize(352, 208, false);
     this.renderer.render(sc, cam);
-    return (this.prizes[kind] = this.renderer.domElement.toDataURL('image/png'));
+    const url = this.renderer.domElement.toDataURL('image/png');
+    this.renderer.setSize(176, 104, false);
+    return (this.prizes[kind] = url);
   },
   /** a picture (data URL) of the car in these colours */
   draw(colors) {
@@ -21795,6 +21991,7 @@ const Game = {
     $('bResCourses').addEventListener('click', () => { if (Modes.mode) { Modes.open(); return; } if (this.practice) Practice.open(this.levelIndex); else if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toSelect(); });
     $('bPreview').addEventListener('click', () => Preview.open());
     $('bMulti').addEventListener('click', () => Modes.open());
+    $('lvChip').addEventListener('click', () => { Morph.note($('lvChip')); this.toGarage('road'); });
     $('bModesBack').addEventListener('click', () => this.toMenu());
     $('mQuick').addEventListener('click', () => Modes.quick());
     $('mKo').addEventListener('click', () => Modes.knockout());
