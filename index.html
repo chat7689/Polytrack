@@ -9575,102 +9575,348 @@ const NEXT_LEVELS = [
   // ---------------------------------------------------------- Section A: Skyline (a city at golden hour)
   {
     id: 's5c1', section: 0, name: 'Downtown', look: 4,
-    decor: { theme: 'city', props: 90, trees: 0.9, piers: false },
-    blurb: 'Past the stands, under a ring, up onto the skyway between the towers and its sky bridges, down for a jump.',
+    decor: { theme: 'city', props: 70, trees: 0.9, piers: false, set: [['petronas', 230], ['empire', 331, 210, 0.35], ['cn', 600, 300, -0.2], ['burj', 24, 520, -0.3]] },
+    blurb: 'Past the stands, between the Petronas Towers under their skybridge, up onto the skyway and down for a jump.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
       b.pad(24, 19);
-      b.straight(110);
+      b.straight(85);
       b.curve(70, -55, { bank: 10, chev: 1 });
-      b.straight(130);
-      b.slope(60, 9, { bridge: true });
-      b.bridge(150);
-      b.curve(85, 70, { bank: 14, bridge: true, chev: 1 });
+      b.straight(100);
+      b.slope(55, 8, { bridge: true });
       b.bridge(70);
-      b.slope(60, -9, { bridge: true });
-      b.straight(40);
-      b.strip(30);
-      b.straight(70);
+      b.curve(80, 60, { bank: 12, bridge: true, chev: 1 });
+      b.slope(55, -8, { bridge: true });
+      b.straight(35);
       b.slope(20, 2); b.ramp(12, 7); b.gap(16, -1.5); b.landing(14, -6, { w: 18 });
-      b.straight(60);
-      b.curve(60, -50, { bank: 10, chev: 1 });
-      b.straight(90);
+      b.straight(50);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
     }
   },
-  // ---------------------------------------------------------- Section B: Wonders (the ancient desert)
   {
-    id: 's5c5', section: 1, name: 'Aqueduct', look: 5,
-    decor: { theme: 'ancient', props: 160, trees: 0.35, piers: false },
-    blurb: 'Through the great arch, up onto a two-tier aqueduct 22 m over the sand, down along the colonnade and over a big jump.',
+    id: 's5c2', section: 0, name: 'Twin Towers', look: 4,
+    decor: { theme: 'city', props: 50, trees: 0.9, piers: false, set: [['petronas', 105], ['burj', 270, 360, 0.15]] },
+    blurb: 'A sprint: straight under the Petronas skybridge, one long sweeping left, flat out to the line.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(130);
+      b.curve(110, 50, { bank: 8, chev: 1 });
+      b.straight(85);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c3', section: 0, name: 'Skyway', look: 4,
+    decor: { theme: 'city', props: 60, trees: 0.9, piers: false, towers: 60, set: [['burj', 135, 270, 0.3], ['empire', 459, 190, -0.35], ['cn', 780, 260, 0.2]] },
+    blurb: 'The long one: an elevated highway through the towers with two big banked bends, a jump back to the street, an S-bend and a speed strip.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(40);
+      b.slope(70, 12, { bridge: true });
+      b.bridge(40);
+      b.curve(90, 70, { bank: 16, bridge: true, chev: 1 });
+      b.bridge(50);
+      b.curve(95, -75, { bank: 16, bridge: true, chev: 1 });
+      b.bridge(50);
+      b.slope(70, -12, { bridge: true });
+      b.straight(30);
+      b.slope(24, 2.5); b.ramp(14, 9); b.gap(22, -2); b.landing(18, -8, { w: 19 });
+      b.straight(35);
+      b.curve(50, 50, { bank: 10, chev: 1 });
+      b.straight(40);
+      b.curve(50, -50, { bank: 10, chev: 1 });
+      b.strip(30);
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c4', section: 0, name: 'Gateway', look: 4,
+    decor: { theme: 'city', props: 80, trees: 0.9, piers: false, towers: 30, set: [['gateway', 135, 170], ['cn', 340, 300, 0.2]] },
+    blurb: 'Under the Gateway Arch, a banked right, rollers and a banked left to the line.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(165);
+      b.curve(80, -90, { bank: 14, chev: 1 });
+      b.straight(50);
+      b.rollers(3, 22, 0.6);
+      b.straight(45);
+      b.curve(70, 70, { bank: 14, chev: 1 });
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section B: Wonders (the ancient world)
+  {
+    id: 's5c5', section: 1, name: 'Pont du Gard', look: 5,
+    decor: { theme: 'wonders', props: 140, trees: 0.4, piers: false, set: [['triumph', 72]] },
+    blurb: 'The long one: through a triumphal arch and up onto the Pont du Gard, 20 m up on three tiers of arches, then a banked bend and a big jump.',
     build() {
       const b = new TrackBuilder({ width: 16, fine: true });
       b.pad(24, 20);
-      b.straight(120);
+      b.straight(80);
       b.curve(90, 50, { bank: 10, chev: 1 });
-      b.straight(40);
-      b.slope(110, 22, { bridge: true });
-      b.bridge(200);
+      b.straight(25);
+      b.slope(100, 20, { bridge: true });
+      b.bridge(90);
       b.curve(120, -45, { bank: 8, bridge: true, chev: 1 });
-      b.bridge(70);
-      b.slope(110, -22, { bridge: true });
-      b.straight(110);
-      b.curve(65, 70, { bank: 16, chev: 1 });
+      b.slope(100, -20, { bridge: true });
       b.straight(60);
+      b.curve(65, 70, { bank: 16, chev: 1 });
+      b.straight(40);
       b.slope(24, 2.5); b.ramp(14, 9); b.gap(22, -2); b.landing(18, -8, { w: 19 });
-      b.straight(70);
+      b.straight(35);
       b.gate('finish');
       b.straight(34, { w: 20 });
       return b.build();
     }
   },
-  // ---------------------------------------------------------- Section C: Powerworks (dam, turbines, bridges)
   {
-    id: 's5c9', section: 2, name: 'Suspension', look: 6,
-    decor: { theme: 'power', props: 380, trees: 0.85, piers: false },
-    blurb: 'Climb to a 260 m suspension bridge 20 m up, turbines turning all round, then down, a banked hairpin and rollers to the line.',
+    id: 's5c6', section: 1, name: 'Giza', look: 5,
+    decor: { theme: 'wonders', props: 90, trees: 0.3, piers: false, obelisks: 1, set: [['giza', 24, 430, 0], ['sphinx', 105, 32, -1]] },
+    blurb: 'A sprint across the desert toward the pyramids, past the Sphinx, a sweeping left and a jump.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
       b.pad(24, 19);
-      b.straight(80);
-      b.curve(80, 60, { bank: 12, chev: 1 });
-      b.straight(60);
-      b.slope(100, 20, { bridge: true });
-      b.bridge(260);
-      b.slope(100, -20, { bridge: true });
-      b.straight(50);
-      b.curve(60, -75, { bank: 16, chev: 1 });
-      b.straight(50);
-      b.strip(30);
-      b.straight(60);
-      b.rollers(3, 22, 0.6);
-      b.straight(50);
+      b.straight(145);
+      b.curve(110, 45, { bank: 8, chev: 1 });
+      b.straight(65);
+      b.slope(20, 2); b.ramp(12, 7); b.gap(16, -1.5); b.landing(14, -6, { w: 18 });
+      b.straight(40);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
     }
   },
-  // ---------------------------------------------------------- Section D: Sky Citadel (twilight, floating islands)
   {
-    id: 's5c13', section: 3, name: 'Skyreach', look: 7,
-    decor: { theme: 'sky', props: 60, trees: 0.5, piers: false },
-    blurb: 'A road in the sky with nothing under it: a jump from one span to the next 18 m up, a banked sweep, rings to fly through.',
+    id: 's5c7', section: 1, name: 'Colosseum', look: 5,
+    decor: { theme: 'wonders', props: 120, trees: 0.4, piers: false, obelisks: 0, set: [['colosseum', 203], ['triumph', 350]] },
+    blurb: 'A huge banked left all the way round the Colosseum, through the arch, rollers and two banked bends.',
     build() {
       const b = new TrackBuilder({ width: 15, fine: true });
       b.pad(24, 19);
       b.straight(60);
-      b.slope(90, 18, { bridge: true });
-      b.bridge(90);
-      b.slope(16, 2, { bridge: true }); b.ramp(14, 8, { bridge: true }); b.gap(24, -2.5); b.landing(18, -8, { bridge: true, w: 19 });
-      b.bridge(70, { w: 16 });
-      b.curve(100, -70, { bank: 14, bridge: true, chev: 1 });
-      b.bridge(110);
-      b.slope(90, -17, { bridge: true });
+      b.curve(105, 130, { bank: 12, chev: 1 });
+      b.straight(60);
+      b.curve(60, -60, { bank: 12, chev: 1 });
       b.straight(40);
-      b.curve(60, 60, { bank: 12, chev: 1 });
-      b.straight(70);
+      b.rollers(2, 24, 0.6);
+      b.straight(35);
+      b.curve(70, 55, { bank: 12, chev: 1 });
+      b.straight(45);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c8', section: 1, name: 'Petra', look: 5,
+    decor: { theme: 'wonders', props: 40, trees: 0.2, piers: false, obelisks: 0, set: [['canyon', 40, 590], ['petra', 560, 110]] },
+    blurb: 'Down the winding canyon of the Siq, rock walls either side, out to the Treasury carved in the cliff.',
+    build() {
+      const b = new TrackBuilder({ width: 13, fine: true });
+      b.pad(24, 17);
+      b.straight(50);
+      b.curve(70, 40, { bank: 8, chev: 1 });
+      b.straight(30);
+      b.curve(70, -40, { bank: 8, chev: 1 });
+      b.straight(40);
+      b.curve(80, 45, { bank: 8, chev: 1 });
+      b.straight(30);
+      b.curve(80, -45, { bank: 8, chev: 1 });
+      b.straight(40);
+      b.curve(90, 35, { bank: 6, chev: 1 });
+      b.straight(110);
+      b.gate('finish');
+      b.straight(34, { w: 17 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section C: Marvels (great works of engineering)
+  {
+    id: 's5c9', section: 2, name: 'Golden Gate', look: 6,
+    decor: { theme: 'marvels', props: 300, trees: 0.85, piers: false, turbines: 4, set: [['goldengate']] },
+    blurb: 'Over the Golden Gate: a 220 m span 20 m above the bay, then a banked hairpin and a speed strip.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(40);
+      b.curve(80, 60, { bank: 12, chev: 1 });
+      b.straight(40);
+      b.slope(90, 20, { bridge: true });
+      b.bridge(150);
+      b.slope(90, -20, { bridge: true });
+      b.straight(30);
+      b.curve(60, -75, { bank: 16, chev: 1 });
+      b.straight(30);
+      b.strip(30);
+      b.straight(40);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c10', section: 2, name: 'Millau', look: 6,
+    decor: { theme: 'marvels', props: 320, trees: 0.85, piers: false, supports: 'millau', turbines: 6 },
+    blurb: 'The long one: the Millau Viaduct, 28 m up on its piers and white pylons, a gentle curve across the valley, then a hairpin and a hop.',
+    build() {
+      const b = new TrackBuilder({ width: 17, fine: true });
+      b.pad(24, 21);
+      b.straight(50);
+      b.slope(120, 28, { bridge: true });
+      b.bridge(80);
+      b.curve(220, 35, { bank: 5, bridge: true, chev: 1 });
+      b.bridge(70);
+      b.slope(120, -28, { bridge: true });
+      b.straight(40);
+      b.curve(55, -100, { bank: 16, chev: 1 });
+      b.straight(35);
+      b.strip(30);
+      b.straight(20);
+      b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: 18 });
+      b.straight(30);
+      b.gate('finish');
+      b.straight(34, { w: 21 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c11', section: 2, name: 'Hoover Dam', look: 6,
+    decor: { theme: 'marvels', props: 60, trees: 0.4, piers: false, turbines: 0, set: [['canyon', 60, 470, 'rock'], ['hoover', 560, 330, 0]] },
+    blurb: 'Through the canyon below Hoover Dam: banked S-bends, rollers, a big banked right and a jump.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(50);
+      b.curve(60, 70, { bank: 14, chev: 1 });
+      b.straight(50);
+      b.curve(60, -70, { bank: 14, chev: 1 });
+      b.straight(45);
+      b.rollers(2, 22, 0.7);
+      b.straight(40);
+      b.curve(70, 80, { bank: 14, chev: 1 });
+      b.straight(45);
+      b.slope(20, 2); b.ramp(12, 7); b.gap(16, -1.5); b.landing(14, -6, { w: 18 });
+      b.straight(35);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c12', section: 2, name: 'Eiffel', look: 6,
+    decor: { theme: 'marvels', props: 160, trees: 0.9, piers: false, turbines: 0, set: [['eiffel', 100]] },
+    blurb: 'A sprint: straight between the legs of the Eiffel Tower, a banked left, a hop and the line.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(150);
+      b.curve(90, 70, { bank: 12, chev: 1 });
+      b.straight(45);
+      b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: 16 });
+      b.straight(35);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section D: Far East (spring in the hills)
+  {
+    id: 's5c13', section: 3, name: 'Great Wall', look: 7,
+    decor: { theme: 'east', props: 280, trees: 0.85, piers: false, set: [['wall', 270, 0, -1], ['fuji', 24, 1100, 0.2]] },
+    blurb: 'The long one: along the top of the Great Wall over the hills, past its watchtowers, down for a big jump and a banked bend.',
+    build() {
+      const b = new TrackBuilder({ width: 14, fine: true });
+      b.pad(24, 18);
+      b.straight(35);
+      b.slope(70, 9, { bridge: true });
+      b.bridge(20);
+      b.slope(60, 6, { bridge: true });
+      b.curve(90, 55, { bank: 10, bridge: true, chev: 1 });
+      b.slope(60, -6, { bridge: true });
+      b.bridge(25);
+      b.slope(50, 6, { bridge: true });
+      b.curve(90, -55, { bank: 10, bridge: true, chev: 1 });
+      b.bridge(35);
+      b.slope(80, -15, { bridge: true });
+      b.straight(30);
+      b.slope(24, 2.5); b.ramp(14, 9); b.gap(22, -2); b.landing(18, -8, { w: 18 });
+      b.straight(35);
+      b.curve(70, 50, { bank: 10, chev: 1 });
+      b.straight(35);
+      b.gate('finish');
+      b.straight(34, { w: 18 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c14', section: 3, name: 'Fushimi Inari', look: 7,
+    decor: { theme: 'east', props: 260, trees: 0.9, piers: false, set: [['torii', 60, 320], ['pagoda', 425, 18, 1], ['fuji', 24, 1100, -0.3]] },
+    blurb: 'Through a tunnel of hundreds of torii gates winding up the hill, past a pagoda, a speed strip and two banked bends.',
+    build() {
+      const b = new TrackBuilder({ width: 14, fine: true });
+      b.pad(24, 18);
+      b.straight(90);
+      b.curve(90, 40, { bank: 8, chev: 1 });
+      b.straight(40);
+      b.curve(90, -40, { bank: 8, chev: 1 });
+      b.straight(50);
+      b.curve(60, 75, { bank: 14, chev: 1 });
+      b.straight(45);
+      b.strip(30);
+      b.straight(45);
+      b.curve(70, -60, { bank: 12, chev: 1 });
+      b.straight(50);
+      b.gate('finish');
+      b.straight(34, { w: 18 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c15', section: 3, name: 'Taj Mahal', look: 7,
+    decor: { theme: 'east', props: 160, trees: 0.8, piers: false, set: [['taj', 90, 235, -1], ['fuji', 154, 1100, 0.4]] },
+    blurb: 'A sprint past the Taj Mahal across its reflecting pool, a banked right, a hop and the line.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(130);
+      b.curve(100, -80, { bank: 12, chev: 1 });
+      b.straight(45);
+      b.slope(10, 0.7); b.ramp(6, 6); b.gap(7, -0.6); b.straight(14, { w: 16 });
+      b.straight(35);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  {
+    id: 's5c16', section: 3, name: 'Tokyo Tower', look: 7,
+    decor: { theme: 'east', props: 220, trees: 0.85, piers: false, set: [['tokyo', 100], ['pagoda', 300, 20, -1], ['fuji', 24, 1100, 0.25]] },
+    blurb: 'Between the legs of Tokyo Tower, a banked right, rollers past a pagoda, a banked left and a big jump.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(150);
+      b.curve(70, -80, { bank: 14, chev: 1 });
+      b.straight(40);
+      b.rollers(3, 22, 0.6);
+      b.straight(45);
+      b.curve(75, 70, { bank: 14, chev: 1 });
+      b.straight(40);
+      b.slope(24, 2.5); b.ramp(14, 9); b.gap(22, -2); b.landing(18, -8, { w: 19 });
+      b.straight(40);
       b.gate('finish');
       b.straight(34, { w: 19 });
       return b.build();
@@ -11301,11 +11547,17 @@ class SkidMarks {
 }
 
 /* ------------------------------------------------- landmarks (Season 4)
- * The big set pieces around a map, from its level's decor: { theme }.
+ * Real places around a map, from its level's decor: { theme, supports, set }.
  * Purely cosmetic (nothing here is solid; the road and its banks are the
- * course's own): skylines and sky bridges, arched aqueducts under raised
- * road, suspension and cable-stayed bridges, wind turbines and a dam,
- * pyramids and colonnades, floating islands. Everything is placed from the
+ * course's own), low-poly but recognisable: the Petronas Towers' skybridge
+ * over the road, the Burj Khalifa, the Empire State, the CN Tower, the
+ * Gateway Arch; Giza and the Sphinx, the Pont du Gard carrying the road, the
+ * Colosseum, a triumphal arch, Petra's Treasury down its canyon; the Golden
+ * Gate, the Millau Viaduct, Hoover Dam, the Eiffel Tower over the road; the
+ * Great Wall carrying the road, Fushimi Inari's torii, a pagoda, the Taj
+ * Mahal, Tokyo Tower, Mount Fuji. `set` names the landmarks of a map and
+ * where (in metres along the road); the theme fills in the rest of the
+ * city, desert, valley or hills around them. Everything is placed from the
  * road itself (where it runs, how high, where it's straight, where it's a
  * bridge) with a generator seeded by the map's id, so a map looks the same
  * every time; free-standing pieces keep clear of the road and its banks,
@@ -11317,13 +11569,14 @@ const Landmarks = {
   M() {
     if (this.mats) return this.mats;
     const std = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.8, metalness: 0.05, flatShading: true }, o || {}));
+    const tex = (t, rough, metal) => std(0xffffff, { map: t.map, emissiveMap: t.emap, emissive: t.emap ? 0xffffff : 0x000000, emissiveIntensity: 0.7, roughness: rough, metalness: metal });
     const win = (frame, glass, lit, seed) => {
       const t = this.windows(frame, glass, lit, seed);
       return std(0xffffff, { map: t.map, emissiveMap: t.emap, emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.38, metalness: 0.25 });
     };
     this.mats = {
       concrete: std(0xd8d4cc, { roughness: 0.95 }), concreteDark: std(0x9b9a96, { roughness: 0.95 }),
-      stone: std(0xc9a06a, { roughness: 0.95 }), stoneDark: std(0x9a7246, { roughness: 0.95 }),
+      stone: std(0xe0bd8c, { roughness: 0.95 }), stoneDark: std(0xb98f5e, { roughness: 0.95 }),
       steel: std(0x6d7a88, { roughness: 0.5, metalness: 0.45 }), red: std(0xc8452f, { roughness: 0.55, metalness: 0.25 }),
       white: std(0xf1f3f5, { roughness: 0.55 }), cable: std(0x2a2f36, { roughness: 0.6, metalness: 0.4 }),
       gold: std(0xe6b850, { roughness: 0.32, metalness: 0.75 }),
@@ -11335,11 +11588,49 @@ const Landmarks = {
       crystal: std(0xc4b2ff, { emissive: 0x7350ff, emissiveIntensity: 0.75, roughness: 0.2, metalness: 0.3 }),
       seatA: std(0x2f6fd8, { roughness: 0.7 }), seatB: std(0xe8544c, { roughness: 0.7 }),
       roof: std(0xeef1f4, { roughness: 0.5, metalness: 0.2 }),
-      cloud: std(0xfff4fb, { roughness: 1, emissive: 0xf3c6e6, emissiveIntensity: 0.35 }),
       glass: std(0x7fb4d8, { roughness: 0.15, metalness: 0.5, emissive: 0x1d4f73, emissiveIntensity: 0.35 }),
+      bands: tex(this.paint('bands'), 0.2, 0.55), lime: tex(this.paint('lime'), 0.9, 0.1), arcade: tex(this.paint('arcade'), 0.95, 0),
+      limeSolid: std(0xd8c9ab, { roughness: 0.9 }), shadow: std(0x2b241f, { roughness: 1 }), sand: std(0xd9bb8a, { roughness: 1 }),
+      rose: std(0xbf7859, { roughness: 1 }), roseDark: std(0x9a5a40, { roughness: 1 }), marble: std(0xf3efe7, { roughness: 0.6 }),
+      orange: std(0xc03a2b, { roughness: 0.55, metalness: 0.2 }), vermilion: std(0xe24a22, { roughness: 0.6 }), black: std(0x1e1e1f, { roughness: 0.7 }),
+      tile: std(0x3c4049, { roughness: 0.7 }), bronze: std(0x6f5b45, { roughness: 0.55, metalness: 0.4 }),
+      chrome: std(0xe9edf1, { roughness: 0.32, metalness: 0.5, emissive: 0x4a5058, emissiveIntensity: 0.25 }), basalt: std(0x4c3e33, { roughness: 1 }), cypress: std(0x2b4a2d, { roughness: 1 }),
+      fujiRock: std(0x5a627c, { roughness: 1 }), snow: std(0xf6f8fb, { roughness: 0.8 }), wallStone: std(0x9b907a, { roughness: 1 }),
       towerA: win('#2c3e52', '#2f5f8a', '#ffd38a', 1), towerB: win('#bfb6a6', '#3d5570', '#ffe2a8', 2), towerC: win('#1b2230', '#223349', '#9fe8ff', 3)
     };
     return this.mats;
+  },
+  /** other facades, painted on a 16 m x 14.4 m tile */
+  paint(kind) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    let e = null;
+    if (kind === 'bands') {
+      g.fillStyle = '#c7ced6'; g.fillRect(0, 0, 128, 128);
+      e = document.createElement('canvas'); e.width = e.height = 128;
+      const ge = e.getContext('2d'); ge.fillStyle = '#000'; ge.fillRect(0, 0, 128, 128);
+      for (let y = 0; y < 4; y++) {
+        g.fillStyle = '#26384c'; g.fillRect(0, y * 32 + 9, 128, 15);
+        for (let x = 0; x < 8; x++) if ((x * 7 + y * 3) % 5 === 0) { g.fillStyle = '#ffe4ad'; g.fillRect(x * 16 + 2, y * 32 + 10, 12, 13); ge.fillStyle = '#ffd890'; ge.fillRect(x * 16 + 2, y * 32 + 10, 12, 13); }
+        g.fillStyle = '#9aa4ae'; for (let x = 0; x < 8; x++) g.fillRect(x * 16, y * 32 + 9, 1.5, 15);
+      }
+    } else if (kind === 'lime') {
+      g.fillStyle = '#d8c8a6'; g.fillRect(0, 0, 128, 128);
+      for (let x = 0; x < 6; x++) { g.fillStyle = '#4d5560'; g.fillRect(x * 21 + 6, 0, 9, 128); g.fillStyle = '#b5a582'; for (let y = 0; y < 8; y++) g.fillRect(x * 21 + 6, y * 16 + 12, 9, 4); }
+    } else {
+      g.fillStyle = '#cdb38c'; g.fillRect(0, 0, 128, 128);
+      for (let y = 0; y < 2; y++) {
+        g.fillStyle = '#b39a74'; g.fillRect(0, y * 64 + 58, 128, 6);
+        for (let x = 0; x < 3; x++) {
+          const cx = x * 42.7 + 21, top = y * 64 + 18, w = 22;
+          g.fillStyle = '#3b3029'; g.fillRect(cx - w / 2, top + 11, w, 30);
+          g.beginPath(); g.arc(cx, top + 11, w / 2, Math.PI, 0); g.fill();
+          g.fillStyle = '#bba27b'; g.fillRect(cx - 21, y * 64 + 6, 4, 52);
+        }
+      }
+    }
+    const t = (cv) => { const x = new THREE.CanvasTexture(cv); x.wrapS = x.wrapT = THREE.RepeatWrapping; x.encoding = THREE.sRGBEncoding; x.anisotropy = 4; return x; };
+    return { map: t(c), emap: e ? t(e) : null };
   },
   /** a facade: 4 x 4 windows (one per 4 m bay and 3.6 m floor), some lit */
   windows(frame, glass, lit, seed) {
@@ -11484,7 +11775,7 @@ const Landmarks = {
     const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
     const placed = [];
     const ctx = {
-      R, B, g, rnd, D, M: this.mats, GY: GROUND_Y,
+      R, B, g, rnd, D, M: this.mats, GY: GROUND_Y, course,
       rr: (a, b) => a + rnd() * (b - a),
       pick: (arr) => arr[Math.floor(rnd() * arr.length)],
       /** is (x, z) at least r clear of the road, its banks and everything else placed? */
@@ -11509,12 +11800,451 @@ const Landmarks = {
         return R.runs.filter((r) => r.len >= minLen && (bridge === undefined || r.bridge === bridge)).map((r) => R.pts[Math.floor((r.a + r.b) / 2)]);
       }
     };
+    for (const it of D.set || []) {
+      try { this.place(ctx, it); } catch (e) { console.warn('aiPolytrack: landmark', it[0], e); }
+    }
     this.themes[D.theme].call(this, ctx);
     B.build(g);
   },
   step(dt) {
     for (const a of this.anim) a(dt);
   },
+  /** one of a map's landmarks: [name, ...where] (metres along the road, a distance off it, a side) */
+  place(c, it) {
+    const [k, m, a2, a3] = it, q = () => this.atCum(c, m);
+    const far = (r, dist, side) => this.ahead(c, m, dist, r, side || 0);
+    let p;
+    switch (k) {
+      case 'petronas': return this.petronas(c, q());
+      case 'gateway': return this.gatewayArch(c, q(), a2);
+      case 'eiffel': return this.eiffel(c, q(), false);
+      case 'tokyo': return this.eiffel(c, q(), true);
+      case 'triumph': return this.triumph(c, q());
+      case 'torii': return this.torii(c, m, a2);
+      case 'canyon': return this.canyon(c, m, a2, a3 === 'rock' ? c.M.basalt : c.M.rose, 24, 56);
+      case 'colosseum': { const t = this.turnCentre(c, m); return this.colosseum(c, t.x, t.z, c.rnd()); }
+      case 'burj': p = far(42, a2 || 300, a3); return p && this.burj(c, p.x, p.z, c.rnd() * 2);
+      case 'empire': p = far(34, a2 || 160, a3); return p && this.empire(c, p.x, p.z, p.face);
+      case 'cn': p = far(22, a2 || 260, a3); return p && this.cnTower(c, p.x, p.z);
+      case 'giza': p = far(280, a2 || 420, a3); return p && this.giza(c, p.x, p.z, c.rnd() * 0.4);
+      case 'sphinx': { const r = q(), o = c.off(r, a3 || 1, r.reach + (a2 || 40)); return this.sphinx(c, o.x, o.z, Math.atan2(r.x - o.x, r.z - o.z)); }
+      case 'petra': p = far(45, a2 || 70, 0); return p && this.petra(c, p.x, p.z, p.face);
+      case 'hoover': p = far(240, a2 || 420, a3); return p && this.hoover(c, p.x, p.z, this.atCum(c, m).x, this.atCum(c, m).z);
+      case 'taj': {
+        const r = q();
+        for (let k = 0; k < 12; k++) {
+          const o = c.off(r, a3 || 1, r.reach + (a2 || 235) + k * 15), face = Math.atan2(r.x - o.x, r.z - o.z);
+          const pool = { x: o.x + Math.sin(face) * 123, z: o.z + Math.cos(face) * 123 };
+          if (c.clear(o.x, o.z, 70) && c.clear(pool.x, pool.z, 30)) return this.taj(c, o.x, o.z, face);
+        }
+        return;
+      }
+      case 'pagoda': { const r = q(), o = c.off(r, a3 || 1, r.reach + (a2 || 20)); return c.clear(o.x, o.z, 11) && this.pagoda(c, o.x, o.z, r.yaw); }
+      case 'fuji': p = far(560, a2 || 1100, a3); return p && this.fuji(c, p.x, p.z);
+      case 'goldengate': {
+        const r = c.R.runs.filter((x) => x.bridge && x.len >= 70).sort((x, y) => y.len - x.len)[0];
+        if (r) { this.suspension(c, r.a, r.b, null, true); (c.skip = c.skip || []).push([c.R.pts[r.a].cum + 4, c.R.pts[r.b].cum - 4]); }
+        if (r && a2 !== false) {
+          // the bay under it
+          const A = c.R.pts[r.a], Z = c.R.pts[r.b], mx = (A.x + Z.x) / 2, mz = (A.z + Z.z) / 2, L = Math.hypot(Z.x - A.x, Z.z - A.z);
+          let ok = true;
+          for (const pt of c.R.pts) if (!pt.bridge && Math.abs((pt.x - mx) * Math.cos(A.yaw) - (pt.z - mz) * Math.sin(A.yaw)) < 90 + pt.reach && Math.abs((pt.x - mx) * Math.sin(A.yaw) + (pt.z - mz) * Math.cos(A.yaw)) < L / 2 - 20 + pt.reach) { ok = false; break; }
+          if (ok) {
+            c.B.box(c.M.water, mx, c.GY + 0.25, mz, 180, 0.3, L - 40, A.yaw);
+            const m4 = new THREE.Matrix4(), v = new THREE.Vector3(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
+            c.course.root.traverse((o) => {
+              if (!o.isInstancedMesh || (o.material !== MAT.tree && o.material !== MAT.rock)) return;
+              for (let i = 0; i < o.count; i++) {
+                o.getMatrixAt(i, m4); v.setFromMatrixPosition(m4);
+                const u = (v.x - mx) * Math.cos(A.yaw) - (v.z - mz) * Math.sin(A.yaw), w = (v.x - mx) * Math.sin(A.yaw) + (v.z - mz) * Math.cos(A.yaw);
+                if (Math.abs(u) < 95 && Math.abs(w) < (L - 40) / 2 + 5) o.setMatrixAt(i, zero);
+              }
+              o.instanceMatrix.needsUpdate = true;
+            });
+          }
+        }
+        return;
+      }
+      case 'wall': {
+        // the Great Wall winding away across the land, off to one side
+        const r = q(), pts = [];
+        for (let i = 0; i < 16; i++) { const d = r.reach + 80 + i * 6, along = (i - 4) * 55; pts.push({ x: r.x + Math.sin(r.yaw) * along + Math.cos(r.yaw) * (a3 || 1) * (d + Math.sin(i * 0.9) * 40), z: r.z + Math.cos(r.yaw) * along - Math.sin(r.yaw) * (a3 || 1) * (d + Math.sin(i * 0.9) * 40) }); }
+        return this.wallLine(c, pts);
+      }
+    }
+  },
+  /* ---------------------------------------------- real landmarks (low-poly, recognisable silhouettes) */
+  /** the nearest road point to a distance along the track */
+  atCum(c, m) { let b = c.R.pts[0], bd = Infinity; for (const p of c.R.pts) { const d = Math.abs(p.cum - m); if (d < bd) { bd = d; b = p; } } return b; },
+  /** where a turn around distance m bends round: the centre of the circle through the road 25 m either side */
+  turnCentre(c, m) {
+    const a = this.atCum(c, m - 25), b = this.atCum(c, m), d = this.atCum(c, m + 25);
+    const ax = a.x, az = a.z, bx = b.x, bz = b.z, cx = d.x, cz = d.z, D = 2 * (ax * (bz - cz) + bx * (cz - az) + cx * (az - bz));
+    if (Math.abs(D) < 1e-6) return { x: b.x, z: b.z };
+    const ux = ((ax * ax + az * az) * (bz - cz) + (bx * bx + bz * bz) * (cz - az) + (cx * cx + cz * cz) * (az - bz)) / D;
+    const uz = ((ax * ax + az * az) * (cx - bx) + (bx * bx + bz * bz) * (ax - cx) + (cx * cx + cz * cz) * (bx - ax)) / D;
+    return { x: ux, z: uz };
+  },
+  /** a spot dist metres ahead of the road at distance m (and a little to one side), nudged out until it's clear */
+  ahead(c, m, dist, r, side) {
+    const q = this.atCum(c, m);
+    for (let k = 0; k < 40; k++) {
+      const d = dist + k * 25, s = (side || 0) + (k % 2 ? 1 : -1) * Math.floor(k / 2) * 0.12;
+      const a = q.yaw + s, x = q.x + Math.sin(a) * d, z = q.z + Math.cos(a) * d;
+      if (c.clear(x, z, r)) return { x, z, face: Math.atan2(q.x - x, q.z - z) };
+    }
+    return null;
+  },
+  /** Petronas Towers: two eight-pointed stepped towers either side of the road, joined by the skybridge over it */
+  petronas(c, q) {
+    const { B, M, GY } = c, R = 12, H = 200, d = q.reach + R + 5;
+    const T = [[0, 0.55, 1], [0.55, 0.67, 0.9], [0.67, 0.77, 0.8], [0.77, 0.85, 0.68], [0.85, 0.9, 0.52]];
+    const at = [];
+    for (const s of [-1, 1]) {
+      const o = c.off(q, s, d);
+      at.push(o);
+      B.box(M.concrete, o.x, GY + 3, o.z, R * 2.8, 6, R * 2.8, q.yaw);
+      for (const [a, b, f] of T) {
+        const w = R * f * 1.41, y = GY + 6 + (a + b) / 2 * H, hh = (b - a) * H;
+        B.facade(M.bands, o.x, y, o.z, w, hh, w, q.yaw);
+        B.facade(M.bands, o.x, y, o.z, w, hh, w, q.yaw + Math.PI / 4);
+        B.add(M.steel, this.cyl(1, 1, 16), o.x, GY + 6 + b * H, o.z, R * f * 1.08, 1.4, R * f * 1.08);
+      }
+      B.add(M.steel, this.cone(16), o.x, GY + 6 + 0.95 * H, o.z, R * 0.42, H * 0.1, R * 0.42);
+      B.add(M.steel, this.cyl(0.15, 0.6, 6), o.x, GY + 6 + 1.06 * H, o.z, 1, H * 0.14, 1);
+      c.take(o.x, o.z, R * 1.5);
+    }
+    // the skybridge (two decks) and the V of legs under it
+    const y = GY + 6 + 0.4 * H, A = new THREE.Vector3(at[0].x, y, at[0].z), Z = new THREE.Vector3(at[1].x, y, at[1].z);
+    B.beam(M.glass, A, Z, 4, 6);
+    B.beam(M.steel, A.clone().setY(y + 4.4), Z.clone().setY(y + 4.4), 4, 6.4);
+    const mid = new THREE.Vector3((A.x + Z.x) / 2, y - 2, (A.z + Z.z) / 2);
+    for (const P of [A, Z]) B.beam(M.steel, P.clone().setY(GY + 6 + 0.3 * H), mid, 1.2, 1.2);
+  },
+  /** Burj Khalifa: a Y of three wings stepping up round a core, and the spire */
+  burj(c, x, z, ry) {
+    const { B, M, GY } = c, H = 400;
+    B.add(M.bands, this.cyl(9, 9, 12), x, GY + H * 0.4, z, 1, H * 0.8, 1);
+    for (let w = 0; w < 3; w++) {
+      const a = ry + w * Math.PI * 2 / 3;
+      for (let i = 0; i < 9; i++) {
+        const top = H * (0.16 + i * 0.075 + w * 0.025), bot = i ? H * (0.16 + (i - 1) * 0.075 + w * 0.025) : 0, len = 30 * (1 - i / 10);
+        const cx = x + Math.sin(a) * len / 2, cz = z + Math.cos(a) * len / 2;
+        B.facade(M.bands, cx, GY + (top + bot) / 2, cz, 13 - i * 0.6, top - bot, len, a);
+      }
+    }
+    B.add(M.steel, this.cone(10), x, GY + H * 0.83, z, 6, H * 0.34, 6);
+    B.add(M.steel, this.cyl(0.3, 1.2, 6), x, GY + H * 1.03, z, 1, H * 0.12, 1);
+    c.take(x, z, 40);
+  },
+  /** the Empire State Building: limestone setbacks, the Art Deco crown and the mast */
+  empire(c, x, z, ry) {
+    const { B, M, GY } = c, H = 175;
+    B.facade(M.lime, x, GY + 12, z, 50, 24, 42, ry);
+    B.facade(M.lime, x, GY + 24 + H * 0.31, z, 36, H * 0.62, 28, ry);
+    B.facade(M.lime, x, GY + 24 + H * 0.68, z, 28, H * 0.12, 21, ry);
+    B.facade(M.lime, x, GY + 24 + H * 0.77, z, 20, H * 0.06, 15, ry);
+    for (let k = 0; k < 3; k++) B.box(M.limeSolid, x, GY + 24 + H * 0.8 + 3 + k * 5, z, 13 - k * 3, 5, 11 - k * 2.6, ry);
+    B.add(M.limeSolid, this.cyl(2.6, 3.4, 8), x, GY + 24 + H * 0.8 + 26, z, 1, 14, 1);
+    B.add(M.steel, this.cyl(0.25, 0.8, 6), x, GY + 24 + H * 0.8 + 47, z, 1, 30, 1);
+    c.take(x, z, 32);
+  },
+  /** the CN Tower: a tall concrete shaft with its pod and antenna */
+  cnTower(c, x, z) {
+    const { B, M, GY } = c, H = 290;
+    B.add(M.concrete, this.cyl(4, 10, 6), x, GY + H * 0.36, z, 1, H * 0.72, 1);
+    for (let k = 0; k < 3; k++) { const a = k * Math.PI * 2 / 3; B.add(M.concrete, this.cone(3), x + Math.sin(a) * 8, GY + H * 0.16, z + Math.cos(a) * 8, 4, H * 0.32, 4, a); }
+    B.add(M.concrete, this.cyl(17, 13, 20), x, GY + H * 0.6, z, 1, 12, 1);
+    B.add(M.glass, this.cyl(18, 18, 20), x, GY + H * 0.6 + 7, z, 1, 3, 1);
+    B.add(M.concrete, this.cyl(11, 14, 20), x, GY + H * 0.6 + 11, z, 1, 6, 1);
+    B.add(M.concrete, this.cyl(3, 4, 8), x, GY + H * 0.74, z, 1, H * 0.06, 1);
+    B.add(M.concrete, this.cyl(6, 6, 12), x, GY + H * 0.78, z, 1, 6, 1);
+    B.add(M.white, this.cyl(0.4, 2.4, 6), x, GY + H * 0.9, z, 1, H * 0.22, 1);
+    c.take(x, z, 20);
+  },
+  /** the Gateway Arch: a stainless catenary, here straddling the road at road point q */
+  gatewayArch(c, q, span) {
+    const { B, M, GY } = c, S = span || 170, H = S, k = 1.7, ch = Math.cosh(k) - 1;
+    let prev = null, prevW = 0;
+    for (let i = 0; i <= 32; i++) {
+      const u = i / 16 - 1, y = GY + H * (1 - (Math.cosh(k * u) - 1) / ch), o = c.off(q, 1, u * S / 2), pt = new THREE.Vector3(o.x, y, o.z);
+      const w = 5 + 9 * (1 - (1 - Math.abs(u)) ** 0.5);
+      if (prev) B.beam(M.chrome, prev, pt, (w + prevW) / 2, (w + prevW) / 2 * 0.86, new THREE.Vector3(Math.sin(q.yaw), 0, Math.cos(q.yaw)));
+      prev = pt; prevW = w;
+    }
+    for (const s of [-1, 1]) { const o = c.off(q, s, S / 2); c.take(o.x, o.z, 9); }
+  },
+  /** the pyramids of Giza: Khufu, Khafre (its casing still on top), Menkaure and three queens */
+  giza(c, x, z, ry) {
+    const { B, M, GY } = c, s = Math.sin(ry), co = Math.cos(ry);
+    const P = [[0, 0, 150], [175, 165, 140], [320, 300, 70], [380, 300, 24], [380, 340, 22], [380, 380, 20]];
+    for (const [a0, b0, sz] of P) {
+      const a = a0 - 190, b = b0 - 180, px = x + co * a + s * b, pz = z - s * a + co * b, h = sz * 0.64;
+      B.add(M.stone, this.cone(4), px, GY + h / 2, pz, sz * 0.707, h, sz * 0.707, ry + Math.PI / 4);
+      if (sz === 140) B.add(M.marble, this.cone(4), px, GY + h * 0.89, pz, sz * 0.707 * 0.22, h * 0.22, sz * 0.707 * 0.22, ry + Math.PI / 4);
+      c.take(px, pz, sz * 0.75);
+    }
+  },
+  /** the Sphinx, lying in its pit, looking along `face` */
+  sphinx(c, x, z, face) {
+    const { B, M, GY } = c, f = { x: Math.sin(face), z: Math.cos(face) }, at = (d, l) => ({ x: x + f.x * d + Math.cos(face) * l, z: z + f.z * d - Math.sin(face) * l });
+    const P = (d, l, y, sx, sy, sz, mat, rx) => { const p = at(d, l); B.box(mat || M.stone, p.x, GY + y, p.z, sx, sy, sz, face, rx || 0); };
+    // a lion lying down: long low body, the haunch, the paws stretched out, the head in its headdress
+    P(-4, 0, 0.3, 26, 0.6, 66, M.stoneDark);
+    P(-6, 0, 4, 10, 8, 36); P(-21, 0, 4.6, 11.5, 7.2, 10); P(9, 0, 5, 9, 9, 8);
+    for (const l of [-2.8, 2.8]) P(19, l, 1.4, 3, 2.8, 18);
+    P(13.5, 0, 11.2, 5, 5.4, 5.2);
+    for (const l of [-1, 1]) P(12.6, l * 3.2, 9.6, 1.1, 5.6, 4.6, M.stoneDark);
+    P(12.8, 0, 14.2, 5.8, 1.2, 5.6, M.stoneDark);
+    P(16.15, 0, 11, 0.4, 2.4, 2.6, M.shadow);
+    c.take(x, z, 34);
+  },
+  /** the Colosseum: four storeys of arches round an ellipse, broken down on one side */
+  colosseum(c, x, z, ry) {
+    const { B, M, GY } = c, A = 64, Bb = 52, H = 38, N = 48;
+    for (let k = 0; k < N; k++) {
+      const t0 = k / N * Math.PI * 2, t1 = (k + 1) / N * Math.PI * 2, tm = (t0 + t1) / 2;
+      const p0 = { x: Math.cos(t0) * A, z: Math.sin(t0) * Bb }, p1 = { x: Math.cos(t1) * A, z: Math.sin(t1) * Bb };
+      const mx = (p0.x + p1.x) / 2, mz = (p0.z + p1.z) / 2, len = Math.hypot(p1.x - p0.x, p1.z - p0.z) + 0.4, a = Math.atan2(p1.x - p0.x, p1.z - p0.z) + Math.PI / 2;
+      const wx = x + Math.cos(ry) * mx + Math.sin(ry) * mz, wz = z - Math.sin(ry) * mx + Math.cos(ry) * mz;
+      const ruined = tm > 2.2 && tm < 3.6, h = ruined ? (k % 2 ? 24 : 27) : H;
+      B.facade(M.arcade, wx, GY + h / 2, wz, len, h, 5, a + ry);
+      // the lower ring inside (the seating)
+      const ix = x + (Math.cos(ry) * mx + Math.sin(ry) * mz) * 0.74, iz = z + (-Math.sin(ry) * mx + Math.cos(ry) * mz) * 0.74;
+      B.box(M.stoneDark, ix, GY + 9, iz, len * 0.76, 18, 9, a + ry, ruined ? 0 : 0.35);
+    }
+    B.add(M.sand, this.geo('disc', () => new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2)), x, GY + 0.25, z, A * 0.55, 1, Bb * 0.55, ry + Math.PI / 2);
+    c.take(x, z, A + 6);
+  },
+  /** a triumphal arch over the road at road point q (after the Arc de Triomphe) */
+  triumph(c, q) {
+    const { B, M, GY } = c, half = q.hw + 5, pw = 15, H = q.y - GY + 52, oh = q.y - GY + 34, dep = 22, yaw = q.yaw;
+    for (const s of [-1, 1]) {
+      const o = c.off(q, s, half + pw / 2);
+      B.box(M.stone, o.x, GY + H / 2, o.z, pw, H, dep, yaw);
+      B.box(M.stoneDark, o.x, GY + 1, o.z, pw + 1.6, 2, dep + 1.6, yaw);
+      // the relief panels and the side arch
+      for (const f of [-1, 1]) {
+        const p = { x: o.x + Math.sin(yaw) * f * (dep / 2 + 0.2), z: o.z + Math.cos(yaw) * f * (dep / 2 + 0.2) };
+        B.box(M.stoneDark, p.x, GY + oh * 0.45, p.z, pw * 0.6, oh * 0.4, 0.6, yaw);
+      }
+      const so = c.off(q, s, half + pw + 0.2);
+      B.box(M.shadow, so.x, GY + oh * 0.35, so.z, 0.6, oh * 0.6, dep * 0.42, yaw);
+    }
+    B.box(M.stone, q.x, GY + (oh + H) / 2, q.z, half * 2 + 0.2, H - oh, dep, yaw);
+    B.box(M.stoneDark, q.x, GY + H - 7, q.z, half * 2 + pw * 2 + 1.2, 1.4, dep + 1.2, yaw);
+    B.box(M.stone, q.x, GY + H + 3, q.z, half * 2 + pw * 2, 6, dep, yaw);
+    for (let k = 1; k <= 8; k++) {
+      const a0 = Math.PI * (k - 1) / 8, a1 = Math.PI * k / 8, ar = half;
+      const p0 = c.off(q, 1, Math.cos(a0) * ar), p1 = c.off(q, 1, Math.cos(a1) * ar);
+      B.beam(M.stoneDark, new THREE.Vector3(p0.x, GY + oh - ar * 0.55 + Math.sin(a0) * ar * 0.55, p0.z), new THREE.Vector3(p1.x, GY + oh - ar * 0.55 + Math.sin(a1) * ar * 0.55, p1.z),
+        dep + 0.4, 1.4, new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)));
+    }
+    for (const s of [-1, 1]) { const o = c.off(q, s, half + pw / 2); c.take(o.x, o.z, pw); }
+  },
+  /** canyon walls along the road between two distances (Petra's Siq, a gorge below a dam) */
+  canyon(c, m0, m1, mat, hMin, hMax) {
+    const { B, GY, R } = c;
+    let last = -1e9;
+    for (const q of R.pts) {
+      if (q.cum < m0 || q.cum > m1 || q.cum - last < 7) continue;
+      last = q.cum;
+      for (const s of [-1, 1]) {
+        const w = c.rr(14, 26), d = q.reach + 3 + w / 2, o = c.off(q, s, d), h = c.rr(hMin, hMax);
+        let ok = true;
+        for (const p of R.pts) { const need = p.reach + 2 + w * 0.45; if ((p.x - o.x) ** 2 + (p.z - o.z) ** 2 < need * need) { ok = false; break; } }
+        if (!ok) continue;
+        B.box(mat, o.x, GY + h / 2, o.z, w, h, c.rr(10, 16), q.yaw + c.rr(-0.25, 0.25), 0, c.rr(-0.06, 0.06));
+        B.box(mat, o.x + c.rr(-3, 3), GY + h + 2, o.z + c.rr(-3, 3), w * 0.6, 6, 8, q.yaw + c.rr(-0.6, 0.6));
+      }
+    }
+  },
+  /** Petra's Treasury, carved into a cliff at (x, z), facing `face` */
+  petra(c, x, z, face) {
+    const { B, M, GY } = c, f = { x: Math.sin(face), z: Math.cos(face) }, at = (d, l) => ({ x: x + f.x * d + Math.cos(face) * l, z: z + f.z * d - Math.sin(face) * l });
+    const P = (d, l, y, sx, sy, sz, mat, geo) => { const p = at(d, l); if (geo) B.add(mat, geo, p.x, GY + y, p.z, sx, sy, sz, face); else B.box(mat, p.x, GY + y, p.z, sx, sy, sz, face); };
+    P(-22, 0, 36, 150, 72, 40, M.rose);
+    P(-1, 0, 2, 34, 4, 6, M.roseDark);
+    for (const l of [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]) P(0, l, 4 + 8, 1.3, 16, 1.3, M.rose, this.cyl(1, 1.1, 10));
+    P(-1.5, 0, 21, 33, 2.4, 4, M.roseDark);
+    P(-1.5, 0, 25, 30, 6, 3, M.rose, this.geo('prism', () => new THREE.CylinderGeometry(1, 1, 1, 3).rotateX(Math.PI / 2).rotateZ(Math.PI / 2)));
+    P(-3, 0, 9, 7, 14, 1.2, M.shadow);
+    P(-2.5, 0, 36, 7, 14, 7, M.rose, this.cyl(1, 1, 14));
+    P(-2.5, 0, 44, 5, 3, 5, M.rose, this.cone(14));
+    for (const l of [-10, 10]) { P(-2.5, l, 36, 7, 14, 4, M.rose); P(-2.5, l, 44, 7, 2, 5, M.roseDark); }
+    c.take(x, z, 40);
+  },
+  /** Golden Gate towers (Art Deco portals) for the suspension bridge */
+  ggTower(c, q, top, legs) {
+    const { B, M, GY } = c, deck = q.y - DECK_T - GIRDER_D;
+    for (const s of [-1, 1]) {
+      const o = c.off(q, s, legs);
+      const tiers = [[GY, deck + (top - deck) * 0.42, 3.6], [deck + (top - deck) * 0.42, deck + (top - deck) * 0.75, 3.1], [deck + (top - deck) * 0.75, top, 2.6]];
+      for (const [a, b, w] of tiers) B.box(M.orange, o.x, (a + b) / 2, o.z, w, b - a, w * 1.4, q.yaw);
+      B.box(M.orange, o.x, top + 1.2, o.z, 3.2, 2.4, 4.2, q.yaw);
+    }
+    for (const f of [0.3, 0.55, 0.78, 0.97]) B.box(M.orange, q.x, deck + (top - deck) * f, q.z, legs * 2 + 2, f > 0.9 ? 3 : 2, 2.6, q.yaw);
+    B.box(M.orange, q.x, deck - 3, q.z, legs * 2 + 2, 2.4, 2.6, q.yaw);
+    B.box(M.concreteDark, q.x, GY + 2, q.z, legs * 2 + 8, 4, 9, q.yaw);
+  },
+  /** Hoover Dam: an arch of concrete in a gorge, intake towers in the lake behind it */
+  hoover(c, x, z, fx, fz) {
+    const { B, M, GY } = c, face = Math.atan2(fx - x, fz - z), H = 80, Rd = 150, arc = 0.8;
+    const cx = x - Math.sin(face) * Rd, cz = z - Math.cos(face) * Rd;
+    for (let k = 0; k < 18; k++) {
+      const a = face - arc / 2 + arc * (k + 0.5) / 18, px = cx + Math.sin(a) * Rd, pz = cz + Math.cos(a) * Rd, seg = Rd * arc / 18 + 0.6;
+      for (let t = 0; t < 4; t++) B.box(M.concrete, px + Math.sin(a) * t * 7, GY + H * (1 - t * 0.22) / 2, pz + Math.cos(a) * t * 7, seg, H * (1 - t * 0.22), 8, a);
+      B.box(M.concreteDark, px, GY + H + 1, pz, seg, 2, 14, a);
+    }
+    B.add(M.water, this.geo('disc', () => new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2)), cx, GY + H - 6, cz, Rd * 0.97, 1, Rd * 0.97);
+    // four intake towers standing in the lake
+    for (const s of [-0.28, -0.18, 0.18, 0.28]) {
+      const a = face + s, px = cx + Math.sin(a) * Rd * 0.82, pz = cz + Math.cos(a) * Rd * 0.82;
+      B.add(M.concrete, this.cyl(4.2, 5, 12), px, GY + (H + 10) / 2, pz, 1, H + 10, 1);
+      B.add(M.concreteDark, this.cyl(5.2, 4.2, 12), px, GY + H + 12, pz, 1, 4, 1);
+    }
+    // the gorge: red rock walls running away either side
+    for (const s of [-1, 1]) for (let k = 0; k < 7; k++) {
+      const a = face + s * (arc / 2 + 0.05), ex = cx + Math.sin(a) * Rd, ez = cz + Math.cos(a) * Rd, d = k * 45 - 60;
+      const px = ex + Math.sin(face) * d + Math.cos(face) * s * 20, pz = ez + Math.cos(face) * d - Math.sin(face) * s * 20;
+      B.box(M.rose, px, GY + 55, pz, 60, c.rr(100, 130), 50, face + c.rr(-0.2, 0.2));
+    }
+    c.take(x, z, 230);
+  },
+  /** the Eiffel Tower, its legs either side of the road at road point q (tokyo: Tokyo Tower's red and white) */
+  eiffel(c, q, tokyo) {
+    const { B, M, GY } = c, S = 2 * (q.reach + 9), H = S * (tokyo ? 2.4 : 2.62), yaw = q.yaw;
+    const fw = { x: Math.sin(yaw), z: Math.cos(yaw) }, rt = { x: Math.cos(yaw), z: -Math.sin(yaw) };
+    const P = (u, v, y) => new THREE.Vector3(q.x + rt.x * u + fw.x * v, GY + y, q.z + rt.z * u + fw.z * v);
+    const mat = (y) => (tokyo ? (Math.floor(y / (H / 12)) % 2 ? M.white : M.orange) : M.bronze);
+    const h1 = H * 0.175, h2 = H * 0.35, h3 = H * 0.93, c1 = S * 0.33, c2 = S * 0.17, c3 = S * 0.035;
+    for (const su of [-1, 1]) for (const sv of [-1, 1]) {
+      // each leg: two members, curving in toward the first platform
+      for (let k = 0; k < 4; k++) {
+        const t0 = k / 4, t1 = (k + 1) / 4, e = (t) => S / 2 - (S / 2 - c1) * Math.pow(t, 1.4);
+        B.beam(mat(h1 * t0), P(su * e(t0), sv * e(t0), h1 * t0), P(su * e(t1), sv * e(t1), h1 * t1), S * 0.08, S * 0.08);
+      }
+      B.beam(mat(h1), P(su * c1, sv * c1, h1), P(su * c2, sv * c2, h2), S * 0.05, S * 0.05);
+      for (let k = 0; k < 6; k++) {
+        const t0 = k / 6, t1 = (k + 1) / 6, e = (t) => c2 - (c2 - c3) * Math.pow(t, 0.8);
+        B.beam(mat(h2 + (h3 - h2) * t0), P(su * e(t0), sv * e(t0), h2 + (h3 - h2) * t0), P(su * e(t1), sv * e(t1), h2 + (h3 - h2) * t1), S * 0.035, S * 0.035);
+      }
+    }
+    // the arches under the first platform, on each face
+    for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      let prev = null;
+      for (let k = 0; k <= 10; k++) {
+        const t = k / 10 * 2 - 1, w = t * (S / 2 - S * 0.06), y = h1 * 0.25 + h1 * 0.55 * (1 - t * t);
+        const pt = du ? P(du * (S / 2 - S * 0.06 * Math.abs(1 - Math.abs(t))), w, y) : P(w, dv * (S / 2 - S * 0.06 * Math.abs(1 - Math.abs(t))), y);
+        if (prev) B.beam(mat(y), prev, pt, 1.2, 1.2);
+        prev = pt;
+      }
+    }
+    // the platforms, the ties up the top section, the top and the antenna
+    for (const [y, half, th] of [[h1, c1 + 1.5, 4.5], [h2, c2 + 1.2, 3], [h3, c3 + 1.6, 3]]) {
+      for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const a = du ? P(du * half, -half, y) : P(-half, dv * half, y), b = du ? P(du * half, half, y) : P(half, dv * half, y);
+        B.beam(tokyo ? M.white : M.bronze, a, b, th, 2.2);
+      }
+    }
+    if (tokyo) B.box(M.white, q.x, GY + h2 + 3, q.z, c2 * 2.6, 8, c2 * 2.6, yaw);
+    for (let k = 1; k < 8; k++) {
+      const y = h2 + (h3 - h2) * k / 8, e = c2 - (c2 - c3) * Math.pow(k / 8, 0.8);
+      for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const a = du ? P(du * e, -e, y) : P(-e, dv * e, y), b = du ? P(du * e, e, y) : P(e, dv * e, y);
+        B.beam(mat(y), a, b, 0.7, 0.7);
+      }
+    }
+    B.add(tokyo ? M.white : M.bronze, this.cyl(0.4, 1.6, 6), q.x, GY + h3 + (H - h3) / 2 + 2, q.z, 1, H - h3 + 4, 1);
+    for (const su of [-1, 1]) for (const sv of [-1, 1]) { const p = P(su * S / 2, sv * S / 2, 0); c.take(p.x, p.z, S * 0.06 + 2); }
+  },
+  /** a run of torii gates over the road between two distances (Fushimi Inari) */
+  torii(c, m0, m1, every) {
+    const { B, M, GY, R } = c;
+    let last = -1e9;
+    for (const q of R.pts) {
+      if (q.cum < m0 || q.cum > m1 || q.cum - last < (every || 3.4)) continue;
+      last = q.cum;
+      const half = q.hw + 1.5, top = q.y + 8.6, fw = new THREE.Vector3(Math.sin(q.yaw), 0, Math.cos(q.yaw));
+      for (const s of [-1, 1]) {
+        const o = c.off(q, s, half);
+        B.add(M.vermilion, this.cyl(0.42, 0.48, 10), o.x, (GY + top) / 2, o.z, 1, top - GY, 1);
+        B.add(M.black, this.cyl(0.56, 0.56, 10), o.x, GY + 1.2, o.z, 1, 2.4, 1);
+      }
+      const a = c.off(q, -1, half + 1.9), b = c.off(q, 1, half + 1.9), a2 = c.off(q, -1, half + 1.2), b2 = c.off(q, 1, half + 1.2);
+      B.beam(M.black, new THREE.Vector3(a.x, top + 0.75, a.z), new THREE.Vector3(b.x, top + 0.75, b.z), 0.55, 1.1, fw);
+      B.beam(M.vermilion, new THREE.Vector3(a.x, top + 0.2, a.z), new THREE.Vector3(b.x, top + 0.2, b.z), 0.6, 0.9, fw);
+      B.beam(M.vermilion, new THREE.Vector3(a2.x, top - 1.6, a2.z), new THREE.Vector3(b2.x, top - 1.6, b2.z), 0.5, 0.6, fw);
+    }
+  },
+  /** a five-storey pagoda */
+  pagoda(c, x, z, ry) {
+    const { B, M, GY } = c;
+    B.box(M.stoneDark, x, GY + 1, z, 16, 2, 16, ry);
+    let y = GY + 2;
+    for (let i = 0; i < 5; i++) {
+      const w = 10 - i * 1.3, h = i ? 3.4 : 4.6;
+      B.box(M.vermilion, x, y + h / 2, z, w, h, w, ry);
+      y += h;
+      B.add(M.tile, this.cone(4), x, y + 0.8, z, (w / 2 + 3.4) * 1.414, 2.2, (w / 2 + 3.4) * 1.414, ry + Math.PI / 4);
+      y += 1.2;
+    }
+    B.add(M.gold, this.cyl(0.25, 0.4, 6), x, y + 5, z, 1, 10, 1);
+    for (let k = 0; k < 7; k++) B.add(M.gold, this.cyl(1, 1, 10), x, y + 1.5 + k * 0.9, z, 0.9 - k * 0.06, 0.2, 0.9 - k * 0.06);
+    c.take(x, z, 11);
+  },
+  /** the Taj Mahal on its plinth, minarets at the corners, the long pool in front (facing `face`) */
+  taj(c, x, z, face) {
+    const { B, M, GY } = c, f = { x: Math.sin(face), z: Math.cos(face) }, at = (d, l) => ({ x: x + f.x * d + Math.cos(face) * l, z: z + f.z * d - Math.sin(face) * l });
+    const P = (d, l, y, sx, sy, sz, mat, geo) => { const p = at(d, l); if (geo) B.add(mat, geo, p.x, GY + y, p.z, sx, sy, sz, face); else B.box(mat, p.x, GY + y, p.z, sx, sy, sz, face); };
+    P(0, 0, 3.5, 96, 7, 96, M.marble);
+    P(0, 0, 7 + 15, 30, 30, 30, M.marble, this.cyl(1, 1, 8));
+    for (const [d, l] of [[30.5, 0], [-30.5, 0], [0, 30.5], [0, -30.5]]) {
+      const p = at(d, l), ang = face + (l ? Math.PI / 2 : 0);
+      B.box(M.marble, p.x, GY + 7 + 13, p.z, 18, 26, 1.4, ang);
+      B.box(M.shadow, p.x + Math.sin(ang) * (d ? Math.sign(d) : 0) * 0.3, GY + 7 + 11, p.z, 9, 17, 1.6, ang);
+    }
+    P(0, 0, 7 + 33, 14, 6, 14, M.marble, this.cyl(1, 1, 16));
+    P(0, 0, 7 + 46, 16, 20, 16, M.marble, this.geo('dome', () => new THREE.SphereGeometry(1, 16, 10)));
+    P(0, 0, 7 + 60, 1.2, 8, 1.2, M.gold, this.cone(8));
+    for (const [d, l] of [[16, 16], [16, -16], [-16, 16], [-16, -16]]) {
+      P(d, l, 7 + 33, 3, 6, 3, M.marble, this.cyl(1, 1, 8));
+      P(d, l, 7 + 38, 4, 5, 4, M.marble, this.geo('dome', () => new THREE.SphereGeometry(1, 16, 10)));
+    }
+    for (const [d, l] of [[44, 44], [44, -44], [-44, 44], [-44, -44]]) {
+      P(d, l, 7 + 22, 2.4, 44, 2.4, M.marble, this.cyl(0.8, 1, 12));
+      for (const y of [14, 28, 40]) P(d, l, 7 + y, 3.6, 0.8, 3.6, M.marble, this.cyl(1, 1, 12));
+      P(d, l, 7 + 46.5, 2.4, 3, 2.4, M.marble, this.geo('dome', () => new THREE.SphereGeometry(1, 16, 10)));
+    }
+    // the reflecting pool and its walks, cypresses either side
+    P(48 + 75, 0, 0.35, 6, 0.4, 150, M.water);
+    for (const l of [-6, 6]) P(48 + 75, l, 0.2, 5, 0.4, 150, M.marble);
+    for (let d = 55; d < 196; d += 9) for (const l of [-11, 11]) { const p = at(d, l); B.add(M.cypress, this.cone(7), p.x, GY + 6, p.z, 1.6, 12, 1.6); }
+    c.take(x, z, 70);
+    const pool = at(120, 0); c.take(pool.x, pool.z, 40);
+  },
+  /** Mount Fuji on the horizon */
+  fuji(c, x, z) {
+    const { B, M, GY } = c;
+    B.add(M.fujiRock, this.cone(9), x, GY + 160, z, 560, 330, 560);
+    B.add(M.snow, this.cone(9), x, GY + 160 + 130, z, 190, 115, 190);
+    c.take(x, z, 560);
+  },
+  /** a stretch of the Great Wall across the land: a wall with battlements, a watchtower every 80 m */
+  wallLine(c, pts) {
+    const { B, M, GY } = c;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], L = Math.hypot(b.x - a.x, b.z - a.z), ang = Math.atan2(b.x - a.x, b.z - a.z);
+      if (!c.clear((a.x + b.x) / 2, (a.z + b.z) / 2, 6)) continue;
+      B.box(M.wallStone, (a.x + b.x) / 2, GY + 4, (a.z + b.z) / 2, 7, 8, L + 0.5, ang);
+      for (let d = 1; d < L; d += 3) for (const s of [-1, 1]) {
+        const t = d / L;
+        B.box(M.wallStone, a.x + (b.x - a.x) * t + Math.cos(ang) * s * 3.2, GY + 8.8, a.z + (b.z - a.z) * t - Math.sin(ang) * s * 3.2, 0.7, 1.6, 1.4, ang);
+      }
+      if (i % 2 === 0) { B.box(M.wallStone, b.x, GY + 7, b.z, 11, 14, 11, ang); B.box(M.tile, b.x, GY + 15, b.z, 12.5, 2, 12.5, ang); }
+    }
+  },
+
 
   /* ---------------------------------------------- the pieces */
   /** a skyscraper: podium, shaft with windows, a setback and a crown */
@@ -11571,10 +12301,11 @@ const Landmarks = {
   supports(c, style) {
     const { B, M, GY, R } = c, P = R.pts;
     let last = -1e9, prevPier = null;
+    if (style === 'wall' || style === 'millau') { this.supports2(c, style); return; }
     const every = style === 'arches' ? 13 : 16;
     for (let i = 0; i < P.length; i++) {
       const q = P[i];
-      if (!q.bridge) { prevPier = null; continue; }
+      if (!q.bridge || (c.skip || []).some(([a, b]) => q.cum > a && q.cum < b)) { prevPier = null; continue; }
       if (q.cum - last < every) continue;
       const deckB = q.y - DECK_T - GIRDER_D, h = deckB - GY;
       if (h < 2.5) { prevPier = null; continue; }
@@ -11594,9 +12325,14 @@ const Landmarks = {
         B.box(M.stone, q.x, GY + h / 2, q.z, fw, h, 3.2, q.yaw);
         B.box(M.stoneDark, q.x, GY + 0.8, q.z, fw + 1.2, 1.6, 4.4, q.yaw);
         if (prevPier) {
-          const tiers = h > 20 ? 2 : 1;
+          // the Pont du Gard: two tiers of big arches and a third of small ones under the road
+          const tiers = h > 16 ? 2 : 1, small = h > 16 ? Math.min(6, h * 0.16) : 0, span = Math.hypot(q.x - prevPier.x, q.z - prevPier.z);
+          if (small) {
+            const ax = (prevPier.x + q.x) / 2, az = (prevPier.z + q.z) / 2;
+            B.facade(M.arcade, ax, deckB - small / 2, az, span + 3.2, small, fw * 0.9, Math.atan2(q.x - prevPier.x, q.z - prevPier.z) + Math.PI / 2);
+          }
           for (let t = 0; t < tiers; t++) {
-            const topY = tiers === 2 && t === 0 ? GY + h * 0.5 : deckB, span = Math.hypot(q.x - prevPier.x, q.z - prevPier.z), rad = span / 2;
+            const topY = tiers === 2 && t === 0 ? GY + (h - small) * 0.52 : deckB - small, rad = span / 2;
             const ax = (prevPier.x + q.x) / 2, az = (prevPier.z + q.z) / 2, dx = (q.x - prevPier.x) / span, dz = (q.z - prevPier.z) / span;
             const springY = topY - rad * 0.9;
             for (let k = 1; k <= 8; k++) {
@@ -11614,11 +12350,60 @@ const Landmarks = {
       }
     }
   },
-  /** a suspension bridge along straight raised road from point a to point b (indices) */
-  suspension(c, ia, ib, mat) {
+  /** the Great Wall under the road (solid, with watchtowers beside it), or Millau's piers and pylons */
+  supports2(c, style) {
+    const { B, M, GY, R } = c, P = R.pts;
+    if (style === 'wall') {
+      let tower = 0;
+      for (let i = 1; i < P.length; i++) {
+        const a = P[i - 1], q = P[i];
+        if (!q.bridge || !a.bridge || a.strip !== q.strip) continue;
+        const deckB = (a.y + q.y) / 2 - DECK_T - GIRDER_D + 0.3, h = deckB - GY;
+        if (h < 1) continue;
+        B.box(M.wallStone, (a.x + q.x) / 2, GY + h / 2, (a.z + q.z) / 2, q.hw * 2 * 0.98, h, Math.hypot(q.x - a.x, q.z - a.z) + 0.4, Math.atan2(q.x - a.x, q.z - a.z));
+        if (q.cum - tower > 85 && h > 3) {
+          tower = q.cum;
+          const side = Math.floor(q.cum / 85) % 2 ? 1 : -1, o = c.off(q, side, q.hw + 6.5), th = q.y - GY + 7;
+          B.box(M.wallStone, o.x, GY + th / 2, o.z, 11, th, 11, q.yaw);
+          for (let k = 0; k < 4; k++) for (const s2 of [-1, 1]) {
+            const e = c.off({ x: o.x, z: o.z, yaw: q.yaw }, s2, 5.2);
+            B.box(M.wallStone, e.x + Math.sin(q.yaw) * (k - 1.5) * 2.8, GY + th + 0.8, e.z + Math.cos(q.yaw) * (k - 1.5) * 2.8, 0.8, 1.6, 1.4, q.yaw);
+          }
+          B.box(M.tile, o.x, GY + th + 3.4, o.z, 8, 1.4, 8, q.yaw);
+          B.add(M.tile, this.cone(4), o.x, GY + th + 5, o.z, 6.5, 2.6, 6.5, q.yaw + Math.PI / 4);
+          c.take(o.x, o.z, 7);
+        }
+      }
+      return;
+    }
+    // the Millau Viaduct: tall tapering piers, and a white pylon each side above the deck with cables fanning out
+    let last = -1e9;
+    for (const q of P) {
+      if (!q.bridge || q.cum - last < 46) continue;
+      const deckB = q.y - DECK_T - GIRDER_D, h = deckB - GY;
+      if (h < 6) continue;
+      last = q.cum;
+      B.box(M.concrete, q.x, GY + h * 0.36, q.z, q.hw * 0.9, h * 0.72, 5, q.yaw);
+      for (const s of [-1, 1]) { const o = c.off(q, s, q.hw * 0.3); B.box(M.concrete, o.x, GY + h * 0.86, o.z, q.hw * 0.32, h * 0.3, 4, q.yaw); }
+      for (const s of [-1, 1]) {
+        const o = c.off(q, s, q.hw + 1.4), top = q.y + 24;
+        B.add(M.white, this.cyl(0.5, 1.2, 6), o.x, (q.y + top) / 2, o.z, 1, top - q.y, 1);
+        for (let dd = -21; dd <= 21; dd += 6) {
+          if (Math.abs(dd) < 4) continue;
+          const q2 = this.atCum(c, q.cum + dd);
+          if (!q2.bridge) continue;
+          const e = c.off(q2, s, q2.hw + 0.2);
+          B.beam(M.cable, new THREE.Vector3(o.x, top - 1 - Math.abs(dd) * 0.25, o.z), new THREE.Vector3(e.x, q2.y + 0.2, e.z), 0.18, 0.18);
+        }
+      }
+    }
+  },
+  /** a suspension bridge along straight raised road from point a to point b (indices); gg: the Golden Gate's */
+  suspension(c, ia, ib, mat, gg) {
     const { B, M, GY, R } = c, P = R.pts, A = P[ia], Z = P[ib];
     const top = Math.max(A.y, Z.y) + 26, sag = 15, legs = A.hw + 2.2;
-    const towerAt = (q) => {
+    if (gg) mat = M.orange;
+    const towerAt = gg ? (q) => this.ggTower(c, q, top, legs) : (q) => {
       for (const s of [-1, 1]) {
         const o = c.off(q, s, legs);
         B.box(mat || M.red, o.x, (GY + top) / 2, o.z, 2.2, top - GY, 2.6, q.yaw);
@@ -11635,7 +12420,7 @@ const Landmarks = {
       for (let k = 0; k <= 24; k++) {
         const t = k / 24, x = a.x + (z.x - a.x) * t, zz = a.z + (z.z - a.z) * t, y = top - sag * 4 * t * (1 - t) * (1 - 0.0) - 0.2;
         const pt = new THREE.Vector3(x, y, zz);
-        if (prev) B.beam(M.cable, prev, pt, 0.45, 0.45);
+        if (prev) B.beam(gg ? M.orange : M.cable, prev, pt, gg ? 0.7 : 0.45, gg ? 0.7 : 0.45);
         prev = pt;
       }
       for (let d = 6; d < L - 3; d += 6) {
@@ -11803,147 +12588,64 @@ const Landmarks = {
 
   /* ---------------------------------------------- the four Season 4 settings */
   themes: {
-    /** a city at golden hour: towers, sky bridges over the road, a ring gate, stands at the start */
+    /** the city at golden hour: stands at the start, columns under raised road, a skyline */
     city(c) {
-      const { R, M } = c;
-      this.supports(c, 'columns');
-      this.grandstand(c);
-      // a ring over the first straight, sky bridges over two others
-      const spans = c.spans(40, false).filter((q) => q.cum > 100);
-      if (spans[0]) this.ring(c, spans[0], spans[0].hw + 9);
-      const lifted = c.spans(50).filter((q) => q !== spans[0]).slice(0, 3);
-      for (const q of lifted) {
-        const w = 16, d = q.reach + w / 2 + 5, a = c.off(q, -1, d), b = c.off(q, 1, d);
-        if (!c.clear(a.x, a.z, w * 0.6) || !c.clear(b.x, b.z, w * 0.6)) continue;
-        const y = q.y + 17, h = y - c.GY + c.rr(14, 40);
-        this.tower(c, a.x, a.z, w, w, h, q.yaw); this.tower(c, b.x, b.z, w, w, h * c.rr(0.8, 1.2), q.yaw);
-        c.take(a.x, a.z, w * 0.6); c.take(b.x, b.z, w * 0.6);
-        this.skyBridge(c, a, b, y);
-      }
-      // the skyline: taller further out
-      for (let n = 0, made = 0; n < 900 && made < (c.D.towers || 75); n++) {
+      this.supports(c, c.D.supports || 'columns');
+      if (c.D.stands !== false) this.grandstand(c);
+      for (let n = 0, made = 0; n < 900 && made < (c.D.towers || 45); n++) {
         const near = n % 3 !== 0, p = near ? c.around(8, 70) : c.around(70, 320);
         const w = c.rr(12, 26), d = c.rr(12, 26), r = Math.max(w, d) * 0.72;
         if (!c.clear(p.x, p.z, r)) continue;
-        const nq = c.near(p.x, p.z), h = nq.d < 80 ? c.rr(22, 70) : c.rr(55, 190);
+        const nq = c.near(p.x, p.z), h = nq.d < 80 ? c.rr(22, 70) : c.rr(50, 150);
         this.tower(c, p.x, p.z, w, d, h, nq.d < 90 ? nq.q.yaw : c.pick([0, Math.PI / 4, 0.3]));
         c.take(p.x, p.z, r);
         made++;
       }
-      // a great steel arch in the distance
-      const C = c.center.center, ext = c.center.extent;
-      for (let k = 0; k < 20; k++) {
-        const a = c.rnd() * 6.28, x = C.x + Math.cos(a) * (ext + 120), z = C.z + Math.sin(a) * (ext + 120);
-        if (!c.clear(x, z, 70)) continue;
-        const ry = a + Math.PI / 2;
-        let prev = null;
-        for (let i = 0; i <= 20; i++) {
-          const t = i / 20, u = (t - 0.5) * 2, px = x + Math.cos(ry) * u * 60, pz = z - Math.sin(ry) * u * 60, py = c.GY + 150 * (1 - u * u);
-          const pt = new THREE.Vector3(px, py, pz);
-          if (prev) c.B.beam(M.steel, prev, pt, 4.5 - Math.abs(u) * 1.5 + 2, 4.5);
-          prev = pt;
-        }
-        c.take(x, z, 70);
-        break;
-      }
     },
-    /** ancient wonders in the desert: an aqueduct, pyramids, obelisks, a colonnade, an arch */
-    ancient(c) {
-      const { R } = c;
-      this.supports(c, 'arches');
-      const ground = c.spans(40, false);
-      if (ground[0]) this.stoneArch(c, ground[0]);
-      const longest = R.runs.filter((r) => !r.bridge && r.len > 50 && R.pts[r.a].h < 2).sort((a, b) => b.len - a.len)[0];
-      if (longest && longest !== undefined) this.colonnade(c, longest);
-      for (const q of ground.slice(1, 4)) for (const s of [-1, 1]) { const o = c.off(q, s, q.reach + 5); if (c.clear(o.x, o.z, 2.5)) { this.obelisk(c, o.x, o.z, c.rr(16, 24), q.yaw); c.take(o.x, o.z, 3); } }
-      // great pyramids out in the desert, a stepped one nearer
-      let n = 0;
-      for (let k = 0; k < 200 && n < 4; k++) {
-        const s = n === 0 ? 70 : c.rr(90, 170), p = c.around(n === 0 ? 40 : 140, n === 0 ? 90 : 420);
-        if (!c.clear(p.x, p.z, s * 0.75)) continue;
-        this.pyramid(c, p.x, p.z, s, n === 0, c.rnd() * 0.5);
-        c.take(p.x, p.z, s * 0.75); n++;
+    /** the ancient world: the Pont du Gard under raised road, obelisks and fallen columns in the sand */
+    wonders(c) {
+      this.supports(c, c.D.supports || 'arches');
+      for (const q of c.spans(40, false).slice(0, c.D.obelisks === undefined ? 2 : c.D.obelisks)) for (const s of [-1, 1]) {
+        const o = c.off(q, s, q.reach + 5);
+        if (c.clear(o.x, o.z, 2.5)) { this.obelisk(c, o.x, o.z, c.rr(16, 24), q.yaw); c.take(o.x, o.z, 3); }
       }
-      // fallen columns and lone obelisks in the sand
-      for (let k = 0; k < 200; k++) {
-        const p = c.around(10, 140);
+      for (let k = 0, made = 0; k < 300 && made < 50; k++) {
+        const p = c.around(10, 160);
         if (!c.clear(p.x, p.z, 3)) continue;
-        if (c.rnd() < 0.3) this.obelisk(c, p.x, p.z, c.rr(10, 18), c.rnd() * 3);
+        if (c.rnd() < 0.25) this.obelisk(c, p.x, p.z, c.rr(9, 16), c.rnd() * 3);
         else c.B.add(c.M.stone, this.cyl(0.9, 1.0, 10), p.x, c.GY + 2, p.z, 1, c.rr(2, 9), 1);
-        c.take(p.x, p.z, 3);
-        if (k > 60) break;
+        c.take(p.x, p.z, 3); made++;
       }
     },
-    /** a powerworks valley: suspension bridges, wind turbines, a dam, power lines */
-    power(c) {
-      const { R } = c;
-      this.supports(c, 'aframe');
-      const big = R.runs.filter((r) => r.bridge && r.len >= 70 && R.pts[r.a].h > 6);
-      for (const r of big) this.suspension(c, r.a, r.b);
-      const C = c.center.center, ext = c.center.extent;
-      for (let k = 0; k < 30; k++) {
-        const a = c.rnd() * 6.28, x = C.x + Math.cos(a) * (ext + 200), z = C.z + Math.sin(a) * (ext + 200);
-        if (!c.clear(x, z, 150)) continue;
-        this.dam(c, x, z, C.x, C.z); c.take(x, z, 220); break;
-      }
+    /** the great works of engineering: steel A-frames (or Millau's piers), turbines on the hills, a power line */
+    marvels(c) {
+      this.supports(c, c.D.supports || 'aframe');
       const wind = c.rnd() * 6.28;
-      let n = 0;
-      for (let k = 0; k < 400 && n < 14; k++) {
-        const p = c.around(25, 260), h = c.rr(55, 85);
+      for (let k = 0, n = 0; k < 400 && n < (c.D.turbines === undefined ? 10 : c.D.turbines); k++) {
+        const p = c.around(40, 280), h = c.rr(55, 85);
         if (!c.clear(p.x, p.z, h * 0.45)) continue;
         this.turbine(c, p.x, p.z, h, wind); c.take(p.x, p.z, h * 0.45); n++;
       }
-      // a power line across the far side
-      const a0 = c.rnd() * 6.28, d0 = ext + 90;
-      let prev = null;
-      for (let k = -3; k <= 3; k++) {
-        const ax = C.x + Math.cos(a0) * d0 + Math.cos(a0 + Math.PI / 2) * k * 70, az = C.z + Math.sin(a0) * d0 + Math.sin(a0 + Math.PI / 2) * k * 70;
-        if (!c.clear(ax, az, 6)) { prev = null; continue; }
-        this.lattice(c, ax, az, 38, a0);
-        c.take(ax, az, 6);
-        if (prev) for (const s of [-1, 1]) {
-          const o1 = { x: prev.x + Math.cos(a0) * s * 8, z: prev.z - Math.sin(a0) * s * 8 }, o2 = { x: ax + Math.cos(a0) * s * 8, z: az - Math.sin(a0) * s * 8 };
-          let pp = null;
-          for (let i = 0; i <= 8; i++) { const t = i / 8, pt = new THREE.Vector3(o1.x + (o2.x - o1.x) * t, c.GY + 36 - 7 * 4 * t * (1 - t), o1.z + (o2.z - o1.z) * t); if (pp) c.B.beam(c.M.cable, pp, pt, 0.18, 0.18); pp = pt; }
-        }
-        prev = { x: ax, z: az };
-      }
     },
-    /** a sky citadel at twilight: floating islands, spires, rings over the road, cable-stayed pylons */
-    sky(c) {
-      const { R } = c;
-      for (const r of R.runs.filter((r) => r.bridge && r.len >= 40)) this.pylon(c, R.pts[Math.floor((r.a + r.b) / 2)]);
-      for (const q of c.spans(35).slice(0, 3)) this.ring(c, q, q.hw + 8, c.M.glow2);
-      let n = 0;
-      for (let k = 0; k < 500 && n < 16; k++) {
-        const p = c.around(15, 260), r = c.rr(8, 28);
-        if (!c.clear(p.x, p.z, r)) continue;
-        this.island(c, p.x, c.GY + c.rr(18, 90), p.z, r); c.take(p.x, p.z, r); n++;
-      }
-      n = 0;
-      for (let k = 0; k < 300 && n < 5; k++) {
-        const p = c.around(40, 300), h = c.rr(80, 170);
-        if (!c.clear(p.x, p.z, 8)) continue;
-        this.spire(c, p.x, p.z, h); c.take(p.x, p.z, 8); n++;
-      }
-      // a sea of cloud below: puffs everywhere off the road (and under the raised road)
-      const puff = this.geo('puff', () => new THREE.IcosahedronGeometry(1, 1));
-      for (let k = 0, made = 0; k < 900 && made < 220; k++) {
-        const p = k % 4 ? c.around(-2, 160) : c.around(160, 420), r = c.rr(9, 26);
-        const nq = c.near(p.x, p.z);
-        if (nq.d < (nq.q.bridge ? 0 : nq.q.reach + r * 0.6)) continue;
-        c.B.add(c.M.cloud, puff, p.x, c.GY + c.rr(-1, 2.5), p.z, r, r * c.rr(0.3, 0.45), r * c.rr(0.8, 1.2), c.rnd() * 3);
-        made++;
-      }
-      for (let k = 0; k < 160; k++) {
-        const p = c.around(6, 120);
-        if (!c.clear(p.x, p.z, 3)) continue;
-        c.B.add(c.M.crystal, this.geo('octa', () => new THREE.OctahedronGeometry(1, 0)), p.x, c.GY + 2, p.z, c.rr(1, 2.4), c.rr(3, 9), c.rr(1, 2.4), c.rnd() * 3, c.rr(-0.3, 0.3));
-        c.take(p.x, p.z, 3);
-        if (k > 70) break;
+    /** the Far East in spring: the Great Wall under raised road, stone lanterns, cherry blossom (the look's trees) */
+    east(c) {
+      this.supports(c, c.D.supports || 'wall');
+      let last = -1e9;
+      for (const q of c.R.pts) {
+        if (q.bridge || q.h > 2 || q.cum - last < 38) continue;
+        last = q.cum;
+        const o = c.off(q, Math.floor(q.cum / 38) % 2 ? 1 : -1, q.reach + 3);
+        if (!c.clear(o.x, o.z, 1.5)) continue;
+        const { B, M, GY } = c;
+        B.box(M.wallStone, o.x, GY + 0.4, o.z, 1.6, 0.8, 1.6, q.yaw);
+        B.box(M.wallStone, o.x, GY + 1.6, o.z, 0.6, 1.8, 0.6, q.yaw);
+        B.box(M.warm, o.x, GY + 2.9, o.z, 1.1, 0.9, 1.1, q.yaw);
+        B.add(M.wallStone, this.cone(4), o.x, GY + 3.7, o.z, 1.3, 0.8, 1.3, q.yaw + Math.PI / 4);
+        c.take(o.x, o.z, 1.5);
       }
     }
   }
+
 };
 
 /* ------------------------------------------------------------- 10. scene */
@@ -11976,13 +12678,13 @@ const Looks = {
       peaks: 0x6b7586, peaksFar: 0x969bab, tree: 0x3f6a3a, rock: 0x7f7a74, exposure: 1.0 },
     { name: 'Wonders', zenith: 0x3c7ec6, band: 0xf8e2ba, nadir: 0xe8c99c, glow: 0xfff0c8, sun: [40, 80, 22], sunCol: 0xfff1d6, sunI: 2.3,
       hemiSky: 0xffefd2, hemiGround: 0xa9834e, hemiI: 0.9, fog: 0xf0d6a8, floor: 0xa8844f, bank: 0xb08a55,
-      peaks: 0xb4864e, peaksFar: 0xcaa476, tree: 0x5e7a2e, rock: 0x9a744a, exposure: 0.95 },
-    { name: 'Powerworks', zenith: 0x2f78c4, band: 0xd8ecf6, nadir: 0xb4ccbe, glow: 0xfff8e0, sun: [-50, 62, 40], sunCol: 0xfff6e6, sunI: 2.0,
+      peaks: 0x7d5238, peaksFar: 0x9c7152, tree: 0x5e7a2e, rock: 0x9a744a, exposure: 0.95 },
+    { name: 'Marvels', zenith: 0x2f78c4, band: 0xd8ecf6, nadir: 0xb4ccbe, glow: 0xfff8e0, sun: [-50, 62, 40], sunCol: 0xfff6e6, sunI: 2.0,
       hemiSky: 0xdcecf8, hemiGround: 0x4a6a45, hemiI: 0.95, fog: 0xcfe2ec, floor: 0x4f7a3e, bank: 0x587f46,
       peaks: 0x55705f, peaksFar: 0x869a96, tree: 0x24503a, rock: 0x7c838a, exposure: 1.0 },
-    { name: 'Sky Citadel', zenith: 0x23245a, band: 0xf29ab6, nadir: 0x6f5e94, glow: 0xffb38a, sun: [-60, 20, -40], sunCol: 0xffc6a6, sunI: 1.7,
-      hemiSky: 0xc4b2ee, hemiGround: 0x4d4672, hemiI: 1.0, fog: 0xcfa6cc, floor: 0x9a8fc4, bank: 0x6f7f8c,
-      peaks: 0x5c5182, peaksFar: 0x8c7baa, tree: 0x3e6a5a, rock: 0x7d7896, exposure: 1.05 }
+    { name: 'Far East', zenith: 0x5e92cc, band: 0xf4e4ea, nadir: 0xc6d4c2, glow: 0xfff2e6, sun: [50, 55, -40], sunCol: 0xfff0e4, sunI: 1.95,
+      hemiSky: 0xf2e6ee, hemiGround: 0x56704a, hemiI: 0.95, fog: 0xe6dde6, floor: 0x4e6b3e, bank: 0x5c7c48,
+      peaks: 0x6b7b96, peaksFar: 0x97a3b8, tree: 0xe598b6, rock: 0x86868c, exposure: 1.0 }
   ],
   /** the look for level i: its section's, or the first */
   of(i) { const lv = levelAt(i); return lv && lv.look !== undefined ? lv.look : lv && lv.section >= 0 ? lv.section % 4 : 0; },
