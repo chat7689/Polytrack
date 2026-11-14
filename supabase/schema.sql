@@ -2117,8 +2117,17 @@ begin
     boxes := boxes + 1;                 -- (a box that split isn't one: the two it became are)
     k := case when r < 10 then null when r < 11 then 'car' when r < 13 then 'anim' when r < 16 then 'decal' when r < 20 then 'cel'
               when r < 25 then 'boost' when r < 30 then 'wheel' when r < 40 then 'title' when r < 50 then 'icon' else null end;
+    it := null;
     if k is not null then
-      select * into it from public.items where kind = k and source = 'box' order by random() limit 1;
+      -- only items with copies left (each is limited: _item_left)
+      select * into it from public.items i where i.kind = k and i.source = 'box' and public._item_left(i.id) > 0 order by random() limit 1;
+      if found then
+        perform pg_advisory_xact_lock(hashtext('item:' || it.id));
+        if public._item_left(it.id) <= 0 then it := null; end if;
+      else it := null;
+      end if;
+    end if;
+    if it.id is not null then
       insert into public.inventory (uid, item) values (p.id, it.id)
         on conflict (uid, item) do update set count = public.inventory.count + 1
         returning count into cnt;
@@ -2128,7 +2137,7 @@ begin
       end if;
       continue;
     end if;
-    -- credits or a hue pack (a hue only while some hue is still locked)
+    -- credits or a hue pack (a hue only while some hue is still locked; also when a whole kind has sold out)
     cell := null;
     if random() < 0.5 then
       select coalesce(public._hue_cells(unlocked), '{}') into cells from public.car_customization where uid = p.id;
@@ -2546,6 +2555,10 @@ begin
   select * into it from public.items where id = p_item;
   price := public._shop_price(it.kind);
   perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  perform pg_advisory_xact_lock(hashtext('item:' || it.id));
+  if public._item_left(it.id) <= 0 then
+    raise exception 'Sold out: every copy of % is owned. Look for one in the auctions.', it.name using errcode = 'P0001';
+  end if;
   if exists (select 1 from public.inventory where uid = p.id and item = p_item and count > 0) then
     raise exception 'You already own that.' using errcode = 'P0001';
   end if;
@@ -2672,7 +2685,10 @@ begin
     'shopToday', (select count(*) from public.credit_events where kind = 'shop' and created_at > now() - interval '1 day'),
     'shopCredits', (select coalesce(-sum(delta), 0) from public.credit_events where kind = 'shop'),
     'plus', (select count(*) from public.pass_claims where season = public._pass_season() and plus),
-    'passPlayers', (select count(*) from public.garage where pass_season = public._pass_season() and pass_runs > 0));
+    'passPlayers', (select count(*) from public.garage where pass_season = public._pass_season() and pass_runs > 0),
+    'auctionsOpen', (select count(*) from public.auctions where status = 'open'),
+    'auctionsSold', (select count(*) from public.auctions where status = 'sold' and settled_at > now() - interval '1 day'),
+    'auctionFees', (select coalesce(sum(fee), 0) from public.auctions where status = 'sold'));
 end $$;
 
 -- ------------------------------------------ rivals, driver level, the Pot map,
@@ -3049,6 +3065,182 @@ begin
       from (select x.* from public.escape_best x join public.profiles pr on pr.id = x.uid and not pr.banned order by x.best_m desc limit 20) e), '[]'::jsonb),
     'mine', (select best_m from public.escape_best where uid = p.id),
     'rank', (select count(*) + 1 from public.escape_best where best_m > coalesce((select best_m from public.escape_best where uid = p.id), 2147483647)));
+end $$;
+
+-- ---------------------------------------------- limited items and auctions
+-- Every box and shop item exists in at most max_supply copies (100):
+-- copies in inventories plus copies up for auction. Selling one back to the
+-- game destroys it, so it can drop again. Pass, Driver Road and money-only
+-- items are promised rewards, so they have no limit (null).
+alter table public.items add column if not exists max_supply integer;
+update public.items set max_supply = 100 where source in ('box', 'shop') and max_supply is null;
+-- Auctions: a player puts one item up with a starting price, maybe a buy-now
+-- price, for 1 to 48 hours. A bid holds the bidder's credits (taken now,
+-- given back the moment someone bids more). A bid in the last 2 minutes
+-- adds 2 minutes. When time runs out the best bid wins: the item goes to the
+-- bidder and the seller gets the bid less a 5% fee. No bids: the item goes
+-- back. Auctions are settled whenever anyone looks (_auction_settle_due).
+create table if not exists public.auctions (
+  id bigserial primary key,
+  seller uuid not null,
+  seller_name text not null,
+  item text not null references public.items(id),
+  start_price integer not null check (start_price between 1 and 100000000),
+  buyout integer check (buyout is null or buyout between 1 and 100000000),
+  created_at timestamptz not null default now(),
+  ends_at timestamptz not null,
+  bid integer,
+  bidder uuid,
+  bidder_name text,
+  bids integer not null default 0,
+  status text not null default 'open' check (status in ('open', 'sold', 'unsold', 'cancelled')),
+  fee integer not null default 0,
+  settled_at timestamptz
+);
+create index if not exists auctions_open on public.auctions (status, ends_at);
+create index if not exists auctions_seller on public.auctions (seller, id desc);
+create index if not exists auctions_bidder on public.auctions (bidder, id desc);
+create or replace function public._item_left(p_item text) returns integer
+language sql stable security definer set search_path = public, pg_temp as $$
+  select case when i.max_supply is null then 2147483647 else i.max_supply
+    - coalesce((select sum(count) from public.inventory v where v.item = i.id), 0)::int
+    - (select count(*) from public.auctions a where a.item = i.id and a.status = 'open')::int end
+  from public.items i where i.id = p_item
+$$;
+/** how many of each limited item exist, for the game: {item: [exist, max]} */
+create or replace function public.item_supply() returns jsonb
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce(jsonb_object_agg(i.id, jsonb_build_array(i.max_supply - public._item_left(i.id), i.max_supply)), '{}'::jsonb)
+  from public.items i where i.max_supply is not null
+$$;
+
+create or replace function public._auction_give(p_uid uuid, p_item text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  insert into public.inventory (uid, item) values (p_uid, p_item) on conflict (uid, item) do update set count = public.inventory.count + 1;
+end $$;
+/** one finished auction, once */
+create or replace function public._auction_settle(p_id bigint) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare a public.auctions; f integer;
+begin
+  select * into a from public.auctions where id = p_id and status = 'open' and ends_at <= now() for update skip locked;
+  if not found then return; end if;
+  if a.bidder is not null then
+    f := floor(a.bid * 0.05)::int;
+    perform public._auction_give(a.bidder, a.item);
+    insert into public.credit_events (uid, delta, kind, note) values (a.seller, a.bid - f, 'auction_sale', a.item);
+    insert into public.credit_events (uid, delta, kind, note) values (a.bidder, 0, 'auction_won', a.item);
+    update public.auctions set status = 'sold', fee = f, settled_at = now() where id = a.id;
+  else
+    perform public._auction_give(a.seller, a.item);
+    insert into public.credit_events (uid, delta, kind, note) values (a.seller, 0, 'auction_unsold', a.item);
+    update public.auctions set status = 'unsold', settled_at = now() where id = a.id;
+  end if;
+end $$;
+create or replace function public._auction_settle_due() returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare i bigint;
+begin
+  for i in select id from public.auctions where status = 'open' and ends_at <= now() order by ends_at limit 50 loop
+    perform public._auction_settle(i);
+  end loop;
+end $$;
+/** put an item up for auction */
+create or replace function public.list_auction(p_item text, p_start integer, p_buyout integer, p_hours integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); have integer; it public.items; slot text; aid bigint;
+begin
+  select * into it from public.items where id = p_item;
+  if not found then raise exception 'That can''t be auctioned.' using errcode = 'P0001'; end if;
+  if p_start is null or p_start < 1 or p_start > 100000000 then raise exception 'Pick a starting price.' using errcode = 'P0001'; end if;
+  if p_buyout is not null and p_buyout < p_start then raise exception 'The buy-now price can''t be below the starting price.' using errcode = 'P0001'; end if;
+  if p_hours is null or p_hours not in (1, 6, 12, 24, 48) then raise exception 'An auction runs 1, 6, 12, 24 or 48 hours.' using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  if (select count(*) from public.auctions where seller = p.id and status = 'open') >= 10 then
+    raise exception 'You have 10 auctions running already.' using errcode = 'P0001';
+  end if;
+  select count into have from public.inventory where uid = p.id and item = p_item for update;
+  if coalesce(have, 0) < 1 then raise exception 'You don''t have that.' using errcode = 'P0001'; end if;
+  if have = 1 then
+    delete from public.inventory where uid = p.id and item = p_item;
+    -- the last one comes off the car or the profile
+    slot := public._loadout_slot(it.kind);
+    perform set_config('app.garage', 'on', true);
+    update public.car_customization set loadout = loadout - slot where uid = p.id and loadout ->> slot = it.id;
+  else
+    update public.inventory set count = count - 1 where uid = p.id and item = p_item;
+  end if;
+  insert into public.auctions (seller, seller_name, item, start_price, buyout, ends_at)
+    values (p.id, p.display_name, p_item, p_start, p_buyout, now() + make_interval(hours => p_hours)) returning id into aid;
+  return jsonb_build_object('ok', true, 'id', aid);
+end $$;
+/** bid (p_amount at least the next bid: the start, or 5% more, at least 10 more); at or over the buy-now price buys it at once */
+create or replace function public.bid_auction(p_id bigint, p_amount integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); a public.auctions; need integer; amt integer := p_amount; bought boolean := false;
+begin
+  perform public._auction_settle_due();
+  select * into a from public.auctions where id = p_id for update;
+  if not found or a.status <> 'open' or a.ends_at <= now() then raise exception 'That auction has ended.' using errcode = 'P0001'; end if;
+  if a.seller = p.id then raise exception 'You can''t bid on your own auction.' using errcode = 'P0001'; end if;
+  need := case when a.bid is null then a.start_price else a.bid + greatest(10, ceil(a.bid * 0.05)::int) end;
+  if a.buyout is not null and amt >= a.buyout then amt := greatest(a.buyout, need); bought := true; end if;
+  if amt is null or amt < need then raise exception 'The next bid is at least % credits.', need using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  -- raising your own bid: only the difference is held
+  if public._balance(p.id) + (case when a.bidder = p.id then a.bid else 0 end) < amt then
+    raise exception 'You don''t have % credits.', amt using errcode = 'P0001';
+  end if;
+  if a.bidder is not null then
+    insert into public.credit_events (uid, delta, kind, note) values (a.bidder, a.bid, 'auction_refund', a.item);
+  end if;
+  insert into public.credit_events (uid, delta, kind, note) values (p.id, -amt, 'auction_bid', a.item);
+  update public.auctions set bid = amt, bidder = p.id, bidder_name = p.display_name, bids = bids + 1,
+    ends_at = case when bought then now() when ends_at < now() + interval '2 minutes' then now() + interval '2 minutes' else ends_at end
+    where id = a.id;
+  if bought then perform public._auction_settle(a.id); end if;
+  return jsonb_build_object('ok', true, 'bid', amt, 'bought', bought, 'balance', public._balance(p.id));
+end $$;
+/** take an auction down (only before anyone bids) */
+create or replace function public.cancel_auction(p_id bigint) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); a public.auctions;
+begin
+  select * into a from public.auctions where id = p_id and seller = p.id for update;
+  if not found or a.status <> 'open' then raise exception 'That auction isn''t running.' using errcode = 'P0001'; end if;
+  if a.bidder is not null then raise exception 'Someone has bid: it has to run to the end.' using errcode = 'P0001'; end if;
+  perform public._auction_give(p.id, a.item);
+  update public.auctions set status = 'cancelled', settled_at = now() where id = a.id;
+  return jsonb_build_object('ok', true);
+end $$;
+/** the auction house: running auctions (p_kind: one kind, or null for all) */
+create or replace function public.auction_list(p_kind text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  perform public._auction_settle_due();
+  return coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'item', a.item, 'kind', i.kind, 'name', i.name, 'seller', a.seller_name,
+      'mine', a.seller = p.id, 'leading', a.bidder = p.id, 'start', a.start_price, 'buyout', a.buyout, 'bid', a.bid, 'bids', a.bids,
+      'ends', (extract(epoch from a.ends_at) * 1000)::bigint,
+      'next', case when a.bid is null then a.start_price else a.bid + greatest(10, ceil(a.bid * 0.05)::int) end) order by a.ends_at)
+    from public.auctions a join public.items i on i.id = a.item
+    where a.status = 'open' and a.ends_at > now() and (p_kind is null or i.kind = p_kind or (p_kind = 'decal' and i.kind = 'anim'))
+    limit 200), '[]'::jsonb);
+end $$;
+/** mine: what I'm selling, what I'm winning, and what ended lately */
+create or replace function public.my_auctions() returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  perform public._auction_settle_due();
+  return jsonb_build_object(
+    'selling', coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'item', a.item, 'status', a.status, 'bid', a.bid, 'bids', a.bids,
+        'start', a.start_price, 'buyout', a.buyout, 'bidder', a.bidder_name, 'fee', a.fee, 'ends', (extract(epoch from a.ends_at) * 1000)::bigint) order by a.id desc)
+      from (select * from public.auctions where seller = p.id and (status = 'open' or settled_at > now() - interval '3 days') order by id desc limit 30) a), '[]'::jsonb),
+    'winning', coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'item', a.item, 'status', a.status, 'bid', a.bid,
+        'seller', a.seller_name, 'ends', (extract(epoch from a.ends_at) * 1000)::bigint) order by a.id desc)
+      from (select * from public.auctions where bidder = p.id and (status = 'open' or settled_at > now() - interval '3 days') order by id desc limit 30) a), '[]'::jsonb));
 end $$;
 
 -- ------------------------------------------------------------ opening hours
@@ -3958,6 +4150,7 @@ alter table public.pot_entries enable row level security;
 alter table public.pot_results enable row level security;
 alter table public.escape_runs enable row level security;
 alter table public.escape_best enable row level security;
+alter table public.auctions enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -3972,7 +4165,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims', 'rival_events', 'pot_entries', 'pot_results', 'escape_runs', 'escape_best',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims', 'rival_events', 'pot_entries', 'pot_results', 'escape_runs', 'escape_best', 'auctions',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -4084,6 +4277,8 @@ revoke execute on function public._pass_give(uuid, jsonb, text) from public, ano
 revoke execute on function public._add_xp(uuid, integer) from public, anon, authenticated;
 revoke execute on function public._pot_settle(text) from public, anon, authenticated;
 revoke execute on function public._pot_ensure(text) from public, anon, authenticated;
+revoke execute on function public._auction_give(uuid, text) from public, anon, authenticated;
+revoke execute on function public._auction_settle(bigint) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- season 1, closed

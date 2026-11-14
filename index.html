@@ -680,6 +680,36 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .pChip.plusLock{color:var(--dim);border-style:dashed}
 .pPic{display:inline-flex;width:40px;height:26px;align-items:center;justify-content:center}
 .pSkip{display:flex;gap:8px;margin:-4px 0 12px}
+.gSup{display:block;font-size:10.5px;font-family:var(--mono);color:#ffcf5c;margin-top:2px}
+.gSup.out{color:#ff7a8a}
+.aTabs{display:flex;gap:6px;margin-bottom:12px}
+.aTabs button.on{border-color:var(--ember);color:var(--ink);background:rgba(242,115,63,.12)}
+.aBar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.aHave{margin-left:auto;font-size:12.5px}
+.aList{display:flex;flex-direction:column;gap:6px}
+.aItem{display:grid;grid-template-columns:64px 1fr auto;gap:4px 10px;align-items:center;padding:8px 10px;border-radius:10px;border:1px solid var(--rule-2);background:rgba(255,255,255,.02)}
+.aItem.lead{border-color:rgba(61,219,184,.55)}
+.aItem.own{opacity:.75}
+.aPic{width:64px;height:40px;display:flex;align-items:center;justify-content:center}
+.aPic img{max-width:64px;max-height:40px}
+.aPic .kPic{width:56px;height:36px}
+.aMain b{display:block;font-size:14px}
+.aMain small{display:block;font-size:11.5px;color:var(--dim)}
+.aTime{color:var(--ink)!important}
+.aPrice{text-align:right}
+.aPrice b{display:block;font-family:var(--mono);font-size:15px;color:#ffcf5c}
+.aPrice small{font-size:11px;color:var(--dim)}
+.aBid{grid-column:2/-1;display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.aItem>.dim{grid-column:2/-1;text-align:right;font-size:12px}
+.aBid input{width:96px;font-family:var(--mono);background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--rule-2);border-radius:8px;padding:5px 8px}
+.aSell{display:flex;gap:16px;align-items:flex-start}
+.aSell .aPic{width:150px;height:100px}
+.aSell .aPic img{max-width:150px;max-height:100px}
+.aForm{flex:1;display:flex;flex-direction:column;gap:6px}
+.aForm select,.aForm input{background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--rule-2);border-radius:8px;padding:6px 8px}
+.aRow{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0}
+.aRow input{width:130px;font-family:var(--mono)}
+.aNote{font-size:12.5px;margin-top:10px}
 .modesPanel{width:min(980px,95vw)}
 .modeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 16px}
 @media(max-width:820px){.modeGrid{grid-template-columns:1fr 1fr}}
@@ -3538,6 +3568,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <button data-tab="shop">Shop</button>
         <button data-tab="pass">Race Pass<i id="gPassBadge" hidden></i></button>
         <button data-tab="road">Driver Road<i id="gRoadBadge" hidden></i></button>
+        <button data-tab="auctions">Auctions</button>
         <button data-tab="car">Car</button>
         <button data-tab="paint">Paint</button>
         <button data-tab="profile">Profile</button>
@@ -3570,6 +3601,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           <section class="gPane" data-pane="shop" hidden></section>
           <section class="gPane" data-pane="pass" hidden></section>
           <section class="gPane" data-pane="road" hidden></section>
+          <section class="gPane" data-pane="auctions" hidden></section>
           <section class="gPane" data-pane="car" hidden></section>
           <section class="gPane" data-pane="paint" hidden>
             <p class="lede" style="margin-bottom:14px">Hue packs come out of boxes. Click any hue you own to use it; the sliders are free.
@@ -5212,6 +5244,12 @@ const Cloud = {
           UI.toast('Your purchase arrived' + (Number(row.delta) > 0 ? ': ' + fmtCredits(Number(row.delta)) + ' credits and your free boxes' : '') +
             '. Thanks for supporting aiPolytrack!');
           Garage.load();
+        } else if (row && /^auction_(refund|sale|won|unsold)$/.test(row.kind)) {
+          const it = Catalog.get(row.note), nm = it ? it.name : 'an item';
+          if (row.kind === 'auction_refund') UI.toast('You were outbid on ' + nm + '. Your ' + fmtCredits(Number(row.delta)) + ' credits are back: bid again in the Auctions.');
+          if (row.kind === 'auction_sale') { UI.toast('Your ' + nm + ' sold! +' + fmtCredits(Number(row.delta)) + ' credits (after the 5% fee).'); Sound.creditWin(); }
+          if (row.kind === 'auction_won') { UI.toast('You won the auction for ' + nm + '! It\'s in your garage.'); Sound.creditWin(); Garage.load(); }
+          if (row.kind === 'auction_unsold') { UI.toast('Nobody bid on your ' + nm + ': it\'s back in your garage.'); Garage.load(); }
         } else if (row && row.kind === 'pot_win' && Number(row.delta) > 0) {
           UI.toast('You won ' + fmtCredits(Number(row.delta)) + ' credits from the Pot map!');
           Sound.creditWin();
@@ -12839,7 +12877,14 @@ const UnboxNews = {
 };
 
 const Garage = {
-  data: null, tab: 'boxes', busy: false, pass: null, shop: null, road: null,
+  data: null, tab: 'boxes', busy: false, pass: null, shop: null, road: null, supply: {}, auc: { view: 'browse', kind: '', list: null, mine: null, sell: '' },
+  /** a limited item's copies: [exist, max], or null */
+  sup(id) { return this.supply[id] || null; },
+  supText(id) {
+    const s = this.sup(id);
+    if (!s) return '';
+    return s[0] >= s[1] ? 'Sold out · all ' + s[1] + ' owned' : fmtCredits(s[0]) + ' of ' + s[1] + ' exist';
+  },
   owned(id) { const r = this.data && this.data.inventory.find((i) => i.item === id); return r ? r.count : 0; },
   freeBoxes() { return (this.data && this.data.free_boxes) || 0; },
   async load() {
@@ -12855,6 +12900,7 @@ const Garage = {
     Flair.mine();
     try { this.pass = await Cloud.rpc('my_pass'); } catch (e) { /* a database from before the pass */ }
     try { this.road = await Cloud.rpc('my_road'); } catch (e) { /* a database from before levels */ }
+    try { this.supply = await Cloud.rpc('item_supply'); } catch (e) { /* a database from before limits */ }
     this.badge();
     this.intro();
     if (Game.state === 'garage') this.render();
@@ -12898,6 +12944,108 @@ const Garage = {
       UI.toast('Level up! You\'re driver level ' + R.level + '. Collect your reward on the Driver Road in the garage.');
     }
     this.badge();
+  },
+  /** the Auctions tab: browse and bid, what I'm selling and winning, and putting something up */
+  async renderAuctions(fresh) {
+    const pane = document.querySelector('#garage .gPane[data-pane="auctions"]'), E = escapeHtml, A = this.auc;
+    if (!Cloud.on || !Cloud.user) { pane.innerHTML = '<p class="lede">Sign in to use the auctions.</p>'; return; }
+    const tabs = '<div class="aTabs">' + [['browse', 'Browse'], ['mine', 'My auctions'], ['sell', 'Sell an item']].map(([v, l]) =>
+      '<button class="small' + (A.view === v ? ' on' : '') + '" data-av="' + v + '">' + l + '</button>').join('') + '</div>';
+    const wire = () => pane.querySelectorAll('[data-av]').forEach((b) => b.addEventListener('click', () => { A.view = b.dataset.av; this.renderAuctions(true); }));
+    const left = (ms) => { const d = Math.max(0, ms - Date.now()); const h = Math.floor(d / 3600000), m = Math.floor(d / 60000) % 60, s2 = Math.floor(d / 1000) % 60;
+      return h ? h + 'h ' + m + 'm' : m ? m + 'm ' + s2 + 's' : s2 + 's'; };
+    const pic = (id) => { const it = Catalog.get(id); return it ? '<div class="gPic aPic">' + Catalog.pic(it) + '</div>' : ''; };
+    const name = (id) => { const it = Catalog.get(id); return it ? it.name : id; };
+    if (A.view === 'sell') {
+      Catalog.get('');                           // (builds the catalogue the first time)
+      const mine = Catalog.items.filter((it) => this.owned(it.id) > 0);
+      const sel = A.sell && this.owned(A.sell) ? A.sell : (mine[0] && mine[0].id) || '';
+      const it = Catalog.get(sel);
+      pane.innerHTML = tabs + (mine.length ? '<div class="aSell">' + (it ? pic(sel) : '') +
+        '<div class="aForm"><label class="fld">Item</label><select id="aItem">' + mine.map((x) => '<option value="' + x.id + '"' + (x.id === sel ? ' selected' : '') + '>' +
+          E(x.name) + ' (' + E(ITEM_KIND[x.kind].label) + (this.owned(x.id) > 1 ? ', ×' + this.owned(x.id) : '') + ')</option>').join('') + '</select>' +
+        (it ? '<small class="dim">' + E(this.supText(sel) || 'Unlimited') + ' · sells back to the game for ' + fmtCredits(it.sell) + '</small>' : '') +
+        '<div class="aRow"><div><label class="fld">Starting price</label><input type="number" id="aStart" min="1" value="' + (it ? it.sell * 2 : 100) + '"></div>' +
+        '<div><label class="fld">Buy now (optional)</label><input type="number" id="aBuy" min="1" placeholder="none"></div>' +
+        '<div><label class="fld">Runs for</label><select id="aHours"><option value="1">1 hour</option><option value="6">6 hours</option><option value="12">12 hours</option><option value="24" selected>24 hours</option><option value="48">48 hours</option></select></div></div>' +
+        '<button class="primary" id="aList">Put it up for auction</button>' +
+        '<p class="lede aNote">The item leaves your garage while it\'s up (taken off your car if you\'re using it). If someone bids, the best bid wins when time runs out and you get it, less a 5% fee. ' +
+        'No bids: it comes back. You can take it down only before anyone bids. A bid in the last 2 minutes adds 2 minutes.</p></div></div>'
+        : '<p class="lede">You don\'t have anything to sell yet: open some boxes.</p>');
+      wire();
+      const s1 = $('aItem');
+      if (s1) s1.addEventListener('change', () => { A.sell = s1.value; this.renderAuctions(); });
+      const go = $('aList');
+      if (go) go.addEventListener('click', async () => {
+        const start = Math.floor(+$('aStart').value || 0), buy = $('aBuy').value ? Math.floor(+$('aBuy').value) : null;
+        if (this.busy) return;
+        this.busy = true;
+        try {
+          await Cloud.rpc('list_auction', { p_item: $('aItem').value, p_start: start, p_buyout: buy, p_hours: +$('aHours').value });
+          UI.toast(name($('aItem').value) + ' is up for auction.');
+          A.view = 'mine'; A.sell = '';
+          await this.load();
+        } catch (e) { UI.toast(Cloud.errText(e)); }
+        this.busy = false;
+        this.renderAuctions(true);
+      });
+      return;
+    }
+    if (A.view === 'mine') {
+      if (fresh || !A.mine) { pane.innerHTML = tabs + '<p class="lede">Loading…</p>'; wire(); try { A.mine = await Cloud.rpc('my_auctions'); } catch (e) { pane.innerHTML = tabs + '<p class="lede">' + E(Cloud.errText(e)) + '</p>'; wire(); return; } }
+      const M = A.mine;
+      const st = (a) => a.status === 'open' ? left(a.ends) + ' left' : a.status === 'sold' ? 'Sold' : a.status === 'unsold' ? 'No bids: back in your garage' : 'Taken down';
+      pane.innerHTML = tabs + '<h3 class="gh">SELLING</h3><div class="aList">' + (M.selling.map((a) => '<div class="aItem">' + pic(a.item) + '<div class="aMain"><b>' + E(name(a.item)) + '</b><small>' + st(a) + '</small></div>' +
+          '<div class="aPrice">' + (a.status === 'sold' ? '<b>+◆ ' + fmtCredits(a.bid - a.fee) + '</b><small>to ' + E(a.bidder || '') + ' (5% fee ' + fmtCredits(a.fee) + ')</small>'
+            : a.bid ? '<b>◆ ' + fmtCredits(a.bid) + '</b><small>' + a.bids + ' bid' + (a.bids === 1 ? '' : 's') + ' · ' + E(a.bidder || '') + '</small>' : '<b>◆ ' + fmtCredits(a.start) + '</b><small>no bids yet</small>') + '</div>' +
+          (a.status === 'open' && !a.bid ? '<button class="small ghost" data-cancel="' + a.id + '">Take down</button>' : '') + '</div>').join('') || '<p class="lede">Nothing up for auction.</p>') + '</div>' +
+        '<h3 class="gh" style="margin-top:16px">YOUR BIDS</h3><div class="aList">' + (M.winning.map((a) => '<div class="aItem">' + pic(a.item) + '<div class="aMain"><b>' + E(name(a.item)) + '</b><small>' +
+          (a.status === 'open' ? 'Winning · ' + left(a.ends) + ' left' : a.status === 'sold' ? 'Won! It\'s in your garage' : '') + '</small></div><div class="aPrice"><b>◆ ' + fmtCredits(a.bid) + '</b><small>from ' + E(a.seller) + '</small></div></div>').join('') ||
+          '<p class="lede">You\'re not winning anything right now.</p>') + '</div>';
+      wire();
+      pane.querySelectorAll('[data-cancel]').forEach((b) => b.addEventListener('click', async () => {
+        try { await Cloud.rpc('cancel_auction', { p_id: +b.dataset.cancel }); UI.toast('Taken down: it\'s back in your garage.'); await this.load(); } catch (e) { UI.toast(Cloud.errText(e)); }
+        this.renderAuctions(true);
+      }));
+      return;
+    }
+    // browse
+    if (fresh || !A.list) { pane.innerHTML = tabs + '<p class="lede">Loading the auctions…</p>'; wire(); try { A.list = await Cloud.rpc('auction_list', { p_kind: A.kind || null }); } catch (e) { pane.innerHTML = tabs + '<p class="lede">' + E(Cloud.errText(e)) + '</p>'; wire(); return; } }
+    const kinds = [['', 'Everything'], ['car', 'Cars'], ['decal', 'Decals'], ['finish', 'Paint'], ['wheel', 'Wheels'], ['boost', 'Boosts'], ['cel', 'Celebrations'], ['title', 'Titles'], ['icon', 'Icons']];
+    pane.innerHTML = tabs + '<div class="aBar"><select id="aKind">' + kinds.map(([k, l]) => '<option value="' + k + '"' + (A.kind === k ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
+      '<button class="small ghost" id="aRefresh">Refresh</button><span class="dim aHave">You have ◆ ' + fmtCredits(Records.credits || 0) + '</span></div>' +
+      '<div class="aList">' + (A.list.map((a) => '<div class="aItem' + (a.leading ? ' lead' : '') + (a.mine ? ' own' : '') + '">' + pic(a.item) +
+        '<div class="aMain"><b>' + E(a.name) + '</b><small>' + E(ITEM_KIND[a.kind] ? ITEM_KIND[a.kind].label : a.kind) + ' · ' + E(this.supText(a.item) || 'unlimited') + ' · by ' + E(a.seller) + '</small>' +
+        '<small class="aTime">' + left(a.ends) + ' left' + (a.leading ? ' · <b>you\'re winning</b>' : '') + '</small></div>' +
+        '<div class="aPrice"><b>◆ ' + fmtCredits(a.bid || a.start) + '</b><small>' + (a.bid ? a.bids + ' bid' + (a.bids === 1 ? '' : 's') : 'starting price') + (a.buyout ? ' · buy now ◆ ' + fmtCredits(a.buyout) : '') + '</small></div>' +
+        (a.mine ? '<span class="dim">Yours</span>' : '<div class="aBid"><input type="number" value="' + a.next + '" min="' + a.next + '" data-amt="' + a.id + '"><button class="small primary" data-bid="' + a.id + '">Bid</button>' +
+          (a.buyout ? '<button class="small" data-buy-now="' + a.id + '" data-price="' + a.buyout + '">Buy now</button>' : '') + '</div>') + '</div>').join('') ||
+        '<p class="lede">No auctions running' + (A.kind ? ' for that' : '') + '. Put something up from the Sell tab, or from your Collection.</p>') + '</div>' +
+      '<p class="lede aNote">Bidding holds your credits until someone bids more (then you get them straight back). The best bid when time runs out wins the item.</p>';
+    wire();
+    $('aKind').addEventListener('change', () => { A.kind = $('aKind').value; this.renderAuctions(true); });
+    $('aRefresh').addEventListener('click', () => this.renderAuctions(true));
+    const bid = async (id, amt, now) => {
+      if (this.busy) return;
+      if ((Records.credits || 0) < amt && !(A.list.find((a) => a.id === id) || {}).leading) {
+        UI.toast('That bid needs ◆ ' + fmtCredits(amt) + ': you have ◆ ' + fmtCredits(Records.credits || 0) + '.');
+        if (Shop.link || Shop.link5) Shop.open();
+        return;
+      }
+      if (!confirm((now ? 'Buy it now' : 'Bid') + ' for ' + fmtCredits(amt) + ' credits?')) return;
+      this.busy = true;
+      try {
+        const r = await Cloud.rpc('bid_auction', { p_id: id, p_amount: amt });
+        Records.credits = r.balance; UI.who(Cloud.name(), Records.credits);
+        Sound.creditWin();
+        UI.toast(r.bought ? 'Bought! It\'s in your garage.' : 'You\'re the top bidder at ◆ ' + fmtCredits(r.bid) + '.');
+        if (r.bought) await this.load();
+      } catch (e) { UI.toast(Cloud.errText(e)); }
+      this.busy = false;
+      this.renderAuctions(true);
+    };
+    pane.querySelectorAll('[data-bid]').forEach((b) => b.addEventListener('click', () => bid(+b.dataset.bid, Math.floor(+pane.querySelector('[data-amt="' + b.dataset.bid + '"]').value || 0), false)));
+    pane.querySelectorAll('[data-buy-now]').forEach((b) => b.addEventListener('click', () => bid(+b.dataset.buyNow, +b.dataset.price, true)));
   },
   /** the Driver Road: every level's reward */
   renderRoad() {
@@ -13074,6 +13222,7 @@ const Garage = {
     else if (this.tab === 'shop') this.renderShop();
     else if (this.tab === 'pass') this.renderPass();
     else if (this.tab === 'road') this.renderRoad();
+    else if (this.tab === 'auctions') this.renderAuctions();
     else if (this.tab === 'car') this.renderCar();
     else if (this.tab === 'profile') this.renderProfile();
     else if (this.tab === 'collection') this.renderCollection();
@@ -13115,10 +13264,12 @@ const Garage = {
       '<div class="gShopGrid">' + S.items.map((x) => {
         const it = Catalog.get(x.item) || { id: x.item, kind: x.kind, name: x.name };
         const K = ITEM_KIND[x.kind] || ITEM_KIND.credits;
-        const btn = x.owned ? '<button class="small" disabled>Owned</button>'
+        const sp = this.sup(x.item), out = sp && sp[0] >= sp[1];
+        const btn = x.owned ? '<button class="small" disabled>Owned</button>' : out ? '<button class="small" disabled>Sold out</button>'
           : '<button class="small ' + (have >= x.price ? 'primary' : 'short') + '" data-buy="' + E(x.item) + '" data-price="' + x.price + '"><span class="gem2d"></span> ' + fmtCredits(x.price) + '</button>';
         return '<div class="gShopCard' + (x.owned ? ' owned' : '') + '" style="--kc:' + K.col + '"><div class="gPic">' + Catalog.pic(it) + '</div>' +
-          '<small class="gShopK">' + E(K.label) + (it.src === 'shop' ? ' · shop only' : '') + '</small><b>' + E(x.name) + '</b>' + btn + '</div>';
+          '<small class="gShopK">' + E(K.label) + (it.src === 'shop' ? ' · shop only' : '') + '</small><b>' + E(x.name) + '</b>' +
+          (sp ? '<small class="gSup' + (out ? ' out' : '') + '">' + (out ? 'Sold out' : fmtCredits(sp[1] - sp[0]) + ' of ' + sp[1] + ' left') + '</small>' : '') + btn + '</div>';
       }).join('') + '</div>' +
       '<p class="lede gShopNote">Pick exactly what you want: no luck needed. Paint finishes are only ever in the shop (and Chrome and Neon only in the Race Pass). ' +
       'Everything here can also be sold in your collection, for much less.</p>';
@@ -13245,7 +13396,7 @@ const Garage = {
       const K = k === 'split' ? { label: 'Split', col: '#ffffff' } : ITEM_KIND[k];
       return '<div class="gOddRow" style="--kc:' + K.col + '"><b>' + escapeHtml(k === 'credits' ? 'Credits or hue' : K.label) + '</b><div class="bar"><i style="width:' + Math.max(3, pc * 2) + '%"></i></div><span>' + pc + '%</span><small>' + escapeHtml(what) + '</small></div>';
     }).join('');
-    $('gBoxOpened').textContent = '';
+    $('gBoxOpened').textContent = 'Every box item is limited to 100 copies. When one is all owned, boxes give another of its kind; trade for it in the Auctions.';
   },
   /** the Car tab: a row of what you own for each slot */
   renderCar() {
@@ -13308,16 +13459,20 @@ const Garage = {
       h += '<h3 class="gh" style="color:' + ITEM_KIND[k].col + '">' + ITEM_KIND[k].plural.toUpperCase() + ' <small>' + own + ' / ' + list.length + ' · sell for ' + ITEM_KIND[k].sell + ' each</small></h3><div class="gColl">' +
         list.map((it) => {
           const n = this.owned(it.id);
+          const st = this.supText(it.id);
           if (!n) return '<div class="gItem locked" title="Not found yet"><div class="gPic">?</div><b>' + E(it.name) + '</b><small>' +
-            (it.src === 'pass' ? 'Race Pass+' : it.src === 'shop' ? 'In the shop' : 'Not found yet') + '</small></div>';
+            (it.src === 'pass' ? 'Race Pass+' : it.src === 'level' ? 'Driver Road' : it.src === 'money' ? 'Exclusive' : it.src === 'shop' ? 'In the shop' : 'Not found yet') + '</small>' +
+            (st ? '<small class="gSup' + (/Sold/.test(st) ? ' out' : '') + '">' + st + '</small>' : '') + '</div>';
           return '<div class="gItem" style="--kc:' + ITEM_KIND[k].col + '"><div class="gPic">' + Catalog.pic(it) + '</div><b>' + E(it.name) + '</b>' +
-            '<small>' + (n > 1 ? '× ' + n : 'Owned') + '</small><div class="gAct">' +
+            '<small>' + (n > 1 ? '× ' + n : 'Owned') + '</small>' + (st ? '<small class="gSup">' + st + '</small>' : '') + '<div class="gAct">' +
             '<button class="small ghost" data-sell="' + it.id + '" data-n="1">Sell 1 · ' + it.sell + '</button>' +
+            '<button class="small ghost" data-auction="' + it.id + '">Auction it</button>' +
             (n > 1 ? '<button class="small ghost" data-sell="' + it.id + '" data-n="' + (n - 1) + '">Sell extras · ' + fmtCredits(it.sell * (n - 1)) + '</button>' : '') + '</div></div>';
         }).join('') + '</div>';
     }
     pane.innerHTML = '<p class="lede">' + have + ' of ' + total + ' found. Duplicates can be sold for credits (hue packs can\'t).</p>' + h;
     pane.querySelectorAll('[data-sell]').forEach((b) => b.addEventListener('click', () => this.sell(b.dataset.sell, +b.dataset.n)));
+    pane.querySelectorAll('[data-auction]').forEach((b) => b.addEventListener('click', () => { this.auc.view = 'sell'; this.auc.sell = b.dataset.auction; this.setTab('auctions'); }));
   }
 };
 
@@ -13891,12 +14046,13 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
   // everyone who saw an earlier list sees it again
-  SEASON: 3, EDITION: 3.5, KEY: 'whatsNew',
+  SEASON: 3, EDITION: 3.6, KEY: 'whatsNew',
   ITEMS: [
+    ['gem', 'Only 100 of each', 'Every box and shop item now exists in at most 100 copies. When it\'s gone, it\'s gone.'],
+    ['card', 'Auctions', 'Sell what you have and bid on what you want, in the garage. Your bid is held until someone beats it.'],
     ['flag', 'New ways to race', 'The Race tile: Quick race against drivers at your level, Knockout (last place goes out every map), Escape (outrun a storm on an endless road) and the daily Pot map.'],
     ['gem', 'The Pot map', 'Put credits in to race the day\'s Pot map. After midnight the fastest share the whole pot.'],
     ['crown', 'Driver levels', 'Everything you do earns XP. Every level pays out on the Driver Road, with exclusive titles, icons and Gold paint.'],
-    ['coach', 'Rival alerts', 'Coach tells you the moment someone beats your time, with a button to race them.'],
     ['crown', 'Race Pass', '50 tiers of rewards for finishing runs this season. Pass+ adds a box at every tier, four exclusive paints and pass-only titles and icons.'],
     ['gem', 'The daily shop', 'Six items a day in the garage at a fixed price: get exactly the car or paint you want.'],
     ['photo', 'Paint finishes', 'From Matte and Pearl to animated Holo and Aurora. Everyone you race sees them.'],
@@ -15654,6 +15810,7 @@ const Coach = {
       '\nSTREAKS: finishing at least one run every day (Pacific time) builds a streak: 25 credits a day of streak, up to 175 a day, and a free box every 7th day in a row. Missing a day starts it again. The streak shows on the daily challenge tile.' +
       '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 30 000 credits and 3 free boxes for $1, or 180 000 credits and 18 free boxes for $5, from the + Buy button.' +
       '\nLEVELS AND MODES: every player has a driver level (XP: 10 a finished run, 25 a personal best, 20 a streak day, 100 the daily challenge, up to 50 an Escape run); the Driver Road in the garage pays a reward every level, with exclusive titles, icons and Gold and Obsidian paint at levels 5 to 50. The Race tile on the menu has Quick race (you against ghosts of drivers at your level on a random map), Knockout (7 ghosts, the slowest goes out after each map until one is left), Escape (an endless road with a storm chasing you; score is distance) and the Pot map (a new map each day: put in 100 to 5 000 credits to race it, and after midnight the fastest 40% share the pot, weighted by place and stake). Rival alerts: Coach tells the player when someone beats their time on any map. The Race Pass has 50 tiers and tiers can be skipped for 2 500 credits each. Exclusives only buyable with real money: the Founder\'s Pack ($3), Holo paint ($2), Gold Rush paint ($2) and the Pass+ Bundle ($3).' +
+      '\nLIMITED ITEMS AND AUCTIONS: every box and shop item exists in at most 100 copies (the garage shows how many exist); when one is all owned, boxes give another of its kind and the shop shows it sold out. Selling an item back to the game frees a copy. Race Pass, Driver Road and exclusive items have no limit. Players trade in the garage\'s Auctions: list an item with a starting price, an optional buy-now price and 1 to 48 hours; bids hold the bidder\'s credits until outbid; a bid in the last 2 minutes adds 2 minutes; the best bid wins and the seller gets it less a 5% fee; no bids and the item comes back.' +
       '\nINVITES: "Invite friends" at the top of the menu gives a link; a friend who makes an account with it needs no invite code, and when they finish 10 runs both of you get a free box. After a run, "Challenge a friend" on the finish screen copies a link that puts a friend on that map against your ghost.';
   },
   async ensureSession(I, onProgress) {

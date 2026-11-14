@@ -526,6 +526,10 @@ button.primary{background:var(--ink);color:#121417}
         </div>
         <div class="msg" id="shopMsg"></div>
         <p class="note" id="shopStats" style="margin-top:8px"></p>
+        <h3 style="margin:16px 0 6px;font-size:14px">Exclusives (real money only)</h3>
+        <p class="note">Each needs its own Stripe product and Payment Link at exactly this price (the game adds which item it is to the
+          link). Same success page as above. Leave a box empty to hide that item from the game.</p>
+        <div id="moneyLinks"></div>
         <div class="tableWrap" style="margin-top:12px">
           <table>
             <thead><tr><th>When</th><th>Player</th><th class="r">Paid</th><th class="r">Credits</th><th></th></tr></thead>
@@ -1985,9 +1989,20 @@ async function loadShop() {
   try {
     const st = await rpc('admin_shop_stats');
     $('shopStats').innerHTML = 'In-game shop: <b>' + st.shopToday + '</b> items bought in the last day, <b>' + fmtCredits(st.shopCredits) + '</b> credits spent there in all · Race Pass: <b>' +
-      st.passPlayers + '</b> players this season, <b>' + st.plus + '</b> with Pass+';
+      st.passPlayers + '</b> players this season, <b>' + st.plus + '</b> with Pass+' +
+      (st.auctionsOpen !== undefined ? ' · Auctions: <b>' + st.auctionsOpen + '</b> running, <b>' + st.auctionsSold + '</b> sold in the last day, <b>' + fmtCredits(st.auctionFees) + '</b> credits in fees' : '');
   } catch (e) { /* from before the pass */ }
-  try { const l = await rpc('shop_links'); $('shopLink').value = l.one || ''; $('shopLink5').value = l.five || ''; $('shopLimit').value = l.limit; }
+  try {
+    const l = await rpc('shop_links'); $('shopLink').value = l.one || ''; $('shopLink5').value = l.five || ''; $('shopLimit').value = l.limit;
+    const M = [['founder', "Founder's Pack", 3], ['holo', 'Holo paint', 2], ['goldrush', 'Gold Rush paint', 2], ['passbundle', 'Pass+ Bundle', 3]];
+    $('moneyLinks').innerHTML = M.map(([c, n, d]) => '<div class="row" style="align-items:flex-end;margin-top:6px"><div><label for="ml_' + c + '">' + esc(n) + ' ($' + d + '.00)</label>' +
+      '<input type="text" id="ml_' + c + '" style="width:420px" placeholder="https://buy.stripe.com/…" value="' + esc((l.money || {})[c] || '') + '"></div>' +
+      '<button data-ml="' + c + '">Save</button></div>').join('');
+    document.querySelectorAll('[data-ml]').forEach((b) => b.addEventListener('click', async () => {
+      try { await rpc('admin_set_money_link', { p_code: b.dataset.ml, p_link: $('ml_' + b.dataset.ml).value }); say('shopMsg', 'Saved.', 'ok'); }
+      catch (e) { say('shopMsg', e.message, 'err'); }
+    }));
+  }
   catch (e) { say('shopMsg', 'Run supabase/schema.sql to set up the shop.', 'err'); return; }
   try {
     const list = await rpc('admin_purchases', { p_limit: 200 });
