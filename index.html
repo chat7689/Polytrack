@@ -737,15 +737,28 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .potList li.me{color:var(--aqua)}
 .potList h4{margin:0 0 4px;font-size:11px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
 .escBoard{margin-top:14px}
-.hEscape{position:absolute;top:96px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 18px;
-  border-radius:12px;background:rgba(20,8,30,.55);border:1px solid rgba(196,92,255,.5);color:#fff;pointer-events:none}
+.hEscape{position:absolute;top:84px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:3}
 .hEscape[hidden]{display:none}
-.stormFx{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:1;
-  background:radial-gradient(ellipse at 50% 45%,transparent 42%,rgba(150,40,255,.45) 78%,rgba(255,40,100,.85) 100%)}
-.hEscape b{font-family:var(--mono);font-size:24px}
-.hEscape span{font-size:12.5px;color:#d9b8ff}
-.hEscape.near{border-color:#ff3d6e;background:rgba(60,6,20,.65);animation:wHot .8s ease-in-out infinite}
-.hEscape.near span{color:#ff9ab0}
+.heDist{display:flex;align-items:baseline;gap:6px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.6)}
+.heDist b{font-family:var(--mono);font-size:58px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.heDist small{font-size:20px;font-weight:700;opacity:.8}
+.heStorm{display:flex;align-items:baseline;gap:10px;padding:8px 18px;border-radius:12px;background:rgba(14,4,24,.72);border:2px solid rgba(160,70,255,.7);color:#e6d4ff}
+.heStorm span{font-family:var(--mono);font-size:12px;font-weight:800;letter-spacing:.18em;color:#b98cff}
+.heStorm b{font-family:var(--mono);font-size:34px;font-weight:800;color:#fff;line-height:1}
+.heStorm small{font-size:13px;opacity:.8}
+.hEscape.warn .heStorm{border-color:#ff9a3d;background:rgba(40,12,4,.75)}
+.hEscape.warn .heStorm b{color:#ffcf5c}
+.hEscape.near .heStorm{border-color:#ff2d55;background:rgba(60,0,14,.85);animation:wHot .5s ease-in-out infinite}
+.hEscape.near .heStorm b{color:#ff5a7a}
+.heMsg{font-family:var(--mono);font-size:15px;font-weight:800;letter-spacing:.12em;color:#ffcf5c;opacity:0;text-shadow:0 0 12px rgba(255,176,46,.8)}
+.heMsg.on{animation:heMsg 1.6s ease-out forwards}
+@keyframes heMsg{0%{opacity:0;transform:scale(1.4)}12%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0}}
+.escMap{position:fixed;right:18px;top:50%;transform:translateY(-50%);width:170px;height:460px;pointer-events:none;z-index:3;border-radius:14px;
+  background:linear-gradient(to top,rgba(6,8,14,.55),rgba(6,8,14,0));
+  -webkit-mask-image:linear-gradient(to top,#000 55%,transparent 100%);mask-image:linear-gradient(to top,#000 55%,transparent 100%)}
+.escMap[hidden]{display:none}
+.stormInk{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.stormInk[hidden]{display:none}
 .pSkip button{display:inline-flex;align-items:center;gap:5px}
 .pPlus.big{font-size:20px;padding:8px 16px}
 .rBadge{font-family:var(--mono);font-weight:800;font-size:22px;padding:6px 14px;border-radius:12px;color:#06141a;background:linear-gradient(135deg,#8fe3ff,#3ddbb8)}
@@ -781,7 +794,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .garagePanel{background:linear-gradient(180deg,rgba(24,28,36,.98),rgba(16,18,24,.98))}
 .garageBig{background:radial-gradient(ellipse at 50% 70%,rgba(242,115,63,.12),transparent 60%),radial-gradient(ellipse at 50% 0%,#1e2534,#0f1219);border-color:rgba(255,255,255,.08)}
 /* the menu's Garage tile, while there's something waiting there */
-#bGarage.wHot{box-shadow:0 0 0 2px var(--ember),0 0 26px -4px var(--ember);animation:wHot 2.2s ease-in-out infinite}
+#bMulti.wHot,#bGarage.wHot{box-shadow:0 0 0 2px var(--ember),0 0 26px -4px var(--ember);animation:wHot 2.2s ease-in-out infinite}
 @keyframes wHot{0%,100%{box-shadow:0 0 0 2px var(--ember),0 0 18px -6px var(--ember)}50%{box-shadow:0 0 0 2px var(--ember),0 0 34px -2px var(--ember)}}
 .wNew{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;letter-spacing:.1em;background:var(--ember);color:#fff;border-radius:4px;padding:1px 6px}
 .gRuns{margin:14px 0 6px;font-size:12.5px;display:grid;grid-template-columns:1fr auto;gap:4px 10px}
@@ -2477,8 +2490,13 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   <div class="layer" id="hud" hidden>
     <div class="hud">
       <div class="hud-tl"><div class="n" id="hNum">Course 1</div><div class="t" id="hName">—</div></div>
-      <div class="hEscape" id="hEscape" hidden><b id="hEscM">0 m</b><span id="hEscGap">The storm is coming</span></div>
-      <div class="stormFx" id="stormFx"></div>
+      <div class="hEscape" id="hEscape" hidden>
+        <div class="heDist"><b id="hEscM">0</b><small>m</small></div>
+        <div class="heStorm"><span>STORM</span><b id="hEscGap">300 m</b><small>behind you</small></div>
+        <div class="heMsg" id="hEscMsg"></div>
+      </div>
+      <canvas class="escMap" id="escMap" width="170" height="460" hidden></canvas>
+      <canvas class="stormInk" id="stormInk" width="320" height="180" hidden></canvas>
       <div class="hud-tc"><div class="clock" id="hClock">0:00.000</div><div class="split" id="hSplit"></div>
         <div class="hudTimes"><span class="pb" id="hPB">PB —</span><span class="wr" id="hWR"></span></div></div>
       <div class="hud-tr">
@@ -6711,6 +6729,10 @@ const Boost = {
         m.userData = { k, baseOpacity: base * fade, role, x: sx };
         flame.add(m);
       }
+      // (only the player's own car has flame lights: three.js rebuilds every
+      // shader in the scene whenever the number of lights shown changes, so
+      // other cars' flames lighting up froze races with several of them)
+      if (flame.userData.noLights) continue;
       const light = new THREE.PointLight(st.light || 0xffffff, 0, 5.5, 2);
       light.position.set(sx, -0.12, -2.3);
       flame.add(light);
@@ -6733,6 +6755,8 @@ const Boost = {
       const m = new THREE.Mesh(geo, this.mat(0.9)); m.userData = { role: 'orb', i: k, own: true }; flame.add(m);
     }
     this.paint(flame, flame.userData.P, flame.userData.S);
+    flame.userData.shown = null;
+    this.showParts(flame, false);           // (new pieces stay hidden until the next boost)
     return flame;
   },
   /** the colours: P and S are THREE.Colors (the car's) */
@@ -6757,12 +6781,22 @@ const Boost = {
       c.material.color.copy(r === 'outer' || r === 'bit' || r === 'orb' ? outer : r === 'tip' ? new THREE.Color(1, 1, 1) : core);
     }
   },
+  /** with lights, the group stays shown (its lights at 0) and only the flame's own pieces hide */
+  showParts(flame, on) {
+    const u = flame.userData;
+    if (!(u.lights && u.lights.length)) { flame.visible = on; return; }
+    flame.visible = true;
+    if (u.shown === on) return;
+    u.shown = on;
+    for (const c of flame.children) if (!c.isLight) c.visible = on;
+  },
   /** one frame: amt is how lit (0..1, fading), phase the flicker clock */
   animate(flame, amt, phase, dt) {
     const st = flame.userData.style || BOOSTS[''];
     const lights = flame.userData.lights || [];
-    flame.visible = amt > 0.01;
-    if (!flame.visible) { for (const l of lights) l.intensity = 0; return; }
+    const on = amt > 0.01;
+    this.showParts(flame, on);
+    if (!on) { for (const l of lights) l.intensity = 0; return; }
     const f = st.flick || 1;
     let pulse = 0.78 + 0.22 * Math.sin(phase * f) + 0.13 * Math.sin(phase * 2.7 * f + 1.1) + 0.07 * Math.sin(phase * 5.3 * f + 2.4);
     if (st.throb) pulse *= 0.55 + 0.45 * Math.max(0, Math.sin(phase * 0.35));
@@ -7107,11 +7141,13 @@ const Look = {
   }
 };
 
-function buildFlameGroup(style) {
+function buildFlameGroup(style, noLights) {
   const flame = new THREE.Group();
   flame.userData.lights = [];
+  flame.userData.noLights = !!noLights;
   Boost.build(flame, style || '');
-  flame.visible = false;
+  flame.userData.shown = null;
+  Boost.showParts(flame, false);
   return { flame, flameLights: flame.userData.lights };
 }
 
@@ -7127,7 +7163,7 @@ function buildCarMesh(bodyMat, bodyDarkMat) {
   const mats = { body: B, dark: D, rimA: own ? MAT.rimA : MAT.rimA.clone(), rimB: own ? MAT.rimB : MAT.rimB.clone() };
   const bodyG = new THREE.Group();
   g.add(bodyG);
-  const { flame, flameLights } = buildFlameGroup();
+  const { flame, flameLights } = buildFlameGroup('', !own);
   g.add(flame);
 
   const wheels = [];
@@ -7175,7 +7211,7 @@ function buildGhostMesh() {
     }
   }
   P.build(g, []);
-  const { flame, flameLights } = buildFlameGroup();
+  const { flame, flameLights } = buildFlameGroup('', true);
   g.add(flame);
   g.userData.flame = flame;
   g.userData.flameLights = flameLights;
@@ -12899,6 +12935,7 @@ const Garage = {
     try { this.road = await Cloud.rpc('my_road'); } catch (e) { /* a database from before levels */ }
     try { this.supply = await Cloud.rpc('item_supply'); } catch (e) { /* a database from before limits */ }
     this.badge();
+    this.raceIntro();
     this.intro();
     if (Game.state === 'garage') this.render();
   },
@@ -13120,8 +13157,19 @@ const Garage = {
     const rb = $('gRoadBadge');
     if (rb) { rb.hidden = !rw; rb.textContent = String(rw); }
     this.levelChip();
-    $('bGarage').classList.toggle('wHot', !!signed && (n > 0 || first || pw > 0 || rw > 0));
+    $('bGarage').classList.toggle('wHot', !!signed && (n > 0 || pw > 0 || rw > 0));
+    // the Race tile glows until it has been opened
+    $('bMulti').classList.toggle('wHot', !!signed && !Prefs.get('raceSeen', false));
+    void first;
     $('gNewMenu').hidden = !signed || !!Prefs.get('garageSeen', false);
+  },
+  /** Coach suggests the Race modes to newer drivers, once */
+  raceIntro() {
+    if (!Cloud.on || !Cloud.user || Prefs.get('coachRaceIntro', false) || Prefs.get('raceSeen', false) || Game.state !== 'menu') return;
+    if (this.road && this.road.level > 8) { Prefs.set('coachRaceIntro', true); return; }   // (not new: they'll find it)
+    Prefs.set('coachRaceIntro', true);
+    CoachAlerts.queue.unshift({ raceIntro: true });
+    CoachAlerts.flush();
   },
   /** Coach tells you about the boxes, once */
   intro() {
@@ -14330,54 +14378,65 @@ const Rivals = {
 };
 
 /**
- * Escape's road: an endless-feeling run (6.5 km, more than anyone outruns
- * the storm for) made from the same pieces as the daily maps, with the
- * heading kept within 60 degrees of the start's, so it never comes back on
- * itself, and a straight before every turn.
+ * Escape: always the same 10 km road (seed ESC.seed), built from the daily
+ * maps' pieces: lots of turns (left-right pairs), boost pads, big and huge
+ * jumps off a boost pad (their landings tried with the test driver),
+ * rollers and crests; never more than 65 degrees off the start's heading,
+ * so it never meets itself.
+ *
+ * The storm starts ESC.d0 m behind at ESC.v0 m/s and gains ESC.acc m/s
+ * every second (up to ESC.vmax). The test driver (near perfect, ~53.5 m/s)
+ * is caught after about 158 s and 8.4 km; a solid run (42 m/s) about 2
+ * minutes; an average one (35 m/s) about 97 s. Leaving the road puts the
+ * car back on it (the storm gains); boost refills float above the road.
+ * The car and its physics are the game's own.
  */
+const ESC = { seed: 77003, d0: 300, v0: 10.4, acc: 0.57, vmax: 95, feel: 230, every: 420 };
 const EscapeGen = {
   plan(seed) {
     const R = DailyGen.rng(seed);
     const rr = (a, b) => a + R() * (b - a);
     const r1 = (v) => Math.round(v * 10) / 10;
     const W = 14;
-    const ops = [['pad', 22, W + 4], ['straight', 70]];
-    let len = 92, heading = 0, height = 0, sinceTurn = Infinity, sinceJump = 0, after = '';
+    const ops = [['pad', 22, W + 4], ['straight', 80]];
+    let len = 102, heading = 0, height = 0, sinceTurn = Infinity, sinceJump = 0, after = '', lastDir = 0;
     const straight = (L) => { ops.push(['straight', r1(L)]); len += L; sinceTurn += L; sinceJump += L; };
-    while (len < 6500) {
-      if (after) { straight(after === 'rollers' ? rr(32, 42) : rr(26, 34)); after = ''; continue; }
+    while (len < 10000) {
+      if (after) { straight(after === 'rollers' ? rr(32, 42) : after === 'jump' ? rr(40, 55) : rr(26, 34)); after = ''; continue; }
       const u = R();
-      if (u < 0.4) {
-        straight(rr(50, 70));
-        let dir = R() < 0.5 ? -1 : 1;
-        const arc = Math.round(rr(30, 80));
-        if (Math.abs(heading + arc * dir) > 60) dir = -dir;
-        if (Math.abs(heading + arc * dir) > 60) continue;
-        const radius = r1(rr(55, 95));
-        ops.push(['curve', radius, arc * dir, { bank: Math.round(Math.min(22, 6 + arc * 0.16)), chev: 1 }]);
+      if (u < 0.56) {
+        straight(rr(48, 62));
+        let dir = lastDir ? -lastDir : (R() < 0.5 ? -1 : 1);
+        const arc = Math.round(rr(30, 85));
+        if (Math.abs(heading + arc * dir) > 65) dir = -dir;
+        if (Math.abs(heading + arc * dir) > 65) { lastDir = 0; continue; }
+        const radius = r1(rr(50, 90));
+        ops.push(['curve', radius, arc * dir, { bank: Math.round(Math.min(24, 8 + arc * 0.18)), chev: 1 }]);
         len += radius * deg(arc); heading += arc * dir; sinceTurn = 0; sinceJump += radius * deg(arc);
-      } else if (u < 0.52) {
-        straight(rr(40, 110));
-      } else if (u < 0.6) {
-        ops.push(['strip', r1(rr(16, 22))]); len += 19; sinceTurn += 19; sinceJump += 19;
-        straight(rr(24, 34));
-      } else if (u < 0.7) {
+        lastDir = R() < 0.55 ? dir : 0;
+      } else if (u < 0.67) {
+        ops.push(['strip', r1(rr(18, 24))]); len += 21; sinceTurn += 21; sinceJump += 21;
+        straight(rr(30, 45)); lastDir = 0;
+      } else if (u < 0.73) {
         if (sinceTurn < 18) straight(20 - sinceTurn);
         const up = height < 4 ? 1 : height > 16 ? -1 : (R() < 0.5 ? 1 : -1);
         const run = rr(30, 44), rise = up * rr(3, 6);
-        ops.push(['slope', r1(run), r1(rise)]); len += run; sinceTurn += run; sinceJump += run; height += rise;
+        ops.push(['slope', r1(run), r1(rise)]); len += run; sinceTurn += run; sinceJump += run; height += rise; lastDir = 0;
       } else if (u < 0.8) {
-        if (sinceTurn < 20) straight(22 - sinceTurn);
-        ops.push(['crest', r1(rr(22, 28)), r1(rr(4.5, 6.5))]); len += 25; sinceTurn += 25; sinceJump += 25; after = 'lip';
-      } else if (u < 0.87) {
+        if (sinceTurn < 22) straight(24 - sinceTurn);
+        ops.push(['crest', r1(rr(22, 28)), r1(rr(5, 7))]); len += 25; sinceTurn += 25; sinceJump += 25; after = 'lip'; lastDir = 0;
+      } else if (u < 0.86) {
         straight(sinceTurn < 30 ? 32 - sinceTurn : 18);
-        ops.push(['rollers', 2, 24, r1(rr(0.55, 0.75))]); len += 48; sinceTurn += 48; sinceJump += 48; after = 'rollers';
-      } else if (sinceJump > 450) {
-        straight(35);
-        ops.push(['slope', 30, 5], ['ramp', 16, r1(rr(7, 8.5))], ['gap', r1(rr(17, 21)), -2], ['table', 44, W + 3], ['slope', 40, -5]);
-        len += 149; sinceTurn += 149; sinceJump = 0; after = 'lip';
+        ops.push(['rollers', 3, 24, r1(rr(0.6, 0.85))]); len += 72; sinceTurn += 72; sinceJump += 72; after = 'rollers'; lastDir = 0;
+      } else if (sinceJump > 380) {
+        straight(sinceTurn < 40 ? 50 - sinceTurn : 30);
+        ops.push(['strip', 20]); straight(40);
+        const huge = R() < 0.45;
+        if (huge) ops.push(['slope', 34, 7], ['ramp', 14, 12], ['gap', r1(rr(30, 33)), -4], ['table', 80, W + 5], ['slope', 60, -7]);
+        else ops.push(['slope', 30, 6], ['ramp', 14, 10], ['gap', r1(rr(24, 27)), -3], ['table', 64, W + 4], ['slope', 50, -6]);
+        len += huge ? 266 : 223; sinceTurn += 250; sinceJump = 0; after = 'jump'; lastDir = 0;
       } else {
-        straight(60);
+        straight(rr(50, 90)); lastDir = 0;
       }
     }
     ops.push(['straight', 40], ['gate', 'finish'], ['straight', 34, { w: W + 4 }]);
@@ -14385,123 +14444,428 @@ const EscapeGen = {
   }
 };
 
-/**
- * Escape: an endless road with a storm wall chasing the car along it. The
- * storm starts 140 m behind and speeds up (26 m/s, +0.62 m/s every second, up
- * to 85: a strong driver lasts about 90 s and 5 km, past anyone's average); it catching you, leaving the road or getting stuck ends the run.
- * The score is the distance along the road. The car and its physics are
- * exactly the game's own: only the road and the storm are new.
- */
 const Escape = {
-  on: false, live: false, done: false, storm: -140, t: 0, mesh: null, ticket: null, plan: null,
+  on: false, live: false, done: false, death: null, storm: -ESC.d0, t: 0, me: 0, mesh: null, ticket: null, cache: null,
+  pickups: [], respawns: [], maxIdx: 0, inkI: 0, exp0: 1,
+  /** the road, built once */
+  build() {
+    if (this.cache) return this.cache;
+    const plan = EscapeGen.plan(ESC.seed);
+    const data = validateCourse(DailyGen.run(plan));
+    this.cache = { plan, data };
+    return this.cache;
+  },
   start() {
     if (Cloud.user && !Hours.guard()) return;
-    let data = null;
-    for (let k = 0; k < 8 && !data; k++) {
-      const seed = (Math.random() * 1e9) | 0;
-      try {
-        this.plan = EscapeGen.plan(seed);
-        data = validateCourse(DailyGen.run(this.plan));
-        if (!data.valid) data = null;
-      } catch (e) { data = null; }
-    }
-    if (!data) { UI.toast('The road couldn\'t be built: try again.'); return; }
-    const plan = this.plan;
+    let c;
+    try { c = this.build(); } catch (e) { c = null; }
+    if (!c || !c.data.valid) { UI.toast('The road couldn\'t be built.'); return; }
+    const plan = c.plan;
     Tracks.level = { id: 'uescape', escape: true, draft: true, user: true, section: -1, name: 'Escape', author: '', blurb: '', rev: 'escape', build: () => DailyGen.run(plan) };
-    Game.data[UTRACK_I] = data; Game.playable[UTRACK_I] = true;
+    Game.data[UTRACK_I] = c.data; Game.playable[UTRACK_I] = true;
     Game.ghostOverride = null; Game.ghostOverrideName = null; Game.extraGhosts = [];
     Modes.mode = 'escape'; Modes.ko = null;
-    this.on = true; this.live = false; this.done = false; this.storm = -140; this.t = 0; this.ticket = null;
+    this.on = true; this.live = false; this.done = false; this.death = null; this.storm = -ESC.d0; this.t = 0; this.me = 0; this.ticket = null;
     Game.startLevel(UTRACK_I);
     if (Game.state !== 'play') { this.stop(); return; }
-    this.ensureMesh();
-    this.mesh.visible = true;
+    Game.car.mesh.visible = true;
+    this.respawns = Multi.safeSpots(c.data, Game.course); this.maxIdx = 0;
+    this.exp0 = App.renderer.toneMappingExposure;
+    this.ensureMesh(); this.mesh.visible = true;
+    this.makePickups();
+    this.mapInit();
+    this.flakesInit();
     this.place();
-    $('hEscape').hidden = false;
-    $('hEscM').textContent = '0 m';
-    $('hEscGap').textContent = 'The storm is coming: go!';
-    $('hEscape').classList.remove('near');
-    UI.toast('Escape: outrun the storm for as long as you can.');
+    $('hEscape').hidden = false; $('escMap').hidden = false; $('stormInk').hidden = false;
+    this.hud();
+    this.ink(0, 0);
+    this.drawMap();
+    UI.toast('Escape: the storm is coming. Grab the boost refills and don\'t look back.');
   },
   stop() {
-    this.on = false; this.live = false;
+    this.on = false; this.live = false; this.death = null;
     if (this.mesh) this.mesh.visible = false;
-    const h = $('hEscape'); if (h) h.hidden = true;
-    const fx = $('stormFx'); if (fx) fx.style.opacity = 0;
+    for (const pk of this.pickups) pk.mesh.visible = false;
+    if (this.flakes) { this.flakes.visible = false; this.flakes.material.uniforms.uT.value = -1; }
+    for (const id of ['hEscape', 'escMap', 'stormInk']) { const el = $(id); if (el) el.hidden = true; }
+    if (App.renderer) { App.renderer.domElement.style.transform = ''; if (this.exp0) App.renderer.toneMappingExposure = this.exp0; }
+    if (Game.car && Game.car.mesh) Game.car.mesh.visible = true;
   },
   /** the car launches: the storm starts, and the server gets a ticket */
   begin() {
-    this.live = true; this.t = 0; this.storm = -140;
+    this.live = true; this.t = 0; this.storm = -ESC.d0;
     this.ticket = Cloud.on && Cloud.user ? Cloud.rpc('start_escape').catch(() => null) : null;
   },
-  speed() { return Math.min(85, 26 + this.t * 0.62); },
+  speed() { return Math.min(ESC.vmax, ESC.v0 + ESC.acc * this.t); },
+  /** how far along the road the car is, smoothly (between the path's points) */
+  dist() {
+    const C = Game.course, i = Game.pathIdx, P = C.path, cum = C.cum;
+    const j = Math.min(i + 1, P.length - 1);
+    if (j === i) return cum[i];
+    const ax = P[j].x - P[i].x, az = P[j].z - P[i].z, L2 = ax * ax + az * az || 1;
+    const u = clamp(((Game.car.pos.x - P[i].x) * ax + (Game.car.pos.z - P[i].z) * az) / L2, 0, 1);
+    return cum[i] + (cum[j] - cum[i]) * u;
+  },
+  /** a point and heading at a distance along the road (before the start: back along the first stretch) */
+  at(d) {
+    const C = Game.course, cum = C.cum, path = C.path;
+    let i = 0;
+    if (d > 0) { let lo = 0, hi = cum.length - 1; while (lo < hi - 1) { const m = (lo + hi) >> 1; if (cum[m] <= d) lo = m; else hi = m; } i = lo; }
+    const a = path[i], b = path[Math.min(i + 1, path.length - 1)];
+    const seg = Math.max(cum[Math.min(i + 1, cum.length - 1)] - cum[i], 1e-6);
+    const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1;
+    const u = d > 0 ? Math.min(1, (d - cum[i]) / seg) : d / L;
+    return { x: a.x + dx * u, y: a.y + (b.y - a.y) * Math.max(0, u), z: a.z + dz * u, h: Math.atan2(dx, dz) };
+  },
   step(dt) {
-    if (!this.live || this.done) return;
+    if (!this.live || this.done || this.death) return;
     this.t += dt;
     this.storm += this.speed() * dt;
-    const me = Game.course.cum[Game.pathIdx];
+    this.me = this.dist();
+    this.maxIdx = Math.max(this.maxIdx, Game.pathIdx);
+    const gap = this.me - this.storm;
+    // boost refills
+    const cp = Game.car.pos, now = performance.now() / 1000;
+    for (const pk of this.pickups) {
+      if (!pk.mesh.visible) continue;
+      pk.mesh.rotation.y = now * 2.2;
+      pk.mesh.position.y = pk.y + Math.sin(now * 3 + pk.d) * 0.25;
+      if (Math.abs(pk.d - this.me) < 30 && cp.distanceToSquared(pk.mesh.position) < 5.5 * 5.5) {
+        pk.mesh.visible = false;
+        Game.car.boostLeft = CAR.boostTotal;
+        Sound.boostFire();
+        this.flash('BOOST REFILLED');
+      }
+    }
     this.place();
-    const gap = me - this.storm;
-    $('hEscM').textContent = fmtCredits(Math.max(0, Math.round(me))) + ' m';
-    $('hEscGap').textContent = gap > 0 ? 'Storm ' + Math.round(gap) + ' m behind' : 'Caught!';
-    $('hEscape').classList.toggle('near', gap < 40);
-    // the storm is behind the camera: the screen's edges glow as it closes in
-    $('stormFx').style.opacity = Math.max(0, Math.min(1, 1 - gap / 90)).toFixed(2);
-    if (gap <= 0) this.over('caught');
+    this.hud(gap);
+    const I = Math.pow(clamp(1 - (gap - 15) / ESC.feel, 0, 1), 1.7);
+    this.ink(I, now);
+    this.drawMap();
+    // the world darkens and shakes as it closes in
+    App.renderer.toneMappingExposure = this.exp0 * (1 - 0.45 * I);
+    const sh = gap < 90 ? (1 - gap / 90) * 5 : 0;
+    App.renderer.domElement.style.transform = sh ? 'translate(' + ((Math.random() - 0.5) * sh).toFixed(1) + 'px,' + ((Math.random() - 0.5) * sh).toFixed(1) + 'px)' : '';
+    if (gap <= 0) this.caught();
   },
+  hud(gap) {
+    const g = gap === undefined ? ESC.d0 : gap;
+    $('hEscM').textContent = fmtCredits(Math.max(0, Math.floor(this.me)));
+    $('hEscGap').textContent = g > 0 ? fmtCredits(Math.round(g)) + ' m' : 'CAUGHT';
+    const el = $('hEscape');
+    el.classList.toggle('warn', g < 150);
+    el.classList.toggle('near', g < 60);
+  },
+  flash(msg) {
+    const m = $('hEscMsg');
+    m.textContent = msg;
+    m.classList.remove('on'); void m.offsetWidth; m.classList.add('on');
+  },
+  /** put the car back on the road after leaving it (the storm keeps coming) */
+  respawn(msg) {
+    let spot = this.respawns[0];
+    for (const s2 of this.respawns) if (s2.idx <= this.maxIdx) spot = s2;
+    const g = Game;
+    g.car.place(spot.pos, spot.heading);
+    g.chase.snap(g.car);
+    g.pathIdx = spot.idx; g.offTrack = 0; g.hungTime = 0; g.accum = 0;
+    g.recPrevPos.copy(g.car.pos); g.recPrevQuat.copy(g.car.quat);
+    UI.flash(); Sound.respawn();
+    this.flash((msg && /stuck/i.test(msg)) ? 'STUCK: BACK ON THE ROAD' : 'OFF THE ROAD: BACK ON IT');
+  },
+  /* ---------------------------------------------------------- the storm */
   ensureMesh() {
     if (this.mesh) { if (!this.mesh.parent) App.scene.add(this.mesh); return; }
+    // smoke: black, thick at the ground, ragged at the top, with violet and red at its edges
     const cv = document.createElement('canvas');
-    cv.width = 64; cv.height = 256;
+    cv.width = 128; cv.height = 256;
     const c = cv.getContext('2d');
     const g = c.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, 'rgba(120,40,255,0)'); g.addColorStop(0.35, 'rgba(170,60,255,0.55)'); g.addColorStop(0.8, 'rgba(255,60,120,0.85)'); g.addColorStop(1, 'rgba(255,90,90,0.95)');
-    c.fillStyle = g; c.fillRect(0, 0, 64, 256);
-    for (let k = 0; k < 40; k++) { c.fillStyle = 'rgba(255,255,255,' + (0.05 + Math.random() * 0.12) + ')'; c.fillRect(Math.random() * 64, Math.random() * 256, 1 + Math.random() * 2, 20 + Math.random() * 60); }
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.25, 'rgba(10,0,20,0.55)'); g.addColorStop(0.6, 'rgba(5,0,10,0.92)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+    c.fillStyle = g; c.fillRect(0, 0, 128, 256);
+    for (let k = 0; k < 90; k++) {
+      c.fillStyle = 'rgba(' + (Math.random() < 0.5 ? '150,40,255' : '255,40,90') + ',' + (0.05 + Math.random() * 0.18) + ')';
+      c.beginPath(); c.arc(Math.random() * 128, 60 + Math.random() * 196, 4 + Math.random() * 16, 0, Math.PI * 2); c.fill();
+    }
     const tex = new THREE.CanvasTexture(cv);
+    const bolt = document.createElement('canvas');
+    bolt.width = 128; bolt.height = 256;
+    const b = bolt.getContext('2d');
+    b.strokeStyle = 'rgba(210,160,255,1)'; b.lineWidth = 3; b.shadowColor = '#b46cff'; b.shadowBlur = 12;
+    for (let k = 0; k < 4; k++) {
+      let x = 10 + Math.random() * 108, y = 0;
+      b.beginPath(); b.moveTo(x, y);
+      while (y < 256) { x += (Math.random() - 0.5) * 30; y += 12 + Math.random() * 18; b.lineTo(x, y); }
+      b.stroke();
+    }
+    const btex = new THREE.CanvasTexture(bolt);
     const grp = new THREE.Group();
     this.walls = [];
-    for (let k = 0; k < 4; k++) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(90, 46), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.75 - k * 0.15,
-        depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, color: 0xffffff, fog: false }));
-      m.position.set(0, 21, -k * 7);
+    for (let k = 0; k < 6; k++) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(130, 80), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.95 - k * 0.1,
+        depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      m.position.set((k % 2 ? 6 : -6), 36, -k * 9);
       grp.add(m); this.walls.push(m);
     }
-    const glow = new THREE.Mesh(new THREE.PlaneGeometry(90, 40), new THREE.MeshBasicMaterial({ color: 0xff3d6e, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
-    glow.rotation.x = -Math.PI / 2; glow.position.set(0, 0.4, -14);
+    this.bolt = new THREE.Mesh(new THREE.PlaneGeometry(120, 80), new THREE.MeshBasicMaterial({ map: btex, transparent: true, opacity: 0,
+      depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false }));
+    this.bolt.position.set(0, 38, -4);
+    grp.add(this.bolt);
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(130, 50), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.75, depthWrite: false, fog: false }));
+    glow.rotation.x = -Math.PI / 2; glow.position.set(0, 0.5, -20);
     grp.add(glow);
     this.mesh = grp;
     App.scene.add(grp);
   },
-  /** the storm at its distance along the road (before the start: back along the first stretch) */
   place() {
-    const C = Game.course;
-    if (!this.mesh || !C) return;
-    const cum = C.cum, path = C.path, s = this.storm;
-    let i = 0;
-    if (s > 0) { let lo = 0, hi = cum.length - 1; while (lo < hi - 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; } i = lo; }
-    const a = path[i], b = path[Math.min(i + 1, path.length - 1)];
-    const seg = Math.max(cum[Math.min(i + 1, cum.length - 1)] - cum[i], 1e-6);
-    const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1;
-    const u = s > 0 ? Math.min(1, (s - cum[i]) / seg) : s / L;
-    this.mesh.position.set(a.x + dx * u, (a.y + (b.y - a.y) * Math.max(0, u)) - 2, a.z + dz * u);
-    this.mesh.rotation.y = Math.atan2(dx, dz);
-    const pulse = 0.85 + 0.15 * Math.sin(performance.now() / 180);
-    this.walls.forEach((w, k) => { w.material.opacity = (0.75 - k * 0.15) * pulse; w.scale.y = 0.95 + 0.08 * Math.sin(performance.now() / 260 + k); });
+    if (!this.mesh || !Game.course) return;
+    const P = this.at(this.storm);
+    this.mesh.position.set(P.x, P.y - 3, P.z);
+    this.mesh.rotation.y = P.h;
+    const t = performance.now() / 1000;
+    this.walls.forEach((w, k) => { w.scale.y = 0.92 + 0.12 * Math.sin(t * 1.3 + k * 1.7); w.position.x = (k % 2 ? 6 : -6) + Math.sin(t * 0.7 + k) * 4; });
+    // lightning, now and then
+    if (Math.random() < 0.025) this.boltT = 0.18;
+    this.boltT = Math.max(0, (this.boltT || 0) - 1 / 60);
+    this.bolt.material.opacity = this.boltT > 0 ? 0.9 : 0;
   },
-  /** the run is over: caught, off the road, or (nobody yet) the end of the road */
-  async over(why) {
+  /* -------------------------------------------------- boost refills */
+  makePickups() {
+    if (!this.pickGeo) {
+      this.pickGeo = new THREE.TorusGeometry(1.2, 0.2, 8, 28);
+      this.pickCore = new THREE.OctahedronGeometry(0.55, 0);
+      this.pickMat = new THREE.MeshBasicMaterial({ color: 0xffb02e, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+      this.pickMat2 = new THREE.MeshBasicMaterial({ color: 0xfff1b0, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    }
+    for (const pk of this.pickups) App.scene.remove(pk.mesh);
+    this.pickups = [];
+    const L = Game.course.length;
+    for (let d = 320; d < L - 200; d += ESC.every) {
+      const P = this.at(d);
+      const g = new THREE.Group();
+      g.add(new THREE.Mesh(this.pickGeo, this.pickMat));
+      const core = new THREE.Mesh(this.pickCore, this.pickMat2); g.add(core);
+      g.position.set(P.x, P.y + 1.6, P.z);
+      App.scene.add(g);
+      this.pickups.push({ mesh: g, d, y: P.y + 1.6 });
+    }
+  },
+  /* ---------------------------------------------- the map on the right */
+  mapInit() {
+    const C = Game.course, P = C.path, cum = C.cum;
+    const a = P[0], b = P[P.length - 1];
+    let fx = b.x - a.x, fz = b.z - a.z; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
+    const px = fz, pz = -fx;
+    const pts = [];
+    let last = -1e9;
+    for (let i = 0; i < P.length; i++) {
+      if (cum[i] - last < 8 && i < P.length - 1) continue;
+      last = cum[i];
+      const dx = P[i].x - a.x, dz = P[i].z - a.z;
+      pts.push({ u: dx * px + dz * pz, v: dx * fx + dz * fz, d: cum[i] });
+    }
+    this.map = { pts, fx, fz, px, pz, ax: a.x, az: a.z };
+  },
+  mapAt(d) {
+    const pts = this.map.pts;
+    let lo = 0, hi = pts.length - 1;
+    while (lo < hi - 1) { const m = (lo + hi) >> 1; if (pts[m].d <= d) lo = m; else hi = m; }
+    const A = pts[lo], B = pts[hi], u = B.d > A.d ? clamp((d - A.d) / (B.d - A.d), 0, 1) : 0;
+    return { u: A.u + (B.u - A.u) * u, v: A.v + (B.v - A.v) * u };
+  },
+  drawMap() {
+    const cv = $('escMap');
+    if (!cv || !this.map) return;
+    const c = cv.getContext('2d'), W = cv.width, H = cv.height, S = 0.085;
+    const me = this.mapAt(Math.max(0, this.me));
+    const X = (q) => W / 2 + (q.u - me.u) * S, Y = (q) => H * 0.84 - (q.v - me.v) * S;
+    c.clearRect(0, 0, W, H);
+    const pts = this.map.pts;
+    // the road
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 9;
+    c.beginPath(); pts.forEach((q, k) => (k ? c.lineTo(X(q), Y(q)) : c.moveTo(X(q), Y(q)))); c.stroke();
+    c.strokeStyle = 'rgba(235,240,255,0.85)'; c.lineWidth = 3.5;
+    c.beginPath(); pts.forEach((q, k) => (k ? c.lineTo(X(q), Y(q)) : c.moveTo(X(q), Y(q)))); c.stroke();
+    // kilometre marks
+    c.fillStyle = 'rgba(255,255,255,0.75)'; c.font = '700 10px Inter, Arial, sans-serif'; c.textAlign = 'left';
+    for (let k = 1000; k < Game.course.length; k += 1000) { const q = this.mapAt(k); c.fillText(k / 1000 + ' km', X(q) + 9, Y(q) + 3); c.fillRect(X(q) - 4, Y(q) - 1, 8, 2); }
+    // boost refills
+    c.fillStyle = '#ffb02e';
+    for (const pk of this.pickups) if (pk.mesh.visible) { const q = this.mapAt(pk.d); c.beginPath(); c.arc(X(q), Y(q), 3, 0, Math.PI * 2); c.fill(); }
+    // what the storm has taken
+    if (this.storm > 0) {
+      c.save();
+      c.shadowColor = 'rgba(160,50,255,0.9)'; c.shadowBlur = 10;
+      c.strokeStyle = '#07000c'; c.lineWidth = 11;
+      c.beginPath();
+      let k = 0;
+      for (; k < pts.length && pts[k].d <= this.storm; k++) (k ? c.lineTo(X(pts[k]), Y(pts[k])) : c.moveTo(X(pts[k]), Y(pts[k])));
+      const f = this.mapAt(this.storm); c.lineTo(X(f), Y(f));
+      c.stroke();
+      c.restore();
+      const f2 = this.mapAt(this.storm);
+      c.fillStyle = '#ff2d55'; c.fillRect(X(f2) - 12, Y(f2) - 2, 24, 4);
+    }
+    // you
+    const t = performance.now() / 1000;
+    c.fillStyle = 'rgba(61,219,184,0.3)'; c.beginPath(); c.arc(X(me), Y(me), 8 + 3 * Math.sin(t * 5), 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#3ddbb8'; c.strokeStyle = '#fff'; c.lineWidth = 2;
+    c.beginPath(); c.arc(X(me), Y(me), 5, 0, Math.PI * 2); c.fill(); c.stroke();
+  },
+  /* -------------------------------------------- black streaks on the screen */
+  ink(I, t) {
+    const cv = $('stormInk');
+    if (!cv) return;
+    const c = cv.getContext('2d'), W = cv.width, H = cv.height;
+    this.inkI = I;
+    c.clearRect(0, 0, W, H);
+    if (I <= 0.001) return;
+    if (!this.tendrils) {
+      this.tendrils = [];
+      for (let k = 0; k < 46; k++) this.tendrils.push({ p: k / 46 + Math.random() * 0.015, w: 6 + Math.random() * 12, s: 0.6 + Math.random() * 1.6, ph: Math.random() * 6.3, f: 0.55 + Math.random() * 0.6, bend: (Math.random() - 0.5) * 0.9 });
+    }
+    // the edges darken
+    const vg = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.62 - 0.3 * Math.min(I, 1.6)), W / 2, H / 2, Math.max(W, H) * 0.62);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,' + Math.min(0.92, 0.75 * I).toFixed(2) + ')');
+    c.fillStyle = vg; c.fillRect(0, 0, W, H);
+    // tendrils reach in from every edge
+    c.save();
+    c.shadowColor = 'rgba(140,40,255,0.75)'; c.shadowBlur = 5;
+    c.fillStyle = 'rgba(2,0,6,0.94)';
+    const per = 2 * (W + H), reach = Math.min(W, H) * 0.62;
+    for (const d of this.tendrils) {
+      let e = d.p * per, x, y, nx, ny;
+      if (e < W) { x = e; y = 0; nx = 0; ny = 1; }
+      else if ((e -= W) < H) { x = W; y = e; nx = -1; ny = 0; }
+      else if ((e -= H) < W) { x = W - e; y = H; nx = 0; ny = -1; }
+      else { e -= W; x = 0; y = H - e; nx = 1; ny = 0; }
+      const L = reach * I * d.f * (0.65 + 0.35 * Math.sin(t * d.s + d.ph));
+      if (L < 2) continue;
+      const tx = -ny, ty = nx, b = d.bend * L;
+      const ex = x + nx * L + tx * b, ey = y + ny * L + ty * b;
+      const mx = x + nx * L * 0.5 + tx * (b * 0.2 + Math.sin(t * 2 + d.ph) * 6), my = y + ny * L * 0.5 + ty * (b * 0.2 + Math.cos(t * 2 + d.ph) * 6);
+      c.beginPath();
+      c.moveTo(x - tx * d.w, y - ty * d.w);
+      c.quadraticCurveTo(mx - tx * d.w * 0.4, my - ty * d.w * 0.4, ex, ey);
+      c.quadraticCurveTo(mx + tx * d.w * 0.4, my + ty * d.w * 0.4, x + tx * d.w, y + ty * d.w);
+      c.closePath(); c.fill();
+    }
+    c.restore();
+    // past full: the dark swallows the screen
+    if (I > 1.2) { c.fillStyle = 'rgba(0,0,0,' + Math.min(0.97, (I - 1.2) * 0.9).toFixed(2) + ')'; c.fillRect(0, 0, W, H); }
+  },
+  /* ------------------------------------------- caught: the car turns to dust */
+  flakesInit() {
+    if (this.flakes) { this.flakes.visible = true; this.flakes.material.uniforms.uT.value = -1; return; }
+    const N = 1600, geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+    geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+    geo.setAttribute('aRel', new THREE.BufferAttribute(new Float32Array(N), 1));
+    geo.setAttribute('aDir', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uT: { value: -1 }, uPx: { value: 60 } },
+      vertexShader: 'uniform float uT; uniform float uPx; attribute vec3 aCol; attribute float aRel; attribute vec3 aDir; varying vec3 vC; varying float vA;\n' +
+        'void main() { float k = max(0.0, uT - aRel); vec3 p = position + aDir * (k * k * 1.5 + k * 0.5) + vec3(sin(k * 6.0 + aRel * 40.0), 0.0, cos(k * 5.0 + aRel * 30.0)) * k * 0.35;\n' +
+        '  vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;\n' +
+        '  vA = uT < 0.0 ? 0.0 : clamp(1.0 - k / 1.4, 0.0, 1.0); vC = mix(aCol, vec3(0.06, 0.0, 0.1), clamp(k * 0.9, 0.0, 1.0));\n' +
+        '  gl_PointSize = uT < 0.0 ? 0.0 : uPx * (1.0 - 0.45 * clamp(k, 0.0, 1.0)) / max(-mv.z, 0.5); }',
+      fragmentShader: 'varying vec3 vC; varying float vA;\n' +
+        'void main() { vec2 d = gl_PointCoord - 0.5; if (vA < 0.01 || abs(d.x) + abs(d.y) > 0.5) discard; gl_FragColor = vec4(pow(vC, vec3(0.4545)), vA); }',
+      transparent: true, depthWrite: false
+    });
+    this.flakes = new THREE.Points(geo, mat);
+    this.flakes.frustumCulled = false;
+    App.scene.add(this.flakes);
+    try { App.renderer.compile(App.scene, App.camera); } catch (e) { /* compiled on first draw instead */ }
+  },
+  /** the car's surface as flakes, in its own colours, ready to blow away (back first: the storm is behind) */
+  shatter() {
+    const car = Game.car.mesh, geo = this.flakes.geometry, N = geo.attributes.position.count;
+    car.updateMatrixWorld(true);
+    const tris = [];
+    let total = 0;
+    const va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+    car.traverseVisible((o) => {
+      if (!o.isMesh || !o.geometry || !o.geometry.attributes.position || (o.material && o.material.blending === THREE.AdditiveBlending)) return;
+      const pos = o.geometry.attributes.position, idx = o.geometry.index, n = idx ? idx.count : pos.count;
+      const col = o.material && o.material.color ? o.material.color : new THREE.Color(0x888888);
+      for (let k = 0; k + 2 < n; k += 3) {
+        const i0 = idx ? idx.getX(k) : k, i1 = idx ? idx.getX(k + 1) : k + 1, i2 = idx ? idx.getX(k + 2) : k + 2;
+        va.fromBufferAttribute(pos, i0).applyMatrix4(o.matrixWorld);
+        vb.fromBufferAttribute(pos, i1).applyMatrix4(o.matrixWorld);
+        vc.fromBufferAttribute(pos, i2).applyMatrix4(o.matrixWorld);
+        const area = vb.clone().sub(va).cross(vc.clone().sub(va)).length() / 2;
+        if (area < 1e-5) continue;
+        total += area;
+        tris.push({ a: va.clone(), b: vb.clone(), c: vc.clone(), area, col, acc: total });
+      }
+    });
+    if (!tris.length) return;
+    const fwd = new THREE.Vector3(Math.sin(Game.car.heading || 0), 0, Math.cos(Game.car.heading || 0));
+    const q = car.getWorldQuaternion(new THREE.Quaternion());
+    fwd.set(0, 0, 1).applyQuaternion(q).setY(0).normalize();
+    const ctr = car.getWorldPosition(new THREE.Vector3());
+    const P = geo.attributes.position.array, Cc = geo.attributes.aCol.array, Rl = geo.attributes.aRel.array, D = geo.attributes.aDir.array;
+    for (let k = 0; k < N; k++) {
+      const r = Math.random() * total;
+      let lo = 0, hi = tris.length - 1;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (tris[m].acc < r) lo = m + 1; else hi = m; }
+      const T = tris[lo];
+      let u = Math.random(), v = Math.random();
+      if (u + v > 1) { u = 1 - u; v = 1 - v; }
+      const x = T.a.x + (T.b.x - T.a.x) * u + (T.c.x - T.a.x) * v, y = T.a.y + (T.b.y - T.a.y) * u + (T.c.y - T.a.y) * v, z = T.a.z + (T.b.z - T.a.z) * u + (T.c.z - T.a.z) * v;
+      P[k * 3] = x; P[k * 3 + 1] = y; P[k * 3 + 2] = z;
+      const sh = 0.8 + Math.random() * 0.35;
+      Cc[k * 3] = T.col.r * sh; Cc[k * 3 + 1] = T.col.g * sh; Cc[k * 3 + 2] = T.col.b * sh;
+      const along = ((x - ctr.x) * fwd.x + (z - ctr.z) * fwd.z) / 4.6 + 0.5;          // 0 at the back, 1 at the front
+      Rl[k] = 0.25 + clamp(along, 0, 1) * 1.0 + Math.random() * 0.25;
+      D[k * 3] = fwd.x * (2 + Math.random() * 4) + (Math.random() - 0.5) * 2.5;
+      D[k * 3 + 1] = 1 + Math.random() * 2.5;
+      D[k * 3 + 2] = fwd.z * (2 + Math.random() * 4) + (Math.random() - 0.5) * 2.5;
+    }
+    for (const name of ['position', 'aCol', 'aRel', 'aDir']) geo.attributes[name].needsUpdate = true;
+    const H = App.renderer.domElement.height || 720;
+    this.flakes.material.uniforms.uPx.value = 0.13 * (H / 2) / Math.tan((App.camera.fov || 60) * Math.PI / 360);
+    this.flakes.visible = true;
+  },
+  caught() {
+    if (this.death || this.done) return;
+    this.live = false;
+    this.death = { t: 0, hid: false };
+    Sound.stopEngine();
+    Sound.respawn();
+    this.hud(0);
+    try { this.shatter(); } catch (e) { console.warn('aiPolytrack: flakes', e); }
+    this.flakes.material.uniforms.uT.value = 0;
+  },
+  /** each frame while the car turns to dust (Game.stepPlay hands over) */
+  stepDeath(dt) {
+    const D = this.death;
+    D.t += dt;
+    this.flakes.material.uniforms.uT.value = D.t;
+    if (!D.hid && D.t > 0.28) { D.hid = true; Game.car.mesh.visible = false; }
+    this.place();
+    const t = performance.now() / 1000;
+    this.ink(Math.max(this.inkI, 1 + D.t * 0.75), t);
+    App.renderer.domElement.style.transform = D.t < 1 ? 'translate(' + ((Math.random() - 0.5) * 6).toFixed(1) + 'px,' + ((Math.random() - 0.5) * 6).toFixed(1) + 'px)' : '';
+    if (D.t > 2.5) this.finish('caught');
+  },
+  /** the end of a run (caught, the player gave up, or the end of the road) */
+  async finish(why) {
     if (!this.on || this.done) return;
-    this.done = true; this.live = false;
-    const meters = Math.max(0, Math.round(Game.course.cum[Game.pathIdx]));
+    this.done = true; this.live = false; this.death = null;
+    const meters = Math.max(0, Math.floor(this.me));
     Game.running = false; Game.state = 'result';
-    Sound.stopEngine(); Sound.finish(why === 'escaped');
-    $('hEscape').hidden = true;
-    $('stormFx').style.opacity = 0;
+    Sound.stopEngine(); if (why === 'escaped') Sound.finish(true);
+    for (const id of ['hEscape', 'escMap', 'stormInk']) $(id).hidden = true;
+    App.renderer.domElement.style.transform = '';
+    App.renderer.toneMappingExposure = this.exp0;
+    if (this.flakes) this.flakes.visible = false;
     $('rKick').textContent = 'Escape';
-    $('rName').textContent = why === 'escaped' ? 'You escaped the storm!' : why === 'caught' ? 'Caught by the storm' : why === 'restart' ? 'Run ended' : 'Off the road';
+    $('rName').textContent = why === 'escaped' ? 'You outran the storm!' : why === 'caught' ? 'The storm took you' : 'Run ended';
     $('rTime').textContent = fmtCredits(meters) + ' m';
-    $('rSub').textContent = Cloud.user ? 'Saving your distance…' : 'Sign in to keep your best distance.';
+    $('rSub').textContent = (Cloud.user ? 'Saving your distance… ' : 'Sign in to keep your best distance. ') + 'You lasted ' + formatTime(this.t) + '.';
     $('rRaceResult').hidden = true;
     $('rShare').hidden = true;
     $('rBoardHd').textContent = 'Escape: the farthest';
@@ -14513,16 +14877,17 @@ const Escape = {
     $('rCampaignRow').hidden = false;
     UI.show('result');
     UI.clock(Game.time, true);
-    const t = this.ticket && await this.ticket;
-    if (!t || !t.ok) { if (Cloud.user) $('rSub').textContent = (t && t.message) || 'This run wasn\'t saved.'; return; }
+    const tk = this.ticket && await this.ticket;
+    if (!tk || !tk.ok) { if (Cloud.user) $('rSub').textContent = ((tk && tk.message) || 'This run wasn\'t saved.') + ' You lasted ' + formatTime(this.t) + '.'; return; }
     try {
-      const f = await Cloud.rpc('finish_escape', { p_run: t.run, p_meters: meters });
+      const f = await Cloud.rpc('finish_escape', { p_run: tk.run, p_meters: meters });
       if (!f.ok) { $('rSub').textContent = f.message || 'This run wasn\'t saved.'; return; }
       Garage.addXp(f.xp || 0, false);
-      $('rSub').textContent = (f.improved ? 'A new best! ' : 'Your best: ' + fmtCredits(f.best) + ' m. ') + '+' + (f.xp || 0) + ' XP';
+      $('rSub').textContent = (f.improved ? 'A new best! ' : 'Your best: ' + fmtCredits(f.best) + ' m. ') + 'You lasted ' + formatTime(this.t) + '. +' + (f.xp || 0) + ' XP';
       Modes.escBoard($('rBoard'), 5);
     } catch (e) { $('rSub').textContent = Cloud.errText(e); }
-  }
+  },
+  over(why) { this.finish(why); }
 };
 
 /**
@@ -14534,6 +14899,8 @@ const Modes = {
   mode: null, ko: null, pot: null, potAt: 0,
   open() {
     Escape.stop();
+    Prefs.set('raceSeen', true);
+    $('bMulti').classList.remove('wHot');
     this.mode = null; this.ko = null;
     Game.state = 'modes'; Game.running = false;
     Sound.stopEngine();
@@ -15298,6 +15665,21 @@ const CoachAlerts = {
     for (const a of this.queue.splice(0, 3)) {
       const el = document.createElement('div');
       el.className = 'alertCard';
+      if (a.raceIntro) {
+        el.classList.add('unbox');
+        el.style.setProperty('--kc', '#3ddbb8');
+        el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
+          '<p><b>New here? Try the Race tile.</b> <b>Quick race</b> puts you against drivers at your level right away, <b>Knockout</b> drops the slowest every map, ' +
+          '<b>Escape</b> is you against a storm on a 10 km road, and the <b>Pot map</b> pays the fastest. Every run earns XP.</p>' +
+          '<div class="ab"><button class="primary small">Show me</button><button class="ghost small">Later</button></div>';
+        const closeQ = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+        el.querySelector('.ah button').addEventListener('click', closeQ);
+        const [go, later] = el.querySelectorAll('.ab button');
+        go.addEventListener('click', () => { closeQ(); Modes.open(); });
+        later.addEventListener('click', closeQ);
+        stack.appendChild(el);
+        continue;
+      }
       if (a.garageIntro) {
         el.classList.add('unbox');
         el.style.setProperty('--kc', '#f2733f');
@@ -21388,7 +21770,8 @@ const Game = {
   },
   restartRun(msg, reason) {
     if (Multi.racing) { Multi.respawn(msg); return; }
-    if (Escape.on && Escape.live) { Escape.over(reason === 'restart' ? 'restart' : 'off'); return; }
+    if (Escape.on && Escape.death) return;
+    if (Escape.on && Escape.live) { if (reason === 'restart') Escape.finish('restart'); else Escape.respawn(msg); return; }
     if (this.practice) { if (msg) UI.toast(msg + ' at your practice point'); Practice.place(); return; }
     this.logAttempt('restarted', reason || 'restart');
     this.ticket = null;
@@ -21469,6 +21852,12 @@ const Game = {
       slot.mesh.visible = false; // shown per-frame in updateGhost once the run actually starts
     });
     for (let k = extra.length; k < this.extraSpecMeshes.length; k++) this.extraSpecMeshes[k].mesh.visible = false;
+    // compile their shaders now, not at the moment they first come into view
+    if (extra.length && App.renderer) {
+      extra.forEach((r, k) => { this.extraSpecMeshes[k].mesh.visible = true; });
+      try { App.renderer.compile(App.scene, App.camera); } catch (e) { /* compiled on first draw instead */ }
+      extra.forEach((r, k) => { this.extraSpecMeshes[k].mesh.visible = false; });
+    }
   },
 
   /** load someone else's stored run as the ghost for the next attempt on this
@@ -22274,7 +22663,7 @@ const Game = {
   },
   /** a track builder test drive's finish: shown, kept as the next test's ghost, saved nowhere */
   finishTest() {
-    if (Escape.on) { Escape.over('escaped'); return; }
+    if (Escape.on) { Escape.finish('escaped'); return; }
     this.running = false;
     this.state = 'result';
     const lv = levelAt(this.levelIndex), prev = Tracks.testBest;
@@ -22790,6 +23179,7 @@ const Game = {
 
   stepPlay(dt) {
     Input.sample();
+    if (Escape.on && Escape.death) { Escape.stepDeath(dt); return; }
     if (this.runKind === 'multi') { if (Multi.step(dt)) return; }
     else if (Input.tapped('Escape')) {
       if (isPreview(this.levelIndex)) { Preview.open(); return; }
@@ -22922,6 +23312,7 @@ const Game = {
   },
   /** the next checkpoint(s) along the road; one missed is forgiven, two in a row are not */
   updateCheckpoints() {
+    if (Escape.on) return;                  // (leaving the road just puts you back on it)
     const cps = this.course.cps;
     if (!cps || !this.started) return;
     const p = this.car.pos;

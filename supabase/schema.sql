@@ -3035,6 +3035,17 @@ create table if not exists public.escape_best (
   best_m integer not null,
   at timestamptz not null default now()
 );
+-- Escape is one fixed road (the game's ESC.seed): best distances from any
+-- other road are cleared once, when the road changes
+do $$
+begin
+  if coalesce((select value ->> 'map' from public.settings where key = 'escape'), '') <> '77003' then
+    delete from public.escape_best;
+    delete from public.escape_runs;
+    insert into public.settings (key, value) values ('escape', '{"map": "77003"}')
+      on conflict (key) do update set value = excluded.value;
+  end if;
+end $$;
 create or replace function public.start_escape() returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); rid uuid;
@@ -3055,7 +3066,7 @@ begin
   if not found or r.done then return jsonb_build_object('ok', false, 'message', 'That run wasn''t registered.'); end if;
   update public.escape_runs set done = true where id = r.id;
   el := extract(epoch from (now() - r.started_at));
-  if p_meters is null or p_meters < 0 or p_meters > el * 75 + 100 or el > 1800 then
+  if p_meters is null or p_meters < 0 or p_meters > el * 75 + 100 or el > 1800 or p_meters > 10500 then
     return jsonb_build_object('ok', false, 'message', 'That distance doesn''t fit the time the run took.');
   end if;
   xp := least(p_meters / 100, 50);
