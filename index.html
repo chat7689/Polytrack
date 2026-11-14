@@ -2438,6 +2438,17 @@ button.danger-outline{background:none}
 .aiMsg{font-size:12.5px;line-height:1.4;color:var(--dim);margin:9px 0 2px;min-height:18px}
 .aiMsg b{color:var(--ink)}
 .aiMsg.err{color:#ff8a7a}
+/* the chat */
+.aiChat{display:flex;flex-direction:column;gap:6px;max-height:min(30vh,280px);min-height:84px;overflow-y:auto;padding:2px 2px 6px;margin-bottom:8px;
+  overscroll-behavior:contain}
+.aiChat .aiMsg{max-width:94%;font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:10px;margin:0;min-height:0;color:var(--ink)}
+.aiChat .aiMsg.ai{align-self:flex-start;background:#1b1e22;border:1px solid rgba(255,210,122,.2);border-top-left-radius:3px}
+.aiChat .aiMsg.me{align-self:flex-end;background:rgba(242,115,63,.15);border:1px solid rgba(242,115,63,.35);border-top-right-radius:3px}
+.aiChat .aiMsg b{color:#ffe2a6;font-weight:600}
+.aiChat .aiMsg.busy{color:var(--dim)}
+.aiSetBtn{display:block;margin:10px 0 0;padding:0;border:0;background:none;font-size:12px;color:var(--dim);text-decoration:underline;text-underline-offset:3px}
+.aiSetBtn[hidden]{display:none}
+.aiSetBtn:hover,.aiSetBtn.on{color:#ffe2a6}
 .aiMsg.busy::after{content:'';display:inline-block;width:9px;height:9px;margin-left:7px;border:2px solid #ffd27a;border-right-color:transparent;
   border-radius:50%;animation:aiSpin .7s linear infinite;vertical-align:-1px}
 @keyframes aiSpin{to{transform:rotate(360deg)}}
@@ -2584,9 +2595,42 @@ button.wChamp:hover{background:#17181b;border-color:rgba(242,115,63,.35)}
 .wnBox:not([hidden]) .wnPanel,.pfBox:not([hidden]) .pfCard,.pcBox:not([hidden]) .pcCard,.refBox:not([hidden]) .refPanel,.bdIO:not([hidden]) .bdIOBox{
   animation:popIn .32s cubic-bezier(.2,.8,.2,1) both}
 .toast.on{border-left:2px solid var(--ember)}
+.askBox:not([hidden]){animation:popBack .18s ease both}
+.celSkip:not([hidden]){animation:celHint 3.2s ease both}
+@keyframes celHint{0%,35%{opacity:0;transform:translate(-50%,8px)}55%,100%{opacity:1;transform:translate(-50%,0)}}
+.askBox:not([hidden]) .askCard{animation:popIn .26s cubic-bezier(.2,.8,.2,1) both}
+.askBox.gift:not([hidden]) .askGift{animation:giftPop .7s cubic-bezier(.2,1.6,.4,1) .12s both}
+@keyframes giftPop{from{opacity:0;transform:scale(.3) rotate(-12deg)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){
-  .panel.morphIn > *,.panel.fadeIn,.wnBox,.pfBox,.pcBox,.refBox,.captchaBox,.bdIO,.wnPanel,.pfCard,.pcCard,.refPanel,.bdIOBox{animation:none!important}
+  .panel.morphIn > *,.panel.fadeIn,.wnBox,.pfBox,.pcBox,.refBox,.captchaBox,.bdIO,.wnPanel,.pfCard,.pcCard,.refPanel,.bdIOBox,.askBox,.askCard,.askGift{animation:none!important}
 }
+/* the finish celebration's hint */
+.celSkip{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:60;padding:7px 14px;border-radius:999px;background:rgba(10,12,15,.55);
+  border:1px solid rgba(255,255,255,.12);color:rgba(234,240,248,.8);font-size:12.5px;pointer-events:none;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.celSkip[hidden]{display:none}
+/* the yes/no box */
+.askBox{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,7,10,.66);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.askBox[hidden]{display:none}
+.askCard{width:min(420px,100%);background:#16181c;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:22px 22px 18px;
+  box-shadow:0 24px 70px rgba(0,0,0,.55)}
+.askCard h3{font-size:17px;font-weight:700;margin:0 0 6px;color:var(--ink)}
+.askCard p{font-size:14px;line-height:1.5;color:var(--dim);margin:0}
+.askCard p b{color:var(--ink)}
+.askRow{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.askRow button{min-width:96px}
+.askRow button[hidden]{display:none}
+.askBox.danger #askYes{background:#d9493b;border-color:#d9493b;color:#fff}
+.askIc{display:flex;justify-content:center;margin:2px 0 14px}
+.askIc[hidden]{display:none}
+.askBox.gift .askCard{border-color:rgba(255,207,92,.55);background:linear-gradient(165deg,rgba(255,207,92,.16),#16181c 55%);text-align:center}
+.askBox.gift .askRow{justify-content:center}
+.askBox.gift #askYes{background:linear-gradient(135deg,#ffcf5c,#f2a33f);border-color:transparent;color:#1a1405;font-weight:700}
+.askGift{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:92px;height:92px;border-radius:50%;
+  border:2px solid rgba(61,219,184,.7);background:radial-gradient(circle at 35% 30%,rgba(61,219,184,.35),rgba(61,219,184,.06) 70%);
+  box-shadow:0 0 34px rgba(61,219,184,.35);font-family:var(--mono)}
+.askGift b{font-size:30px;line-height:1;color:var(--aqua);font-weight:800}
+.askGift small{font-size:10.5px;letter-spacing:.12em;color:var(--ink);margin-top:3px}
 
 /* ---------- more of the accent ---------- */
 ::selection{background:rgba(242,115,63,.45)}
@@ -3083,11 +3127,11 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
             </div>
           </div>
           <div class="aiSide" id="bdSideAI" hidden>
-            <p class="aiLede">Describe the track you want to drive. AI designs it from real track pieces; then change anything you like, test drive it and save.</p>
-            <textarea id="aiText" rows="3" maxlength="300" placeholder="A long icy mountain road with big jumps and tight hairpins" aria-label="Describe your track"></textarea>
+            <div class="aiChat" id="aiChat" aria-live="polite"></div>
+            <textarea id="aiText" rows="2" maxlength="300" placeholder="A long icy mountain road with big jumps and tight hairpins" aria-label="Talk to the track AI"></textarea>
             <div class="aiIdeas" id="aiIdeas"></div>
-            <div class="aiRow"><button class="primary" id="aiGo"><svg class="aiIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2l2.1 6.4L19.5 10.5l-6.4 2.1L11 19l-2.1-6.4L2.5 10.5l6.4-2.1z"/><path d="M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>Design it</button><button id="aiAgain" disabled title="A different track from the same description">Another version</button></div>
-            <div class="aiMsg" id="aiMsg" aria-live="polite"></div>
+            <div class="aiRow"><button class="primary" id="aiGo"><svg class="aiIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2l2.1 6.4L19.5 10.5l-6.4 2.1L11 19l-2.1-6.4L2.5 10.5l6.4-2.1z"/><path d="M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>Send</button><button id="aiAgain" hidden title="A different track from the same description">Another version</button></div>
+            <button class="aiSetBtn" id="aiSetBtn" type="button" hidden>Design settings</button>
             <div class="aiDials" id="aiDials" hidden></div>
           </div>
         </section>
@@ -3259,6 +3303,18 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   </div>
 
   <!-- what's new: once per player when a new season goes live -->
+  <!-- the game's own yes/no box (UI.ask), in place of the browser's -->
+  <div class="askBox" id="askBox" hidden>
+    <div class="askCard" role="alertdialog" aria-modal="true" aria-labelledby="askTitle" aria-describedby="askText">
+      <div class="askIc" id="askIc" hidden></div>
+      <h3 id="askTitle">Are you sure?</h3>
+      <p id="askText"></p>
+      <div class="askRow"><button id="askNo">Cancel</button><button class="primary" id="askYes">OK</button></div>
+    </div>
+  </div>
+
+  <div class="celSkip" id="celSkip" hidden>Click or press any key for your result</div>
+
   <div class="wnBox" id="wnBox" hidden>
     <div class="wnPanel" role="dialog" aria-labelledby="wnTitle">
       <div class="wnHero">
@@ -5534,6 +5590,8 @@ const Cloud = {
             '. Thanks for supporting aiPolytrack!');
           Garage.load();
           PodiumPass.load(true);
+        } else if (row && row.kind === 'gift_levels') {
+          setTimeout(() => Gifts.check(true), 2600);
         } else if (row && /^auction_(refund|sale|won|unsold)$/.test(row.kind)) {
           const it = Catalog.get(row.note), nm = it ? it.name : 'an item';
           if (row.kind === 'auction_refund') UI.toast('You were outbid on ' + nm + '. Your ' + fmtCredits(Number(row.delta)) + ' credits are back: bid again in the Auctions.');
@@ -7121,69 +7179,141 @@ const Boost = {
  * shockwave and the halo.
  */
 const CELEBRATIONS = {
-  confetti: { n: 180 }, fireworks: { n: 270 }, shockwave: { n: 60 }, starburst: { n: 140 },
-  lightning: { n: 60 }, pixels: { n: 220 }, fountain: { n: 220 }, halo: { n: 50 }
+  confetti: { n: 320 }, fireworks: { n: 440 }, shockwave: { n: 150 }, starburst: { n: 230 },
+  lightning: { n: 130 }, pixels: { n: 300 }, fountain: { n: 320 }, halo: { n: 150 }
 };
+/**
+ * Finish celebrations: instanced pieces (confetti, sparks, pixels), a glow
+ * on the brightest of them (additive points), and flashes (additive
+ * sprites) where things burst or strike. Each lasts about 3 to 4 seconds;
+ * FRAME is where the finish camera sits for it (Game.holdResult): d its
+ * distance from the car, h its height, ly the height it looks at, D how long
+ * the result card waits.
+ */
 const Celebrate = {
   live: [],
-  play(id, pos, P, S) {
+  FRAME: {
+    confetti: { d: 10, h: 2.6, ly: 2.8, D: 3.0 }, fireworks: { d: 18, h: 2.4, ly: 8, D: 3.6 }, shockwave: { d: 12, h: 5.5, ly: 0.8, D: 2.7 },
+    starburst: { d: 11, h: 2.6, ly: 1.8, D: 2.7 }, lightning: { d: 15, h: 2.4, ly: 5.5, D: 2.9 }, pixels: { d: 11, h: 3, ly: 2.4, D: 3.0 },
+    fountain: { d: 13, h: 2.2, ly: 5, D: 3.3 }, halo: { d: 10, h: 2.2, ly: 3.4, D: 3.0 }
+  },
+  /** a soft round glow, made once */
+  glowTex() {
+    if (this._tex) return this._tex;
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.22, 'rgba(255,255,255,0.8)');
+    r.addColorStop(0.55, 'rgba(255,255,255,0.18)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 64, 64);
+    this._tex = new THREE.CanvasTexture(c);
+    return this._tex;
+  },
+  play(id, pos, P, S, heading) {
     if (!CELEBRATIONS[id] || !App.scene) return;
-    const n = CELEBRATIONS[id].n;
+    const n = CELEBRATIONS[id].n, h = heading || 0;
     const rnd = (a, b) => a + Math.random() * (b - a);
-    const geo = id === 'starburst' || id === 'fountain' || id === 'lightning' ? new THREE.BoxGeometry(0.035, 0.035, 0.3)
-      : id === 'confetti' ? new THREE.BoxGeometry(0.14, 0.015, 0.09) : new THREE.BoxGeometry(0.09, 0.09, 0.09);
+    const geo = id === 'starburst' || id === 'fountain' || id === 'lightning' ? new THREE.BoxGeometry(0.04, 0.04, 0.36)
+      : id === 'confetti' ? new THREE.BoxGeometry(0.16, 0.015, 0.1) : id === 'pixels' ? new THREE.BoxGeometry(0.14, 0.14, 0.14) : new THREE.BoxGeometry(0.09, 0.09, 0.09);
     const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false,
-      blending: id === 'confetti' ? THREE.NormalBlending : THREE.AdditiveBlending });
+      blending: id === 'confetti' || id === 'pixels' ? THREE.NormalBlending : THREE.AdditiveBlending });
     const mesh = new THREE.InstancedMesh(geo, mat, n);
     mesh.frustumCulled = false;
-    const W = new THREE.Color(1, 1, 1), LP = P.clone().lerp(W, 0.5), LS = S.clone().lerp(W, 0.5);
-    const cols = [P, S, LP, LS, W];
-    const ps = [];
+    const W = new THREE.Color(1, 1, 1), LP = P.clone().lerp(W, 0.5), LS = S.clone().lerp(W, 0.5), GOLD = new THREE.Color(1, 0.82, 0.36);
+    const cols = [P, S, LP, LS, W, GOLD];
     const at = pos.clone();
+    const fwd = new THREE.Vector3(Math.sin(h), 0, Math.cos(h)), side = new THREE.Vector3(Math.cos(h), 0, -Math.sin(h));
+    const SHELLS = [[-4, 10, 2], [4.5, 12.5, -1], [0, 14.5, -3], [-1.5, 9, 4.5]].map(([x, y, z]) => side.clone().multiplyScalar(x).addScaledVector(fwd, z).setY(y));
+    const ps = [];
     for (let i = 0; i < n; i++) {
-      const p = { p: at.clone(), v: new THREE.Vector3(), life: 0, max: rnd(1.4, 2.4), delay: 0, spin: new THREE.Vector3(rnd(-8, 8), rnd(-8, 8), rnd(-8, 8)), s: 1, g: 9 };
+      const p = { p: at.clone(), v: new THREE.Vector3(), life: 0, max: rnd(1.4, 2.4), delay: 0, spin: new THREE.Vector3(rnd(-8, 8), rnd(-8, 8), rnd(-8, 8)), g: 9 };
       const dir = new THREE.Vector3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize();
-      if (id === 'confetti') { p.v.set(rnd(-4, 4), rnd(7, 13), rnd(-4, 4)); p.g = 7; p.drag = 1.6; }
-      else if (id === 'fireworks') {
-        const shell = i % 3, c = [new THREE.Vector3(-3, 9, 2), new THREE.Vector3(3, 11, 0), new THREE.Vector3(0, 13, -3)][shell];
-        p.burst = c; p.delay = 0.45 + shell * 0.35; p.v.copy(dir).multiplyScalar(rnd(5, 8)); p.g = 3; p.max = 1.6; p.drag = 1.2;
-      } else if (id === 'shockwave') { p.v.set(dir.x, 0.15, dir.z).normalize().multiplyScalar(rnd(6, 10)); p.p.y += 0.1; p.g = 0; p.drag = 2.5; p.max = 1.1; }
-      else if (id === 'starburst') { p.v.copy(dir).multiplyScalar(rnd(10, 18)); p.g = 0; p.drag = 3; p.max = 1.0; p.aim = true; }
-      else if (id === 'lightning') { p.v.set(rnd(-5, 5), rnd(2, 8), rnd(-5, 5)); p.g = 9; p.max = rnd(0.5, 1.0); p.aim = true; }
-      else if (id === 'pixels') { p.v.copy(dir).multiplyScalar(rnd(4, 11)); p.g = 4; p.drag = 1.5; p.max = rnd(1, 2); }
-      else if (id === 'fountain') { p.delay = (i / n) * 1.5; p.v.set(rnd(-1.5, 1.5), rnd(9, 13), rnd(-1.5, 1.5)); p.g = 14; p.max = 1.2; p.aim = true; }
-      else { p.v.set(dir.x * 0.6, rnd(2, 4), dir.z * 0.6); p.p.y += 1.6; p.g = -0.5; p.max = 1.6; }
-      p.c = cols[i % cols.length];
+      if (id === 'confetti') {
+        // two cannons, one each side of the car, crossing over it
+        const c = i % 2 ? 1 : -1;
+        p.p.addScaledVector(side, c * 1.7).y += 0.5;
+        p.v.copy(side).multiplyScalar(-c * rnd(1, 3.6)).addScaledVector(fwd, rnd(-2.2, 2.2)); p.v.y = rnd(9, 15);
+        p.g = 6; p.drag = 1.9; p.max = rnd(2.4, 3.4); p.sway = rnd(0.8, 1.8); p.delay = (i % 6) * 0.07;
+      } else if (id === 'fireworks') {
+        const sh = i % 4;
+        p.burst = SHELLS[sh]; p.delay = 0.35 + sh * 0.34; p.v.copy(dir).multiplyScalar(rnd(6, 9.5)); p.g = 2.4; p.max = rnd(1.4, 2.1); p.drag = 1.1;
+        p.twinkle = rnd(14, 26); p.c = cols[sh % cols.length];
+      } else if (id === 'shockwave') {
+        p.v.set(dir.x, 0, dir.z).normalize().multiplyScalar(rnd(6, 13)); p.p.y += 0.12; p.g = 2; p.drag = 2.4; p.max = rnd(0.9, 1.4);
+        if (i % 3 === 0) p.v.y = rnd(3, 7);
+        p.delay = i % 2 ? 0 : 0.28;
+      } else if (id === 'starburst') {
+        p.v.copy(dir).multiplyScalar(rnd(12, 22)); p.g = 0; p.drag = 3; p.max = rnd(0.9, 1.3); p.aim = true; p.p.y += 0.8;
+        p.delay = i % 2 ? 0 : 0.38;
+      } else if (id === 'lightning') {
+        p.v.set(rnd(-6, 6), rnd(2, 9), rnd(-6, 6)); p.g = 9; p.max = rnd(0.5, 1.0); p.aim = true;
+        p.delay = [0.1, 0.55, 1.0, 1.45][i % 4];
+      } else if (id === 'pixels') {
+        p.v.copy(dir).multiplyScalar(rnd(4, 12)); p.v.y += 3; p.g = 5; p.drag = 1.4; p.max = rnd(1.6, 2.8); p.p.y += 0.6;
+      } else if (id === 'fountain') {
+        const c = i % 2 ? 1 : -1;
+        p.p.addScaledVector(side, c * 1.5);
+        p.delay = (i / n) * 2.1; p.v.set(rnd(-1.2, 1.2), rnd(10, 14.5), rnd(-1.2, 1.2)).addScaledVector(side, -c * 1.2); p.g = 14; p.max = 1.35; p.aim = true;
+      } else {
+        // halo: sparkles spiralling up round the car under a rising ring
+        p.orbit = { r: rnd(1.1, 2.4), a0: rnd(0, Math.PI * 2), w: rnd(2, 3.6) * (i % 2 ? 1 : -1) };
+        p.v.set(0, rnd(1.4, 3.4), 0); p.g = -0.3; p.max = rnd(1.6, 2.4); p.delay = rnd(0, 0.9); p.p.y += 0.3;
+      }
+      if (!p.c) p.c = cols[i % cols.length];
       mesh.setColorAt(i, p.c);
       ps.push(p);
     }
     App.scene.add(mesh);
-    const fx = { id, mesh, ps, t: 0, extra: [], at };
+    // a glow on the brightest pieces
+    const ng = Math.min(n, id === 'confetti' ? 60 : 170);
+    const gGeo = new THREE.BufferGeometry();
+    gGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ng * 3), 3));
+    gGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(ng * 3), 3));
+    const glow = new THREE.Points(gGeo, new THREE.PointsMaterial({ size: id === 'fireworks' ? 0.9 : id === 'confetti' ? 0.35 : 0.6, map: this.glowTex(),
+      vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true }));
+    glow.frustumCulled = false;
+    App.scene.add(glow);
+    const fx = { id, mesh, ps, t: 0, extra: [glow], glow, ng, at, flashes: [] };
+    // flashes where things burst or strike
+    const flash = (when, where, size, col, dur) => {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex(), color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      sp.position.copy(where); sp.visible = false; sp.scale.set(0.01, 0.01, 0.01);
+      sp.userData = { flash: true, when, size, dur: dur || 0.5 };
+      App.scene.add(sp); fx.extra.push(sp);
+    };
+    const up = (y) => at.clone().setY(at.y + y);
+    if (id === 'fireworks') SHELLS.forEach((s, k) => flash(0.35 + k * 0.34, at.clone().add(s), 9, cols[k % cols.length], 0.55));
+    else if (id === 'starburst') { flash(0, up(0.8), 7, W, 0.45); flash(0.38, up(0.8), 6, LP, 0.45); }
+    else if (id === 'lightning') [0.1, 0.55, 1.0, 1.45].forEach((w, k) => flash(w, up(1.2), 9, k % 2 ? LS : W, 0.3));
+    else if (id === 'shockwave') { flash(0, up(0.3), 8, LP, 0.5); flash(0.28, up(0.3), 6, LS, 0.5); }
+    else if (id === 'halo') flash(0, up(1.9), 5, LS, 0.8);
+    else if (id === 'pixels') flash(0, up(0.8), 6, LP, 0.4);
+    else if (id === 'confetti') { flash(0, at.clone().addScaledVector(side, 1.7).setY(at.y + 0.6), 3, GOLD, 0.35); flash(0, at.clone().addScaledVector(side, -1.7).setY(at.y + 0.6), 3, GOLD, 0.35); }
     // rings for the shockwave and the halo, bolts for the lightning
     const ringMat = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
     if (id === 'shockwave' || id === 'halo') {
-      for (let k = 0; k < (id === 'halo' ? 1 : 2); k++) {
-        const r = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 6, 48), ringMat(k ? S : LP));
+      for (let k = 0; k < (id === 'halo' ? 2 : 3); k++) {
+        const r = new THREE.Mesh(new THREE.TorusGeometry(1, id === 'halo' ? 0.07 : 0.09, 8, 64), ringMat(k % 2 ? S : LP));
         r.rotation.x = Math.PI / 2; r.position.copy(at); r.position.y += id === 'halo' ? 1.9 : 0.15;
         r.userData = { k };
         App.scene.add(r); fx.extra.push(r);
       }
       if (id === 'halo') {
-        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.2, 14, 20, 1, true), ringMat(LS));
-        beam.position.copy(at); beam.position.y += 7; beam.userData = { beam: true };
+        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.3, 16, 24, 1, true), ringMat(LS));
+        beam.position.copy(at); beam.position.y += 8; beam.userData = { beam: true };
         App.scene.add(beam); fx.extra.push(beam);
       }
     }
     if (id === 'lightning') {
-      for (let k = 0; k < 3; k++) {
+      [0.1, 0.55, 1.0, 1.45].forEach((d, k) => {
         const pts = [];
         let x = rnd(-3, 3), z = rnd(-3, 3);
-        for (let s = 0; s <= 8; s++) { pts.push(new THREE.Vector3(at.x + x, at.y + 18 - s * 2.2, at.z + z)); x *= 0.6; z *= 0.6; x += rnd(-1, 1); z += rnd(-1, 1); }
+        for (let s = 0; s <= 10; s++) { pts.push(new THREE.Vector3(at.x + x, at.y + 22 - s * 2.2, at.z + z)); x *= 0.6; z *= 0.6; x += rnd(-1.2, 1.2); z += rnd(-1.2, 1.2); }
         pts[pts.length - 1].set(at.x, at.y + 0.3, at.z);
-        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: k ? LS : W, transparent: true }));
-        line.userData = { bolt: true, delay: k * 0.18 };
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: k % 2 ? LS : W, transparent: true }));
+        line.userData = { bolt: true, delay: d };
         App.scene.add(line); fx.extra.push(line);
-      }
+      });
     }
     this.live.push(fx);
   },
@@ -7192,6 +7322,7 @@ const Celebrate = {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 0, 1);
     for (const fx of this.live) {
       fx.t += dt;
+      const gp = fx.glow.geometry.attributes.position, gc = fx.glow.geometry.attributes.color;
       fx.ps.forEach((p, i) => {
         let alive = 0;
         if (fx.t >= p.delay) {
@@ -7199,36 +7330,54 @@ const Celebrate = {
           p.life += dt;
           if (p.drag) p.v.multiplyScalar(Math.exp(-p.drag * dt));
           p.v.y -= p.g * dt;
-          p.p.addScaledVector(p.v, dt);
+          if (p.orbit) {
+            const o = p.orbit, a = o.a0 + o.w * p.life, r = o.r * (1 + p.life * 0.35);
+            p.p.x = fx.at.x + Math.cos(a) * r; p.p.z = fx.at.z + Math.sin(a) * r; p.p.y += p.v.y * dt;
+          } else p.p.addScaledVector(p.v, dt);
+          if (p.sway) { p.p.x += Math.sin(p.life * 5 + i) * p.sway * dt; p.p.z += Math.cos(p.life * 4 + i * 1.7) * p.sway * dt; }
           alive = Math.max(0, 1 - p.life / p.max);
         } else if (p.burst) {
-          // the shell on its way up
+          // the shell on its way up (one per shell shows)
           const k = fx.t / p.delay;
-          p.p.copy(fx.at).addScaledVector(p.burst, k);
-          alive = i < 3 ? 1 : 0;
+          p.p.copy(fx.at).addScaledVector(p.burst, 1 - (1 - k) * (1 - k));
+          alive = i < 4 ? 1 : 0;
         }
         if (p.aim && p.v.lengthSq() > 0.01) q.setFromUnitVectors(up, sc.copy(p.v).normalize());
         else q.setFromEuler(e.set(p.spin.x * p.life, p.spin.y * p.life, p.spin.z * p.life));
-        const s = alive > 0 ? (fx.id === 'confetti' ? 1 : alive) : 0.0001;
+        const s = alive > 0 ? (fx.id === 'confetti' || fx.id === 'pixels' ? Math.min(1, alive * 3) : alive) : 0.0001;
         m4.compose(p.p, q, sc.set(s, s, s));
         fx.mesh.setMatrixAt(i, m4);
+        if (i < fx.ng) {
+          gp.setXYZ(i, p.p.x, p.p.y, p.p.z);
+          const tw = p.twinkle ? 0.55 + 0.45 * Math.sin(p.life * p.twinkle + i) : 1, b = alive * tw;
+          gc.setXYZ(i, p.c.r * b, p.c.g * b, p.c.b * b);
+        }
       });
       fx.mesh.instanceMatrix.needsUpdate = true;
+      gp.needsUpdate = true; gc.needsUpdate = true;
       for (const x of fx.extra) {
-        if (x.userData.bolt) { x.visible = fx.t > x.userData.delay && fx.t < x.userData.delay + 0.35 && Math.sin(fx.t * 60) > -0.3; continue; }
-        if (x.userData.beam) { x.material.opacity = Math.max(0, 0.45 - fx.t * 0.25); continue; }
-        const k = x.userData.k;
-        const r = 0.5 + Math.max(0, fx.t - k * 0.2) * (fx.id === 'halo' ? 1.2 : 9);
+        const u = x.userData;
+        if (x === fx.glow) continue;
+        if (u.flash) {
+          const k = (fx.t - u.when) / u.dur;
+          x.visible = k >= 0 && k < 1;
+          if (x.visible) { const s = u.size * (0.35 + 1.1 * Math.sqrt(k)); x.scale.set(s, s, s); x.material.opacity = (1 - k) * (1 - k); }
+          continue;
+        }
+        if (u.bolt) { x.visible = fx.t > u.delay && fx.t < u.delay + 0.32 && Math.sin(fx.t * 70) > -0.4; continue; }
+        if (u.beam) { x.material.opacity = Math.max(0, 0.5 - fx.t * 0.22); x.scale.x = x.scale.z = 1 + fx.t * 0.25; continue; }
+        const k = u.k;
+        const r = 0.5 + Math.max(0, fx.t - k * 0.22) * (fx.id === 'halo' ? 1.1 : 10);
         x.scale.set(r, r, r);
-        if (fx.id === 'halo') x.position.y = fx.at.y + 1.9 + fx.t * 0.6;
-        x.material.opacity = Math.max(0, 1 - fx.t / 1.5);
+        if (fx.id === 'halo') x.position.y = fx.at.y + 1.9 + Math.max(0, fx.t - k * 0.4) * 0.8;
+        x.material.opacity = Math.max(0, 1 - Math.max(0, fx.t - k * 0.22) / 1.6);
       }
     }
     // done: gone
     this.live = this.live.filter((fx) => {
-      if (fx.t < 3.2) return true;
+      if (fx.t < 4.5) return true;
       App.scene.remove(fx.mesh); fx.mesh.geometry.dispose(); fx.mesh.material.dispose();
-      for (const x of fx.extra) { App.scene.remove(x); x.geometry.dispose(); x.material.dispose(); }
+      for (const x of fx.extra) { App.scene.remove(x); if (x.geometry && !x.isSprite) x.geometry.dispose(); x.material.dispose(); }
       return false;
     });
   }
@@ -9851,12 +10000,13 @@ const TrackGen = {
     ['speed', 'Speed', ['Calm', 'Quick', 'Fast', 'Rocket']],
     ['jumps', 'Jumps', ['None', 'One', 'Some', 'Lots']],
     ['hills', 'Hills', ['Flat', 'Rolling', 'Hilly', 'Mountain']],
+    ['way', 'Slopes', ['Up and down', 'Uphill', 'Downhill']],
     ['bumps', 'Bumps', ['Smooth', 'A few', 'Bumpy', 'Wild']],
     ['bank', 'Banking', ['Flat', 'Light', 'Banked', 'Steep']],
     ['ice', 'Ice', ['None', 'A little', 'Icy', 'All ice']],
     ['width', 'Road', ['Narrow', 'Normal', 'Wide', 'Huge']]
   ],
-  BASE: { size: 1, turns: 2, tight: 1, speed: 1, jumps: 1, hills: 1, bumps: 1, bank: 1, ice: 0, width: 1, squeeze: 0, open: 0 },
+  BASE: { size: 1, turns: 2, tight: 1, speed: 1, jumps: 1, hills: 1, way: 0, bumps: 1, bank: 1, ice: 0, width: 1, squeeze: 0, open: 0, dips: 0 },
   /** words, each [pattern, dial, value] or [pattern, { dial: value, ... }] (a mood); later ones win */
   WORDS: [
     [/short|tiny|small|mini|little|quick one|sprint/, 'size', 0],
@@ -9876,9 +10026,14 @@ const TrackGen = {
     [/jumps?|ramps?|air|flying|fly|launch|stunts?|airtime|gaps?|leaps?/, 'jumps', 2],
     [/one jump|a jump|single jump/, 'jumps', 1],
     [/big jumps?|huge jumps?|giant jumps?|mega jumps?|jumps? everywhere|tabletops?|sky|skyway/, 'jumps', 3],
-    [/hills?|hilly|climbs?|slopes?|up and down|valley|elevation/, 'hills', 2],
-    [/mountains?|steep|alpine|alps|cliffs?|peaks?|summit/, 'hills', 3],
-    [/flat track|flat road|totally flat|no hills/, 'hills', 0],
+    [/hills?|hilly|climbs?|climbing|slopes?|sloped|sloping|up and down|ups and downs|elevation|height|heights|inclines?|declines?|inclined|rises?|risers?|drops?|dips?|depressions?|valleys?|ditch(es)?|hollows?|ravines?|canyons?|gorges?|uphill|downhill|ascents?|descents?|altitude|vertical|3d/, 'hills', 2],
+    [/mountains?|mountainous|steep|steeply|alpine|alps|cliffs?|peaks?|summit|big hills?|huge hills?|massive hills?|giant hills?|tall|towering|big drops?|huge drops?|plunges?|freefall|sky ?high|very hilly|super hilly/, 'hills', 3],
+    [/rolling|gentle hills?|small hills?|little hills?|a few hills|some hills/, 'hills', 1],
+    [/flat track|flat road|totally flat|completely flat|all flat|no hills|no height|no elevation/, 'hills', 0],
+    [/uphill|climb(s|ing)?|ascents?|ascending|going up|up the mountain|up a mountain|to the top|to the summit|rising|upward/, 'way', 1],
+    [/downhill|descents?|descending|going down|down the mountain|down a mountain|drops?|plunges?|freefall|falling|downward|down ?hill/, 'way', 2],
+    [/up and down|ups and downs|rolling|hills and valleys|hilly/, 'way', 0],
+    [/dips?|depressions?|valleys?|ditch(es)?|hollows?|ravines?|canyons?|gorges?|bowls?|sinks?/, 'dips', 1],
     [/bumps?|bumpy|rollers?|crests?|rough|off ?road|rally|dirt|humps?|wavy|waves|desert|dunes?/, 'bumps', 2],
     [/very bumpy|roller ?coaster|chaos|chaotic|wild|crazy bumps/, 'bumps', 3],
     [/banked|banking|banks|nascar|oval|velodrome|bowl/, 'bank', 2],
@@ -9898,7 +10053,7 @@ const TrackGen = {
   /** a description in words to { dials, said: the dials the words set, name } */
   read(text) {
     const s = ' ' + String(text || '').toLowerCase().replace(/[^a-z0-9.' ]+/g, ' ').replace(/\s+/g, ' ') + ' ';
-    const D = Object.assign({}, this.BASE), said = new Set();
+    const D = Object.assign({}, this.BASE), said = new Set(), from = {};
     for (const [re, k, v] of this.WORDS) {
       const g = new RegExp('\\b(?:' + re.source + ')\\b', 'g');
       let m;
@@ -9906,8 +10061,12 @@ const TrackGen = {
         const before = s.slice(Math.max(0, m.index - 24), m.index);
         if (typeof k === 'object') { if (!this.NO.test(before)) for (const j in k) if (!said.has(j)) D[j] = k[j]; continue; }
         if (this.NO.test(before)) D[k] = 0;
-        else D[k] = this.MORE.test(before) ? Math.min(3, Math.max(v, 2) + 1) : v;
-        said.add(k);
+        else {
+          const val = this.MORE.test(before) ? Math.min(3, Math.max(v, 2) + 1) : v;
+          // ("lots of inclines and declines": the same words twice keep the stronger)
+          D[k] = from[k] === re && said.has(k) ? Math.max(D[k], val) : val;
+        }
+        said.add(k); from[k] = re;
       }
     }
     // numbers: "2 km", "800 m", "5 jumps"
@@ -9945,21 +10104,24 @@ const TrackGen = {
     const ten = (v) => clamp(Math.round(v / 10) * 10, 10, 300);
     const W = [10, 15, 20, 25][D.width];
     const target = D.km ? D.km * 1000 : [650, 1250, 2000, 3000][D.size];
-    const radii = [[90, 120, 150], [60, 75, 90, 120], [40, 50, 60, 75], [20, 24, 30, 40]][D.tight];
-    const angles = [[30, 45, 60], [45, 60, 90], [60, 90, 120], [90, 120, 135, 180]][D.turns];
+    // (a twisty road with nothing said about its corners: quicker ones)
+    const radii = [[90, 120, 150], [60, 75, 90, 120], [40, 50, 60, 75], [20, 24, 30, 40]][D.tight + (D.turns >= 3 && D.tight === 1 ? 1 : 0)];
+    // twistier: more turns, not bigger ones (hairpins swing all the way round)
+    const angles = [[30, 45], [30, 45, 60, 90], [45, 60, 90, 120], [45, 60, 75, 90, 120]][D.turns].concat(D.tight >= 3 ? [150, 180] : []);
     const banks = [[0, 0, 5], [5, 10], [10, 15, 20], [20, 25, 30]][D.bank];
     const iceP = [0, 0.25, 0.6, 1][D.ice];
     const maxJ = D.nJ !== undefined ? D.nJ : [0, 1, 3, 5][D.jumps];
     const longS = D.speed >= 2 || D.size >= 2;
     const P = [];
-    let len = 110, heading = 0, height = 0, since = 999, lastDir = 0, after = '', jumps = 0, xs = 0;
+    let len = 110, heading = 0, height = 0, since = 999, lastDir = 0, lastA = 0, after = '', jumps = 0, xs = 0, lastH = 60;
+    const hEvery = [Infinity, 420, 260, 170][D.hills];
     const put = (p, L) => { P.push(p); len += L; since += L; };
     const straight = (L, w) => put(['S', ten(L), w || W], ten(L));
     const w8 = {
-      T: [0.14, 0.3, 0.44, 0.58][D.turns],
+      T: [0.14, 0.3, 0.5, 0.95][D.turns],
       S: Math.max(0.06, 0.2 + 0.05 * D.speed - 0.04 * D.turns + (D.size >= 3 ? 0.08 : 0)),
       B: [0, 0.05, 0.09, 0.11][D.speed], X: [0, 0, 0.03, 0.07][D.speed],
-      H: [0, 0.07, 0.12, 0.17][D.hills], C: [0, 0.04, 0.07, 0.09][D.bumps], R: [0, 0.03, 0.06, 0.09][D.bumps],
+      H: [0, 0.1, 0.2, 0.3][D.hills], C: [0, 0.04, 0.07, 0.09][D.bumps], R: [0, 0.03, 0.06, 0.09][D.bumps],
       J: [0, 0.1, 0.12, 0.17][D.jumps], N: D.squeeze ? 0.06 : 0, W: D.open ? 0.06 : 0
     };
     const kinds = Object.keys(w8);
@@ -9968,9 +10130,11 @@ const TrackGen = {
     straight(rr(20, 40));
     while (len < target && room()) {
       // something with a lip (crest, rollers, a jump) is followed by a straight to settle on
-      if (after) { straight(after === 'J' ? rr(40, 60) : after === 'R' ? rr(30, 45) : rr(25, 40)); after = ''; continue; }
+      if (after) { straight(after === 'J' ? rr(40, 60) : after === 'R' ? rr(30, 45) : after === 'H' ? rr(20, 30) : rr(25, 40)); after = ''; continue; }
       let k = 'S', u = R() * kinds.reduce((a, j) => a + w8[j], 0);
       for (const j of kinds) { u -= w8[j]; if (u <= 0) { k = j; break; } }
+      if (len - lastH > hEvery) k = 'H';                  // the hills asked for, for sure
+      if (D.turns && since > [400, 260, 180, 120][D.turns]) k = 'T';   // and the turns
       if (k === 'J' && jumps >= maxJ) k = 'S';
       if (k === 'X' && xs >= 3) k = 'B';
       if (k === 'T') {
@@ -9979,12 +10143,13 @@ const TrackGen = {
         if (Math.abs(heading + a * dir) > lim) dir = -dir;
         while (a > 15 && Math.abs(heading + a * dir) > lim) a -= 15;
         // a turn the other way gets a real straight first
-        if (lastDir && dir !== lastDir && since < 50) straight(50 - since + 10);
+        const gap = a >= 55 || lastA >= 55 ? 50 : 30;
+        if (lastDir && dir !== lastDir && since < gap) straight(gap - since + 10);
         let bank = pick(banks);
         if (r * a * Math.PI / 180 < 40) bank = Math.min(bank, 20);
         const ice = R() < iceP ? 1 : 0;
         put(['T', r, a * dir, bank, ice, Math.min(W, 2 * (r - 8))], r * a * Math.PI / 180);
-        heading += a * dir; lastDir = dir; since = 0;
+        heading += a * dir; lastDir = dir; lastA = a; since = 0;
       } else if (k === 'S') {
         straight(longS && R() < 0.4 ? rr(120, D.size >= 3 ? 300 : 200) : rr(30, 100));
       } else if (k === 'B' || k === 'X') {
@@ -9993,13 +10158,28 @@ const TrackGen = {
         if (k === 'X') straight(rr(40, 70));
       } else if (k === 'H') {
         if (since < 20) straight(30);                       // the bank untwists before the road tilts
-        const top = [0, 12, 30, 60][D.hills];
-        const up = height < 3 ? 1 : height > top ? -1 : R() < 0.55 ? 1 : -1;
-        const run = pick([[40, 50, 60], [40, 50, 60], [30, 40, 50, 60], [40, 50, 60, 80]][D.hills]);
-        const rises = [[2, 3], [2, 3, 4], [4, 5, 6, 8], [8, 10, 12, 15, 20]][D.hills].filter((x) => x / run <= 0.36);
-        const rise = rises.length ? pick(rises) : 3;
-        put(['H', rise * up, run, W], run);
-        height += rise * up;
+        // a climb, a drop, a hill (up and over) or a dip (down and back up), one to three pieces each way;
+        // the road may wander this far above or below its start (a road that goes below it starts higher)
+        const way = D.way || 0, top = way ? [0, 15, 40, 90][D.hills] : [0, 10, 25, 45][D.hills];
+        const runs = [[40, 50, 60], [40, 50, 60], [40, 50, 60, 80], [50, 60, 80, 100]][D.hills];
+        const rises = [[2, 3], [3, 4, 5, 6], [5, 6, 8, 10, 12], [10, 12, 15, 20]][D.hills];   // metres a piece
+        const step = (sg) => {
+          const run = pick(runs), ok = rises.filter((x) => x / run <= 0.3), rise = ok.length ? pick(ok) : 3;
+          put(['H', rise * sg, run, W], run); height += rise * sg;
+        };
+        let shape = way === 1 ? pick(['up', 'up', 'up', 'hill']) : way === 2 ? pick(['down', 'down', 'down', 'dip'])
+          : pick(D.dips ? ['dip', 'dip', 'hill', 'up', 'down'] : ['up', 'down', 'hill', 'dip']);
+        if (height > top) shape = way === 1 ? 'dip' : 'down';
+        else if (height < -top) shape = way === 2 ? 'hill' : 'up';
+        const n = 1 + (D.hills >= 2 && R() < 0.5 ? 1 : 0);
+        if (shape === 'up' || shape === 'down') { for (let i = 0; i < n; i++) step(shape === 'up' ? 1 : -1); }
+        else {
+          const a = shape === 'hill' ? 1 : -1;
+          for (let i = 0; i < n; i++) step(a);
+          straight(rr(20, 40));                             // the top of the hill (the bottom of the dip)
+          for (let i = 0; i < n; i++) step(-a);
+        }
+        after = 'H'; lastH = len;
       } else if (k === 'C') {
         if (since < 20) straight(30);                       // never straight off a turn into a lip
         put(['C', pick([[3, 5], [3, 5], [5, 7], [7, 9]][D.bumps]), W], 26); after = 'C';
@@ -10037,6 +10217,580 @@ const TrackGen = {
     const E = Object.assign({}, D);
     if (E.turns > 1) E.turns--; else if (E.width > 1) E.width--; else if (E.size > 0) { E.size--; delete E.km; } else return { ok: false };
     return this.design(E, seed + 1, tries);
+  }
+};
+/* ------------------------------------------------ changing a track by asking
+ * "Add a dip after the second turn", "make the last jump bigger", "make piece
+ * 5 a hairpin", "mirror it", "more hills": a request in words becomes plain
+ * edit steps (ops), and the steps are made on the track's pieces, then
+ * checked with TrackKit.check (a straight is slipped in either side of the
+ * change when that's all it takes). The browser's own helper can turn a
+ * request into the same steps when the words here don't cover it
+ * (Tracks.aiModel), so both are made and checked the same way.
+ *   op: add {kind, at (index to insert at), size 0..3, dir}, remove {index},
+ *       change {index, how, value}, replace {index, kind, size, dir},
+ *       all {how}, more {kind}, fewer {kind}, none {kind}, tweak {dial, by},
+ *       design {text}, answer {q}, undo, redo */
+const TrackChat = {
+  // the words for each kind of piece, most particular first (dip/hill/up/down: hill pieces)
+  KINDS: [
+    ['X', 'super ?(?:speed )?(?:strips?|boosts?|pads?)'],
+    ['B', 'speed ?(?:strips?|pads?|boosts?)|boost ?(?:strips?|pads?)|boosts?|strips?'],
+    ['dip', 'dips?|depressions?|valleys?|ditch(?:es)?|hollows?|sags?|troughs?|ravines?|canyons?'],
+    ['up', 'inclines?|climbs?|uphills?|ascents?|rises?|slopes? up|ramps? up'],
+    ['down', 'declines?|downhills?|descents?|drops?|slopes? down|plunges?'],
+    ['hill', 'hills?|mounds?|mountains?|slopes?'],
+    ['C', 'crests?|humps?|kinks?|lips?'],
+    ['R', 'rollers?|bumps?|whoops|moguls?|waves?'],
+    ['J', 'jumps?|ramps?|kickers?|tabletops?|leaps?|gaps?'],
+    ['T', 'turns?|corners?|bends?|curves?|hairpins?|switchbacks?|u-?turns?'],
+    ['N', 'bottlenecks?|squeezes?|narrow (?:bit|part|section|spot)s?'],
+    ['W', 'wide (?:area|bit|part|section|open space)s?|open areas?|arenas?|plazas?'],
+    ['S', 'straights?|straightaways?|straight (?:road|bit|section|part|line)s?']
+  ],
+  NAME: { S: 'straight', T: 'turn', B: 'speed strip', X: 'super strip', H: 'hill', C: 'crest', R: 'set of rollers', J: 'jump', N: 'bottleneck',
+    W: 'wide area', dip: 'dip', hill: 'hill', up: 'climb', down: 'drop' },
+  PLURAL: { S: 'straights', T: 'turns', B: 'speed strips', X: 'super strips', H: 'hills', C: 'crests', R: 'sets of rollers', J: 'jumps',
+    N: 'bottlenecks', W: 'wide areas', dip: 'dips', hill: 'hills', up: 'climbs', down: 'drops' },
+  ORD: { first: 1, '1st': 1, second: 2, '2nd': 2, third: 3, '3rd': 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10 },
+  NUM: { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 },
+  /** every piece-word in the text, in order: [{ k, at, word }] */
+  find(s) {
+    const out = [];
+    for (const [k, src] of this.KINDS) {
+      const g = new RegExp('\\b(?:' + src + ')\\b', 'g');
+      let m;
+      while ((m = g.exec(s))) {
+        const a = m.index, b = a + m[0].length;
+        if (!out.some((o) => a < o.at + o.word.length && o.at < b)) out.push({ k, at: a, word: m[0] });
+      }
+    }
+    return out.sort((x, y) => x.at - y.at);
+  },
+  is(p, k) {
+    if (!p) return false;
+    if (k === 'up') return p[0] === 'H' && p[1] > 0;
+    if (k === 'down') return p[0] === 'H' && p[1] < 0;
+    if (k === 'H' || k === 'hill' || k === 'dip') return p[0] === 'H';
+    return p[0] === k;
+  },
+  base(k) { return k === 'dip' || k === 'hill' || k === 'up' || k === 'down' ? 'H' : k; },
+  wOf(P) { const f = P[0]; return f ? clamp(f[f.length - 1], 6, 30) : 15; },
+  /** the road's own width near index i (bottlenecks and wide areas have their own) */
+  widthNear(P, i) {
+    for (let d = 0; d < P.length; d++) for (const j of [i - 1 - d, i + d]) {
+      const p = P[j];
+      if (p && p[0] !== 'N' && p[0] !== 'W') return p[p.length - 1];
+    }
+    return 15;
+  },
+  heading(P, at) { let h = 0; for (let i = 0; i < at && i < P.length; i++) if (P[i][0] === 'T') h += P[i][2]; return h; },
+  /** which piece the words point at: { i } or { ask } or null */
+  target(s, P, sel) {
+    let m = s.match(/\b(?:piece|part|bit|section|number|no\.?)\s*#?\s*(\d{1,2})\b/) || s.match(/#\s*(\d{1,2})\b/);
+    if (m) {
+      const i = +m[1] - 1;
+      return i >= 0 && i < P.length ? { i } : { ask: 'There\'s no piece ' + m[1] + ': this track has ' + P.length + ' pieces.' };
+    }
+    if (/\b(last|final) piece\b/.test(s)) return { i: P.length - 1 };
+    if (/\bfirst piece\b/.test(s)) return { i: 0 };
+    const W = this.find(s);
+    const ordRe = /\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last|final|second(?:-| )to(?:-| )last|next(?:-| )to(?:-| )last|penultimate|(\d{1,2})(?:st|nd|rd|th))\s+(?:(left|right|big|small|tight|long|short|icy|banked|sharp|wide)\s+)?$/;
+    for (const w of W) {
+      const before = s.slice(Math.max(0, w.at - 40), w.at), after = s.slice(w.at + w.word.length, w.at + w.word.length + 6);
+      const o = before.match(ordRe);
+      let n = null;
+      if (o) {
+        const word = o[1];
+        n = /penultimate|to.last/.test(word) ? -2 : /^(last|final)$/.test(word) ? -1 : o[2] ? +o[2] : this.ORD[word];
+      } else {
+        const a = after.match(/^\s*(\d{1,2})\b(?!\s*(?:m\b|meters?|metres?|deg|degrees|°))/);
+        if (a) n = +a[1];
+      }
+      if (n === null) continue;
+      const side = o && o[3] === 'left' ? 1 : o && o[3] === 'right' ? -1 : 0;
+      let L = P.map((p, i) => i).filter((i) => this.is(P[i], w.k));
+      if (side) L = L.filter((i) => Math.sign(P[i][2]) === side);
+      if (!L.length) return { ask: 'There isn\'t ' + (/^[aeiou]/.test(this.NAME[w.k]) ? 'an ' : 'a ') + this.NAME[w.k] + ' on this track yet.' };
+      const idx = n < 0 ? L.length + n : n - 1;
+      if (idx < 0 || idx >= L.length) return { ask: 'This track has ' + (L.length === 1 ? 'only one ' + this.NAME[w.k] : L.length + ' ' + this.PLURAL[w.k]) + '.' };
+      return { i: L[idx], k: w.k, end: w.at + w.word.length };
+    }
+    if (sel >= 0 && sel < P.length && /\b(this|that|selected|here)\b/.test(s)) return { i: sel, here: true };
+    // "the jump": the only one, or the selected one
+    for (const w of W) {
+      if (/s$/.test(w.word) && w.k !== 'R') continue;
+      if (!new RegExp('\\b(?:the|that|this|my)\\s+(?:[a-z]+\\s+)?' + w.word.replace(/[-?]/g, '.') + '\\b').test(s)) continue;
+      const L = P.map((p, i) => i).filter((i) => this.is(P[i], w.k));
+      if (!L.length) return { ask: 'There isn\'t ' + (/^[aeiou]/.test(this.NAME[w.k]) ? 'an ' : 'a ') + this.NAME[w.k] + ' on this track yet. Say "add ' + (/^[aeiou]/.test(this.NAME[w.k]) ? 'an ' : 'a ') + this.NAME[w.k] + '" to put one in.' };
+      if (L.length === 1) return { i: L[0], k: w.k, end: w.at + w.word.length };
+      if (sel >= 0 && this.is(P[sel], w.k)) return { i: sel, k: w.k, end: w.at + w.word.length };
+      if (L.length > 1) {
+        return { ask: 'Which ' + this.NAME[w.k] + '? There are ' + L.length + ': pieces ' + L.map((i) => i + 1).join(', ') +
+          '. Say "the second ' + this.NAME[w.k] + '" or "piece ' + (L[1] + 1) + '", or click it in the list first.' };
+      }
+    }
+    if (/\b(the )?(start|beginning)\b/.test(s)) return { i: 0, where: 'start' };
+    if (/\b(the )?(end|finish)\b/.test(s)) return { i: P.length - 1, where: 'end' };
+    return null;
+  },
+  size(s) {
+    return /\b(huge|massive|giant|mega|enormous|insane|gigantic|tabletop)\b/.test(s) ? 3 : /\b(big|large|long|steep|tall|high|bigger|larger|deep)\b/.test(s) ? 2
+      : /\b(small|little|tiny|short|gentle|mini|baby|slight|shallow|low)\b/.test(s) ? 0 : 1;
+  },
+  dir(s) {
+    return /\bleft\b/.test(s) ? 'left' : /\bright\b(?!\s+(?:after|before|at|here|there|now|away|in|on|by|next|behind|past|where))/.test(s) ? 'right' : '';
+  },
+  /** what the request asks for: { ops } or { ask } or { unknown } */
+  parse(text, P, sel) {
+    const s = ' ' + String(text || '').toLowerCase().replace(/[’`]/g, '\'').replace(/[^a-z0-9#°.\-' ]+/g, ' ').replace(/\s+/g, ' ') + ' ';
+    const t = s.replace(/\bto the (left|right)\b/g, '$1').trim().replace(/^(please|pls|can you|could you|would you|will you|i want you to|i'?d like you to|now)\s+/, '').replace(/\s*please$/, '');
+    const u = ' ' + t + ' ';
+    if (/^(undo|undo that|go back|revert|take that back|undo it)$/.test(t)) return { ops: [{ op: 'undo' }] };
+    if (/^(redo|redo that|redo it)$/.test(t)) return { ops: [{ op: 'redo' }] };
+    const asked = /\?\s*$/.test(String(text).trim()) || /^(how|what|which|where|is|are|does|do|why|tell me|describe|show me|who)\b/.test(t);
+    if (asked && !/^(can|could|would|will) /.test(t)) return { ops: [{ op: 'answer', q: t }] };
+    // a whole new track
+    if (/\b(new|another|different|fresh|whole new|brand new)\s+(track|map|road|design|course)\b/.test(u) || /^start (over|again)\b/.test(t) ||
+      /^(design|build|create|generate|make)( me)? (a|an|my)\s+(?:(?!on |in |at |after |before |near |to |into )[a-z0-9'-]+\s+){0,7}(track|map|road|course|circuit)\b/.test(t) &&
+      !this.find(t.split(/\b(?:track|map|road|course|circuit)\b/)[0].replace(/^(design|build|create|generate|make)( me)? (a|an|my)\s+/, '')).some((w) => w.at === 0)) {
+      return { ops: [{ op: 'design', text: t }] };
+    }
+    const W = this.find(u), size = this.size(u), dir = this.dir(u);
+    const noun = (w) => w && { kind: w.k, size, dir, hairpin: /\b(hairpins?|switchbacks?|u-?turns?)\b/.test(u), tabletop: /\btabletops?\b/.test(u),
+      tight: /\b(tight|sharp)\b/.test(u), wide: /\b(wide|sweeping|gentle|long|big)\s+(turn|corner|bend|curve)/.test(u),
+      icy: /\b(icy|ice|slippery|frozen)\b/.test(u), banked: /\bbank(ed|ing)?\b/.test(u), num: this.num(u) };
+    // ---- ice or banking: "add ice to the second turn", "make it icy"
+    if (/\b(add|put|make|give)\b/.test(u) && /\b(ice|icy|slippery|bank|banking|banked)\b/.test(u) && !W.some((w) => w.k !== 'T')) {
+      const how = /\b(ice|icy|slippery)\b/.test(u) ? 'icy' : 'banked', tg0 = this.target(u, P, sel);
+      if (tg0 && tg0.ask) return { ask: tg0.ask };
+      if (tg0 && tg0.i !== undefined && P[tg0.i][0] === 'T') return { ops: [{ op: 'change', index: tg0.i, how }] };
+      return { ops: [{ op: 'all', how }] };
+    }
+    // ---- moving: "move the jump to the end", "move piece 4 after piece 9"
+    if (/\bmove\b/.test(u)) {
+      const pm = u.match(/\b(after|before|to the end|to the start|to the beginning|to the middle|to the finish)\b/);
+      const tg0 = this.target(pm ? u.slice(0, pm.index) : u, P, sel);
+      if (tg0 && tg0.ask) return { ask: tg0.ask };
+      if (tg0 && tg0.i !== undefined && pm) {
+        const rest = u.slice(pm.index), t2 = this.target(' ' + rest.replace(/^\s*(after|before)\b/, '') + ' ', P, sel);
+        let at = null;
+        if (/\b(end|finish)\b/.test(pm[0])) at = P.length;
+        else if (/\b(start|beginning)\b/.test(pm[0])) at = 1;
+        else if (/middle/.test(pm[0])) at = Math.round(P.length / 2);
+        else if (t2 && t2.i !== undefined) at = pm[0] === 'after' ? t2.i + 1 : t2.i;
+        if (at !== null) return { ops: [{ op: 'move', index: tg0.i, at }] };
+      }
+    }
+    // ---- adding: "add a dip after the second turn", "put a big jump here", "add a hill at the end"
+    const add = /\b(add|put|insert|place|stick|throw|give me|include|i want|i'?d like|let'?s have|plus)\b/.test(u);
+    if (add && W.length) {
+      const pm = u.match(/\b(right after|just after|after|following|past|behind|before|just before|right before|ahead of|between|at|in|near|on|by|here)\b/);
+      const what = W.find((w) => !pm || w.at < pm.index) || W[0];
+      const plural = /s$/.test(what.word) && !/(rollers|whoops|bumps|moguls)$/.test(what.word) || /\b(some|a few|few|several|lots of|more)\b/.test(u);
+      let at = null, where = '';
+      if (pm) {
+        const rest = u.slice(pm.index);
+        const tg = this.target(' ' + rest.replace(/^\s*\b(?:right |just )?(?:after|following|past|behind|before|ahead of|between|at|in|near|on|by)\b/, '') + ' ', P, sel);
+        if (/^\s*(right |just )?(after|following|past|behind|between)\b/.test(rest) && tg && tg.i !== undefined) { at = tg.i + 1; where = 'after piece ' + (tg.i + 1); }
+        else if (/^\s*(right |just )?(before|ahead of)\b/.test(rest) && tg && tg.i !== undefined) { at = tg.i; where = 'before piece ' + (tg.i + 1); }
+        else if (/\b(end|finish)\b/.test(rest)) { at = P.length; where = 'at the end'; }
+        else if (/\b(start|beginning)\b/.test(rest)) { at = Math.min(1, P.length); where = 'near the start'; }
+        else if (/\b(middle|halfway|half way|center|centre)\b/.test(rest)) { at = Math.round(P.length / 2); where = 'in the middle'; }
+        else if (/^\s*here\b/.test(rest) || /\b(this|that|selected)\b/.test(rest)) { if (sel >= 0) { at = sel + 1; where = 'after piece ' + (sel + 1); } }
+        else if (tg && tg.i !== undefined) { at = tg.i + 1; where = 'after piece ' + (tg.i + 1); }
+        else if (tg && tg.ask) return { ask: tg.ask };
+      }
+      if (at === null && plural) return { ops: [{ op: 'more', kind: what.k }] };
+      if (at === null) { at = sel >= 0 ? sel + 1 : P.length; where = sel >= 0 && sel < P.length - 1 ? 'after piece ' + (sel + 1) : 'at the end'; }
+      return { ops: [Object.assign({ op: 'add', at, where }, noun(what))] };
+    }
+    // ---- taking out: "remove the third turn", "delete piece 7", "get rid of all the jumps"
+    if (/\b(remove|delete|get rid of|take out|take away|lose|cut out|cut|erase|ditch)\b/.test(u)) {
+      const tg = this.target(u, P, sel);
+      if (tg && tg.i !== undefined && (tg.k || !/\b(ice|icy|bank|banking)\b/.test(u))) {
+        if (tg.k === undefined && /\b(ice|icy)\b/.test(u) && P[tg.i][0] === 'T') return { ops: [{ op: 'change', index: tg.i, how: 'grippy' }] };
+        return { ops: [{ op: 'remove', index: tg.i }] };
+      }
+      if (/\b(ice|icy)\b/.test(u)) return { ops: [{ op: 'all', how: 'grippy' }] };
+      if (/\b(bank|banking)\b/.test(u)) return { ops: [{ op: 'all', how: 'flat' }] };
+      if (tg && tg.ask && !(W.length && /\b(all|every|each)\b/.test(u))) return { ask: tg.ask };
+      if (W.length) return { ops: [{ op: /\b(some|a few|half)\b/.test(u) ? 'fewer' : 'none', kind: W[0].k }] };
+    }
+    // ---- more or fewer of something: "more hills", "fewer jumps", "no ice"
+    const more = u.match(/\b(more|extra|lots more|loads more|even more|another few|a few more|some more)\b/);
+    if (more && W.length && !this.target(u, P, sel)) return { ops: [{ op: 'more', kind: W[0].k }] };
+    if (/\b(more|extra)\s+(height|elevation|altitude|ups and downs|slopes|vertical)\b|\bhillier\b|\bmore 3d\b/.test(u)) return { ops: [{ op: 'more', kind: 'hill' }] };
+    if (/\b(fewer|less|not as many|too many)\b/.test(u) && W.length && !this.target(u, P, sel)) return { ops: [{ op: 'fewer', kind: W[0].k }] };
+    if (/\b(no|without)\s+(more\s+)?(ice|icy)\b|\bnot icy\b|\bless ice\b/.test(u)) return { ops: [{ op: 'all', how: 'grippy' }] };
+    if (/\b(no|without)\b/.test(u) && W.length && !this.target(u, P, sel)) return { ops: [{ op: 'none', kind: W[0].k }] };
+    // ---- the whole track
+    const tg = this.target(u, P, sel);
+    if (tg && tg.ask && !/\b(track|road|map|everything|whole|all)\b/.test(u)) return { ask: tg.ask };
+    const whole = !tg || tg.ask || /\b(whole|entire|all|every|everything)\b/.test(u) || (/\b(the )?(track|map|course|it)\b/.test(u) && !tg.k && tg.where === undefined && !tg.here);
+    if (/\b(mirror|flip|reverse|swap)\b/.test(u) && (whole || /\b(the )?(track|map|road|it|everything)\b/.test(u)) && !(tg && tg.k)) return { ops: [{ op: 'all', how: 'mirror' }] };
+    if (whole) {
+      if (/\b(less|fewer)\s+(twisty|curvy|winding|turns|corners)\b|\bstraighter\b|\bless twisty\b/.test(u)) return { ops: [{ op: 'tweak', dial: 'turns', by: -1 }] };
+      if (/\b(more|extra)\s+(twisty|curvy|winding)\b|\btwistier\b|\bcurvier\b/.test(u)) return { ops: [{ op: 'tweak', dial: 'turns', by: 1 }] };
+      if (/\b(harder|tougher|more difficult|more challenging|trickier)\b/.test(u)) return { ops: [{ op: 'tweak', dial: 'tight', by: 1 }] };
+      if (/\b(easier|simpler|less difficult)\b/.test(u)) return { ops: [{ op: 'tweak', dial: 'tight', by: -1 }] };
+      if (/\b(faster|quicker|speedier)\b/.test(u)) return { ops: [{ op: 'more', kind: 'B' }] };
+      if (/\b(wider|widen|broader|bigger road|more room)\b/.test(u) && !/\bturns?\b/.test(u)) return { ops: [{ op: 'all', how: 'wider road' }] };
+      if (/\b(narrower|thinner|skinnier|tighter road|narrow it)\b/.test(u)) return { ops: [{ op: 'all', how: 'narrower road' }] };
+      if (/\b(icy|ice|slippery|frozen|snowy)\b/.test(u)) return { ops: [{ op: 'all', how: 'icy' }] };
+      if (/\b(grippy|grip)\b/.test(u)) return { ops: [{ op: 'all', how: 'grippy' }] };
+      if (/\b(flat turns|flatten the turns|unbank|no bank|less bank)\b/.test(u)) return { ops: [{ op: 'all', how: 'flat' }] };
+      if (/\bbank(ed|ing)?\b/.test(u)) return { ops: [{ op: 'all', how: 'banked' }] };
+      if (/\b(tighter|sharper)\b/.test(u) && /\bturns|corners|bends|curves\b/.test(u)) return { ops: [{ op: 'all', how: 'tighter' }] };
+      if (/\b(wider|gentler|smoother|sweeping|looser)\b/.test(u) && /\bturns|corners|bends|curves\b/.test(u)) return { ops: [{ op: 'all', how: 'wider' }] };
+      if (/\b(flatter|flat)\b/.test(u)) return { ops: [{ op: 'none', kind: 'hill' }] };
+      if (/\b(longer|extend|lengthen|bigger|more track|more road)\b/.test(u)) return { ops: [{ op: 'all', how: 'longer' }] };
+      if (/\b(shorter|shorten|smaller|trim|cut it down)\b/.test(u)) return { ops: [{ op: 'all', how: 'shorter' }] };
+    }
+    // ---- one piece: "make the last turn a hairpin", "make piece 5 longer", "turn 2 to the right"
+    if (tg && tg.i !== undefined) {
+      const i = tg.i, p = P[i], rest = tg.end !== undefined ? u.slice(tg.end) : u;
+      const into = rest.match(/\b(?:into|to|with|for|as|be|is)?\s*(?:a|an)\s+/);
+      const nw = into ? this.find(rest.slice(into.index)).filter((w) => w.at >= 0)[0] : null;
+      if (nw && (this.base(nw.k) !== p[0] || (p[0] === 'H' && /^(dip|hill)$/.test(nw.k)))) return { ops: [Object.assign({ op: 'replace', index: i }, noun(nw))] };
+      const how = this.how(u, p);
+      if (how) return { ops: [{ op: 'change', index: i, how, value: this.num(u) }] };
+      if (nw && this.base(nw.k) === p[0]) {
+        if (/\b(hairpins?|switchbacks?|u-?turns?)\b/.test(rest)) return { ops: [{ op: 'change', index: i, how: 'hairpin' }] };
+        if (/\btabletop\b/.test(rest)) return { ops: [{ op: 'change', index: i, how: 'tabletop' }] };
+      }
+    }
+    return { unknown: true };
+  },
+  /** a number in the request: { m (metres), deg (degrees), r (radius) } */
+  num(u) {
+    const o = {};
+    let m = u.match(/\b(\d{1,3})\s*(?:m|meters?|metres?)\b/); if (m) o.m = +m[1];
+    m = u.match(/\b(\d{1,3})\s*(?:°|deg|degrees?)\b/); if (m) o.deg = +m[1];
+    m = u.match(/\bradius (?:of )?(\d{1,3})\b/); if (m) o.r = +m[1];
+    return o;
+  },
+  /** what to do to one piece */
+  how(u, p) {
+    const k = p[0];
+    if (/\b(hairpin|switchback|u-?turn)\b/.test(u) && k === 'T') return 'hairpin';
+    if (/\btabletop\b/.test(u) && k === 'J') return 'tabletop';
+    if (/\b(other way|opposite way|flip|mirror|reverse|swap)\b/.test(u)) return 'flip';
+    if (k === 'T' && /\b(go |goes |turn |bend |to the |towards the )?left\b/.test(u)) return 'left';
+    if (k === 'T' && /\b(go |goes |turn |bend |to the |towards the )?right\b(?!\s+(?:after|before|at|here|there|now))/.test(u)) return 'right';
+    if (k === 'H' && /\b(go(es)? up|uphill|climb|rise|incline|upward)\b/.test(u)) return 'up';
+    if (k === 'H' && /\b(go(es)? down|downhill|drop|fall|decline|descend|downward)\b/.test(u)) return 'down';
+    if (/\b(not icy|no ice|grippy|grip|unfreeze|melt)\b/.test(u)) return 'grippy';
+    if (/\b(icy|ice|slippery|frozen)\b/.test(u)) return 'icy';
+    if (/\b(no bank|unbank|flat|flatten|level)\b/.test(u) && k === 'T') return 'flat';
+    if (/\b(less bank|less banked)\b/.test(u)) return 'less banked';
+    if (/\bbank(ed|ing)?\b/.test(u)) return 'banked';
+    if (/\b(wider|broader|widen)\b/.test(u) && /\b(road|track|lane)\b/.test(u)) return 'wider road';
+    if (/\b(narrower|thinner|skinnier|narrow)\b/.test(u)) return 'narrower road';
+    if (/\b(tighter|sharper|tight|sharp|tighten)\b/.test(u)) return 'tighter';
+    if (/\b(wider|gentler|smoother|looser|sweeping|wide|softer)\b/.test(u)) return k === 'T' ? 'wider' : k === 'H' ? 'smaller' : 'wider road';
+    if (/\b(steeper|steep)\b/.test(u)) return 'steeper';
+    if (/\b(flatter|less steep|gentle)\b/.test(u)) return 'smaller';
+    if (/\b(longer|extend|lengthen|long)\b/.test(u)) return 'longer';
+    if (/\b(shorter|shorten|short)\b/.test(u)) return 'shorter';
+    if (/\b(bigger|larger|higher|taller|huge|massive|big|more|deeper|harder)\b/.test(u)) return 'bigger';
+    if (/\b(smaller|lower|tinier|little|less|small|shallower|easier)\b/.test(u)) return 'smaller';
+    const n = this.num(u);
+    if (n.m || n.deg || n.r) return 'set';
+    return '';
+  },
+  /** a new piece (or a few: a hill is up, a top, down) from a request's words */
+  make(o, P, at) {
+    const k = o.kind, w = this.widthNear(P, at), sz = o.size === undefined ? 1 : o.size, n = o.num || {};
+    const step = (list, v) => list[clamp(v, 0, list.length - 1)];
+    const H = (sg, big) => { const run = [40, 40, 50, 60][big], rise = Math.min([3, 6, 10, 15][big], Math.floor(run * 0.3)); return ['H', rise * sg, run, w]; };
+    switch (this.base(k)) {
+      case 'S': return [['S', clamp(Math.round((n.m || [40, 80, 150, 250][sz]) / 10) * 10, 10, 300), w]];
+      case 'B': return [['B', step([20, 30, 40, 60], sz), w]];
+      case 'X': return [['X', step([10, 20, 30, 40], sz), w]];
+      case 'C': return [['C', step([3, 5, 7, 9], sz), w]];
+      case 'R': return [['R', step([2, 3, 4, 6], sz), step([0.3, 0.6, 0.9, 1.2], sz), w]];
+      case 'J': return [['J', o.tabletop ? 4 : step([1, 2, 3, 4], sz), w]];
+      case 'N': return [['N', step([20, 30, 40, 60], sz), 6]];
+      case 'W': return [['W', step([30, 40, 60, 80], sz), 30]];
+      case 'T': {
+        const r = o.hairpin ? 24 : n.r ? TrackKit.RADII.map((e) => e[0]).reduce((a, b) => (Math.abs(b - n.r) < Math.abs(a - n.r) ? b : a))
+          : o.tight ? 40 : o.wide ? 90 : 60;
+        const ang = o.hairpin ? 180 : n.deg ? clamp(Math.round(n.deg / 15) * 15, 15, 180) : [45, 90, 120, 150][sz];
+        const h = this.heading(P, at), sg = o.dir === 'left' ? 1 : o.dir === 'right' ? -1 : h > 0 ? -1 : 1;
+        return [['T', r, ang * sg, o.banked ? 20 : 10, o.icy ? 1 : 0, Math.min(w, 2 * (r - 8))]];
+      }
+      default: {
+        const big = clamp(sz, 0, 3);
+        if (k === 'up') return [H(1, big)];
+        if (k === 'down') return [H(-1, big)];
+        const a = k === 'dip' ? -1 : 1;
+        return [H(a, big), ['S', 30, w], H(-a, big)];
+      }
+    }
+  },
+  /** one piece, changed: the new piece, or null when it can't go further that way */
+  changed(p, how, value) {
+    const q = p.slice(), k = p[0], L = q.length;
+    const nextIn = (list, v, d) => { const xs = list.map((e) => (Array.isArray(e) ? e[0] : e)); const i = xs.indexOf(v); const j = clamp((i < 0 ? xs.findIndex((x) => x >= v) : i) + d, 0, xs.length - 1); return xs[j]; };
+    const R = TrackKit.RADII, len = (v, d) => clamp(Math.round((d > 0 ? v * 1.5 : v / 1.5) / 10) * 10, 10, k === 'S' ? 300 : 200);
+    const strip = (v, d) => nextIn(TrackKit.STRIPS, v, d);
+    const W = TrackKit.WIDTHS, n = value || {};
+    switch (how) {
+      case 'set':
+        if (n.m && 'SNW'.includes(k)) q[1] = clamp(Math.round(n.m / 10) * 10, 10, k === 'S' ? 300 : 200);
+        else if (n.m && 'BX'.includes(k)) q[1] = nextIn(TrackKit.STRIPS, n.m, 0);
+        else if (k === 'T' && (n.deg || n.r)) {
+          if (n.deg) q[2] = Math.sign(q[2]) * clamp(Math.round(n.deg / 15) * 15, 15, 180);
+          if (n.r) q[1] = R.map((e) => e[0]).reduce((a, b) => (Math.abs(b - n.r) < Math.abs(a - n.r) ? b : a));
+        } else return null;
+        break;
+      case 'hairpin': if (k !== 'T') return null; q[1] = 24; q[2] = Math.sign(q[2]) * Math.max(Math.abs(q[2]), 150); break;
+      case 'tabletop': if (k !== 'J') return null; q[1] = 4; break;
+      case 'flip': if (k === 'T' || k === 'H') q[k === 'T' ? 2 : 1] = -q[k === 'T' ? 2 : 1]; else return null; break;
+      case 'left': if (k !== 'T') return null; q[2] = Math.abs(q[2]); break;
+      case 'right': if (k !== 'T') return null; q[2] = -Math.abs(q[2]); break;
+      case 'up': if (k !== 'H') return null; q[1] = Math.abs(q[1]); break;
+      case 'down': if (k !== 'H') return null; q[1] = -Math.abs(q[1]); break;
+      case 'icy': case 'grippy': if (k !== 'T') return null; q[4] = how === 'icy' ? 1 : 0; break;
+      case 'banked': if (k !== 'T') return null; q[3] = Math.min(40, Math.max(q[3], 0) + 10); break;
+      case 'less banked': if (k !== 'T') return null; q[3] = Math.max(0, q[3] - 10); break;
+      case 'flat': if (k !== 'T') return null; q[3] = 0; break;
+      case 'tighter': if (k !== 'T') return null; q[1] = nextIn(R, q[1], -1); q[5] = Math.min(q[5], 2 * (q[1] - 8)); break;
+      case 'wider': if (k !== 'T') return null; q[1] = nextIn(R, q[1], 1); break;
+      case 'wider road': case 'narrower road': {
+        if (k === 'N' || k === 'W') { const list = k === 'N' ? TrackKit.NARROW : TrackKit.WIDE; q[L - 1] = nextIn(list, q[L - 1], how === 'wider road' ? 1 : -1); break; }
+        let v = nextIn(W, q[L - 1], how === 'wider road' ? 2 : -2);
+        if (k === 'T') v = Math.min(v, 2 * (q[1] - 8));
+        q[L - 1] = clamp(v, 8, 25);
+        break;
+      }
+      case 'longer': case 'shorter': case 'bigger': case 'smaller': case 'steeper': {
+        const d = how === 'longer' || how === 'bigger' || how === 'steeper' ? 1 : -1;
+        if ('SNW'.includes(k)) q[1] = len(q[1], d);
+        else if (k === 'B' || k === 'X') q[1] = strip(q[1], d);
+        else if (k === 'T') {
+          if (how === 'longer' || how === 'shorter' || how === 'bigger' || how === 'smaller') q[2] = Math.sign(q[2]) * clamp(Math.abs(q[2]) + 30 * d, 15, 180);
+          else return null;
+        } else if (k === 'H') {
+          const sg = Math.sign(q[1]) || 1;
+          if (how === 'longer' || how === 'shorter') q[2] = nextIn(TrackKit.RUNS, q[2], d);
+          else q[1] = sg * nextIn(TrackKit.RISES, Math.abs(q[1]), d);
+          // too steep: a longer run to climb it on
+          while (Math.abs(q[1]) / q[2] > 0.36 && q[2] < 100) q[2] = nextIn(TrackKit.RUNS, q[2], 1);
+          while (Math.abs(q[1]) / q[2] > 0.36) q[1] = sg * nextIn(TrackKit.RISES, Math.abs(q[1]), -1);
+        } else if (k === 'J') q[1] = clamp(q[1] + d, 1, 4);
+        else if (k === 'C') q[1] = nextIn(TrackKit.CRESTS, q[1], d);
+        else if (k === 'R') { if (how === 'longer' || how === 'shorter') q[1] = clamp(q[1] + d, 1, 6); else q[2] = nextIn(TrackKit.ROLLER_H, q[2], d); }
+        break;
+      }
+      default: return null;
+    }
+    return JSON.stringify(q) === JSON.stringify(p) ? null : q;
+  },
+  /** the pieces made to check out: as they are, or with a straight slipped in either side of piece i */
+  settle(P, i) {
+    const chk = (Q) => TrackKit.check({ w: this.wOf(Q), pieces: Q });
+    let c = chk(P);
+    if (c.ok) return { P, c };
+    const first = c.error;
+    const pad = (Q, at, L) => { const R = Q.slice(); R.splice(at, 0, ['S', L, this.widthNear(Q, at)]); return R; };
+    const tries = [];
+    if (i >= 0) {
+      tries.push(pad(P, i + 1, 40), pad(P, i, 40), pad(pad(P, i + 1, 50), i, 50));
+      const p = P[i];
+      if (p && p[0] === 'T' && p[3] > 10) { const Q = P.slice(); Q[i] = p.slice(); Q[i][3] = 10; tries.push(Q, pad(pad(Q, i + 1, 40), i, 40)); }
+    }
+    for (const Q of tries) {
+      if (Q.length > TrackKit.MAX) continue;
+      c = chk(Q);
+      if (c.ok) return { P: Q, c, padded: true };
+    }
+    return { error: first };
+  },
+  /** the track's numbers, for answers */
+  stats(P) {
+    const c = TrackKit.check({ w: this.wOf(P), pieces: P }), g = TrackKit.walk({ w: this.wOf(P), pieces: P });
+    const n = (k) => P.filter((p) => this.is(p, k)).length;
+    const T = P.filter((p) => p[0] === 'T');
+    return { len: c.ok ? c.len : g.len, pieces: P.length, turns: T.length, left: T.filter((p) => p[2] > 0).length, hairpins: T.filter((p) => p[1] <= 24).length,
+      icy: T.filter((p) => p[4]).length, jumps: n('J'), hills: n('H'), up: n('up'), down: n('down'), strips: n('B') + n('X'), crests: n('C'), rollers: n('R'),
+      range: g.hi - g.lo, ok: c.ok, error: c.error };
+  },
+  /** a question about the track, answered from its pieces */
+  answer(q, P) {
+    const st = this.stats(P), km = (st.len / 1000).toFixed(2) + ' km';
+    let m = q.match(/\b(?:piece|number|#)\s*#?(\d{1,2})\b/);
+    if (m) { const p = P[+m[1] - 1]; return p ? 'Piece ' + m[1] + ' is a ' + TrackKit.label(p).replace(/^./, (c) => c.toLowerCase()) + '.' : 'There\'s no piece ' + m[1] + '.'; }
+    const W = this.find(' ' + q + ' ');
+    if (/\bhow many\b/.test(q) && W.length) {
+      const k = W[0].k, c = P.filter((p) => this.is(p, k)).length;
+      return 'There ' + (c === 1 ? 'is 1 ' + this.NAME[k] : 'are ' + c + ' ' + this.PLURAL[k]) + ' on this track.';
+    }
+    if (/\b(high|tall|height|elevation|climb|steep|hilly|altitude)\b/.test(q)) return 'From its lowest point to its highest, the road covers ' + Math.round(st.range) + ' m of height, over ' + st.hills + ' hill piece' + (st.hills === 1 ? '' : 's') + '.';
+    if (/\b(long|length|distance|far|km|meters|metres)\b/.test(q)) return 'It\'s ' + km + ' long, in ' + st.pieces + ' pieces (' + TrackKit.MAX + ' at most).';
+    return this.describe(P);
+  },
+  describe(P) {
+    const st = this.stats(P), bits = [];
+    bits.push(st.turns + ' turn' + (st.turns === 1 ? '' : 's') + (st.hairpins ? ' (' + st.hairpins + ' hairpin' + (st.hairpins === 1 ? '' : 's') + ')' : ''));
+    if (st.jumps) bits.push(st.jumps + ' jump' + (st.jumps === 1 ? '' : 's'));
+    if (st.hills) bits.push(st.hills + ' hill piece' + (st.hills === 1 ? '' : 's') + ' over ' + Math.round(st.range) + ' m of height');
+    if (st.strips) bits.push(st.strips + ' speed strip' + (st.strips === 1 ? '' : 's'));
+    if (st.icy) bits.push(st.icy + ' icy turn' + (st.icy === 1 ? '' : 's'));
+    if (st.crests + st.rollers) bits.push(st.crests + st.rollers + ' bump' + (st.crests + st.rollers === 1 ? '' : 's'));
+    return 'It\'s ' + (st.len / 1000).toFixed(2) + ' km in ' + st.pieces + ' pieces: ' + bits.join(', ') + '.';
+  },
+  /** good places for new pieces: after a straight, spread along the track */
+  spots(P, n) {
+    const c = [];
+    for (let i = 1; i < P.length; i++) if (P[i - 1][0] === 'S' && P[i - 1][1] >= 30 && P[i][0] !== 'J') c.push(i);
+    if (!c.length) for (let i = 1; i <= P.length; i++) c.push(i);
+    const out = [];
+    for (let k = 1; k <= n; k++) {
+      const want = (P.length * k) / (n + 1);
+      const best = c.filter((i) => !out.includes(i)).sort((a, b) => Math.abs(a - want) - Math.abs(b - want))[0];
+      if (best !== undefined) out.push(best);
+    }
+    return out.sort((a, b) => b - a);                    // from the back, so the earlier places stay put
+  },
+  /** a new piece in place, with what it needs around it (a run-up before a jump, a settle after) */
+  insert(P, at, pieces) {
+    const Q = P.slice(), add = pieces.map((p) => p.slice());
+    const prev = Q[at - 1], next = Q[at], k = add[0][0];
+    const w = this.widthNear(Q, at);
+    if (k === 'J' && !(prev && ((prev[0] === 'S' && prev[1] >= 60) || prev[0] === 'B' || prev[0] === 'X'))) add.unshift(['S', [60, 70, 90, 100][add[0][1] - 1], w]);
+    if (k === 'H' && prev && prev[0] === 'T') add.unshift(['S', 30, w]);
+    if ((k === 'J' || k === 'C' || k === 'R') && next && next[0] !== 'S') add.push(['S', 40, w]);
+    if (k === 'H' && next && next[0] === 'T') add.push(['S', 20, w]);
+    Q.splice(at, 0, ...add);
+    return { Q, first: at, count: add.length, main: at + add.findIndex((p) => p[0] === k), runup: k === 'J' && add[0][0] === 'S' };
+  },
+  /** does one step: { P, sel, say } or { error } (or { redesign, dials } for a change to the whole design) */
+  apply(op, P, sel, ctx) {
+    ctx = ctx || {};
+    const nm = (i) => 'piece ' + (i + 1) + ' (' + TrackKit.label(P[i]).split(' · ')[0].toLowerCase() + ')';
+    const a = (k) => (/^[aeiou]/.test(this.NAME[k]) ? 'an ' : 'a ') + this.NAME[k];
+    const done = (Q, focus, say) => {
+      const r = this.settle(Q, focus);
+      if (r.error) return { error: 'I couldn\'t do that one: ' + r.error.replace(/^./, (c) => c.toLowerCase()) + ' (Your track is as it was.)' };
+      return { P: r.P, sel: clamp(focus, 0, r.P.length - 1), say: say + (r.padded ? ' I put a little straight road next to it so it drives cleanly.' : '') };
+    };
+    switch (op.op) {
+      case 'add': {
+        if (P.length >= TrackKit.MAX) return { error: 'This track already has ' + TrackKit.MAX + ' pieces, the most there can be. Remove one first.' };
+        const at = clamp(op.at === undefined ? P.length : op.at, 0, P.length);
+        const r = this.insert(P, at, this.make(op, P, at));
+        if (r.Q.length > TrackKit.MAX) return { error: 'That needs more pieces than the track has room for (' + TrackKit.MAX + ' at most).' };
+        const what = op.kind === 'J' && (op.tabletop || op.size >= 3) ? 'a tabletop jump' : op.kind === 'T' && op.hairpin ? 'a hairpin' :
+          (op.size >= 2 && op.kind !== 'T' ? 'a big ' + this.NAME[op.kind] : a(op.kind));
+        return done(r.Q, r.main, 'Added ' + what + ' ' + (op.where || 'at piece ' + (at + 1)) + '.' + (r.runup ? ' It has a straight before it for the run-up.' : ''));
+      }
+      case 'remove': {
+        const i = op.index;
+        if (!(i >= 0 && i < P.length)) return { error: 'There\'s no piece ' + (i + 1) + '.' };
+        if (P.length <= 1) return { error: 'That\'s the only piece left.' };
+        const label = nm(i), Q = P.slice();
+        Q.splice(i, 1);
+        return done(Q, Math.min(i, Q.length - 1), 'Removed ' + label + '.');
+      }
+      case 'move': {
+        const i = op.index, p = P[i];
+        if (!p) return { error: 'There\'s no piece ' + (i + 1) + '.' };
+        const Q = P.slice();
+        Q.splice(i, 1);
+        const at = clamp(op.at > i ? op.at - 1 : op.at, 0, Q.length);
+        Q.splice(at, 0, p);
+        return done(Q, at, 'Moved ' + nm(i) + ' to be piece ' + (at + 1) + '.');
+      }
+      case 'replace': {
+        const i = op.index, Q = P.slice();
+        Q.splice(i, 1);
+        const r = this.insert(Q, i, this.make(op, Q, i));
+        return done(r.Q, r.main, 'Made ' + nm(i) + ' into ' + a(op.kind) + '.');
+      }
+      case 'change': {
+        const i = op.index, p = P[i];
+        if (!p) return { error: 'There\'s no piece ' + (i + 1) + '.' };
+        const q = this.changed(p, op.how, op.value);
+        if (!q) return { error: 'Piece ' + (i + 1) + ' is a ' + TrackKit.label(p).split(' · ')[0].toLowerCase() + ': I can\'t make it ' + op.how + (/^(tighter|wider|longer|shorter|bigger|smaller|steeper)$/.test(op.how) ? ' than it is' : '') + '.' };
+        const Q = P.slice(); Q[i] = q;
+        const res = done(Q, i, 'Piece ' + (i + 1) + ' is now: ' + TrackKit.label(q).toLowerCase() + '.');
+        // a hairpin that won't fit swinging all the way round: just as tight, round as far as it went before
+        if (res.error && op.how === 'hairpin' && Math.abs(q[2]) !== Math.abs(p[2])) {
+          const q2 = q.slice(); q2[2] = p[2];
+          const Q2 = P.slice(); Q2[i] = q2;
+          const r2 = done(Q2, i, 'Piece ' + (i + 1) + ' is now a hairpin-tight ' + TrackKit.label(q2).toLowerCase() + ' (swinging all the way round would have run the road into itself).');
+          if (!r2.error) return r2;
+        }
+        return res;
+      }
+      case 'all': {
+        let Q = P.map((p) => p.slice()), say = '';
+        if (op.how === 'mirror') { Q.forEach((p) => { if (p[0] === 'T') p[2] = -p[2]; }); say = 'Mirrored it: every left turn is a right turn now, and the other way round.'; }
+        else if (op.how === 'longer' || op.how === 'shorter') {
+          const L0 = this.stats(P).len;
+          if (op.how === 'shorter') {
+            while (Q.length > 3 && this.stats(Q).len > L0 * 0.72) Q.splice(Q.length - 2, 1);
+            if (Q.length === P.length) return { error: 'It\'s about as short as it can go. Remove pieces you don\'t want instead.' };
+            say = 'Made it shorter: ' + (P.length - Q.length) + ' pieces fewer near the end.';
+          } else {
+            const D = Object.assign({}, ctx.dials || TrackGen.BASE);
+            for (let k = 0; k < 10; k++) {
+              const more = TrackGen.pieces(D, (ctx.seed || 7) + 7919 * (k + 1)).slice(1), R = Q.slice();
+              const w = this.widthNear(R, R.length);
+              for (const p of more) {
+                if (R.length >= TrackKit.MAX || TrackKit.walk({ w: this.wOf(R), pieces: R }).len > L0 * 1.35) break;
+                const c = p.slice(); if (c[0] !== 'N' && c[0] !== 'W') c[c.length - 1] = c[0] === 'T' ? Math.min(w, 2 * (c[1] - 8)) : w;
+                R.push(c);
+              }
+              if (R[R.length - 1][0] !== 'S') R.push(['S', 50, w]);
+              const r = this.settle(R, -1);
+              if (r.P) return { P: r.P, sel: P.length, say: 'Made it longer: ' + (r.P.length - P.length) + ' more pieces at the end, in the same style.' };
+            }
+            return { error: 'I couldn\'t find a way to add on to the end that fits. Try "add a long straight at the end" first.' };
+          }
+        } else {
+          let n = 0;
+          for (const p of Q) {
+            if (op.how.includes('road') ? p[0] === 'N' || p[0] === 'W' : p[0] !== 'T') continue;
+            const c = this.changed(p, op.how);
+            if (c) { p.splice(0, p.length, ...c); n++; }
+          }
+          if (!n) return { error: 'Nothing on the track changes that way.' };
+          say = { icy: 'Made every turn icy.', grippy: 'No more ice: every turn is grippy.', banked: 'Banked every turn more.', flat: 'Every turn is flat now.',
+            tighter: 'Made every turn tighter.', wider: 'Made every turn wider.', 'wider road': 'Made the road wider.', 'narrower road': 'Made the road narrower.' }[op.how] || 'Done.';
+        }
+        const r = this.settle(Q, -1);
+        return r.error ? { error: r.error } : { P: r.P, sel, say };
+      }
+      case 'more': {
+        const k = op.kind, count = 2;
+        for (let t = 0; t < 6; t++) {
+          let Q = P.slice(), first = -1;
+          const spots = this.spots(P, count + (t > 2 ? 1 : 0)).slice(t % 2, (t % 2) + count);
+          for (const at of spots) {
+            const size = k === 'J' ? 2 : 1 + (t > 3 ? 0 : 1);
+            const r = this.insert(Q, at, this.make({ kind: k === 'hill' && t % 2 ? 'dip' : k, size }, Q, at));
+            Q = r.Q; first = r.main;
+          }
+          if (Q.length > TrackKit.MAX) return { error: 'There\'s no room for more: a track has ' + TrackKit.MAX + ' pieces at most.' };
+          const r = this.settle(Q, -1);
+          if (r.P) return { P: r.P, sel: first, say: 'Added ' + spots.length + ' more ' + this.PLURAL[k] + ', spread along the track.' };
+        }
+        return { error: 'I couldn\'t fit more ' + this.PLURAL[k] + ' in without the road running into trouble. Try adding one in a particular place.' };
+      }
+      case 'fewer': case 'none': {
+        const L = P.map((p, i) => i).filter((i) => this.is(P[i], op.kind));
+        if (!L.length) return { error: 'There aren\'t any ' + this.PLURAL[op.kind] + ' on this track.' };
+        const go = op.op === 'none' ? L : L.filter((_, j) => j % 2 === 0);
+        const Q = P.filter((_, i) => !go.includes(i));
+        if (!Q.length) return { error: 'That would leave no road at all.' };
+        const r = this.settle(Q, -1);
+        return r.error ? { error: r.error } : { P: r.P, sel: Math.min(go[0], r.P.length - 1), say: 'Removed ' + (op.op === 'none' ? 'all ' : '') + go.length + ' ' + (go.length === 1 ? this.NAME[op.kind] : this.PLURAL[op.kind]) + '.' };
+      }
+    }
+    return { error: 'I can\'t do that one yet.' };
   }
 };
 // the daily map is played as level DAILY_I, one past the season's
@@ -10191,6 +10945,23 @@ class ChaseCamera {
       }
     }
     this.occl = lerp(this.occl, want, approach(want < this.occl ? 16 : 3.5, dt));
+  }
+  /** a finish celebration: from where the chase camera is, out to a slow swing round the
+   *  car, looking at the middle of the celebration (f: Celebrate.FRAME's d, h, ly) */
+  showcase(dt, car, f, t) {
+    const c = car.rPos || car.pos;
+    if (!this.sc) {
+      const o = this._a.copy(this.pos).sub(c);
+      this.sc = { a: Math.atan2(o.x, o.z), d0: Math.max(4, Math.hypot(o.x, o.z)), h0: o.y, ly0: this.look.y - c.y, fov0: this.cam.fov };
+    }
+    const S = this.sc, e = 1 - Math.exp(-t * 2.4), a = S.a + 0.5 * t * e;
+    const d = lerp(S.d0, f.d, e), h = lerp(S.h0, f.h, e), ly = lerp(S.ly0, f.ly, e);
+    this.pos.set(c.x + Math.sin(a) * d, c.y + h, c.z + Math.cos(a) * d);
+    this.look.set(c.x, c.y + ly, c.z);
+    const fov = lerp(S.fov0, 58, e);
+    if (Math.abs(this.cam.fov - fov) > 0.05) { this.cam.fov = fov; this.cam.updateProjectionMatrix(); }
+    this.fov = fov;
+    this.apply();
   }
   orbit(target, time) {
     const r = 19;
@@ -11947,7 +12718,7 @@ const Tracks = {
     else if (a === 'edit') this.edit(t);
     else if (a === 'board') this.board(t, card.querySelector('.tkBoard'));
     else if (a === 'del') {
-      if (!confirm('Delete "' + t.name + '"? Its leaderboard goes too, and this can\'t be undone.')) return;
+      if (!(await UI.ask('"' + t.name + '" and its leaderboard will be gone for good. This can\'t be undone.', { title: 'Delete this track?', ok: 'Delete', danger: true }))) return;
       try {
         const r = await Cloud.rpc('delete_track', { p_id: t.id });
         if (!r || !r.ok) { UI.toast((r && r.error) || 'Couldn\'t delete it.'); return; }
@@ -12023,7 +12794,7 @@ const Tracks = {
     $('bdMsg').textContent = '';
     this.sideNow = 'pieces';
     this.ai = { dials: null, seed: 0, name: '', auto: '' };
-    $('aiMsg').textContent = ''; $('aiMsg').className = 'aiMsg';
+    this.chat = []; this.aiSetOpen = false;
     this.showBuilder();
   },
   stamp() { const d = this.draft; return JSON.stringify([d.name, d.pub, d.pieces]); },
@@ -12264,7 +13035,7 @@ const Tracks = {
     // a road nobody has driven to the finish yet saves as private
     const driven = this.driven(), pub = d.pub && driven;
     const same = !!this.origNorm && JSON.stringify(d.pieces) === this.origNorm;
-    if (d.id && !same && !confirm('You changed the road, so this track\'s leaderboard starts again from zero. Save it?')) return;
+    if (d.id && !same && !(await UI.ask('You changed the road, so this track\'s leaderboard starts again from zero.', { title: 'Save the new road?', ok: 'Save it' }))) return;
     this.busy = true;
     $('bdSave').disabled = true;
     $('bdMsg').textContent = 'Saving…';
@@ -12296,51 +13067,82 @@ const Tracks = {
       this.renderBuilder();
     }
   },
-  leaveBuilder() {
-    if (this.draft && this.stamp() !== this.orig && !confirm('Leave the builder without saving your changes?')) return;
+  async leaveBuilder() {
+    if (this.draft && this.stamp() !== this.orig &&
+      !(await UI.ask('Your changes to this track aren\'t saved yet.', { title: 'Leave without saving?', ok: 'Leave', cancel: 'Keep building', danger: true }))) return;
     this.draft = null;
     $('bdIO').hidden = true;
     this.open();
   },
-  /* ------------------------------------------------- designing with AI */
+  /* ------------------------------------------------- the track AI: designing and changing a track by chat */
   IDEAS: ['A long icy mountain road with big jumps', 'Short and fast with speed strips', 'Twisty hairpins, no jumps', 'A bumpy desert rally',
-    'A wide banked oval, rocket fast', 'Insane: everything at once'],
-  /** the left column: 'pieces' (the hand tools) or 'ai' (describe it) */
+    'Downhill with big drops and dips', 'Insane: everything at once'],
+  EDITS: ['Add a dip after the second turn', 'Make the last turn a hairpin', 'Add a big jump here', 'More hills', 'Make the road wider',
+    'Mirror the track', 'Make it longer', 'How high does it go?'],
+  /** a fresh track (just its first straight): what's said is a description; after that, changes */
+  designed() { const P = this.draft && this.draft.pieces; return !!P && !(P.length === 1 && P[0][0] === 'S'); },
+  /** the left column: 'pieces' (the hand tools) or 'ai' (the chat) */
   side(v) {
     this.sideNow = v;
     $('bdSidePieces').hidden = v !== 'pieces';
     $('bdSideAI').hidden = v !== 'ai';
     document.querySelectorAll('#bdSide .tab').forEach((b) => b.classList.toggle('on', b.dataset.side === v));
     if (v === 'ai') {
+      if (!this.chat || !this.chat.length) this.greet();
       this.renderAI();
-      if (!this.ai || !this.ai.dials) setTimeout(() => $('aiText').focus(), 30);
+      setTimeout(() => $('aiText').focus(), 30);
     }
   },
-  renderAI() {
-    const A = this.ai || {}, D = A.dials, E = escapeHtml;
-    $('aiIdeas').innerHTML = this.IDEAS.map((t) => '<button class="aiIdea" type="button">' + E(t) + '</button>').join('');
-    $('aiGo').disabled = !!this.aiBusy;
-    $('aiAgain').disabled = !D || !!this.aiBusy;
-    $('aiDials').hidden = !D;
-    if (!D) return;
-    const seg = (k, names, two) => '<div class="aiSeg' + (two ? ' two' : '') + '">' + names.map((n, v) => '<button type="button" data-d="' + k + '" data-v="' + v + '"' +
-      ((D[k] || 0) === v ? ' class="on"' : '') + '>' + E(n) + '</button>').join('') + '</div>';
-    $('aiDials').innerHTML = '<h4>What AI went for <small>click to change</small></h4>' +
-      TrackGen.DIALS.map(([k, lab, names]) => '<div class="aiDial"><span>' + E(lab) + '</span>' + seg(k, names) + '</div>').join('') +
-      '<div class="aiDial"><span>Bottlenecks</span>' + seg('squeeze', ['No', 'Yes'], true) + '</div>' +
-      '<div class="aiDial"><span>Open areas</span>' + seg('open', ['No', 'Yes'], true) + '</div>';
+  greet() {
+    this.chat = [];
+    this.say('ai', this.designed()
+      ? 'I know this track. ' + escapeHtml(TrackChat.describe(this.draft.pieces)) + ' Ask me for any change, like <b>"add a dip after the second turn"</b> or ' +
+        '<b>"make the last jump bigger"</b>. Click a piece in the list and say <b>"here"</b> to mean that spot.'
+      : 'Tell me the track you want, like <b>"a long icy mountain road with big jumps"</b>, and I\'ll build it. Then ask me for changes as you go.');
   },
-  /** the browser's own helper reads the words into dials, when it has one ready (null otherwise; never downloads anything) */
+  say(who, html) {
+    (this.chat = this.chat || []).push({ who, html });
+    if (this.chat.length > 60) this.chat.shift();
+    this.renderChat();
+  },
+  renderChat() {
+    const el = $('aiChat');
+    if (!el) return;
+    el.innerHTML = (this.chat || []).map((m) => '<div class="aiMsg ' + (m.who === 'me' ? 'me' : 'ai') + '">' + m.html + '</div>').join('') +
+      (this.aiBusy ? '<div class="aiMsg ai busy">Working on it</div>' : '');
+    el.scrollTop = el.scrollHeight;
+  },
+  renderAI() {
+    const A = this.ai || {}, D = A.dials, E = escapeHtml, on = this.designed();
+    $('aiIdeas').innerHTML = (on ? this.EDITS : this.IDEAS).map((t) => '<button class="aiIdea" type="button">' + E(t) + '</button>').join('');
+    $('aiText').placeholder = on ? 'Ask for a change: "add a dip after the second turn"' : 'A long icy mountain road with big jumps and tight hairpins';
+    $('aiGo').disabled = !!this.aiBusy;
+    $('aiAgain').hidden = !D;
+    $('aiAgain').disabled = !D || !!this.aiBusy;
+    $('aiSetBtn').hidden = !D;
+    $('aiSetBtn').classList.toggle('on', !!this.aiSetOpen);
+    $('aiDials').hidden = !D || !this.aiSetOpen;
+    this.renderChat();
+    if (!D) return;
+    const seg = (k, names) => '<div class="aiSeg" style="grid-template-columns:repeat(' + names.length + ',minmax(0,1fr))">' + names.map((n, v) =>
+      '<button type="button" data-d="' + k + '" data-v="' + v + '"' + ((D[k] || 0) === v ? ' class="on"' : '') + '>' + E(n) + '</button>').join('') + '</div>';
+    $('aiDials').innerHTML = '<h4>The design <small>click to change (makes a new version)</small></h4>' +
+      TrackGen.DIALS.map(([k, lab, names]) => '<div class="aiDial"><span>' + E(lab) + '</span>' + seg(k, names) + '</div>').join('') +
+      '<div class="aiDial"><span>Bottlenecks</span>' + seg('squeeze', ['No', 'Yes']) + '</div>' +
+      '<div class="aiDial"><span>Open areas</span>' + seg('open', ['No', 'Yes']) + '</div>';
+  },
+  /** the browser's own helper reads a description into dials, when it has one ready (null otherwise; never downloads anything) */
   async aiRead(text) {
-    if (!Coach.api() || Coach.api() !== 'new' || (await Coach.availability()) !== 'available') return null;
+    if (Coach.api() !== 'new' || (await Coach.availability()) !== 'available') return null;
     const props = { name: { type: 'string' } }, B = TrackGen.BASE;
-    for (const [k] of TrackGen.DIALS) props[k] = { type: 'integer', minimum: 0, maximum: 3 };
+    for (const [k, , names] of TrackGen.DIALS) props[k] = { type: 'integer', minimum: 0, maximum: names.length - 1 };
     props.squeeze = { type: 'integer', minimum: 0, maximum: 1 };
     props.open = { type: 'integer', minimum: 0, maximum: 1 };
     const schema = { type: 'object', properties: props, required: Object.keys(props) };
     const sys = 'You turn a player\'s description of a race track into settings for the track generator of the racing game aiPolytrack. ' +
       'Each setting is a whole number: ' + TrackGen.DIALS.map(([k, l, n]) => k + ' (' + l.toLowerCase() + ': ' + n.map((x, i) => i + ' = ' + x.toLowerCase()).join(', ') + ')').join('; ') +
-      '; squeeze (1 = narrow bottlenecks, 0 = none); open (1 = wide open areas, 0 = none). For anything the player did not ask about, use ' +
+      '; squeeze (1 = narrow bottlenecks, 0 = none); open (1 = wide open areas, 0 = none). Hills, climbs, drops, dips, valleys, inclines and ' +
+      'declines all mean height: give hills 2 or 3 for them. For anything the player did not ask about, use ' +
       Object.keys(props).filter((k) => k !== 'name').map((k) => k + ' ' + (B[k] || 0)).join(', ') + '. ' +
       'name: a short, cool name for the track, 2 or 3 words, letters and spaces only. Answer with the JSON only.';
     const s = await self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: sys }],
@@ -12352,43 +13154,143 @@ const Tracks = {
       return o && typeof o === 'object' ? o : null;
     } finally { try { s.destroy(); } catch (e) { /* gone already */ } }
   },
-  /** design from the words (again: another version of the same) */
-  async aiDesign(again) {
-    if (this.aiBusy || !this.draft) return;
-    const msg = $('aiMsg');
-    if (!again) {
-      const text = $('aiText').value.trim();
-      if (!text) { msg.className = 'aiMsg err'; msg.textContent = 'Say what kind of track you want, or pick one of the ideas.'; return; }
-      this.aiBusy = true; this.renderAI();
-      msg.className = 'aiMsg busy'; msg.textContent = 'Reading what you want';
-      const r = TrackGen.read(text), D = Object.assign({}, r.dials);
-      let name = r.name;
-      let smart = null;
-      try { smart = await this.aiRead(text); } catch (e) { smart = null; }
-      if (smart) {
-        // the player's own words win; the helper fills in the rest
-        for (const [k] of TrackGen.DIALS) if (!r.said.has(k) && Number.isInteger(smart[k])) D[k] = clamp(smart[k], 0, 3);
-        for (const k of ['squeeze', 'open']) if (!r.said.has(k) && Number.isInteger(smart[k])) D[k] = clamp(smart[k], 0, 1);
-        const nm = TrackGen.cleanName(smart.name);
-        if (!name && nm && !Coach.BANNED.test(nm) && !(typeof Coach.badWord === 'function' && Coach.badWord(nm))) name = nm;
-      }
-      this.ai = Object.assign(this.ai || {}, { text, dials: D, seed: (Math.random() * 2147483647) >>> 0, name });
-    } else {
-      this.ai.seed = (this.ai.seed + 104729) >>> 0;
+  /** the browser's helper turns a change TrackChat didn't follow into its steps: { ops, reply } (null when there's no helper) */
+  async aiModel(text) {
+    if (Coach.api() !== 'new' || (await Coach.availability()) !== 'available') return null;
+    const P = this.draft.pieces;
+    const kinds = ['S', 'T', 'B', 'X', 'C', 'R', 'J', 'N', 'W', 'up', 'down', 'hill', 'dip'];
+    const hows = ['tighter', 'wider', 'longer', 'shorter', 'bigger', 'smaller', 'steeper', 'icy', 'grippy', 'banked', 'flat', 'left', 'right',
+      'flip', 'hairpin', 'tabletop', 'wider road', 'narrower road', 'up', 'down'];
+    const schema = { type: 'object', required: ['reply', 'ops'], properties: { reply: { type: 'string' }, ops: { type: 'array', items: { type: 'object', required: ['op'],
+      properties: { op: { type: 'string', enum: ['add', 'remove', 'change', 'replace', 'move', 'more', 'fewer', 'none', 'mirror', 'answer'] },
+        kind: { type: 'string', enum: kinds.concat(['']) }, piece: { type: 'integer' }, after: { type: 'integer' }, how: { type: 'string', enum: hows.concat(['']) },
+        size: { type: 'string', enum: ['small', 'medium', 'big', 'huge', ''] }, dir: { type: 'string', enum: ['left', 'right', ''] } } } } } };
+    const sys = 'You change race tracks in the track builder of the racing game aiPolytrack. You are its track AI; never name the company, model ' +
+      'or technology behind you. The track\'s pieces, in order:\n' + P.map((p, i) => (i + 1) + '. ' + TrackKit.label(p)).join('\n') +
+      (this.sel >= 0 ? '\nThe player has piece ' + (this.sel + 1) + ' selected (that is "here").' : '') +
+      '\nTurn what the player asks into steps: {op:"add", kind, after: the piece number it goes after (0 = the very start), size, dir}; ' +
+      '{op:"remove", piece}; {op:"change", piece, how}; {op:"replace", piece, kind, size}; {op:"move", piece, after}; {op:"more", kind}; ' +
+      '{op:"fewer", kind}; {op:"none", kind}; {op:"mirror"}; {op:"answer"} for a question (answer it in reply, from the list). ' +
+      'kind: S straight, T turn, B speed strip, X super strip, C crest, R rollers, J jump, N bottleneck, W wide area, up a climb, down a drop, ' +
+      'hill (up and over), dip (down and back up). Only use piece numbers from the list. reply: one short friendly sentence. Answer with the JSON only.';
+    const s = await self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: sys }],
+      expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] });
+    let o;
+    try {
+      const out = await Promise.race([s.prompt(String(text).slice(0, 300), { responseConstraint: schema }),
+        new Promise((res, no) => setTimeout(() => no(new Error('slow')), 15000))]);
+      o = JSON.parse(String(out).replace(/^\s*```(?:json)?|```\s*$/g, ''));
+    } finally { try { s.destroy(); } catch (e) { /* gone already */ } }
+    if (!o || typeof o !== 'object') return null;
+    const ops = [], SZ = { small: 0, medium: 1, big: 2, huge: 3 };
+    for (const x of (Array.isArray(o.ops) ? o.ops : []).slice(0, 4)) {
+      const i = Number.isInteger(x.piece) ? x.piece - 1 : -1, size = x.size in SZ ? SZ[x.size] : 1;
+      if (x.op === 'add' && kinds.includes(x.kind)) {
+        const at = Number.isInteger(x.after) ? clamp(x.after, 0, P.length) : P.length;
+        ops.push({ op: 'add', kind: x.kind, at, where: at === P.length ? 'at the end' : at ? 'after piece ' + at : 'at the start', size, dir: x.dir || '' });
+      } else if (x.op === 'remove' && P[i]) ops.push({ op: 'remove', index: i });
+      else if (x.op === 'change' && P[i] && hows.includes(x.how)) ops.push({ op: 'change', index: i, how: x.how });
+      else if (x.op === 'replace' && P[i] && kinds.includes(x.kind)) ops.push({ op: 'replace', index: i, kind: x.kind, size });
+      else if (x.op === 'move' && P[i] && Number.isInteger(x.after)) ops.push({ op: 'move', index: i, at: clamp(x.after, 0, P.length) });
+      else if (/^(more|fewer|none)$/.test(x.op) && kinds.includes(x.kind)) ops.push({ op: x.op, kind: x.kind });
+      else if (x.op === 'mirror') ops.push({ op: 'all', how: 'mirror' });
+      else if (x.op === 'answer') ops.push({ op: 'answer', q: text });
     }
-    this.aiBuild();
+    const reply = String(o.reply || '').slice(0, 300);
+    return { ops, reply: Coach.BANNED.test(reply) ? '' : reply };
   },
-  /** build the track the dials describe, into the builder (Undo brings the old road back) */
-  aiBuild() {
-    const A = this.ai, msg = $('aiMsg');
-    if (!A || !A.dials || !this.draft) return;
+  /** what the player typed (or an idea they clicked) */
+  async aiSend(textIn) {
+    if (this.aiBusy || !this.draft) return;
+    const text = String(textIn !== undefined ? textIn : $('aiText').value).trim();
+    if (!text) { $('aiText').focus(); return; }
+    $('aiText').value = '';
+    this.say('me', escapeHtml(text));
+    if (!this.designed()) { await this.aiDesign(text); return; }
+    // one request at a time, in order ("add a jump after turn 2, then make it icy")
+    const parts = text.split(/(?:\.\s+|;\s*|,?\s+and then\s+|,\s*then\s+|\s+then\s+|,\s+also\s+)/i).map((x) => x.trim()).filter(Boolean);
+    for (const part of parts) if (!(await this.aiStep(part))) break;
+    this.renderAI();
+  },
+  /** one request: true when it went through */
+  async aiStep(text) {
+    let r = TrackChat.parse(text, this.draft.pieces, this.sel), reply = '';
+    if (r.unknown) {
+      this.aiBusy = true; this.renderAI();
+      let m = null;
+      try { m = await this.aiModel(text); } catch (e) { m = null; }
+      this.aiBusy = false;
+      if (m && m.ops.length) { r = { ops: m.ops }; reply = m.reply; }
+      else if (m && m.reply) { this.say('ai', escapeHtml(m.reply)); return true; }
+    }
+    if (r.ask) { this.say('ai', escapeHtml(r.ask)); return false; }
+    if (r.unknown) {
+      this.say('ai', 'I didn\'t catch that one. Try <b>"add a jump after piece 4"</b>, <b>"make the second turn tighter"</b>, <b>"add a dip in the middle"</b>, ' +
+        '<b>"remove the last hill"</b>, <b>"more hills"</b>, <b>"mirror it"</b>, <b>"make me a new track: ..."</b> or <b>"undo"</b>.');
+      return false;
+    }
+    for (const op of r.ops) {
+      if (op.op === 'undo' || op.op === 'redo') {
+        if (!(op.op === 'undo' ? this.past : this.future).length) { this.say('ai', 'There\'s nothing to ' + op.op + '.'); return false; }
+        this[op.op]();
+        this.say('ai', op.op === 'undo' ? 'Undone.' : 'Done again.');
+        continue;
+      }
+      if (op.op === 'answer') { this.say('ai', escapeHtml(reply || TrackChat.answer(op.q, this.draft.pieces))); continue; }
+      if (op.op === 'design') { await this.aiDesign(op.text); continue; }
+      if (op.op === 'tweak') {
+        const D = Object.assign({}, (this.ai && this.ai.dials) || TrackGen.BASE);
+        D[op.dial] = clamp((D[op.dial] || 0) + op.by, 0, 3);
+        this.ai = Object.assign(this.ai || {}, { dials: D, seed: (this.ai && this.ai.seed) || ((Math.random() * 2147483647) >>> 0) });
+        const what = op.dial === 'turns' ? (op.by < 0 ? 'less twisty' : 'twistier') : op.by > 0 ? 'harder' : 'easier';
+        this.say('ai', 'That changes the whole design, so here\'s a new version that\'s ' + what + '. Undo brings yours back.');
+        await this.aiBuild(true);
+        continue;
+      }
+      const res = TrackChat.apply(op, this.draft.pieces, this.sel, { dials: this.ai && this.ai.dials, seed: this.ai && this.ai.seed });
+      if (res.error) { this.say('ai', escapeHtml(res.error)); return false; }
+      this.remember();
+      this.draft.pieces = res.P;
+      this.sel = res.sel;
+      this.renderBuilder();
+      this.say('ai', escapeHtml(reply || res.say));
+      reply = '';
+    }
+    return true;
+  },
+  /** a new track from a description (Undo brings the old road back) */
+  async aiDesign(text) {
     this.aiBusy = true; this.renderAI();
-    msg.className = 'aiMsg busy'; msg.textContent = 'Designing your track';
-    setTimeout(() => {
+    const r = TrackGen.read(text), D = Object.assign({}, r.dials);
+    let name = r.name, smart = null;
+    try { smart = await this.aiRead(text); } catch (e) { smart = null; }
+    if (smart) {
+      // the player's own words win; the helper fills in the rest
+      for (const [k, , names] of TrackGen.DIALS) if (!r.said.has(k) && Number.isInteger(smart[k])) D[k] = clamp(smart[k], 0, names.length - 1);
+      for (const k of ['squeeze', 'open']) if (!r.said.has(k) && Number.isInteger(smart[k])) D[k] = clamp(smart[k], 0, 1);
+      const nm = TrackGen.cleanName(smart.name);
+      if (!name && nm && !Coach.BANNED.test(nm)) name = nm;
+    }
+    this.ai = Object.assign(this.ai || {}, { text, dials: D, seed: (Math.random() * 2147483647) >>> 0, name });
+    this.aiBusy = false;
+    await this.aiBuild(false);
+  },
+  aiAgain() {
+    if (!this.ai || !this.ai.dials || this.aiBusy) return;
+    this.ai.seed = (this.ai.seed + 104729) >>> 0;
+    this.say('me', 'Another version');
+    this.aiBuild(false);
+  },
+  /** build the track the dials describe, into the builder */
+  aiBuild(quiet) {
+    const A = this.ai;
+    if (!A || !A.dials || !this.draft) return Promise.resolve(false);
+    this.aiBusy = true; this.renderAI();
+    return new Promise((done) => setTimeout(() => {
       let d;
       try { d = TrackGen.design(A.dials, A.seed); } catch (e) { d = { ok: false }; }
       this.aiBusy = false;
-      if (!d.ok) { msg.className = 'aiMsg err'; msg.textContent = 'That much doesn\'t fit in one track. Ask for a little less, or make it shorter.'; this.renderAI(); return; }
+      if (!d.ok) { this.say('ai', 'That much doesn\'t fit in one track. Ask for a little less, or make it shorter.'); this.renderAI(); done(false); return; }
       this.remember();
       this.draft.pieces = d.pieces.map((p) => p.slice());
       this.sel = this.draft.pieces.length - 1;
@@ -12397,17 +13299,18 @@ const Tracks = {
       let nm = cur;
       if (!cur || cur === A.auto) { nm = A.name || TrackGen.nameFor(d.dials, d.seed); $('bdName').value = nm; this.draft.name = nm; A.auto = nm; }
       const less = d.dials !== A.dials ? ' It had to be a little ' + (d.dials.turns < A.dials.turns ? 'less twisty' : d.dials.width < A.dials.width ? 'narrower' : 'shorter') + ' to fit.' : '';
-      msg.className = 'aiMsg';
-      msg.innerHTML = 'Made <b>' + escapeHtml(nm || 'your track') + '</b>: ' + (d.len / 1000).toFixed(2) + ' km, ' + d.pieces.length + ' pieces.' + escapeHtml(less) +
-        ' Test drive it, change any piece, then save.';
       this.renderBuilder();
+      this.say('ai', quiet ? escapeHtml(TrackChat.describe(this.draft.pieces))
+        : 'Made <b>' + escapeHtml(nm || 'your track') + '</b>. ' + escapeHtml(TrackChat.describe(this.draft.pieces) + less) +
+          ' Test drive it, or ask me for changes, like <b>"add a dip after the second turn"</b>.');
       this.renderAI();
-      Sound.click && Sound.click();
-    }, 40);
+      done(true);
+    }, 40));
   },
   onAIClick(ev) {
     const idea = ev.target.closest('.aiIdea');
-    if (idea) { $('aiText').value = idea.textContent; this.aiDesign(false); return; }
+    if (idea) { this.aiSend(idea.textContent); return; }
+    if (ev.target.closest('#aiSetBtn')) { this.aiSetOpen = !this.aiSetOpen; this.renderAI(); return; }
     const b = ev.target.closest('button[data-d]');
     if (b && this.ai && this.ai.dials && !this.aiBusy) {
       const k = b.dataset.d, v = +b.dataset.v;
@@ -12415,7 +13318,7 @@ const Tracks = {
       this.ai.dials = Object.assign({}, this.ai.dials, { [k]: v });
       if (k === 'size') delete this.ai.dials.km;
       if (k === 'jumps') delete this.ai.dials.nJ;
-      this.aiBuild();
+      this.aiBuild(false);
     }
   },
 
@@ -12489,10 +13392,10 @@ const Tracks = {
     $('bdIOGo').addEventListener('click', () => this.ioGo());
     $('bdIOClose').addEventListener('click', () => { $('bdIO').hidden = true; });
     $('bdSide').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-side]'); if (b) this.side(b.dataset.side); });
-    $('aiGo').addEventListener('click', () => this.aiDesign(false));
-    $('aiAgain').addEventListener('click', () => this.aiDesign(true));
+    $('aiGo').addEventListener('click', () => this.aiSend());
+    $('aiAgain').addEventListener('click', () => this.aiAgain());
     $('bdSideAI').addEventListener('click', (ev) => this.onAIClick(ev));
-    $('aiText').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.aiDesign(false); } });
+    $('aiText').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.aiSend(); } });
     $('bdList').addEventListener('click', (ev) => {
       const li = ev.target.closest('li[data-k]');
       if (li) this.select(+li.dataset.k);
@@ -13488,8 +14391,6 @@ const Shop = {
     const m = this.MONEY.find((x) => x[0] === code), link = this.money[code];
     if (!m || !link || !Cloud.user) return;
     if (!this.allowed(m[2])) { UI.toast('That would go over today\'s spending limit of $' + this.limit + '. Try again tomorrow.'); return; }
-    const what = code === 'podium' ? (PodiumPass.active() ? '14 more days of your Podium Pass' : 'the Podium Pass (14 days of 1 credit a minute for every season map you\'re top 3 on)') : m[1];
-    if (!confirm('Buy ' + what + ' for $' + m[2] + '? You pay on Stripe\'s secure page and come straight back.')) return;
     location.href = link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid + '--' + code);
   },
   async load() {
@@ -13554,7 +14455,47 @@ const Shop = {
     try { q = new URLSearchParams(location.search).get('purchase'); } catch (e) { /* no query */ }
     if (!q) return;
     try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* fine */ }
-    setTimeout(() => UI.toast(q === 'done' ? 'Thanks! Your credits arrive in a moment.' : 'No payment was made.'), 1500);
+    setTimeout(() => UI.toast(q === 'done' ? 'Thanks! Your purchase arrives in a moment.' : 'No payment was made.'), 1500);
+    // (the webhook may have been quicker than the way back, or a little slower)
+    if (q === 'done') [5000, 15000, 40000].forEach((ms) => setTimeout(() => Gifts.check(true), ms));
+  }
+};
+
+/**
+ * A thank-you after a purchase: the server adds a driver level for every
+ * dollar (grant_purchase, kind 'gift_levels'), and nothing says so before.
+ * Shown once per gift, the moment it arrives or the next time the game is
+ * on the menu (a gift that came while the player was away still shows).
+ */
+const Gifts = {
+  busy: false, at: 0,
+  async check(force) {
+    if (!Cloud.on || !Cloud.user || this.busy) return;
+    if (!force && Date.now() - this.at < 30000) return;
+    if (Game.running || !$('askBox').hidden) { setTimeout(() => this.check(true), 20000); return; }   // not mid-race or over a question
+    this.at = Date.now();
+    this.busy = true;
+    try {
+      const key = 'giftSeen:' + Cloud.user.uid, seen = Number(Prefs.get(key, 0)) || 0;
+      const rows = (await Cloud.q(Cloud.sb.from('credit_events').select('id, note').eq('uid', Cloud.user.uid).eq('kind', 'gift_levels')
+        .gt('id', seen).gte('created_at', new Date(Date.now() - 14 * 864e5).toISOString()).order('id'))) || [];
+      if (rows.length) {
+        Prefs.set(key, rows[rows.length - 1].id);
+        const n = rows.reduce((a, r) => a + (Number(r.note) || 0), 0);
+        await Garage.load();
+        const lv = Garage.road && Garage.road.level;
+        Sound.creditWin();
+        const go = await UI.ask('', {
+          title: 'A thank-you from aiPolytrack',
+          html: 'Thanks for supporting the game! Here ' + (n === 1 ? 'is a free driver level' : 'are <b>' + n + ' free driver levels</b>') +
+            (lv ? ': you\'re now <b>level ' + lv + '</b>' : '') + '. Their rewards are waiting for you on the Driver Road.',
+          icon: '<span class="askGift"><b>+' + n + '</b><small>LEVEL' + (n === 1 ? '' : 'S') + '</small></span>',
+          ok: 'Open the Driver Road', cancel: 'Later', gift: true
+        });
+        if (go && !Game.running) Game.toGarage('road');
+      }
+    } catch (e) { /* the levels arrived regardless: only the note is missed */ }
+    this.busy = false;
   }
 };
 
@@ -13750,7 +14691,9 @@ const Garage = {
         if (Shop.link || Shop.link5) Shop.open();
         return;
       }
-      if (!confirm((now ? 'Buy it now' : 'Bid') + ' for ' + fmtCredits(amt) + ' credits?')) return;
+      const it = A.list.find((a) => a.id === id);
+      if (!(await UI.ask((now ? 'Buy ' : 'Bid on ') + (it ? it.name : 'this item') + ' for ◆ ' + fmtCredits(amt) + ' credits.' +
+        (now ? '' : ' Your credits are held until someone bids more.'), { title: now ? 'Buy it now?' : 'Place this bid?', ok: now ? 'Buy now' : 'Bid' }))) return;
       this.busy = true;
       try {
         const r = await Cloud.rpc('bid_auction', { p_id: id, p_amount: amt });
@@ -13923,7 +14866,8 @@ const Garage = {
       if (Shop.link || Shop.link5) Shop.open();
       return;
     }
-    if (!confirm('Skip ' + n + ' Race Pass tier' + (n > 1 ? 's' : '') + ' for ' + fmtCredits(cost) + ' credits?')) return;
+    if (!(await UI.ask('That costs ◆ ' + fmtCredits(cost) + ' credits. The rewards wait for you to collect them.',
+      { title: 'Skip ' + n + ' Race Pass tier' + (n > 1 ? 's' : '') + '?', ok: 'Skip' }))) return;
     this.busy = true;
     try { const r = await Cloud.rpc('buy_tiers', { p_n: n }); Records.credits = r.balance; UI.who(Cloud.name(), Records.credits); this.passToast(r.got); }
     catch (e) { UI.toast(Cloud.errText(e)); }
@@ -14003,9 +14947,10 @@ const Garage = {
   /** your finish celebration, at the line */
   celebrate() {
     const id = (Look.own.cel || '').replace(/^cel:/, '');
-    if (!id || !Game.car || !Game.car.mesh) return;
+    if (!id || !Game.car || !Game.car.mesh || !CELEBRATIONS[id]) return null;
     const m = Game.car.mesh.userData.mats;
-    Celebrate.play(id, Game.car.mesh.position.clone(), m.body.color, m.dark.color);
+    Celebrate.play(id, Game.car.mesh.position.clone(), m.body.color, m.dark.color, Game.car.heading);
+    return Celebrate.FRAME[id] || null;
   },
   async equip(slot, id) {
     if (this.busy) return;
@@ -14028,7 +14973,7 @@ const Garage = {
     const have = this.owned(id);
     if (have <= 0) return;
     const worn = Object.values(Look.own).includes(id);
-    if (n >= have && worn && !confirm('Sell your last ' + it.name + '? It comes off your car or profile.')) return;
+    if (n >= have && worn && !(await UI.ask('It comes off your car or profile.', { title: 'Sell your last ' + it.name + '?', ok: 'Sell', danger: true }))) return;
     this.busy = true;
     try {
       const r = await Cloud.rpc('sell_item', { p_item: id, p_count: n });
@@ -14175,7 +15120,7 @@ const Garage = {
       if (Shop.link || Shop.link5) Shop.open();
       return;
     }
-    if (!confirm('Buy ' + it.name + ' for ' + fmtCredits(price) + ' credits?')) return;
+    if (!(await UI.ask('It costs ◆ ' + fmtCredits(price) + ' credits.', { title: 'Buy ' + it.name + '?', ok: 'Buy' }))) return;
     this.busy = true;
     try {
       const r = await Cloud.rpc('buy_item', { p_item: id });
@@ -14252,7 +15197,8 @@ const Garage = {
       if (Shop.link || Shop.link5) Shop.open();
       return;
     }
-    if (!confirm('Get Pass+ for this season for ' + fmtCredits(P.price) + ' credits?')) return;
+    if (!(await UI.ask('Pass+ for this season costs ◆ ' + fmtCredits(P.price) + ' credits: a box every tier, plus the pass-only paints, titles and icons.',
+      { title: 'Get Pass+?', ok: 'Get Pass+' }))) return;
     this.busy = true;
     try {
       const r = await Cloud.rpc('buy_pass');
@@ -14933,7 +15879,7 @@ const WhatsNew = {
   // everyone who saw an earlier list sees it again
   SEASON: 3, EDITION: 3.7, KEY: 'whatsNew',
   ITEMS: [
-    ['build', 'Design a track with AI', 'In the track builder, describe the track you want ("a long icy road with big jumps") and AI builds it. Then change anything, test drive it and save.'],
+    ['build', 'Design a track with AI', 'In the track builder, describe the track you want ("a long icy road with big jumps") and AI builds it. Then chat with it to change things: "add a dip after the second turn", "make the last jump bigger".'],
     ['crown', 'Podium Pass', 'In the garage shop: for 14 days, 1 credit every minute for each season map you\'re top 3 on.'],
     ['gem', 'Only 100 of each', 'Every box and shop item now exists in at most 100 copies. When it\'s gone, it\'s gone.'],
     ['card', 'Auctions', 'Sell what you have and bid on what you want, in the garage. Your bid is held until someone beats it.'],
@@ -16126,7 +17072,7 @@ const Modes = {
       if (Shop.link || Shop.link5) Shop.open();
       return;
     }
-    if (!confirm('Put ' + fmtCredits(stake) + ' credits in today\'s pot? You can\'t take them back out.')) return;
+    if (!(await UI.ask('◆ ' + fmtCredits(stake) + ' credits go into today\'s pot. You can\'t take them back out.', { title: 'Enter the Pot map?', ok: 'Put them in' }))) return;
     try {
       const r = await Cloud.rpc('enter_pot', { p_stake: stake });
       Records.credits = r.balance; UI.who(Cloud.name(), Records.credits);
@@ -17256,7 +18202,7 @@ const Coach = {
       '\nSTREAKS: finishing at least one run every day (Pacific time) builds a streak: 25 credits a day of streak, up to 175 a day, and a free box every 7th day in a row. Missing a day starts it again. The streak shows on the daily challenge tile.' +
       '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 30 000 credits and 3 free boxes for $1, or 180 000 credits and 18 free boxes for $5, from the + Buy button.' +
       '\nLEVELS AND MODES: every player has a driver level (XP: 10 a finished run, 25 a personal best, 20 a streak day, 100 the daily challenge, up to 50 an Escape run); the Driver Road in the garage pays a reward every level, with exclusive titles, icons and Gold and Obsidian paint at levels 5 to 50. The Race tile on the menu has Knockout (7 ghosts, the slowest goes out after each map until one is left), Escape (one 25 km road, the same for everyone, with a storm chasing you; score is distance) and the Pot map (a new map each day: put in 100 to 5 000 credits to race it, and after midnight the fastest 40% share the pot, weighted by place and stake). Rival alerts: Coach tells the player when someone beats their time on any map. The Race Pass has 50 tiers and tiers can be skipped for 2 500 credits each. Exclusives only buyable with real money: Holo paint ($2), Gold Rush paint ($2) and the Podium Pass ($3: for 14 days it pays 1 credit every minute for each season map the player is top 3 on; buying it again adds 14 days).' +
-      '\nTRACK BUILDER: Tracks on the menu: build up to 3 tracks piece by piece, or press "Design with AI" and describe one in words (for example "a long icy road with big jumps"); it builds the track from real pieces, and the player can change any piece, test drive it and save it.' +
+      '\nTRACK BUILDER: Tracks on the menu: build up to 3 tracks piece by piece, or press "Design with AI" and describe one in words (for example "a long icy road with big jumps"); it builds the track from real pieces. Then the player can chat with the track AI to change it ("add a dip after the second turn", "make the last jump bigger", "more hills", "mirror it"), or change any piece by hand, test drive it and save it.' +
       '\nLIMITED ITEMS AND AUCTIONS: every box and shop item exists in at most 100 copies (the garage shows how many exist); when one is all owned, boxes give another of its kind and the shop shows it sold out. Selling an item back to the game frees a copy. Race Pass, Driver Road and exclusive items have no limit. Players trade in the garage\'s Auctions: list an item with a starting price, an optional buy-now price and 1 to 48 hours; bids hold the bidder\'s credits until outbid; a bid in the last 2 minutes adds 2 minutes; the best bid wins and the seller gets it less a 5% fee; no bids and the item comes back.' +
       '\nINVITES: "Invite friends" at the top of the menu gives a link; a friend who makes an account with it needs no invite code, and when they finish 10 runs both of you get a free box. After a run, "Challenge a friend" on the finish screen copies a link that puts a friend on that map against your ghost.';
   },
@@ -20366,6 +21312,45 @@ const UI = {
   },
 
 
+  /** The game's own yes/no box, in place of the browser's confirm(): resolves
+   *  true (yes) or false. o: { title, ok, cancel (null: no second button),
+   *  danger, gift, html (trusted markup instead of text), icon (markup) } */
+  ask(text, o) {
+    o = o || {};
+    const box = $('askBox');
+    if (this._askDone) this._askDone(false);             // one at a time: one still open is a no
+    $('askTitle').textContent = o.title || 'Are you sure?';
+    if (o.html) $('askText').innerHTML = o.html; else $('askText').textContent = text || '';
+    $('askYes').textContent = o.ok || 'OK';
+    $('askNo').textContent = o.cancel || 'Cancel';
+    $('askNo').hidden = o.cancel === null;
+    $('askIc').innerHTML = o.icon || '';
+    $('askIc').hidden = !o.icon;
+    box.className = 'askBox' + (o.danger ? ' danger' : '') + (o.gift ? ' gift' : '');
+    const back = document.activeElement;
+    box.hidden = false;
+    setTimeout(() => $(o.danger ? 'askNo' : 'askYes').focus(), 0);
+    return new Promise((res) => {
+      this._askDone = (v) => {
+        this._askDone = null;
+        box.hidden = true;
+        try { if (back && back.focus && document.contains(back)) back.focus(); } catch (e) { /* fine */ }
+        res(!!v);
+      };
+    });
+  },
+  wireAsk() {
+    $('askYes').addEventListener('click', () => this._askDone && this._askDone(true));
+    $('askNo').addEventListener('click', () => this._askDone && this._askDone(false));
+    $('askBox').addEventListener('pointerdown', (e) => { if (e.target === $('askBox') && this._askDone) this._askDone(false); });
+    // while it's open, its keys are its own (Esc: no, Enter: the focused button)
+    addEventListener('keydown', (e) => {
+      if ($('askBox').hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (this._askDone) this._askDone(false); }
+      else if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); if (this._askDone) this._askDone(document.activeElement !== $('askNo')); }
+      else if (e.key !== 'Tab') e.stopImmediatePropagation();
+    }, true);
+  },
   prompt(text) {
     const n = $('hPrompt');
     if (text) { n.textContent = text; n.classList.add('on'); } else n.classList.remove('on');
@@ -20685,6 +21670,7 @@ const UI = {
     Rivals.check();
     Shop.load();
     PodiumPass.load();
+    Gifts.check();
     Champion.render();
     Champion.load();
     $('overallLeaderKick').textContent = 'Season ' + SEASON + ' leader';
@@ -22094,7 +23080,7 @@ const RunHides = {
     }
   },
   async show() {
-    if (!confirm('Show your run to everyone again now? The days you paid for aren\'t given back.')) return;
+    if (!(await UI.ask('Everyone can see it again right away. The days you paid for aren\'t given back.', { title: 'Show your run again?', ok: 'Show it' }))) return;
     try {
       await Cloud.rpc('show_run', { p_course: this.id });
       this.map.delete(this.key(Cloud.user.uid, this.id));
@@ -22673,7 +23659,7 @@ const Game = {
       const msg = $('setResetMsg');
       const pass = $('setResetPass').value;
       if (!pass) { msg.textContent = 'Type your password to reset your scores.'; return; }
-      if (!confirm('Delete all your times and ghosts? This can\'t be undone.')) return;
+      if (!(await UI.ask('Every time and ghost you have goes, for good. This can\'t be undone.', { title: 'Delete all your times?', ok: 'Delete them', danger: true }))) return;
       $('bResetScores').disabled = true;
       msg.textContent = 'Working…';
       try {
@@ -22725,6 +23711,10 @@ const Game = {
     $('bResCourses').addEventListener('click', () => { if (Modes.mode) { Modes.open(); return; } if (this.practice) Practice.open(this.levelIndex); else if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toSelect(); });
     $('bPreview').addEventListener('click', () => Preview.open());
     $('bMulti').addEventListener('click', () => Modes.open());
+    UI.wireAsk();
+    const skipCel = (e) => { if (!this.celebrating || this.state !== 'result') return; e.preventDefault(); e.stopImmediatePropagation(); this.endCelebration(); };
+    addEventListener('pointerdown', skipCel, true);
+    addEventListener('keydown', (e) => { if (e.key !== 'Escape') skipCel(e); }, true);
     $('lvChip').addEventListener('click', () => { Morph.note($('lvChip')); this.toGarage('road'); });
     $('pdChip').addEventListener('click', () => { Morph.note($('pdChip')); this.toGarage('shop'); });
     $('bModesBack').addEventListener('click', () => this.toMenu());
@@ -23786,7 +24776,7 @@ const Game = {
     }
     Sound.stopEngine();
     Sound.finish(res.rank === 1);
-    Garage.celebrate();
+    const shot = Garage.celebrate();
 
     $('rKick').textContent = this.levelIndex === DAILY_I ? (res.rank === 1 ? 'Leading today’s daily' : 'Daily run')
       : res.rank === 1 ? 'Course record' : 'Course clear';
@@ -23825,10 +24815,25 @@ const Game = {
     $('bNext').textContent = 'Next course';
     if (Tracks.level && Tracks.level.pot && this.levelIndex === UTRACK_I) $('bResCourses').textContent = 'Race';
     Modes.afterResult(raceResult);
-    UI.show('result');
+    if (shot && !Morph.quiet()) this.holdResult(shot); else UI.show('result');
     UI.clock(this.time, true);
     this.awardCompletion();
     CoachAlerts.flush();                   // podium news, now that the run is over
+  },
+  /** the finish celebration gets the screen first, the camera swinging round it; the
+   *  result card waits until it's done (any key or click: at once) */
+  holdResult(shot) {
+    this.celebrating = { t: 0, D: shot.D || 3, f: shot };
+    this.chase.sc = null;
+    UI.show('hud');
+    $('celSkip').hidden = false;
+  },
+  endCelebration() {
+    if (!this.celebrating) return;
+    this.celebrating = null;
+    this.chase.sc = null;
+    $('celSkip').hidden = true;
+    if (this.state === 'result') UI.show('result');
   },
   /** a track builder test drive's finish: shown, kept as the next test's ghost, saved nowhere */
   finishTest() {
@@ -24556,8 +25561,10 @@ const Game = {
     const driving = this.state === 'play';
     if (!driving && this.state !== 'spectate' && this.state !== 'section' && Input.tapped('Escape')) {
       const f = document.activeElement;
-      if (f && (f.tagName === 'INPUT' || f.tagName === 'TEXTAREA')) f.blur(); else this.goBack();
+      if (this.celebrating) this.endCelebration();
+      else if (f && (f.tagName === 'INPUT' || f.tagName === 'TEXTAREA')) f.blur(); else this.goBack();
     }
+    if (this.celebrating && this.state !== 'result') { this.celebrating = null; this.chase.sc = null; $('celSkip').hidden = true; }
     if (driving) {
       this.stepPlay(dt);
       if (this.state === 'play') {
@@ -24584,8 +25591,13 @@ const Game = {
       }
     } else if (this.state === 'result') {
       // the car stays frozen on the line, exactly where the clock stopped;
-      // only the camera settles
-      this.chase.update(dt, this.car);
+      // only the camera moves (round the celebration, while there is one)
+      const c = this.celebrating;
+      if (c) {
+        c.t += dt;
+        this.chase.showcase(dt, this.car, c.f, c.t);
+        if (c.t >= c.D) this.endCelebration();
+      } else this.chase.update(dt, this.car);
     } else if (this.state === 'spectate') {
       this.stepSpectate(dt);
     } else if (this.state === 'section') {

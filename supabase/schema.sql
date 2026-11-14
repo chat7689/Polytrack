@@ -2278,11 +2278,13 @@ create table if not exists public.purchases (
 create index if not exists purchases_intent on public.purchases (payment_intent);
 alter table public.purchases add column if not exists boxes integer not null default 0;
 alter table public.purchases add column if not exists item text;
+alter table public.purchases add column if not exists xp integer not null default 0;   -- the thank-you levels' XP
 
 /** a paid checkout: its credits, once (the webhook only) */
 create or replace function public.grant_purchase(p_session text, p_uid text, p_amount integer, p_currency text, p_intent text) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare who uuid; n integer := 0; bx integer := 0; ref text := coalesce(p_uid, ''); code text; mi jsonb; got text := null; it text;
+  v_lvls integer; v_xp integer; v_lv integer; v_add integer := 0;
 begin
   if coalesce(p_session, '') = '' then return jsonb_build_object('ok', false, 'error', 'no session'); end if;
   -- "uid--code": one of the money-only items (_money_item), opened from its own Payment Link
@@ -2334,7 +2336,18 @@ begin
     -- (after the boxes, so the game that hears of it sees them too)
     insert into public.credit_events (uid, delta, kind, note) values (who, n, 'purchase', 'Stripe ' || p_session);
   end if;
-  return jsonb_build_object('ok', true, 'credits', n, 'boxes', bx, 'item', got, 'matched', who is not null);
+  -- a thank-you nobody is told about beforehand: one driver level for every
+  -- dollar paid (the game shows it once the purchase is through: 'gift_levels')
+  if who is not null and lower(coalesce(p_currency, '')) = 'usd' and coalesce(p_amount, 0) >= 100 then
+    v_lvls := least(p_amount / 100, 20);
+    select xp into v_xp from public.garage where uid = who;
+    v_lv := public._level(coalesce(v_xp, 0));
+    v_add := public._level_xp(v_lv + v_lvls) - public._level_xp(v_lv);   -- (progress into the level is kept)
+    perform public._add_xp(who, v_add);
+    update public.purchases set xp = v_add where session_id = p_session;
+    insert into public.credit_events (uid, delta, kind, note) values (who, 0, 'gift_levels', v_lvls::text);
+  end if;
+  return jsonb_build_object('ok', true, 'credits', n, 'boxes', bx, 'item', got, 'matched', who is not null, 'levels', coalesce(v_lvls, 0));
 end $$;
 
 /** a refunded payment: its credits come back off (the webhook only) */
@@ -2347,6 +2360,10 @@ begin
   update public.purchases set refunded = true where id = r.id;
   if r.uid is not null and r.credits > 0 then
     insert into public.credit_events (uid, delta, kind, note) values (r.uid, -r.credits, 'refund', 'Stripe refund ' || r.session_id);
+  end if;
+  -- the thank-you levels go too
+  if r.uid is not null and coalesce(r.xp, 0) > 0 then
+    update public.garage set xp = greatest(xp - r.xp, 0) where uid = r.uid;
   end if;
   -- the boxes too, as many as are still unopened
   if r.uid is not null and r.boxes > 0 then
