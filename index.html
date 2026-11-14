@@ -19954,7 +19954,9 @@ const Morph = {
     if (!to || this.quiet()) return;
     if (from && from.el === to) return;
     this.finish();                                       // a morph still running ends at once
-    const src = origin || from;
+    // the box on screen now turns into the next one; a pressed tile is only
+    // where it grows from when no box is showing (from a race, say)
+    const src = from || origin;
     if (!src) {
       to.classList.remove('fadeIn'); void to.offsetWidth; to.classList.add('fadeIn');
       clearTimeout(this.safeFade);
@@ -19965,7 +19967,7 @@ const Morph = {
     g.className = 'morphGhost';
     L.insertBefore(g, to);                               // under the new panel, over its scrim
     to.classList.add('morphIn');
-    const a = src.rect, t0 = performance.now(), D = origin ? 460 : 420;
+    const a = src.rect, t0 = performance.now(), D = src === origin ? 460 : 420;
     to.style.setProperty('--mk', '0');
     const r0 = parseFloat(src.radius) || 8, r1 = parseFloat(getComputedStyle(to).borderTopLeftRadius) || 8;
     const c0 = (String(src.bg).match(/\d+(\.\d+)?/g) || [18, 20, 23]).slice(0, 3).map(Number), c1 = [18, 20, 23];
