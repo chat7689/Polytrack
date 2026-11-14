@@ -1222,6 +1222,15 @@ begin
     if not found then
       return jsonb_build_object('ok', false, 'error', 'unpaid', 'message', 'Each daily attempt costs 1 credit: start it from the Daily screen.');
     end if;
+  elsif p_course ~ '^p[0-9]{8}$' then
+    -- the Pot map: today's only, and only with a stake in today's pot
+    if substr(p_course, 2) <> public._daily_today() then
+      return jsonb_build_object('ok', false, 'error', 'closed', 'message', 'That Pot map has closed.');
+    end if;
+    if not exists (select 1 from public.pot_entries where day = substr(p_course, 2) and uid = p.id) then
+      return jsonb_build_object('ok', false, 'error', 'unpaid', 'message', 'Put credits in today''s pot to race the Pot map.');
+    end if;
+    perform public._pot_ensure(substr(p_course, 2));
   elsif p_course ~ '^u[0-9]{1,15}$' and not exists (select 1 from public.user_tracks
           where id = substr(p_course, 2)::bigint and (is_public or uid = p.id)) then
     return jsonb_build_object('ok', false, 'error', 'course', 'message', 'That track is private or was deleted.');
@@ -1260,7 +1269,7 @@ declare p public.profiles := public._player(); r public.runs; el numeric; fl int
   box_runs integer := 0; free_box boolean := false;
   yday text := to_char((now() at time zone 'America/Los_Angeles')::date - 1, 'YYYYMMDD');
   v_total integer := 0; v_streak integer := 0; g_day text; streak_bonus integer := 0; streak_box boolean := false;
-  v_ref public.referrals; ref_box boolean := false; ref_name text; v_pass integer := 0;
+  v_ref public.referrals; ref_box boolean := false; ref_name text; v_pass integer := 0; v_xp integer := 0;
 begin
   select * into r from public.runs where id = p_run and uid = p.id for update;
   if not found then return jsonb_build_object('ok', false, 'message', 'This run wasn''t registered with the server, so the time stays on this device only.'); end if;
@@ -1303,6 +1312,7 @@ begin
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
     if not exists (select 1 from public.credit_events where uid = p.id and kind = 'streak' and note = 'day ' || d) then
       streak_bonus := least(v_streak, 7) * 25;
+      v_xp := public._add_xp(p.id, 20);
       insert into public.credit_events (uid, delta, kind, note) values (p.id, streak_bonus, 'streak', 'day ' || d);
       if v_streak % 7 = 0 then
         update public.garage set free_boxes = free_boxes + 1 where uid = p.id;
@@ -1330,7 +1340,9 @@ begin
       end if;
     end if;
   end if;
-  if r.course_id !~ '^d[0-9]{8}$' and r.course_id !~ '^u[0-9]+$' then
+  -- driver XP: 10 a counted finish
+  v_xp := public._add_xp(p.id, 10);
+  if r.course_id !~ '^d[0-9]{8}$' and r.course_id !~ '^u[0-9]+$' and r.course_id !~ '^p[0-9]{8}$' then
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
     if not exists (select 1 from public.credit_events where uid = p.id and kind = 'grind' and created_at > now() - interval '10 seconds') then
       insert into public.credit_events (uid, delta, kind, note) values (p.id, 1, 'grind', 'run ' || r.id::text);
@@ -1348,13 +1360,14 @@ begin
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
     if not exists (select 1 from public.credit_events where uid = p.id and kind = 'daily_runs' and note = 'day ' || d) then
       day_bonus := 300;
+      v_xp := public._add_xp(p.id, 100);
       insert into public.credit_events (uid, delta, kind, note) values (p.id, day_bonus, 'daily_runs', 'day ' || d);
     end if;
   end if;
   return jsonb_build_object('ok', true, 'credited', credited, 'bonus', bonus, 'day_runs', day_runs, 'day_bonus', day_bonus,
     'balance', public._balance(p.id), 'box_runs', box_runs, 'free_box', free_box,
     'streak', v_streak, 'streak_bonus', streak_bonus, 'streak_box', streak_box, 'ref_box', ref_box, 'ref_name', ref_name,
-    'pass_runs', v_pass);
+    'pass_runs', v_pass, 'xp', v_xp);
 end $$;
 
 -- A run's recording against the map: the right number of samples for the
@@ -1466,6 +1479,9 @@ begin
   if p_course ~ '^d[0-9]{8}$' and not public._daily_accepts(substr(p_course, 2)) then
     raise exception 'The daily map has closed.' using errcode = 'P0001';
   end if;
+  if p_course ~ '^p[0-9]{8}$' and not public._pot_accepts(substr(p_course, 2)) then
+    raise exception 'That Pot map has closed.' using errcode = 'P0001';
+  end if;
   g := public._ghost_check(p_course, p_time_ms, p_samples);
   if not (g ->> 'ok')::boolean then raise exception '%', g ->> 'error' using errcode = 'P0001'; end if;
   flags := array(select jsonb_array_elements_text(g -> 'flags'));
@@ -1492,6 +1508,16 @@ begin
       on conflict (uid, course_id) do update set time_ms = excluded.time_ms, flags = excluded.flags, run_id = excluded.run_id, at = now();
   else
     delete from public.best_flags where uid = p.id and course_id = p_course;
+  end if;
+  -- rival alerts: everyone this time just passed (they were ahead of or level
+  -- with the old best, and are behind the new one)
+  if p_course !~ '^u[0-9]+$' then
+    insert into public.rival_events (uid, by_uid, by_name, course_id, by_ms, their_ms)
+      select b.uid, p.id, p.display_name, p_course, p_time_ms, b.time_ms from public.bests b
+      where b.course_id = p_course and b.uid <> p.id and not b.banned and b.time_ms > p_time_ms and (cur is null or b.time_ms <= cur)
+      order by b.time_ms limit 25;
+    delete from public.rival_events where id in (select id from public.rival_events where at < now() - interval '14 days' limit 200);
+    perform public._add_xp(p.id, 25);           -- a personal best: 25 XP
   end if;
   return jsonb_build_object('improved', true);
 end $$;
@@ -2240,22 +2266,51 @@ create table if not exists public.purchases (
 );
 create index if not exists purchases_intent on public.purchases (payment_intent);
 alter table public.purchases add column if not exists boxes integer not null default 0;
+alter table public.purchases add column if not exists item text;
 
 /** a paid checkout: its credits, once (the webhook only) */
 create or replace function public.grant_purchase(p_session text, p_uid text, p_amount integer, p_currency text, p_intent text) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare who uuid; n integer := 0; bx integer := 0;
+declare who uuid; n integer := 0; bx integer := 0; ref text := coalesce(p_uid, ''); code text; mi jsonb; got text := null; it text;
 begin
   if coalesce(p_session, '') = '' then return jsonb_build_object('ok', false, 'error', 'no session'); end if;
-  if coalesce(p_uid, '') ~ '^[0-9a-fA-F-]{36}$' then select id into who from public.profiles where id = p_uid::uuid; end if;
-  if who is not null and lower(coalesce(p_currency, '')) = 'usd' and coalesce(p_amount, 0) >= 100 then
+  -- "uid--code": one of the money-only items (_money_item), opened from its own Payment Link
+  if ref ~ '^[0-9a-fA-F-]{36}--[a-z]{2,20}$' then code := split_part(ref, '--', 2); ref := split_part(ref, '--', 1); end if;
+  if ref ~ '^[0-9a-fA-F-]{36}$' then select id into who from public.profiles where id = ref::uuid; end if;
+  if code is not null then mi := public._money_item(code); end if;
+  if who is not null and lower(coalesce(p_currency, '')) = 'usd' and mi is not null and coalesce(p_amount, 0) = (mi ->> 'cents')::int
+     and not (coalesce((mi ->> 'once')::boolean, false)
+              and exists (select 1 from public.inventory where uid = who and item = (mi -> 'items' ->> 0) and count > 0)) then
+    -- the item, paid exactly its price (anything else is paid as credits)
+    got := code;
+    n := coalesce((mi ->> 'credits')::int, 0);
+    bx := coalesce((mi ->> 'boxes')::int, 0);
+  elsif who is not null and lower(coalesce(p_currency, '')) = 'usd' and coalesce(p_amount, 0) >= 100 then
     n := (p_amount / 100) * 30000 + (p_amount / 500) * 30000;     -- $1: 30 000, $5: 180 000
     bx := (p_amount / 100) * 3 + (p_amount / 500) * 3;            -- $1: 3 boxes, $5: 18
   end if;
-  insert into public.purchases (session_id, payment_intent, uid, credits, boxes, amount_cents, currency)
-    values (p_session, p_intent, who, n, bx, coalesce(p_amount, 0), lower(coalesce(p_currency, '')))
+  insert into public.purchases (session_id, payment_intent, uid, credits, boxes, amount_cents, currency, item)
+    values (p_session, p_intent, who, n, bx, coalesce(p_amount, 0), lower(coalesce(p_currency, '')), got)
     on conflict (session_id) do nothing;
   if not found then return jsonb_build_object('ok', true, 'duplicate', true); end if;
+  if got is not null then
+    for it in select jsonb_array_elements_text(coalesce(mi -> 'items', '[]'::jsonb)) loop
+      insert into public.inventory (uid, item) values (who, it) on conflict (uid, item) do update set count = public.inventory.count + 1;
+    end loop;
+    if coalesce((mi ->> 'plus')::boolean, false) then
+      insert into public.pass_claims (uid, season, plus) values (who, public._pass_season(), true)
+        on conflict (uid, season) do update set plus = true;
+    end if;
+    if coalesce((mi ->> 'tiers')::int, 0) > 0 then
+      insert into public.garage (uid) values (who) on conflict do nothing;
+      update public.garage set pass_runs = case when pass_season is distinct from public._pass_season() then 0 else pass_runs end
+        + (mi ->> 'tiers')::int * (public._pass_rules() ->> 'perTier')::int, pass_season = public._pass_season() where uid = who;
+    end if;
+    if n = 0 then
+      -- (a 0-credit line so the buyer's game hears about it)
+      insert into public.credit_events (uid, delta, kind, note) values (who, 0, 'purchase', 'Stripe ' || p_session || ' ' || got);
+    end if;
+  end if;
   if bx > 0 then
     insert into public.garage (uid, free_boxes) values (who, bx)
       on conflict (uid) do update set free_boxes = public.garage.free_boxes + bx;
@@ -2264,7 +2319,7 @@ begin
     -- (after the boxes, so the game that hears of it sees them too)
     insert into public.credit_events (uid, delta, kind, note) values (who, n, 'purchase', 'Stripe ' || p_session);
   end if;
-  return jsonb_build_object('ok', true, 'credits', n, 'boxes', bx, 'matched', who is not null);
+  return jsonb_build_object('ok', true, 'credits', n, 'boxes', bx, 'item', got, 'matched', who is not null);
 end $$;
 
 /** a refunded payment: its credits come back off (the webhook only) */
@@ -2282,6 +2337,16 @@ begin
   if r.uid is not null and r.boxes > 0 then
     update public.garage set free_boxes = greatest(free_boxes - r.boxes, 0) where uid = r.uid;
   end if;
+  -- and a money item's items (and Pass+)
+  if r.uid is not null and r.item is not null then
+    perform set_config('app.garage', 'on', true);
+    update public.inventory set count = count - 1 where uid = r.uid and count > 0
+      and item in (select jsonb_array_elements_text(coalesce(public._money_item(r.item) -> 'items', '[]'::jsonb)));
+    delete from public.inventory where uid = r.uid and count <= 0;
+    if coalesce((public._money_item(r.item) ->> 'plus')::boolean, false) then
+      update public.pass_claims set plus = false where uid = r.uid and season = public._pass_season();
+    end if;
+  end if;
   return jsonb_build_object('ok', true, 'found', true, 'credits', r.credits, 'boxes', r.boxes);
 end $$;
 
@@ -2296,6 +2361,7 @@ $$;
 create or replace function public.shop_links() returns jsonb
 language sql stable security definer set search_path = public, pg_temp as $$
   select jsonb_build_object(
+    'money', coalesce((select value from public.settings where key = 'money_links'), '{}'::jsonb),
     'one', coalesce((select value ->> 'link' from public.settings where key = 'shop'), ''),
     'five', coalesce((select value ->> 'link5' from public.settings where key = 'shop'), ''),
     'limit', coalesce((select (value ->> 'dollars')::int from public.settings where key = 'shop_limit'), 20),
@@ -2513,17 +2579,20 @@ language sql stable security definer set search_path = public, pg_temp as $$
 $$;
 create or replace function public._pass_rules() returns jsonb
 language sql immutable as $$
-  select '{"tiers": 30, "perTier": 25, "price": 30000}'::jsonb
+  select '{"tiers": 50, "perTier": 25, "price": 30000, "tierPrice": 2500}'::jsonb
 $$;
 /** what a tier pays on a track: {credits}, {boxes} or {item} */
 create or replace function public._pass_reward(p_plus boolean, p_tier integer) returns jsonb
 language sql immutable as $$
   select case when not p_plus then
-      case when p_tier % 5 = 0 then '{"boxes": 1}'::jsonb else '{"credits": 100}'::jsonb end
+      case p_tier when 25 then '{"item": "title:grinder"}'::jsonb when 50 then '{"item": "icon:pass-medal"}'::jsonb
+        else case when p_tier % 5 = 0 then '{"boxes": 1}'::jsonb else '{"credits": 100}'::jsonb end end
     else case p_tier when 1 then '{"item": "title:pass-holder"}'::jsonb when 8 then '{"item": "icon:pass-bolt"}'::jsonb
       when 15 then '{"item": "finish:neon"}'::jsonb when 22 then '{"item": "title:velocity"}'::jsonb
       when 26 then '{"item": "icon:pass-gem"}'::jsonb when 30 then '{"item": "finish:chrome"}'::jsonb
-      else '{"boxes": 1}'::jsonb end end
+      when 35 then '{"item": "finish:frost"}'::jsonb when 40 then '{"item": "title:unstoppable"}'::jsonb
+      when 45 then '{"item": "icon:pass-wing"}'::jsonb when 50 then '{"item": "finish:aurora"}'::jsonb
+      else case when p_tier % 10 = 0 then '{"boxes": 3}'::jsonb else '{"boxes": 1}'::jsonb end end end
 $$;
 /** the calling player's pass */
 create or replace function public.my_pass() returns jsonb
@@ -2534,6 +2603,7 @@ begin
   select case when pass_season = s then pass_runs else 0 end into runs from public.garage where uid = p.id;
   select * into c from public.pass_claims where uid = p.id and season = s;
   return jsonb_build_object('season', s, 'runs', coalesce(runs, 0), 'tiers', R -> 'tiers', 'perTier', R -> 'perTier', 'price', R -> 'price',
+    'tierPrice', R -> 'tierPrice',
     'tier', least((R ->> 'tiers')::int, coalesce(runs, 0) / (R ->> 'perTier')::int),
     'plus', coalesce(c.plus, false), 'free_upto', coalesce(c.free_upto, 0), 'plus_upto', coalesce(c.plus_upto, 0),
     'rewards', (select jsonb_agg(jsonb_build_object('tier', t, 'free', public._pass_reward(false, t), 'plus', public._pass_reward(true, t)) order by t)
@@ -2603,6 +2673,382 @@ begin
     'shopCredits', (select coalesce(-sum(delta), 0) from public.credit_events where kind = 'shop'),
     'plus', (select count(*) from public.pass_claims where season = public._pass_season() and plus),
     'passPlayers', (select count(*) from public.garage where pass_season = public._pass_season() and pass_runs > 0));
+end $$;
+
+-- ------------------------------------------ rivals, driver level, the Pot map,
+-- ------------------------------------------ money-only items, Escape
+-- the new items: the Driver Road's, the pass's new ones, and the money-only ones
+insert into public.items (id, kind, name, sell, source) values
+  ('title:road-rookie', 'title', 'Road Rookie', 100, 'level'), ('icon:lvl-shield', 'icon', 'Shield', 100, 'level'),
+  ('title:road-warrior', 'title', 'Road Warrior', 100, 'level'), ('finish:gold', 'finish', 'Gold', 400, 'level'),
+  ('icon:lvl-laurel', 'icon', 'Laurels', 100, 'level'), ('title:veteran', 'title', 'Veteran', 100, 'level'),
+  ('finish:obsidian', 'finish', 'Obsidian', 400, 'level'), ('title:living-legend', 'title', 'Living Legend', 100, 'level'),
+  ('finish:frost', 'finish', 'Frost', 400, 'pass'), ('title:unstoppable', 'title', 'Unstoppable', 100, 'pass'),
+  ('icon:pass-wing', 'icon', 'Jet', 100, 'pass'), ('finish:aurora', 'finish', 'Aurora', 400, 'pass'),
+  ('title:grinder', 'title', 'Grinder', 100, 'pass'), ('icon:pass-medal', 'icon', 'Medal', 100, 'pass'),
+  ('title:founder', 'title', 'Founder', 100, 'money'), ('icon:founder', 'icon', 'Founder', 100, 'money'),
+  ('finish:holo', 'finish', 'Holo', 400, 'money'), ('finish:goldrush', 'finish', 'Gold Rush', 400, 'money')
+on conflict (id) do update set kind = excluded.kind, name = excluded.name, sell = excluded.sell, source = excluded.source;
+
+-- Rival alerts: a row for each player a new best passes (submit_best).
+create table if not exists public.rival_events (
+  id bigserial primary key,
+  uid uuid not null,                 -- the one who was passed
+  by_uid uuid not null,
+  by_name text not null,
+  course_id text not null,
+  by_ms integer not null,
+  their_ms integer not null,
+  at timestamptz not null default now()
+);
+create index if not exists rival_events_uid on public.rival_events (uid, id);
+/** the latest times that passed mine (after id p_since; null: just the newest id) */
+create or replace function public.my_rivals(p_since bigint) returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  return jsonb_build_object('last', coalesce((select max(id) from public.rival_events where uid = p.id), 0),
+    'events', case when p_since is null then '[]'::jsonb else coalesce((select jsonb_agg(jsonb_build_object('id', id, 'by', by_uid, 'name', by_name,
+      'course', course_id, 'by_ms', by_ms, 'their_ms', their_ms, 'at', (extract(epoch from at) * 1000)::bigint) order by id)
+      from (select * from public.rival_events where uid = p.id and id > p_since and at > now() - interval '3 days' order by id desc limit 10) x), '[]'::jsonb) end);
+end $$;
+
+-- The driver level: XP from every counted finish (10), a personal best
+-- (25), a day of the streak (20) and the daily challenge (100). Level L
+-- needs 50 x L x (L - 1) XP in all (level 2 at 100, 10 at 4 500, 50 at
+-- 122 500). Each level pays a reward on the Driver Road, once.
+alter table public.garage add column if not exists xp integer not null default 0;
+alter table public.garage add column if not exists road_upto integer not null default 1;
+create or replace function public._add_xp(p_uid uuid, n integer) returns integer
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare v integer;
+begin
+  insert into public.garage (uid, xp) values (p_uid, n) on conflict (uid) do update set xp = public.garage.xp + n returning xp into v;
+  return v;
+end $$;
+create or replace function public._level(p_xp integer) returns integer
+language sql immutable as $$ select floor((1 + sqrt(1 + 0.08 * greatest(coalesce(p_xp, 0), 0))) / 2)::int $$;
+create or replace function public._level_xp(p_level integer) returns integer
+language sql immutable as $$ select 50 * p_level * (p_level - 1) $$;
+/** what reaching a level pays */
+create or replace function public._road_reward(p_level integer) returns jsonb
+language sql immutable as $$
+  select case p_level when 5 then '{"item": "title:road-rookie"}'::jsonb when 10 then '{"item": "icon:lvl-shield"}'::jsonb
+    when 15 then '{"item": "title:road-warrior"}'::jsonb when 20 then '{"item": "finish:gold"}'::jsonb
+    when 25 then '{"item": "icon:lvl-laurel"}'::jsonb when 30 then '{"item": "title:veteran"}'::jsonb
+    when 40 then '{"item": "finish:obsidian"}'::jsonb when 50 then '{"item": "title:living-legend"}'::jsonb
+    else case when p_level > 50 then '{"boxes": 2}'::jsonb when p_level % 5 = 0 then '{"boxes": 3}'::jsonb
+      when p_level % 2 = 1 then '{"boxes": 1}'::jsonb else jsonb_build_object('credits', least(1000, 50 * p_level)) end end
+$$;
+/** the calling player's level and road */
+create or replace function public.my_road() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); g public.garage; lv integer;
+begin
+  select * into g from public.garage where uid = p.id;
+  lv := public._level(coalesce(g.xp, 0));
+  return jsonb_build_object('xp', coalesce(g.xp, 0), 'level', lv, 'from', public._level_xp(lv), 'to', public._level_xp(lv + 1),
+    'upto', coalesce(g.road_upto, 1),
+    'rewards', (select jsonb_agg(jsonb_build_object('level', l, 'reward', public._road_reward(l)) order by l)
+                from generate_series(2, greatest(55, lv + 5)) l));
+end $$;
+/** everyone's level, for profile cards (up to 60 at a time) */
+create or replace function public.levels_of(p_uids uuid[]) returns jsonb
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce(jsonb_object_agg(uid::text, public._level(xp)), '{}'::jsonb) from public.garage where uid = any(p_uids[1:60])
+$$;
+/** collect every level reward reached */
+create or replace function public.claim_road() returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); g public.garage; lv integer; got jsonb := '[]'::jsonb; l integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  insert into public.garage (uid) values (p.id) on conflict do nothing;
+  select * into g from public.garage where uid = p.id for update;
+  lv := public._level(g.xp);
+  for l in g.road_upto + 1 .. lv loop
+    perform public._pass_give(p.id, public._road_reward(l), 'level ' || l);
+    got := got || jsonb_build_array(public._road_reward(l) || jsonb_build_object('level', l));
+  end loop;
+  update public.garage set road_upto = greatest(road_upto, lv) where uid = p.id;
+  return jsonb_build_object('got', got, 'balance', public._balance(p.id));
+end $$;
+
+-- Skipping Race Pass tiers with credits: 2 500 a tier, up to the last tier.
+create or replace function public.buy_tiers(p_n integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); R jsonb := public._pass_rules(); s text := public._pass_season();
+  n integer := coalesce(p_n, 0); v_runs integer; cost integer;
+begin
+  if n < 1 or n > 10 then raise exception 'Skip 1 to 10 tiers at a time.' using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  insert into public.garage (uid) values (p.id) on conflict do nothing;
+  select case when pass_season = s then pass_runs else 0 end into v_runs from public.garage where uid = p.id for update;
+  if v_runs / (R ->> 'perTier')::int + n > (R ->> 'tiers')::int then
+    raise exception 'That would go past the last tier.' using errcode = 'P0001';
+  end if;
+  cost := n * (R ->> 'tierPrice')::int;
+  if public._balance(p.id) < cost then raise exception 'That costs % credits.', cost using errcode = 'P0001'; end if;
+  insert into public.credit_events (uid, delta, kind, note) values (p.id, -cost, 'pass_tiers', n || ' tiers ' || s);
+  -- to the start of the tier n above (part of a tier already driven counts)
+  update public.garage set pass_season = s, pass_runs = (v_runs / (R ->> 'perTier')::int + n) * (R ->> 'perTier')::int where uid = p.id;
+  return public.claim_pass();
+end $$;
+
+-- The money-only items: bought on Stripe with their own Payment Link (the
+-- link carries "uid--code"), paid out by grant_purchase only when the
+-- amount is exactly the price. settings 'money_links' {code: link}.
+create or replace function public._money_item(p_code text) returns jsonb
+language sql immutable as $$
+  select case p_code
+    when 'founder' then '{"cents": 300, "name": "Founder''s Pack", "items": ["title:founder", "icon:founder"], "credits": 60000, "boxes": 10, "once": true}'
+    when 'holo' then '{"cents": 200, "name": "Holo paint", "items": ["finish:holo"], "once": true}'
+    when 'goldrush' then '{"cents": 200, "name": "Gold Rush paint", "items": ["finish:goldrush"], "once": true}'
+    when 'passbundle' then '{"cents": 300, "name": "Pass+ Bundle", "plus": true, "tiers": 10}'
+  end::jsonb
+$$;
+create or replace function public.admin_set_money_link(p_code text, p_link text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare l text := btrim(coalesce(p_link, ''));
+begin
+  perform public._require_admin();
+  if public._money_item(p_code) is null then raise exception 'No such item.' using errcode = 'P0001'; end if;
+  if l <> '' and l !~ '^https://buy\.stripe\.com/[A-Za-z0-9_]+$' then
+    raise exception 'That isn''t a Stripe Payment Link (they start https://buy.stripe.com/).' using errcode = 'P0001';
+  end if;
+  insert into public.settings (key, value) values ('money_links', jsonb_build_object(p_code, l))
+    on conflict (key) do update set value = public.settings.value || jsonb_build_object(p_code, l);
+  perform public._log('money link', p_code, l);
+end $$;
+
+-- The Pot map: a new map every day (Pacific), made here from the date as
+-- track-builder pieces (so _track_geo gives its rules). Players put 100 to
+-- 5 000 credits in to race it, once a day. After midnight the pot goes to
+-- the fastest 40% (at least one): each gets a weight of (winners - place +
+-- 1) x their stake, and a share of the pot in proportion. A time with
+-- anything unusual about it (best_flags) doesn't win. Nobody finishing:
+-- everyone gets their stake back.
+create table if not exists public.pot_entries (
+  day text not null,
+  uid uuid not null,
+  stake integer not null check (stake between 100 and 5000),
+  at timestamptz not null default now(),
+  primary key (day, uid)
+);
+create table if not exists public.pot_results (
+  day text primary key,
+  pot integer not null,
+  data jsonb not null,
+  at timestamptz not null default now()
+);
+create or replace function public._pot_rand(p_day text, k integer) returns float8
+language sql immutable as $$ select ('x' || substr(md5('pot:' || p_day || ':' || k), 1, 8))::bit(32)::bigint / 4294967296.0 $$;
+create or replace function public._pot_pick(p_day text, k integer, a integer[]) returns integer
+language sql immutable as $$ select a[1 + floor(public._pot_rand(p_day, k) * array_length(a, 1))::int] $$;
+/** the day's road as track-builder pieces (width 14): never turning more than 75 degrees off the
+ *  start's heading, so it never meets itself; a straight before every turn */
+create or replace function public._pot_pieces(p_day text) returns jsonb
+language plpgsql immutable as $$
+declare ps jsonb := '[["S", 40, 14]]'::jsonb; k integer := 0; h integer := 0; len float8 := 40; u float8; a integer; dir integer;
+  r integer; after boolean := false; jumps integer := 0; v integer;
+begin
+  while len < 950 and jsonb_array_length(ps) < 34 loop
+    k := k + 1; u := public._pot_rand(p_day, k * 11);
+    if after then ps := ps || '[["S", 30, 14]]'::jsonb; len := len + 30; after := false; continue; end if;
+    if u < 0.4 then
+      a := public._pot_pick(p_day, k * 11 + 1, array[30, 45, 60, 75]);
+      dir := case when public._pot_rand(p_day, k * 11 + 2) < 0.5 then -1 else 1 end;
+      if abs(h + a * dir) > 75 then dir := -dir; end if;
+      if abs(h + a * dir) > 75 then a := 30; end if;
+      r := public._pot_pick(p_day, k * 11 + 3, array[60, 75, 90, 120]);
+      ps := ps || jsonb_build_array(jsonb_build_array('S', 50, 14),
+        jsonb_build_array('T', r, a * dir, public._pot_pick(p_day, k * 11 + 4, array[10, 15, 20]), 0, 14));
+      h := h + a * dir; len := len + 50 + r * radians(a);
+    elsif u < 0.55 then
+      v := public._pot_pick(p_day, k * 11 + 5, array[40, 60, 80, 100]);
+      ps := ps || jsonb_build_array(jsonb_build_array('S', v, 14)); len := len + v;
+    elsif u < 0.64 then
+      ps := ps || jsonb_build_array(jsonb_build_array('B', public._pot_pick(p_day, k * 11 + 6, array[20, 30]), 14)); len := len + 25; after := true;
+    elsif u < 0.76 then
+      v := public._pot_pick(p_day, k * 11 + 7, array[3, 4, 5, 6]) * case when public._pot_rand(p_day, k * 11 + 8) < 0.5 then -1 else 1 end;
+      ps := ps || jsonb_build_array(jsonb_build_array('H', v, public._pot_pick(p_day, k * 11 + 9, array[40, 50, 60]), 14)); len := len + 50;
+    elsif u < 0.86 then
+      ps := ps || jsonb_build_array(jsonb_build_array('C', public._pot_pick(p_day, k * 11 + 10, array[5, 7]), 14)); len := len + 26; after := true;
+    elsif u < 0.93 then
+      ps := ps || jsonb_build_array(jsonb_build_array('R', public._pot_pick(p_day, k * 11 + 10, array[2, 3]), 0.6, 14)); len := len + 60; after := true;
+    elsif jumps < 2 and len > 250 then
+      ps := ps || jsonb_build_array(jsonb_build_array('S', 60, 14), jsonb_build_array('J', public._pot_pick(p_day, k * 11 + 10, array[2, 3, 4]), 14));
+      len := len + 120; jumps := jumps + 1; after := true;
+    else
+      ps := ps || '[["S", 60, 14]]'::jsonb; len := len + 60;
+    end if;
+  end loop;
+  return ps;
+end $$;
+create or replace function public._pot_name(p_day text) returns text
+language sql immutable as $$
+  select (array['Jackpot', 'High Stakes', 'Golden', 'All-In', 'Big Money', 'Lucky', 'Diamond', 'Payday'])[1 + floor(public._pot_rand(p_day, 1) * 8)::int]
+    || ' ' || (array['Run', 'Mile', 'Dash', 'Circuit', 'Sprint', 'Rush', 'Pass', 'Boulevard'])[1 + floor(public._pot_rand(p_day, 2) * 8)::int]
+$$;
+/** the day's map gets its rules (start, finish, checkpoints, fastest believable time: 70 m/s on average,
+ *  at most 0.72 of the test driver's best on 120 days of maps) */
+create or replace function public._pot_ensure(p_day text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare g jsonb; cps float8[];
+begin
+  if exists (select 1 from public.course_rules where course_id = 'p' || p_day) then return; end if;
+  g := public._track_geo(14, public._pot_pieces(p_day));
+  if not (g ->> 'ok')::boolean then raise exception 'pot map %: %', p_day, g ->> 'error'; end if;
+  select array(select jsonb_array_elements_text(g -> 'cps')::float8) into cps;
+  insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floor_ms, ref_ms, len_m, cps)
+  values ('p' || p_day, 0, coalesce((g ->> 'sy')::float8, 0), 7, (g ->> 'fx')::float8, (g ->> 'fy')::float8, (g ->> 'fz')::float8,
+          (g ->> 'gate_r')::float8, round((g ->> 'len')::numeric / 70 * 1000)::int, null, (g ->> 'len')::int, cps)
+  on conflict (course_id) do nothing;
+end $$;
+-- may a time for day d be saved now? (that day, and 5 minutes after it)
+create or replace function public._pot_accepts(d text) returns boolean
+language sql stable as $$
+  select d ~ '^[0-9]{8}$' and public._daily_now() >= to_date(d, 'YYYYMMDD')::timestamp
+     and public._daily_now() < to_date(d, 'YYYYMMDD')::timestamp + interval '1 day 5 minutes'
+$$;
+/** pay out a finished day's pot, once */
+create or replace function public._pot_settle(p_day text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare total integer; fin integer; W integer; sumw numeric; rw record; pay integer; paid integer := 0; res jsonb := '[]'::jsonb; first uuid;
+begin
+  if public._pot_accepts(p_day) or p_day >= public._daily_today() then return; end if;
+  perform pg_advisory_xact_lock(hashtext('pot:' || p_day));
+  if exists (select 1 from public.pot_results where day = p_day) then return; end if;
+  select coalesce(sum(stake), 0) into total from public.pot_entries where day = p_day;
+  create temp table if not exists _pot_rank (uid uuid, name text, stake integer, t integer, place integer) on commit drop;
+  delete from _pot_rank where true;
+  insert into _pot_rank
+    select e.uid, b.display_name, e.stake, b.time_ms, row_number() over (order by b.time_ms, b.updated_ms)::int
+    from public.pot_entries e join public.bests b on b.uid = e.uid and b.course_id = 'p' || p_day
+    where e.day = p_day and not b.banned
+      and not exists (select 1 from public.best_flags f where f.uid = e.uid and f.course_id = 'p' || p_day);
+  select count(*) into fin from _pot_rank;
+  if fin = 0 then
+    -- nobody finished: the stakes go back
+    for rw in select * from public.pot_entries where day = p_day loop
+      insert into public.credit_events (uid, delta, kind, note) values (rw.uid, rw.stake, 'pot_refund', 'pot ' || p_day);
+    end loop;
+    insert into public.pot_results (day, pot, data) values (p_day, total, jsonb_build_object('refunded', true, 'winners', '[]'::jsonb));
+    return;
+  end if;
+  W := greatest(1, ceil(fin * 0.4)::int);
+  select sum((W - place + 1)::numeric * stake) into sumw from _pot_rank where place <= W;
+  for rw in select * from _pot_rank where place <= W order by place loop
+    pay := floor(total * ((W - rw.place + 1)::numeric * rw.stake) / sumw)::int;
+    if rw.place = 1 then first := rw.uid; end if;
+    paid := paid + pay;
+    res := res || jsonb_build_array(jsonb_build_object('uid', rw.uid, 'name', rw.name, 'place', rw.place, 'ms', rw.t, 'stake', rw.stake, 'won', pay));
+  end loop;
+  -- what rounding leaves goes to the winner
+  res := (select jsonb_agg(case when (x ->> 'place')::int = 1 then x || jsonb_build_object('won', (x ->> 'won')::int + total - paid) else x end)
+          from jsonb_array_elements(res) x);
+  for rw in select * from jsonb_to_recordset(res) as x(uid uuid, won integer) loop
+    if rw.won > 0 then insert into public.credit_events (uid, delta, kind, note) values (rw.uid, rw.won, 'pot_win', 'pot ' || p_day); end if;
+  end loop;
+  insert into public.pot_results (day, pot, data) values (p_day, total, jsonb_build_object('winners', res, 'finishers', fin, 'entrants',
+    (select count(*) from public.pot_entries where day = p_day)));
+end $$;
+/** today's Pot map for the calling player (and any finished day's pot is paid first) */
+create or replace function public.pot_today() returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); d text := public._daily_today(); e public.pot_entries; y text; dd text;
+begin
+  for dd in select distinct day from public.pot_entries where day < d and day >= to_char(public._daily_now() - interval '7 days', 'YYYYMMDD')
+            and not exists (select 1 from public.pot_results r where r.day = pot_entries.day) loop
+    perform public._pot_settle(dd);
+  end loop;
+  perform public._pot_ensure(d);
+  select * into e from public.pot_entries where day = d and uid = p.id;
+  y := to_char(public._daily_now() - interval '1 day', 'YYYYMMDD');
+  return jsonb_build_object('day', d, 'name', public._pot_name(d), 'w', 14, 'pieces', public._pot_pieces(d),
+    'entered', e.uid is not null, 'stake', e.stake,
+    'pot', (select coalesce(sum(stake), 0) from public.pot_entries where day = d),
+    'entrants', (select count(*) from public.pot_entries where day = d),
+    'ends', (extract(epoch from ((to_date(d, 'YYYYMMDD') + 1)::timestamp at time zone 'America/Los_Angeles')) * 1000)::bigint,
+    'yesterday', (select jsonb_build_object('pot', r.pot, 'winners', (select coalesce(jsonb_agg(x - 'uid' || jsonb_build_object('me', (x ->> 'uid')::uuid = p.id)), '[]'::jsonb)
+                    from jsonb_array_elements(r.data -> 'winners') x), 'refunded', coalesce((r.data ->> 'refunded')::boolean, false))
+                  from public.pot_results r where r.day = y));
+end $$;
+/** put credits in today's pot (once a day, 100 to 5 000) */
+create or replace function public.enter_pot(p_stake integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); d text := public._daily_today();
+begin
+  if p_stake is null or p_stake < 100 or p_stake > 5000 then raise exception 'Put in 100 to 5 000 credits.' using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  if exists (select 1 from public.pot_entries where day = d and uid = p.id) then
+    raise exception 'You''re already in today''s pot.' using errcode = 'P0001';
+  end if;
+  if public._balance(p.id) < p_stake then raise exception 'You don''t have that many credits.' using errcode = 'P0001'; end if;
+  insert into public.credit_events (uid, delta, kind, note) values (p.id, -p_stake, 'pot_stake', 'pot ' || d);
+  insert into public.pot_entries (day, uid, stake) values (d, p.id, p_stake);
+  perform public._pot_ensure(d);
+  return jsonb_build_object('ok', true, 'balance', public._balance(p.id),
+    'pot', (select sum(stake) from public.pot_entries where day = d));
+end $$;
+
+-- Escape (the endless chase): a run ticket, then the distance it reached,
+-- which has to fit the time since the ticket (75 m/s at most). The best
+-- distance of each player is kept, and pays XP (1 a 100 m, up to 50).
+create table if not exists public.escape_runs (
+  id uuid primary key default gen_random_uuid(),
+  uid uuid not null,
+  started_at timestamptz not null default now(),
+  done boolean not null default false
+);
+create index if not exists escape_runs_uid on public.escape_runs (uid, started_at desc);
+create table if not exists public.escape_best (
+  uid uuid primary key,
+  display_name text not null,
+  best_m integer not null,
+  at timestamptz not null default now()
+);
+create or replace function public.start_escape() returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); rid uuid;
+begin
+  if not public._may_play(p.id) then return jsonb_build_object('ok', false, 'message', 'aiPolytrack is closed right now.'); end if;
+  if (select count(*) from public.escape_runs where uid = p.id and started_at > now() - interval '1 hour') >= 300 then
+    return jsonb_build_object('ok', false, 'message', 'Take a break: that''s a lot of runs this hour.');
+  end if;
+  delete from public.escape_runs where id in (select id from public.escape_runs where started_at < now() - interval '2 days' limit 200);
+  insert into public.escape_runs (uid) values (p.id) returning id into rid;
+  return jsonb_build_object('ok', true, 'run', rid);
+end $$;
+create or replace function public.finish_escape(p_run uuid, p_meters integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); r public.escape_runs; el numeric; old integer; xp integer := 0;
+begin
+  select * into r from public.escape_runs where id = p_run and uid = p.id for update;
+  if not found or r.done then return jsonb_build_object('ok', false, 'message', 'That run wasn''t registered.'); end if;
+  update public.escape_runs set done = true where id = r.id;
+  el := extract(epoch from (now() - r.started_at));
+  if p_meters is null or p_meters < 0 or p_meters > el * 75 + 100 or el > 1800 then
+    return jsonb_build_object('ok', false, 'message', 'That distance doesn''t fit the time the run took.');
+  end if;
+  xp := least(p_meters / 100, 50);
+  if xp > 0 then perform public._add_xp(p.id, xp); end if;
+  select best_m into old from public.escape_best where uid = p.id;
+  if old is null or p_meters > old then
+    insert into public.escape_best (uid, display_name, best_m) values (p.id, p.display_name, p_meters)
+      on conflict (uid) do update set best_m = excluded.best_m, display_name = excluded.display_name, at = now();
+  end if;
+  return jsonb_build_object('ok', true, 'best', greatest(coalesce(old, 0), p_meters), 'improved', old is null or p_meters > old, 'xp', xp);
+end $$;
+create or replace function public.escape_board() returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
+begin
+  return jsonb_build_object(
+    'top', coalesce((select jsonb_agg(jsonb_build_object('uid', e.uid, 'name', e.display_name, 'm', e.best_m) order by e.best_m desc)
+      from (select x.* from public.escape_best x join public.profiles pr on pr.id = x.uid and not pr.banned order by x.best_m desc limit 20) e), '[]'::jsonb),
+    'mine', (select best_m from public.escape_best where uid = p.id),
+    'rank', (select count(*) + 1 from public.escape_best where best_m > coalesce((select best_m from public.escape_best where uid = p.id), 2147483647)));
 end $$;
 
 -- ------------------------------------------------------------ opening hours
@@ -3507,6 +3953,11 @@ alter table public.box_log enable row level security;
 alter table public.unbox_news enable row level security;
 alter table public.purchases enable row level security;
 alter table public.pass_claims enable row level security;
+alter table public.rival_events enable row level security;
+alter table public.pot_entries enable row level security;
+alter table public.pot_results enable row level security;
+alter table public.escape_runs enable row level security;
+alter table public.escape_best enable row level security;
 alter table public.admin_notes enable row level security;
 alter table public.races enable row level security;
 alter table public.race_entries enable row level security;
@@ -3521,7 +3972,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims', 'rival_events', 'pot_entries', 'pot_results', 'escape_runs', 'escape_best',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -3614,7 +4065,7 @@ grant execute on function public.name_check(text), public.device_status(text, te
   public.admin_box_stats(), public.admin_set_shop(text), public.admin_purchases(integer), public.shop_link(),
   public.admin_set_shop_links(text, text), public.shop_links(), public.admin_set_shop_limit(integer),
   public.admin_set_open_signups(boolean), public.admin_open_signups(), public.admin_invite_stats(), public.online_now(),
-  public._open_signups(), public.admin_shop_stats() to anon;
+  public._open_signups(), public.admin_shop_stats(), public.admin_set_money_link(text, text) to anon;
 -- paying out and taking back purchases: only the Stripe webhook (the service role)
 revoke execute on function public.grant_purchase(text, text, integer, text, text) from public, anon, authenticated;
 revoke execute on function public.refund_purchase(text) from public, anon, authenticated;
@@ -3630,6 +4081,9 @@ revoke execute on function public._player_keys(uuid) from public, anon, authenti
 revoke execute on function public._sec_event(text, text, text, text, text, text) from public, anon, authenticated;
 revoke execute on function public._same_computer(uuid, uuid) from public, anon, authenticated;
 revoke execute on function public._pass_give(uuid, jsonb, text) from public, anon, authenticated;
+revoke execute on function public._add_xp(uuid, integer) from public, anon, authenticated;
+revoke execute on function public._pot_settle(text) from public, anon, authenticated;
+revoke execute on function public._pot_ensure(text) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- season 1, closed

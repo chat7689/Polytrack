@@ -13,8 +13,8 @@ const boxes = async (name) => (await t.owner('select coalesce((select free_boxes
 
 // --- items
 const items = (await t.owner('select id, kind, source, sell from public.items')).rows;
-ok(items.length === 107, '97 box items + 6 paint finishes + 4 pass items = ' + items.length);
-ok(items.filter((i) => i.kind === 'finish').length === 6 && items.filter((i) => i.source === 'pass').length === 6, 'finishes and pass-only items');
+ok(items.length === 125, '97 box items, 6 shop finishes, 12 pass items, 8 driver-level items, 4 money-only items = ' + items.length);
+ok(items.filter((i) => i.kind === 'finish').length === 12 && items.filter((i) => i.source === 'pass').length === 12, 'finishes and pass-only items');
 ok(items.filter((i) => i.source === 'box').length === 97, 'boxes hold the 96 from before and Slick');
 await t.mkUser('Box');
 await t.one('Box', "select public.redeem_access('OPENOPEN') as j");
@@ -57,7 +57,7 @@ ok(worst < 0.15, 'every item sells back for well under its shop price (' + worst
 await t.mkUser('Pia');
 await t.one('Pia', "select public.redeem_access('OPENOPEN') as j");
 let pass = (await t.one('Pia', 'select public.my_pass() as j')).j;
-ok(pass.tier === 0 && pass.tiers === 30 && pass.perTier === 25 && pass.price === 30000 && !pass.plus && pass.rewards.length === 30, 'a fresh pass ' + JSON.stringify({ ...pass, rewards: pass.rewards.length }));
+ok(pass.tier === 0 && pass.tiers === 50 && pass.perTier === 25 && pass.price === 30000 && !pass.plus && pass.rewards.length === 50, 'a fresh pass ' + JSON.stringify({ ...pass, rewards: pass.rewards.length }));
 ok(pass.rewards[4].free.boxes === 1 && pass.rewards[3].free.credits === 100 && pass.rewards[29].plus.item === 'finish:chrome', 'the rewards');
 // 3 finishes count
 for (let k = 0; k < 3; k++) {
@@ -83,9 +83,9 @@ ok((await bal('Pia')) === c1 - 30000 && (await boxes('Pia')) === bx1 + 5 && (awa
 ok(/already have Pass\+/.test(await t.err('Pia', 'select public.buy_pass()')), 'bought once a season');
 await t.owner('update public.garage set pass_runs = 10000 where uid = $1', [t.users.Pia]);
 const all = (await t.one('Pia', 'select public.claim_pass() as j')).j;
-ok(all.got.length === 48, 'the top of the pass: 24 more tiers on both tracks ' + all.got.length);
+ok(all.got.length === 88, 'the top of the pass: 44 more tiers on both tracks ' + all.got.length);
 ok((await owns('Pia', 'finish:chrome')) === 1 && (await owns('Pia', 'finish:neon')) === 1 && (await owns('Pia', 'icon:pass-gem')) === 1, 'Chrome, Neon and the pass icons');
-ok((await t.one('Pia', 'select public.my_pass() as j')).j.tier === 30, 'and it stops at tier 30');
+ok((await t.one('Pia', 'select public.my_pass() as j')).j.tier === 50, 'and it stops at tier 50');
 ok(/permission denied/.test(await t.err('Pia', "select public._pass_give(auth.uid(), '{\"boxes\": 99}', 'x')")), 'no player can hand out rewards');
 // a new season: the pass starts again
 await t.owner("insert into public.season_awards (season, data) values ('final:Test season', '{}')");
