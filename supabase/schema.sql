@@ -2586,6 +2586,8 @@ create table if not exists public.pass_claims (
   plus_upto integer not null default 0,
   primary key (uid, season)
 );
+alter table public.pass_claims add column if not exists free_got integer[] not null default '{}';
+alter table public.pass_claims add column if not exists plus_got integer[] not null default '{}';
 create or replace function public._pass_season() returns text
 language sql stable security definer set search_path = public, pg_temp as $$
   select 'P' || (select count(*) from public.season_awards where season like 'final:%')
@@ -2619,6 +2621,7 @@ begin
     'tierPrice', R -> 'tierPrice',
     'tier', least((R ->> 'tiers')::int, coalesce(runs, 0) / (R ->> 'perTier')::int),
     'plus', coalesce(c.plus, false), 'free_upto', coalesce(c.free_upto, 0), 'plus_upto', coalesce(c.plus_upto, 0),
+    'free_got', to_jsonb(coalesce(c.free_got, '{}')), 'plus_got', to_jsonb(coalesce(c.plus_got, '{}')),
     'rewards', (select jsonb_agg(jsonb_build_object('tier', t, 'free', public._pass_reward(false, t), 'plus', public._pass_reward(true, t)) order by t)
                 from generate_series(1, (R ->> 'tiers')::int) t));
 end $$;
@@ -2648,18 +2651,46 @@ begin
   insert into public.pass_claims (uid, season) values (p.id, s) on conflict do nothing;
   select * into c from public.pass_claims where uid = p.id and season = s for update;
   for t in c.free_upto + 1 .. tier loop
+    if t = any(c.free_got) then continue; end if;
     perform public._pass_give(p.id, public._pass_reward(false, t), 'pass ' || s || ' free ' || t);
     got := got || jsonb_build_array(public._pass_reward(false, t) || jsonb_build_object('tier', t));
   end loop;
   if c.plus then
     for t in c.plus_upto + 1 .. tier loop
+      if t = any(c.plus_got) then continue; end if;
       perform public._pass_give(p.id, public._pass_reward(true, t), 'pass ' || s || ' plus ' || t);
       got := got || jsonb_build_array(public._pass_reward(true, t) || jsonb_build_object('tier', t, 'plus', true));
     end loop;
   end if;
-  update public.pass_claims set free_upto = greatest(free_upto, tier), plus_upto = case when plus then greatest(plus_upto, tier) else plus_upto end
+  update public.pass_claims set free_upto = greatest(free_upto, tier), free_got = array(select x from unnest(free_got) x where x > tier),
+    plus_upto = case when plus then greatest(plus_upto, tier) else plus_upto end,
+    plus_got = case when plus then array(select x from unnest(plus_got) x where x > tier) else plus_got end
     where uid = p.id and season = s;
   return jsonb_build_object('got', got, 'balance', public._balance(p.id));
+end $$;
+/** collect one reward (the player clicks it on the pass) */
+create or replace function public.claim_pass_reward(p_tier integer, p_plus boolean) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); s text := public._pass_season(); R jsonb := public._pass_rules();
+  runs integer; tier integer; c public.pass_claims; g integer[]; u integer; plus boolean := coalesce(p_plus, false); v_rw jsonb;
+begin
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  select case when pass_season = s then pass_runs else 0 end into runs from public.garage where uid = p.id;
+  tier := least((R ->> 'tiers')::int, coalesce(runs, 0) / (R ->> 'perTier')::int);
+  if p_tier is null or p_tier < 1 or p_tier > tier then raise exception 'You haven''t reached that tier yet.' using errcode = 'P0001'; end if;
+  insert into public.pass_claims (uid, season) values (p.id, s) on conflict do nothing;
+  select * into c from public.pass_claims where uid = p.id and season = s for update;
+  if plus and not c.plus then raise exception 'That reward needs Pass+.' using errcode = 'P0001'; end if;
+  if plus then g := c.plus_got; u := c.plus_upto; else g := c.free_got; u := c.free_upto; end if;
+  if p_tier <= u or p_tier = any(g) then raise exception 'Already collected.' using errcode = 'P0001'; end if;
+  v_rw := public._pass_reward(plus, p_tier);
+  perform public._pass_give(p.id, v_rw, 'pass ' || s || case when plus then ' plus ' else ' free ' end || p_tier);
+  -- collected in a row from the start: kept as a count, the rest as a list
+  g := array_append(g, p_tier);
+  while (u + 1) = any(g) loop u := u + 1; g := array_remove(g, u); end loop;
+  if plus then update public.pass_claims set plus_got = g, plus_upto = u where uid = p.id and season = s;
+  else update public.pass_claims set free_got = g, free_upto = u where uid = p.id and season = s; end if;
+  return jsonb_build_object('got', v_rw || jsonb_build_object('tier', p_tier, 'plus', plus), 'balance', public._balance(p.id));
 end $$;
 /** buy Pass+ for this season (rewards already reached are collected at once) */
 create or replace function public.buy_pass() returns jsonb
@@ -2674,7 +2705,7 @@ begin
   insert into public.credit_events (uid, delta, kind, note) values (p.id, -price, 'pass_plus', 'Pass+ ' || s);
   insert into public.pass_claims (uid, season, plus) values (p.id, s, true)
     on conflict (uid, season) do update set plus = true;
-  return public.claim_pass();
+  return jsonb_build_object('ok', true, 'balance', public._balance(p.id));
 end $$;
 /** the admin: how the shop and the pass are doing */
 create or replace function public.admin_shop_stats() returns jsonb
@@ -2734,6 +2765,7 @@ end $$;
 -- 122 500). Each level pays a reward on the Driver Road, once.
 alter table public.garage add column if not exists xp integer not null default 0;
 alter table public.garage add column if not exists road_upto integer not null default 1;
+alter table public.garage add column if not exists road_got integer[] not null default '{}';
 create or replace function public._add_xp(p_uid uuid, n integer) returns integer
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare v integer;
@@ -2763,7 +2795,7 @@ begin
   select * into g from public.garage where uid = p.id;
   lv := public._level(coalesce(g.xp, 0));
   return jsonb_build_object('xp', coalesce(g.xp, 0), 'level', lv, 'from', public._level_xp(lv), 'to', public._level_xp(lv + 1),
-    'upto', coalesce(g.road_upto, 1),
+    'upto', coalesce(g.road_upto, 1), 'got', to_jsonb(coalesce(g.road_got, '{}')),
     'rewards', (select jsonb_agg(jsonb_build_object('level', l, 'reward', public._road_reward(l)) order by l)
                 from generate_series(2, greatest(55, lv + 5)) l));
 end $$;
@@ -2782,11 +2814,30 @@ begin
   select * into g from public.garage where uid = p.id for update;
   lv := public._level(g.xp);
   for l in g.road_upto + 1 .. lv loop
+    if l = any(g.road_got) then continue; end if;
     perform public._pass_give(p.id, public._road_reward(l), 'level ' || l);
     got := got || jsonb_build_array(public._road_reward(l) || jsonb_build_object('level', l));
   end loop;
-  update public.garage set road_upto = greatest(road_upto, lv) where uid = p.id;
+  update public.garage set road_upto = greatest(road_upto, lv), road_got = array(select x from unnest(road_got) x where x > lv) where uid = p.id;
   return jsonb_build_object('got', got, 'balance', public._balance(p.id));
+end $$;
+/** collect one level's reward (the player clicks it on the Driver Road) */
+create or replace function public.claim_road_level(p_level integer) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); gr public.garage; lv integer; g integer[]; u integer; r jsonb;
+begin
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
+  insert into public.garage (uid) values (p.id) on conflict do nothing;
+  select * into gr from public.garage where uid = p.id for update;
+  lv := public._level(gr.xp);
+  if p_level is null or p_level < 2 or p_level > lv then raise exception 'You haven''t reached that level yet.' using errcode = 'P0001'; end if;
+  if p_level <= gr.road_upto or p_level = any(gr.road_got) then raise exception 'Already collected.' using errcode = 'P0001'; end if;
+  r := public._road_reward(p_level);
+  perform public._pass_give(p.id, r, 'level ' || p_level);
+  g := array_append(gr.road_got, p_level); u := gr.road_upto;
+  while (u + 1) = any(g) loop u := u + 1; g := array_remove(g, u); end loop;
+  update public.garage set road_got = g, road_upto = u where uid = p.id;
+  return jsonb_build_object('got', r || jsonb_build_object('level', p_level), 'balance', public._balance(p.id));
 end $$;
 
 -- Skipping Race Pass tiers with credits: 2 500 a tier, up to the last tier.
@@ -2807,7 +2858,7 @@ begin
   insert into public.credit_events (uid, delta, kind, note) values (p.id, -cost, 'pass_tiers', n || ' tiers ' || s);
   -- to the start of the tier n above (part of a tier already driven counts)
   update public.garage set pass_season = s, pass_runs = (v_runs / (R ->> 'perTier')::int + n) * (R ->> 'perTier')::int where uid = p.id;
-  return public.claim_pass();
+  return jsonb_build_object('ok', true, 'balance', public._balance(p.id));
 end $$;
 
 -- The money-only items: bought on Stripe with their own Payment Link (the

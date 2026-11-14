@@ -35,9 +35,16 @@ ok(cr.got.length === 19 && cr.got[18].level === 20, 'level 20: rewards for level
 ok((await owns('Lev', 'finish:gold')) === 1 && (await owns('Lev', 'title:road-rookie')) === 1 && (await owns('Lev', 'icon:lvl-shield')) === 1, 'the road\'s titles, icons and Gold paint');
 ok((await bal('Lev')) > c0 && (await garage('Lev')).free_boxes > b0, 'and credits and boxes');
 ok((await t.one('Lev', 'select public.claim_road() as j')).j.got.length === 0, 'once');
+await t.owner('update public.garage set xp = 24500 where uid = $1', [t.users.Lev]);
+const lr = (await t.one('Lev', 'select public.claim_road_level(22) as j')).j;
+ok(lr.got.level === 22 && (await t.owner('select road_got from public.garage where uid = $1', [t.users.Lev])).rows[0].road_got.join() === '22', 'a Driver Road level collected with a click');
+ok(/Already collected/.test(await t.err('Lev', 'select public.claim_road_level(22)')), 'once');
+ok(/haven.t reached/.test(await t.err('Lev', 'select public.claim_road_level(40)')), 'not before reaching it');
+await t.one('Lev', 'select public.claim_road_level(21) as j');
+ok((await t.one('Lev', 'select public.my_road() as j')).j.upto === 22, 'then 21: collected up to 22');
 ok(/permission denied/.test(await t.err('Lev', 'select public._add_xp(auth.uid(), 99999)')), 'no one can give themselves XP');
 const lvls = (await t.one('Lev', 'select public.levels_of($1) as j', [[t.users.Lev]])).j;
-ok(lvls[t.users.Lev] === 20, 'anyone can see a player\'s level');
+ok(lvls[t.users.Lev] === 22, 'anyone can see a player\'s level');
 
 // --- rival alerts
 await player('Ria'); await player('Rob');
@@ -122,7 +129,8 @@ await give('Tia', 6000);
 const tk = (await t.one('Tia', 'select public.buy_tiers(2) as j')).j;
 ok((await bal('Tia')) === 1000 - 200 + 6000 - 5000 + 0 || true, 'two tiers');
 ps = (await t.one('Tia', 'select public.my_pass() as j')).j;
-ok(ps.tier === 2 && ps.free_upto === 2 && tk.got.length === 2, 'skipping 2 tiers moves the pass 2 tiers and collects them ' + JSON.stringify(tk.got));
+ok(ps.tier === 2 && ps.free_upto === 0 && tk.ok, 'skipping 2 tiers moves the pass 2 tiers (the rewards wait to be clicked)');
+ok((await t.one('Tia', 'select public.claim_pass_reward(2, false) as j')).j.got.credits === 100, 'and each is collected with a click');
 ok(/costs 5000/.test(await t.err('Tia', 'select public.buy_tiers(2)')) || (await bal('Tia')) >= 5000, 'tiers cost 2 500 each');
 ok(/past the last tier/.test(await t.err('Tia', 'select public.buy_tiers(10)').then(async (m) => { await t.owner('update public.garage set pass_runs = 25 * 45 where uid = $1', [t.users.Tia]); return t.err('Tia', 'select public.buy_tiers(10)'); })), 'not past tier 50');
 

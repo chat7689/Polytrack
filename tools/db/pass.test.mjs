@@ -78,8 +78,22 @@ ok(/Pass\+ costs 30000/.test(await t.err('Pia', 'select public.buy_pass()')), 'P
 await give('Pia', 40000);
 const c1 = await bal('Pia'), bx1 = await boxes('Pia');
 const bp = (await t.one('Pia', 'select public.buy_pass() as j')).j;
-ok(bp.got.length === 6 && bp.got.every((g) => g.plus), 'Pass+ collects the 6 tiers already reached at once');
-ok((await bal('Pia')) === c1 - 30000 && (await boxes('Pia')) === bx1 + 5 && (await owns('Pia', 'title:pass-holder')) === 1, '30 000 off, 5 boxes and the Pass Holder title');
+ok(bp.ok && (await bal('Pia')) === c1 - 30000 && (await boxes('Pia')) === bx1, 'Pass+ costs 30 000 and collects nothing by itself');
+// the player clicks each reward
+const one = (tier, plus) => t.one('Pia', 'select public.claim_pass_reward($1, $2) as j', [tier, plus]).then((r) => r.j);
+const c3 = await one(3, true);
+ok(c3.got.boxes === 1 && c3.got.tier === 3 && (await boxes('Pia')) === bx1 + 1, 'clicking Pass+ tier 3 collects its box (out of order is fine)');
+ok(/Already collected/.test(await t.err('Pia', 'select public.claim_pass_reward(3, true)')), 'once');
+ok(/haven.t reached/.test(await t.err('Pia', 'select public.claim_pass_reward(7, true)')), 'not a tier not reached yet');
+await one(1, true); await one(2, true);
+let pc = (await t.one('Pia', 'select public.my_pass() as j')).j;
+ok(pc.plus_upto === 3 && pc.plus_got.length === 0, 'tiers 1 to 3 collected: kept as "up to 3" ' + JSON.stringify([pc.plus_upto, pc.plus_got]));
+await one(5, true);
+pc = (await t.one('Pia', 'select public.my_pass() as j')).j;
+ok(pc.plus_upto === 3 && pc.plus_got.join() === '5', 'tier 5 alone: listed separately');
+await one(4, true); await one(6, true);
+ok((await t.one('Pia', 'select public.my_pass() as j')).j.plus_upto === 6, 'then 4 and 6: up to 6');
+ok((await boxes('Pia')) === bx1 + 5 && (await owns('Pia', 'title:pass-holder')) === 1, '5 boxes and the Pass Holder title in all');
 ok(/already have Pass\+/.test(await t.err('Pia', 'select public.buy_pass()')), 'bought once a season');
 await t.owner('update public.garage set pass_runs = 10000 where uid = $1', [t.users.Pia]);
 const all = (await t.one('Pia', 'select public.claim_pass() as j')).j;

@@ -701,6 +701,23 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .rwDState.got{color:var(--aqua)}
 .rwDState.plusLock{color:#ffcf5c}
 .rwHow{font-size:12.5px}
+.rwHint{align-self:center;font-size:12.5px;font-weight:700;color:#ffb27a;padding:6px 12px;border-radius:999px;background:rgba(242,115,63,.12);border:1px solid rgba(242,115,63,.45)}
+.rwHint[hidden]{display:none}
+.rwCard.claiming{animation:claimPop .55s cubic-bezier(.2,.9,.25,1.3)!important;z-index:2}
+@keyframes claimPop{0%{transform:scale(1)}35%{transform:scale(1.14);box-shadow:0 0 0 3px #ffcf5c,0 0 46px 6px rgba(255,207,92,.75)}100%{transform:scale(1)}}
+.rwCard.justGot .rwState{animation:stampIn .45s cubic-bezier(.2,.9,.25,1.4)}
+@keyframes stampIn{from{transform:scale(2.2);opacity:0}to{transform:none;opacity:1}}
+.rwBurst{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.rwBurst i{position:absolute;left:50%;top:42%;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--bc);box-shadow:0 0 10px var(--bc);
+  animation:rwSpark .75s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rwSpark{from{transform:rotate(var(--a)) translateY(0) scale(1);opacity:1}to{transform:rotate(var(--a)) translateY(-84px) scale(.25);opacity:0}}
+.rwBurst b{position:absolute;left:50%;top:42%;width:26px;height:26px;margin:-13px;border-radius:50%;border:3px solid var(--bc);animation:rwRing .6s ease-out both}
+@keyframes rwRing{from{transform:scale(.4);opacity:1}to{transform:scale(6.5);opacity:0;border-width:1px}}
+.rwFloat{position:fixed;z-index:140;pointer-events:none;font-weight:800;font-size:17px;text-shadow:0 2px 10px rgba(0,0,0,.75),0 0 16px currentColor;
+  transform:translate(-50%,0);animation:rwFloat 1.35s cubic-bezier(.2,.8,.2,1) forwards;white-space:nowrap}
+@keyframes rwFloat{0%{opacity:0;transform:translate(-50%,12px) scale(.6)}18%{opacity:1;transform:translate(-50%,-8px) scale(1.12)}100%{opacity:0;transform:translate(-50%,-70px) scale(1)}}
+.gotPulse{animation:gotPulse .55s cubic-bezier(.2,.9,.25,1.4)}
+@keyframes gotPulse{40%{transform:scale(1.2);filter:brightness(1.6)}}
 .gTabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:9px 14px;color:var(--dim);font-weight:600;position:relative}
 .gTabs button.on{color:var(--ink);border-bottom-color:var(--ember)}
 .gTabs button i,.wBadge{font-style:normal;font-size:11px;font-weight:700;background:var(--ember);color:#fff;border-radius:9px;padding:1px 6px;margin-left:6px}
@@ -852,9 +869,11 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .heMsg{font-family:var(--mono);font-size:15px;font-weight:800;letter-spacing:.12em;color:#ffcf5c;opacity:0;text-shadow:0 0 12px rgba(255,176,46,.8)}
 .heMsg.on{animation:heMsg 1.6s ease-out forwards}
 @keyframes heMsg{0%{opacity:0;transform:scale(1.4)}12%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0}}
-.escMap{position:fixed;right:18px;top:50%;transform:translateY(-50%);width:170px;height:460px;pointer-events:none;z-index:3;border-radius:14px;
-  background:linear-gradient(to top,rgba(6,8,14,.55),rgba(6,8,14,0));
-  -webkit-mask-image:linear-gradient(to top,#000 55%,transparent 100%);mask-image:linear-gradient(to top,#000 55%,transparent 100%)}
+.escMap{position:fixed;right:16px;top:50%;transform:translateY(-50%);width:230px;height:min(600px,76vh);pointer-events:none;z-index:3;border-radius:18px;
+  background:linear-gradient(to top,rgba(6,8,16,.78),rgba(10,12,24,.55) 60%,rgba(10,12,24,0));border:1px solid rgba(160,120,255,.22);
+  box-shadow:0 20px 50px -20px rgba(0,0,0,.8);transition:border-color .4s ease,box-shadow .4s ease;
+  -webkit-mask-image:linear-gradient(to top,#000 62%,transparent 100%);mask-image:linear-gradient(to top,#000 62%,transparent 100%)}
+.escMap.near{border-color:rgba(255,45,85,.7);box-shadow:0 0 34px -6px rgba(255,45,85,.7),0 20px 50px -20px rgba(0,0,0,.8)}
 .escMap[hidden]{display:none}
 .stormInk{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .stormInk[hidden]{display:none}
@@ -2136,8 +2155,24 @@ h2.big{font-size:28px;letter-spacing:-.025em}
   .gBar i,.pBar i,.dayChBar i,.lvChip s,.refBar i{transition:width .7s cubic-bezier(.2,.8,.2,1)}
   .toast{transition:opacity .25s ease,transform .3s cubic-bezier(.2,.9,.25,1.2)}
   .layer:not([hidden])>.scrim{animation:boxFade .3s ease}
-  .result:not(.morphIn) .bigtime{animation:resultTime .5s .05s cubic-bezier(.2,.9,.25,1.15) both}
-  .result:not(.morphIn) .mini,.result:not(.morphIn) .row{animation:cardIn .4s .12s cubic-bezier(.2,.8,.2,1) both}
+  /* after any run: the dark fades in, the card rises into focus, and what's on it arrives in turn */
+  #result:not([hidden])>.scrim{animation:scrimIn .45s ease both}
+  #result:not([hidden])>.panel.result{animation:resultIn .62s cubic-bezier(.16,1,.3,1) both}
+  #result:not([hidden])>.panel.result>*{animation:resultKid .5s cubic-bezier(.16,1,.3,1) both}
+  #result:not([hidden])>.panel.result>:nth-child(1){animation-delay:.12s}
+  #result:not([hidden])>.panel.result>:nth-child(2){animation-delay:.17s}
+  #result:not([hidden])>.panel.result>.bigtime{animation:resultTime .65s .2s cubic-bezier(.2,.9,.25,1.25) both}
+  #result:not([hidden])>.panel.result>:nth-child(4){animation-delay:.3s}
+  #result:not([hidden])>.panel.result>:nth-child(5){animation-delay:.36s}
+  #result:not([hidden])>.panel.result>:nth-child(6){animation-delay:.42s}
+  #result:not([hidden])>.panel.result>:nth-child(7){animation-delay:.48s}
+  #result:not([hidden])>.panel.result>:nth-child(n+8){animation-delay:.54s}
+  #result:not([hidden]) #rBoard li,#result:not([hidden]) #rRaceResultList li{animation:resultKid .4s cubic-bezier(.16,1,.3,1) both}
+  #result:not([hidden]) #rBoard li:nth-child(2),#result:not([hidden]) #rRaceResultList li:nth-child(2){animation-delay:.05s}
+  #result:not([hidden]) #rBoard li:nth-child(3),#result:not([hidden]) #rRaceResultList li:nth-child(3){animation-delay:.1s}
+  #result:not([hidden]) #rBoard li:nth-child(4),#result:not([hidden]) #rRaceResultList li:nth-child(4){animation-delay:.15s}
+  #result:not([hidden]) #rBoard li:nth-child(n+5),#result:not([hidden]) #rRaceResultList li:nth-child(n+5){animation-delay:.2s}
+  #mpResults:not([hidden]){animation:resultIn .55s cubic-bezier(.16,1,.3,1) both}
 }
 @keyframes boxFade{from{opacity:0}to{opacity:1}}
 @keyframes boxPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
@@ -2145,7 +2180,10 @@ h2.big{font-size:28px;letter-spacing:-.025em}
 @keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes tabOn{0%{transform:scale(.94)}100%{transform:scale(1)}}
 @keyframes readyPulse{0%,100%{box-shadow:0 0 0 1px var(--ember),0 10px 26px -12px var(--ember)}50%{box-shadow:0 0 0 2px var(--ember),0 12px 34px -8px var(--ember)}}
-@keyframes resultTime{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+@keyframes resultTime{from{opacity:0;transform:scale(.8);filter:blur(4px)}60%{opacity:1;transform:scale(1.04);filter:none}to{opacity:1;transform:none}}
+@keyframes resultIn{from{opacity:0;transform:translateY(42px) scale(.93);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes resultKid{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes scrimIn{from{opacity:0}to{opacity:1}}
 /* ---------- home ---------- */
 .menuPanel{width:min(1180px,95vw);padding:26px 36px 30px}
 .menuTop{padding-bottom:16px;border-bottom:1px solid var(--rule-2)}
@@ -2657,7 +2695,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <div class="heStorm"><span>STORM</span><b id="hEscGap">300 m</b><small>behind you</small></div>
         <div class="heMsg" id="hEscMsg"></div>
       </div>
-      <canvas class="escMap" id="escMap" width="170" height="460" hidden></canvas>
+      <canvas class="escMap" id="escMap" width="460" height="1200" hidden></canvas>
       <canvas class="stormInk" id="stormInk" width="640" height="360" hidden></canvas>
       <div class="boostFlash" id="boostFlash"></div>
       <div class="hud-tc"><div class="clock" id="hClock">0:00.000</div><div class="split" id="hSplit"></div>
@@ -10235,11 +10273,14 @@ const App = {
     this.hemi = new THREE.HemisphereLight(0xcfe6f6, 0x86ab72, 0.95);
     this.scene.add(this.hemi);
 
+    // the grass: a plain colour, so it can simply follow the camera (a 6 km
+    // square fixed at the origin ran out ~3 km along Escape's 10 km road)
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), MAT.floor);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = GROUND_Y;
     floor.receiveShadow = true;
     this.scene.add(floor);
+    this.floor = floor;
 
     // two rings of low-poly peaks for depth, the far ring fading into the
     // fog. Laid out per course (layoutBackdrop) around that course's own
@@ -10314,6 +10355,7 @@ const App = {
   },
   render() {
     if (this.sky) this.sky.position.copy(this.camera.position);
+    if (this.floor) this.floor.position.set(this.camera.position.x, GROUND_Y, this.camera.position.z);
     this.renderer.render(this.scene, this.camera);
   }
 };
@@ -13121,7 +13163,15 @@ const Garage = {
   },
   /** a level from total XP (the server's curve: 50 x L x (L - 1)) */
   levelOf(xp) { return Math.floor((1 + Math.sqrt(1 + 0.08 * Math.max(0, xp || 0))) / 2); },
-  roadWaiting() { const R = this.road; return R ? Math.max(0, R.level - R.upto) : 0; },
+  roadGot(l) { const R = this.road; return l <= R.upto || (R.got || []).includes(l); },
+  roadWaiting() {
+    const R = this.road;
+    if (!R) return 0;
+    let n = 0;
+    for (let l = 2; l <= R.level; l++) if (!this.roadGot(l)) n++;
+    return n;
+  },
+  passGot(t, plus) { const P = this.pass; return plus ? t <= P.plus_upto || (P.plus_got || []).includes(t) : t <= P.free_upto || (P.free_got || []).includes(t); },
   /** the menu's level chip */
   levelChip() {
     const R = this.road, el = $('lvChip');
@@ -13136,7 +13186,9 @@ const Garage = {
   passWaiting() {
     const P = this.pass;
     if (!P) return 0;
-    return Math.max(0, P.tier - P.free_upto) + (P.plus ? Math.max(0, P.tier - P.plus_upto) : 0);
+    let n = 0;
+    for (let t = 1; t <= P.tier; t++) { if (!this.passGot(t, false)) n++; if (P.plus && !this.passGot(t, true)) n++; }
+    return n;
   },
   /** today's shop (again when the day has turned) */
   async loadShop(force) {
@@ -13277,7 +13329,7 @@ const Garage = {
   rewardCard(r, state, key, label) {
     const it = r.item && Catalog.get(r.item);
     const K = it ? ITEM_KIND[it.kind] : null;
-    const st = state === 'got' ? 'Collected' : state === 'ready' ? 'Ready!' : state === 'plusLock' ? 'Pass+ only' : label;
+    const st = state === 'got' ? 'Collected' : state === 'ready' ? 'Click to collect' : state === 'plusLock' ? 'Pass+ only' : label;
     return '<button class="rwCard ' + state + (it ? ' rwItem' : '') + '" data-rw="' + key + '"' + (K ? ' style="--kc:' + K.col + '"' : '') + '>' +
       this.rewardPic(r) + '<span class="rwName">' + escapeHtml(this.rewardText(r)) + '</span><span class="rwState">' + st + '</span></button>';
   },
@@ -13298,11 +13350,86 @@ const Garage = {
       pane.querySelectorAll('.rwCard.sel').forEach((c) => c.classList.remove('sel'));
       b.classList.add('sel');
       const f = find(b.dataset.rw);
-      if (f) this.rewardDetail(f.r, f.where, f.state);
+      if (!f) return;
+      // a reward that's ready is collected by clicking it
+      if (b.classList.contains('ready')) { this.claimOne(b, pane.dataset.pane, b.dataset.rw, f.r); return; }
+      this.rewardDetail(f.r, f.where, f.state);
     }));
     const tr = pane.querySelector('.rwTrack'), cur = pane.querySelector('.rwCol.now');
     if (tr && cur) { tr.style.scrollBehavior = 'auto'; tr.scrollLeft = Math.max(0, cur.offsetLeft - tr.offsetLeft - tr.clientWidth / 2 + cur.offsetWidth / 2); tr.style.scrollBehavior = ''; }
     if (tr) tr.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { tr.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  },
+  /** collect one reward with a click: the card pops, sparks fly, its picture flies to where it goes */
+  async claimOne(b, kind, key, r) {
+    if (b.classList.contains('claiming')) return;
+    const pass = kind === 'pass', plus = pass && key[0] === 'p', n = pass ? +key.slice(1) : +key;
+    b.classList.add('claiming');
+    this.claimFx(b, r);
+    try {
+      const res = await Cloud.rpc(pass ? 'claim_pass_reward' : 'claim_road_level', pass ? { p_tier: n, p_plus: plus } : { p_level: n });
+      Records.credits = res.balance;
+      UI.who(Cloud.name(), Records.credits);
+      $('gCredits').textContent = fmtCredits(Records.credits);
+      if (pass) (plus ? (this.pass.plus_got = this.pass.plus_got || []) : (this.pass.free_got = this.pass.free_got || [])).push(n);
+      else (this.road.got = this.road.got || []).push(n);
+      if (this.data && r.boxes) this.data.free_boxes = (this.data.free_boxes || 0) + r.boxes;
+      if (this.data && r.item) { const v = this.data.inventory.find((i) => i.item === r.item); if (v) v.count++; else this.data.inventory.push({ item: r.item, count: 1 }); }
+      setTimeout(() => {
+        b.classList.remove('ready', 'claiming');
+        b.classList.add('got', 'justGot');
+        b.querySelector('.rwState').textContent = 'Collected';
+      }, 420);
+      this.badge();
+      this.claimHint(kind);
+      this.rewardDetail(r, pass ? (plus ? 'Pass+' : 'Free') + ' · tier ' + n : 'Level ' + n, 'got');
+    } catch (e) {
+      b.classList.remove('claiming');
+      UI.toast(Cloud.errText(e));
+    }
+  },
+  /** the show: a burst on the card, a label rising, the picture flying home */
+  claimFx(b, r) {
+    Sound.creditWin();
+    const col = r.credits ? '#9a78ff' : r.boxes ? '#ffcf5c' : (ITEM_KIND[(Catalog.get(r.item) || {}).kind] || {}).col || '#ffcf5c';
+    const burst = document.createElement('span');
+    burst.className = 'rwBurst';
+    burst.style.setProperty('--bc', col);
+    burst.innerHTML = '<b></b>' + Array.from({ length: 14 }, (_, k) => '<i style="--a:' + (k * 360 / 14 + Math.random() * 10) + 'deg;animation-delay:' + (Math.random() * 0.06).toFixed(2) + 's"></i>').join('');
+    b.appendChild(burst);
+    setTimeout(() => burst.remove(), 900);
+    const br = b.getBoundingClientRect();
+    const fl = document.createElement('div');
+    fl.className = 'rwFloat';
+    fl.style.left = (br.left + br.width / 2) + 'px'; fl.style.top = (br.top + 6) + 'px'; fl.style.color = col;
+    fl.textContent = r.credits ? '+' + fmtCredits(r.credits) + ' credits' : r.boxes ? '+' + r.boxes + ' free box' + (r.boxes > 1 ? 'es' : '') : this.rewardText(r) + '!';
+    document.body.appendChild(fl);
+    setTimeout(() => fl.remove(), 1400);
+    // the picture flies to the credits, the Boxes tab or Customize
+    const pic = b.querySelector('.rwPic img, .rwPic .fIcon, .rwPic span');
+    const target = r.credits ? $('gCredits') : r.boxes ? document.querySelector('#gTabs [data-tab="boxes"]') : document.querySelector('#gTabs [data-tab="custom"]');
+    if (!pic || !target || !pic.animate || Morph.quiet()) return;
+    const a = pic.getBoundingClientRect(), z = target.getBoundingClientRect();
+    const clone = pic.cloneNode(true);
+    Object.assign(clone.style, { position: 'fixed', left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', margin: '0', zIndex: 140, pointerEvents: 'none', opacity: 1 });
+    clone.classList.add('ready');
+    document.body.appendChild(clone);
+    const dx = z.left + z.width / 2 - (a.left + a.width / 2), dy = z.top + z.height / 2 - (a.top + a.height / 2);
+    clone.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: 'translate(' + dx * 0.35 + 'px,' + (dy * 0.35 - 70) + 'px) scale(1.15)', opacity: 1, offset: 0.4 },
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.2)', opacity: 0.25 }
+    ], { duration: 900, delay: 150, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'both' }).onfinish = () => {
+      clone.remove();
+      target.classList.remove('gotPulse'); void target.offsetWidth; target.classList.add('gotPulse');
+    };
+  },
+  /** "N ready: click them" over the track */
+  claimHint(kind) {
+    const el = $(kind === 'pass' ? 'rwHintPass' : 'rwHintRoad');
+    if (!el) return;
+    const n = kind === 'pass' ? this.passWaiting() : this.roadWaiting();
+    el.hidden = !n;
+    el.textContent = n + ' reward' + (n === 1 ? '' : 's') + ' ready: click ' + (n === 1 ? 'it' : 'them') + ' to collect';
   },
   /** the Driver Road: every level's reward, as a road of cards */
   renderRoad() {
@@ -13312,13 +13439,13 @@ const Garage = {
     if (!R) { pane.innerHTML = '<p class="lede">Driver levels aren\'t set up on the server yet.</p>'; return; }
     const wait = this.roadWaiting();
     const pct = Math.min(100, (R.xp - R.from) / Math.max(1, R.to - R.from) * 100);
-    const state = (l) => (l <= R.upto ? 'got' : l <= R.level ? 'ready' : 'lock');
+    const state = (l) => (this.roadGot(l) ? 'got' : l <= R.level ? 'ready' : 'lock');
     const cols = R.rewards.map((x) => '<div class="rwCol' + (x.level <= R.level ? ' reached' : '') + (x.level === R.level + 1 ? ' now' : '') + (x.reward.item ? ' big' : '') + '" style="--d:' + Math.abs(x.level - R.level - 1) + '">' +
       '<span class="rwNum">' + x.level + '</span>' + this.rewardCard(x.reward, state(x.level), String(x.level), 'Level ' + x.level) + '</div>').join('');
     pane.innerHTML = '<div class="bpTop"><div class="rwLv"><b>' + R.level + '</b><small>LEVEL</small></div><div class="bpTitle"><div class="pKick">DRIVER ROAD</div><h3>Level ' + R.level + '</h3>' +
       '<small>' + fmtCredits(R.xp - R.from) + ' / ' + fmtCredits(R.to - R.from) + ' XP to level ' + (R.level + 1) + ' · it never resets</small>' +
       '<div class="gBar pBar"><i style="width:' + pct.toFixed(1) + '%"></i></div></div></div>' +
-      (wait ? '<button class="primary gBig pClaim" id="bRoadClaim"><span>Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</span></button>' : '') +
+      '<div class="bpActions"><span class="rwHint" id="rwHintRoad"' + (wait ? '' : ' hidden') + '>' + wait + ' reward' + (wait === 1 ? '' : 's') + ' ready: click ' + (wait === 1 ? 'it' : 'them') + ' to collect</span></div>' +
       '<div class="rwWrap single"><div class="rwTrack"><div class="rwCols">' + cols + '</div></div></div>' +
       '<div class="rwDetail" id="rwDetail" hidden></div>' +
       '<p class="lede rwHow">XP: <b>10</b> a finished run · <b>25</b> a personal best · <b>20</b> a streak day · <b>100</b> the daily challenge · up to <b>50</b> an Escape run. ' +
@@ -13615,8 +13742,8 @@ const Garage = {
     if (!P) { pane.innerHTML = '<p class="lede">The Race Pass isn\'t set up on the server yet.</p>'; return; }
     const into = P.tier >= P.tiers ? P.perTier : P.runs - P.tier * P.perTier;
     const wait = this.passWaiting();
-    const fs = (t) => (t <= P.free_upto ? 'got' : t <= P.tier ? 'ready' : 'lock');
-    const ps = (t) => (!P.plus ? 'plusLock' : t <= P.plus_upto ? 'got' : t <= P.tier ? 'ready' : 'lock');
+    const fs = (t) => (this.passGot(t, false) ? 'got' : t <= P.tier ? 'ready' : 'lock');
+    const ps = (t) => (!P.plus ? 'plusLock' : this.passGot(t, true) ? 'got' : t <= P.tier ? 'ready' : 'lock');
     const cols = P.rewards.map((r) => '<div class="rwCol' + (r.tier <= P.tier ? ' reached' : '') + (r.tier === P.tier + 1 ? ' now' : '') + '" style="--d:' + Math.abs(r.tier - P.tier - 1) + '">' +
       '<span class="rwNum">' + r.tier + '</span>' + this.rewardCard(r.plus, ps(r.tier), 'p' + r.tier, 'Tier ' + r.tier) +
       this.rewardCard(r.free, fs(r.tier), 'f' + r.tier, 'Tier ' + r.tier) + '</div>').join('');
@@ -13624,7 +13751,7 @@ const Garage = {
       '<small>' + (P.tier >= P.tiers ? 'Every tier reached!' : 'Tier ' + P.tier + ' of ' + P.tiers + ' · ' + into + ' / ' + P.perTier + ' finished runs to the next') + '</small>' +
       '<div class="gBar pBar"><i style="width:' + (P.tier >= P.tiers ? 100 : into / P.perTier * 100).toFixed(1) + '%"></i></div></div>' +
       (P.plus ? '<span class="pPlus on">PASS+</span>' : '<button class="primary bpBuy" id="bPassBuy"><b>Get Pass+</b><span><span class="gem2d"></span> ' + fmtCredits(P.price) + '</span></button>') + '</div>' +
-      '<div class="bpActions">' + (wait ? '<button class="primary" id="bPassClaim">Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</button>' : '') +
+      '<div class="bpActions"><span class="rwHint" id="rwHintPass"' + (wait ? '' : ' hidden') + '>' + wait + ' reward' + (wait === 1 ? '' : 's') + ' ready: click ' + (wait === 1 ? 'it' : 'them') + ' to collect</span>' +
       (P.tier < P.tiers ? '<button class="small" id="bSkip1">Skip a tier · <span class="gem2d"></span> ' + fmtCredits(P.tierPrice || 2500) + '</button>' +
         (P.tier + 5 <= P.tiers ? '<button class="small" id="bSkip5">Skip 5 · <span class="gem2d"></span> ' + fmtCredits(5 * (P.tierPrice || 2500)) + '</button>' : '') : '') + '</div>' +
       '<div class="rwWrap"><div class="rwLabels"><span class="lp">PASS+</span><span class="lf">FREE</span></div><div class="rwTrack"><div class="rwCols">' + cols + '</div></div></div>' +
@@ -14741,6 +14868,7 @@ const Escape = {
     this.flakesInit();
     this.place();
     $('hEscape').hidden = false; $('escMap').hidden = false; $('stormInk').hidden = false;
+    this.mapSize();
     this.hud();
     this.ink(0, 0);
     this.drawMap();
@@ -14798,16 +14926,25 @@ const Escape = {
     for (const pk of this.pickups) {
       if (!pk.mesh.visible) continue;
       if (pk.got !== undefined) {
+        // the burst: the rings fly apart as a shockwave, the halo flashes, the sparks scatter
         pk.got += dt;
-        const u = Math.min(1, pk.got / 0.5);
-        pk.mesh.scale.setScalar(1 + u * 2.6);
+        const u = Math.min(1, pk.got / 0.55), e = 1 - Math.pow(1 - u, 3);
+        pk.ring.scale.setScalar(1 + e * 3.2); pk.ring.rotation.x = Math.PI / 2;
+        pk.ring2.scale.setScalar(0.82 + e * 2.2);
+        pk.glow.scale.setScalar(3.2 + Math.sin(Math.min(1, u * 2) * Math.PI) * 5);
+        pk.sparks.scale.setScalar(1 + e * 4);
+        pk.core.scale.setScalar(Math.max(0.01, 1.3 * (1 - e)));
         pk.mats.forEach((m) => { m.opacity = m.userData.o * (1 - u); });
         if (u >= 1) pk.mesh.visible = false;
         continue;
       }
-      pk.ring.rotation.y = now * 2.2;
-      pk.core.rotation.y = -now * 3;
-      pk.mesh.position.y = pk.y + Math.sin(now * 3 + pk.d) * 0.2;
+      pk.ring.rotation.set(now * 1.7, now * 0.9, 0);
+      pk.ring2.rotation.set(Math.PI / 2 + now * 0.8, 0, now * 2.1);
+      pk.core.rotation.y = now * 2.4;
+      pk.sparks.rotation.y = -now * 1.6;
+      pk.glow.scale.setScalar(3.1 + Math.sin(now * 4 + pk.d) * 0.3);
+      pk.mesh.position.y = pk.y + Math.sin(now * 2.5 + pk.d) * 0.22;
+      pk.pool.position.y = -2.05 - Math.sin(now * 2.5 + pk.d) * 0.22;
       if (Math.abs(pk.d - this.me) < 30 && cp.distanceToSquared(pk.mesh.position) < 6 * 6) {
         pk.got = 0;
         Game.car.boostLeft = CAR.boostTotal;
@@ -14925,9 +15062,32 @@ const Escape = {
    *  respawn spots, which never sit on a ramp, a jump, a crest or a banked turn), 2 m above it */
   makePickups() {
     if (!this.pickGeo) {
-      this.pickGeo = new THREE.TorusGeometry(1.15, 0.16, 10, 32);
-      this.pickCore = new THREE.OctahedronGeometry(0.5, 0);
-      this.pickBeam = new THREE.CylinderGeometry(0.35, 0.9, 14, 16, 1, true);
+      this.pickGeo = new THREE.TorusGeometry(1.05, 0.07, 10, 48);
+      // a lightning bolt, solid
+      const sh = new THREE.Shape();
+      [[0.18, 0.95], [-0.42, 0.02], [-0.04, 0.02], [-0.22, -0.95], [0.44, 0.12], [0.04, 0.12]].forEach(([x, y], k) => (k ? sh.lineTo(x, y) : sh.moveTo(x, y)));
+      sh.closePath();
+      this.pickCore = new THREE.ExtrudeGeometry(sh, { depth: 0.16, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 1 });
+      this.pickCore.center();
+      this.pickBeam = new THREE.CylinderGeometry(0.16, 0.42, 16, 20, 1, true);
+      const glowTex = (inner, outer) => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+        const c = cv.getContext('2d'), g = c.createRadialGradient(64, 64, 0, 64, 64, 64);
+        g.addColorStop(0, inner); g.addColorStop(0.35, outer); g.addColorStop(1, 'rgba(255,140,30,0)');
+        c.fillStyle = g; c.fillRect(0, 0, 128, 128);
+        return new THREE.CanvasTexture(cv);
+      };
+      this.pickHaloTex = glowTex('rgba(255,200,90,0.85)', 'rgba(255,140,30,0.28)');
+      this.pickPoolTex = glowTex('rgba(255,190,70,0.9)', 'rgba(255,140,30,0.35)');
+      const bc = document.createElement('canvas'); bc.width = 4; bc.height = 128;
+      const bx = bc.getContext('2d'), bg = bx.createLinearGradient(0, 0, 0, 128);
+      bg.addColorStop(0, 'rgba(255,170,50,0)'); bg.addColorStop(0.7, 'rgba(255,150,40,0.35)'); bg.addColorStop(0.9, 'rgba(255,170,60,0.6)'); bg.addColorStop(1, 'rgba(255,170,60,0)');
+      bx.fillStyle = bg; bx.fillRect(0, 0, 4, 128);
+      this.pickBeamTex = new THREE.CanvasTexture(bc);
+      const sp = new Float32Array(16 * 3);
+      for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; sp[k * 3] = Math.cos(a) * 1.5; sp[k * 3 + 1] = Math.sin(a * 3) * 0.35; sp[k * 3 + 2] = Math.sin(a) * 1.5; }
+      this.pickSparkGeo = new THREE.BufferGeometry();
+      this.pickSparkGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
     }
     for (const pk of this.pickups) App.scene.remove(pk.mesh);
     this.pickups = [];
@@ -14940,14 +15100,25 @@ const Escape = {
       if (!best) continue;
       last = cum[best.idx];
       const deckY = best.pos.y - CAR.comHeight - 0.15;
-      const mats = [add(0xffb02e, 0.95), add(0xfff1b0, 0.9), add(0xffb02e, 0.16)];
+      const solid = (c, o) => { const m = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o }); m.userData.o = o; return m; };
+      const mats = [solid(0xff8a1c, 1), solid(0xffd24a, 1)];
+      const boltMat = new THREE.MeshBasicMaterial({ color: 0xffc23a, transparent: true, opacity: 1 }); boltMat.userData.o = 1;
+      const halo = new THREE.SpriteMaterial({ map: this.pickHaloTex, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }); halo.userData.o = 0.5;
+      const beamM = new THREE.MeshBasicMaterial({ map: this.pickBeamTex, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }); beamM.userData.o = 0.32;
+      const poolM = new THREE.MeshBasicMaterial({ map: this.pickPoolTex, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }); poolM.userData.o = 0.7;
+      const sparkM = new THREE.PointsMaterial({ color: 0xffe08a, size: 0.22, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }); sparkM.userData.o = 0.95;
+      mats.push(boltMat, halo, beamM, poolM, sparkM);
       const g = new THREE.Group();
       const ring = new THREE.Mesh(this.pickGeo, mats[0]); g.add(ring);
-      const core = new THREE.Mesh(this.pickCore, mats[1]); g.add(core);
-      const beam = new THREE.Mesh(this.pickBeam, mats[2]); beam.position.y = 6; g.add(beam);
+      const ring2 = new THREE.Mesh(this.pickGeo, mats[1]); ring2.scale.setScalar(0.82); g.add(ring2);
+      const core = new THREE.Mesh(this.pickCore, boltMat); core.scale.setScalar(1.3); g.add(core);
+      const glow = new THREE.Sprite(halo); glow.scale.setScalar(3.2); g.add(glow);
+      const sparks = new THREE.Points(this.pickSparkGeo, sparkM); g.add(sparks);
+      const beam = new THREE.Mesh(this.pickBeam, beamM); beam.position.y = 9.6; g.add(beam);
+      const pool = new THREE.Mesh(new THREE.CircleGeometry(2.6, 32), poolM); pool.rotation.x = -Math.PI / 2; pool.position.y = -2.05; g.add(pool);
       g.position.set(best.pos.x, deckY + 2.1, best.pos.z);
       App.scene.add(g);
-      this.pickups.push({ mesh: g, ring, core, mats, d: cum[best.idx], y: deckY + 2.1 });
+      this.pickups.push({ mesh: g, ring, ring2, core, glow, sparks, pool, mats, d: cum[best.idx], y: deckY + 2.1 });
     }
   },
   /* ---------------------------------------------- the map on the right */
@@ -14973,45 +15144,144 @@ const Escape = {
     const A = pts[lo], B = pts[hi], u = B.d > A.d ? clamp((d - A.d) / (B.d - A.d), 0, 1) : 0;
     return { u: A.u + (B.u - A.u) * u, v: A.v + (B.v - A.v) * u };
   },
+  /** the map's canvas at the screen's own resolution */
+  mapSize() {
+    const cv = $('escMap');
+    const dpr = Math.min(2, devicePixelRatio || 1), w = cv.clientWidth || 230, h = cv.clientHeight || 600;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    this.mapDpr = dpr;
+  },
   drawMap() {
     const cv = $('escMap');
     if (!cv || !this.map) return;
-    const c = cv.getContext('2d'), W = cv.width, H = cv.height, S = 0.085;
-    const me = this.mapAt(Math.max(0, this.me));
-    const X = (q) => W / 2 + (q.u - me.u) * S, Y = (q) => H * 0.84 - (q.v - me.v) * S;
+    const dpr = this.mapDpr || 1, c = cv.getContext('2d'), W = cv.width / dpr, H = cv.height / dpr, S = 0.1;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, W, H);
-    const pts = this.map.pts;
-    // the road
-    c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 9;
-    c.beginPath(); pts.forEach((q, k) => (k ? c.lineTo(X(q), Y(q)) : c.moveTo(X(q), Y(q)))); c.stroke();
-    c.strokeStyle = 'rgba(235,240,255,0.85)'; c.lineWidth = 3.5;
-    c.beginPath(); pts.forEach((q, k) => (k ? c.lineTo(X(q), Y(q)) : c.moveTo(X(q), Y(q)))); c.stroke();
-    // kilometre marks
-    c.fillStyle = 'rgba(255,255,255,0.75)'; c.font = '700 10px Inter, Arial, sans-serif'; c.textAlign = 'left';
-    for (let k = 1000; k < Game.course.length; k += 1000) { const q = this.mapAt(k); c.fillText(k / 1000 + ' km', X(q) + 9, Y(q) + 3); c.fillRect(X(q) - 4, Y(q) - 1, 8, 2); }
-    // boost refills
-    c.fillStyle = '#ffb02e';
-    for (const pk of this.pickups) if (pk.mesh.visible) { const q = this.mapAt(pk.d); c.beginPath(); c.arc(X(q), Y(q), 3, 0, Math.PI * 2); c.fill(); }
-    // what the storm has taken
-    if (this.storm > 0) {
-      c.save();
-      c.shadowColor = 'rgba(160,50,255,0.9)'; c.shadowBlur = 10;
-      c.strokeStyle = '#07000c'; c.lineWidth = 11;
-      c.beginPath();
-      let k = 0;
-      for (; k < pts.length && pts[k].d <= this.storm; k++) (k ? c.lineTo(X(pts[k]), Y(pts[k])) : c.moveTo(X(pts[k]), Y(pts[k])));
-      const f = this.mapAt(this.storm); c.lineTo(X(f), Y(f));
-      c.stroke();
-      c.restore();
-      const f2 = this.mapAt(this.storm);
-      c.fillStyle = '#ff2d55'; c.fillRect(X(f2) - 12, Y(f2) - 2, 24, 4);
-    }
-    // you
     const t = performance.now() / 1000;
-    c.fillStyle = 'rgba(61,219,184,0.3)'; c.beginPath(); c.arc(X(me), Y(me), 8 + 3 * Math.sin(t * 5), 0, Math.PI * 2); c.fill();
+    const meD = Math.max(0, this.me), me = this.mapAt(meD), PY = H * 0.72;
+    const X = (q) => W / 2 + (q.u - me.u) * S, Y = (q) => PY - (q.v - me.v) * S;
+    const pts = this.map.pts, gap = meD - this.storm;
+    // a faint grid that scrolls with you
+    c.strokeStyle = 'rgba(140,170,255,0.07)'; c.lineWidth = 1;
+    const off = (me.v * S) % 36;
+    c.beginPath();
+    for (let y = (PY + off) % 36; y < H; y += 36) { c.moveTo(0, y); c.lineTo(W, y); }
+    for (let x = (W / 2 - (me.u * S) % 36) % 36; x < W; x += 36) { c.moveTo(x, 0); c.lineTo(x, H); }
+    c.stroke();
+    // the road: shadow, deck, bright centre (only the part on screen)
+    const road = () => {
+      c.beginPath();
+      let on = false;
+      for (const q of pts) {
+        const y = Y(q);
+        if (y < -60 || y > H + 60) { on = false; continue; }
+        if (!on) { c.moveTo(X(q), y); on = true; } else c.lineTo(X(q), y);
+      }
+    };
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    road(); c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 13; c.stroke();
+    road(); c.strokeStyle = '#323a52'; c.lineWidth = 9; c.stroke();
+    road(); c.strokeStyle = 'rgba(232,238,255,0.95)'; c.lineWidth = 2.6; c.stroke();
+    // kilometres
+    c.font = '800 10.5px Inter, Arial, sans-serif'; c.textBaseline = 'middle';
+    for (let k = 1000; k < Game.course.length; k += 1000) {
+      const q = this.mapAt(k), x = X(q), y = Y(q);
+      if (y < -20 || y > H + 20) continue;
+      c.fillStyle = 'rgba(255,255,255,0.9)'; c.fillRect(x - 6, y - 1, 12, 2);
+      const lab = k / 1000 + ' km', w = c.measureText(lab).width + 10;
+      c.fillStyle = 'rgba(10,14,24,0.8)'; c.beginPath(); c.roundRect ? c.roundRect(x + 10, y - 8, w, 16, 8) : c.rect(x + 10, y - 8, w, 16); c.fill();
+      c.fillStyle = '#dfe7ff'; c.fillText(lab, x + 15, y + 0.5);
+    }
+    // boost refills: glowing, with a bolt
+    for (const pk of this.pickups) {
+      if (!pk.mesh.visible || pk.got !== undefined) continue;
+      const q = this.mapAt(pk.d), x = X(q), y = Y(q);
+      if (y < -10 || y > H + 10) continue;
+      c.save(); c.shadowColor = '#ffb02e'; c.shadowBlur = 10;
+      c.fillStyle = '#ffb02e'; c.beginPath(); c.arc(x, y, 6.5, 0, Math.PI * 2); c.fill(); c.restore();
+      c.fillStyle = '#2a1500'; c.beginPath(); c.moveTo(x + 1, y - 4.5); c.lineTo(x - 2.5, y + 0.8); c.lineTo(x, y + 0.8); c.lineTo(x - 1, y + 4.5); c.lineTo(x + 2.5, y - 0.8); c.lineTo(x, y - 0.8); c.closePath(); c.fill();
+    }
+    // the storm: everything behind its front a churning dark mass, the road it has taken glowing
+    // violet under it, a ragged red edge, embers lifting off it, lightning inside
+    const fy = this.storm > 0 ? Y(this.mapAt(this.storm)) : PY + gap * S;
+    const edge = (x) => fy + Math.sin(x * 0.09 + t * 3) * 4 + Math.sin(x * 0.23 - t * 5.3) * 2.5 + Math.sin(x * 0.51 + t * 9) * 1.2;
+    const near = clamp(1 - gap / 300, 0, 1);
+    if (fy < H + 24) {
+      c.save();
+      c.beginPath(); c.moveTo(-4, H + 6);
+      for (let x = -4; x <= W + 4; x += 5) c.lineTo(x, edge(x));
+      c.lineTo(W + 4, H + 6); c.closePath();
+      const g = c.createLinearGradient(0, fy - 8, 0, fy + 160);
+      g.addColorStop(0, 'rgba(90,10,140,0.95)'); g.addColorStop(0.12, 'rgba(22,0,36,0.97)'); g.addColorStop(1, 'rgba(0,0,0,0.99)');
+      c.fillStyle = g; c.shadowColor = 'rgba(180,60,255,0.95)'; c.shadowBlur = 22; c.fill();
+      c.clip();
+      // swirling smoke inside it
+      for (let k = 0; k < 7; k++) {
+        const sx = (k * 61 + t * (12 + k * 5)) % (W + 80) - 40, sy = fy + 30 + ((k * 47) % 140) + Math.sin(t + k) * 8;
+        const sg = c.createRadialGradient(sx, sy, 0, sx, sy, 34 + k * 3);
+        sg.addColorStop(0, 'rgba(120,30,180,0.28)'); sg.addColorStop(1, 'rgba(120,30,180,0)');
+        c.fillStyle = sg; c.fillRect(sx - 50, sy - 50, 100, 100);
+      }
+      // the road it has taken, faint violet
+      c.beginPath();
+      let on = false;
+      for (const q of pts) { if (q.d > this.storm) break; const y = Y(q); if (y < fy - 10 || y > H + 40) { on = false; continue; } if (!on) { c.moveTo(X(q), y); on = true; } else c.lineTo(X(q), y); }
+      c.strokeStyle = 'rgba(190,110,255,0.55)'; c.lineWidth = 3; c.shadowColor = '#a855ff'; c.shadowBlur = 8; c.stroke();
+      // lightning, now and then
+      if (Math.random() < 0.07) {
+        c.strokeStyle = 'rgba(225,190,255,0.95)'; c.lineWidth = 1.6; c.shadowColor = '#c084fc'; c.shadowBlur = 12;
+        let x = Math.random() * W, y = fy + 4;
+        c.beginPath(); c.moveTo(x, y);
+        while (y < H) { x += (Math.random() - 0.5) * 22; y += 8 + Math.random() * 12; c.lineTo(x, y); }
+        c.stroke();
+      }
+      c.restore();
+      // the front: a ragged line, red hot
+      c.save();
+      c.beginPath();
+      for (let x = -4; x <= W + 4; x += 5) (x === -4 ? c.moveTo(x, edge(x)) : c.lineTo(x, edge(x)));
+      c.strokeStyle = 'rgba(255,45,85,' + (0.75 + 0.25 * Math.sin(t * 8)).toFixed(2) + ')'; c.lineWidth = 2.6; c.shadowColor = '#ff2d55'; c.shadowBlur = 14; c.stroke();
+      c.restore();
+      // embers lifting off it
+      for (let k = 0; k < 22; k++) {
+        const ex = (k * 37.3 + Math.sin(t * 0.7 + k) * 14 + t * (6 + (k % 4) * 3)) % W;
+        const life = ((t * (0.55 + (k % 5) * 0.12) + k * 0.37) % 1);
+        const ey = edge(ex) - life * 46;
+        c.fillStyle = 'rgba(' + (k % 3 ? '200,120,255' : '255,80,110') + ',' + (0.85 * (1 - life)).toFixed(2) + ')';
+        c.beginPath(); c.arc(ex, ey, 1.6 + (k % 3) * 0.6, 0, Math.PI * 2); c.fill();
+      }
+      // its distance, on the front
+      const lab = 'STORM  ' + fmtCredits(Math.max(0, Math.round(gap))) + ' m', ly = Math.min(H - 14, Math.max(fy + 18, 14));
+      c.font = '800 11.5px Inter, Arial, sans-serif';
+      const lw = c.measureText(lab).width + 16;
+      c.fillStyle = 'rgba(40,0,10,0.85)'; c.beginPath(); c.roundRect ? c.roundRect(W / 2 - lw / 2, ly - 10, lw, 20, 10) : c.rect(W / 2 - lw / 2, ly - 10, lw, 20); c.fill();
+      c.strokeStyle = '#ff2d55'; c.lineWidth = 1.5; c.stroke();
+      c.fillStyle = '#ffd0da'; c.textAlign = 'center'; c.fillText(lab, W / 2, ly + 0.5); c.textAlign = 'left';
+    } else {
+      // still off the bottom of the map: a red glow and how far it is
+      const gl = c.createLinearGradient(0, H - 70, 0, H);
+      gl.addColorStop(0, 'rgba(120,0,40,0)'); gl.addColorStop(1, 'rgba(160,20,70,' + (0.35 + 0.2 * Math.sin(t * 3)).toFixed(2) + ')');
+      c.fillStyle = gl; c.fillRect(0, H - 70, W, 70);
+      c.font = '800 11.5px Inter, Arial, sans-serif'; c.textAlign = 'center';
+      c.fillStyle = '#ffb3c2'; c.fillText('▼ STORM ' + fmtCredits(Math.round(gap)) + ' m', W / 2, H - 14); c.textAlign = 'left';
+    }
+    // you: an arrow along the road
+    const ah = this.mapAt(meD + 20), ang = Math.atan2(X(ah) - X(me), -(Y(ah) - Y(me)));
+    const px = X(me), py = Y(me);
+    c.save();
+    c.fillStyle = 'rgba(61,219,184,0.25)'; c.beginPath(); c.arc(px, py, 11 + 3 * Math.sin(t * 5), 0, Math.PI * 2); c.fill();
+    c.translate(px, py); c.rotate(ang);
+    c.shadowColor = '#3ddbb8'; c.shadowBlur = 10;
     c.fillStyle = '#3ddbb8'; c.strokeStyle = '#fff'; c.lineWidth = 2;
-    c.beginPath(); c.arc(X(me), Y(me), 5, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(0, -9); c.lineTo(7, 7); c.lineTo(0, 3.5); c.lineTo(-7, 7); c.closePath(); c.fill(); c.stroke();
+    c.restore();
+    // the whole map flushes red as it closes in
+    if (near > 0) {
+      const v = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.7);
+      v.addColorStop(0, 'rgba(255,30,70,0)'); v.addColorStop(1, 'rgba(255,30,70,' + (near * (0.35 + 0.15 * Math.sin(t * 6))).toFixed(2) + ')');
+      c.fillStyle = v; c.fillRect(0, 0, W, H);
+    }
+    cv.classList.toggle('near', gap < 120);
   },
   /* -------------------------------------------- black streaks on the screen */
   ink(I, t) {
@@ -19314,6 +19584,27 @@ const UI = {
     $('boot').hidden = true;             // the loading notice ends when any screen shows
     document.body.dataset.screen = id;   // lets CSS hide things per screen
     Morph.go(from, id);
+    if (id === 'result') this.countUp($('rTime'));
+  },
+  /** a result's time (0:23.410) or distance (1 234 m) counts up to itself */
+  countUp(el) {
+    if (!el || Morph.quiet()) return;
+    const txt = el.textContent;
+    let m = txt.match(/^(\d+):(\d\d)\.(\d+)$/), target, fmt;
+    if (m) { target = +m[1] * 60 + +(m[2] + '.' + m[3]); fmt = (v) => formatTime(v); }
+    else if ((m = txt.replace(/[\s\u202f]/g, '').match(/^(\d+)m$/))) { target = +m[1]; fmt = (v) => fmtCredits(Math.round(v)) + ' m'; }
+    else return;
+    const id = (this._cu = (this._cu || 0) + 1), t0 = performance.now() + 200, D = 700;
+    el.textContent = fmt(0);
+    // (animation frames stop in a hidden tab: the real number always lands)
+    setTimeout(() => { if (id === this._cu) { this._cu++; el.textContent = txt; } }, D + 350);
+    const step = (now) => {
+      if (id !== this._cu) return;
+      const u = clamp((now - t0) / D, 0, 1), e = 1 - Math.pow(1 - u, 3);
+      el.textContent = u < 1 ? fmt(target * e) : txt;
+      if (u < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   },
   who(name, credits) {
     $('who').hidden = !name;
