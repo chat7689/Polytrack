@@ -1497,6 +1497,8 @@ begin
     select min(time_ms) into top from public.bests where course_id = p_course and uid <> p.id and not banned;
     if top is not null and p_time_ms < top * 0.98 then flags := array_append(flags, 'record'); end if;
   end if;
+  -- a season map's podium may be about to change: Podium Pass holders are paid up to now first
+  if p_course = any(public._season_maps()) then perform public._podium_pay(null); end if;
   insert into public.bests (uid, course_id, display_name, banned, time_ms, updated_ms)
   values (p.id, p_course, p.display_name, p.banned, p_time_ms, (extract(epoch from now()) * 1000)::bigint)
   on conflict (uid, course_id) do update
@@ -2288,6 +2290,7 @@ begin
   if ref ~ '^[0-9a-fA-F-]{36}$' then select id into who from public.profiles where id = ref::uuid; end if;
   if code is not null then mi := public._money_item(code); end if;
   if who is not null and lower(coalesce(p_currency, '')) = 'usd' and mi is not null and coalesce(p_amount, 0) = (mi ->> 'cents')::int
+     and not coalesce((mi ->> 'retired')::boolean, false)
      and not (coalesce((mi ->> 'once')::boolean, false)
               and exists (select 1 from public.inventory where uid = who and item = (mi -> 'items' ->> 0) and count > 0)) then
     -- the item, paid exactly its price (anything else is paid as credits)
@@ -2309,6 +2312,9 @@ begin
     if coalesce((mi ->> 'plus')::boolean, false) then
       insert into public.pass_claims (uid, season, plus) values (who, public._pass_season(), true)
         on conflict (uid, season) do update set plus = true;
+    end if;
+    if coalesce((mi ->> 'podium_days')::int, 0) > 0 then
+      perform public._podium_start(who, (mi ->> 'podium_days')::int);
     end if;
     if coalesce((mi ->> 'tiers')::int, 0) > 0 then
       insert into public.garage (uid) values (who) on conflict do nothing;
@@ -2354,6 +2360,9 @@ begin
     delete from public.inventory where uid = r.uid and count <= 0;
     if coalesce((public._money_item(r.item) ->> 'plus')::boolean, false) then
       update public.pass_claims set plus = false where uid = r.uid and season = public._pass_season();
+    end if;
+    if coalesce((public._money_item(r.item) ->> 'podium_days')::int, 0) > 0 then
+      perform public._podium_end(r.uid);
     end if;
   end if;
   return jsonb_build_object('ok', true, 'found', true, 'credits', r.credits, 'boxes', r.boxes);
@@ -2708,6 +2717,103 @@ begin
   return jsonb_build_object('ok', true, 'balance', public._balance(p.id));
 end $$;
 /** the admin: how the shop and the pass are doing */
+-- ================================================================ Podium Pass
+-- $3 on Stripe (money item 'podium'): for 14 days, 1 credit a minute for
+-- every map of the season the player is on the podium of (top 3 by time,
+-- then whoever set it first; banned drivers don't count). Paid as it goes:
+-- the game asks about once a minute (my_podium_pass), and before any best on
+-- a season map changes, everyone holding a pass is paid up to that moment
+-- (submit_best), so a podium pays for exactly as long as it was held (to
+-- the minute). Buying again while it runs adds 14 days. A refund ends it and
+-- takes back what it paid.
+create table if not exists public.podium_passes (
+  uid uuid primary key,
+  starts_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  paid_to timestamptz not null default now(),     -- paid up to here (whole minutes)
+  earned bigint not null default 0                -- paid so far, this pass
+);
+alter table public.podium_passes enable row level security;
+/** this season's 16 maps (settings 'season_maps' once a new season is out, as a JSON list) */
+create or replace function public._season_maps() returns text[]
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select array(select jsonb_array_elements_text(value)) from public.settings
+                   where key = 'season_maps' and jsonb_typeof(value) = 'array'),
+    array['s4m1', 's4m2', 's4m3', 's4m4', 's4m5', 's4m16', 's4c1', 's4m7', 's4m8', 's4m9', 's4m10', 's4m11', 's4m12', 's4m13', 's4m14', 's4m17'])
+$$;
+/** the season maps a player is on the podium of */
+create or replace function public._podium_maps(p_uid uuid) returns text[]
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce(array_agg(course_id order by course_id), '{}') from (
+    select b.course_id, b.uid, row_number() over (partition by b.course_id order by b.time_ms, b.updated_ms, b.uid) as rk
+    from public.bests b where b.course_id = any(public._season_maps()) and not b.banned
+  ) x where x.uid = p_uid and x.rk <= 3
+$$;
+/** pay running passes up to now (one player's, or everyone's): whole minutes x podiums held */
+create or replace function public._podium_pay(p_uid uuid) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare r record; v_mins integer; amt bigint;
+begin
+  for r in
+    select pp.uid, pp.paid_to, pp.expires_at, coalesce(pc.n, 0) as n
+    from public.podium_passes pp
+    left join (
+      select x.uid, count(*)::int as n from (
+        select b.uid, row_number() over (partition by b.course_id order by b.time_ms, b.updated_ms, b.uid) as rk
+        from public.bests b where b.course_id = any(public._season_maps()) and not b.banned
+      ) x where x.rk <= 3 group by x.uid
+    ) pc on pc.uid = pp.uid
+    where pp.paid_to < pp.expires_at and (p_uid is null or pp.uid = p_uid)
+    order by pp.uid
+  loop
+    -- (locked one at a time, in order; another payer may have got here first)
+    select paid_to, expires_at into r.paid_to, r.expires_at from public.podium_passes where uid = r.uid for update;
+    v_mins := floor(extract(epoch from (least(now(), r.expires_at) - r.paid_to)) / 60)::int;
+    if v_mins <= 0 then continue; end if;
+    amt := v_mins::bigint * r.n;
+    update public.podium_passes set paid_to = paid_to + make_interval(mins => v_mins), earned = earned + amt where uid = r.uid;
+    if amt > 0 then
+      insert into public.credit_events (uid, delta, kind, note) values (r.uid, amt, 'podium_pass', v_mins || ' min x ' || r.n || ' podiums');
+    end if;
+  end loop;
+end $$;
+/** a bought pass: starts now, or runs p_days longer when one is running */
+create or replace function public._podium_start(p_uid uuid, p_days integer) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._podium_pay(p_uid);
+  insert into public.podium_passes (uid, starts_at, expires_at, paid_to, earned)
+    values (p_uid, now(), now() + make_interval(days => p_days), now(), 0)
+    on conflict (uid) do update set
+      starts_at = case when public.podium_passes.expires_at > now() then public.podium_passes.starts_at else now() end,
+      paid_to = case when public.podium_passes.expires_at > now() then public.podium_passes.paid_to else now() end,
+      earned = case when public.podium_passes.expires_at > now() then public.podium_passes.earned else 0 end,
+      expires_at = greatest(public.podium_passes.expires_at, now()) + make_interval(days => p_days);
+end $$;
+/** a refunded pass: it stops now and what it paid comes back off */
+create or replace function public._podium_end(p_uid uuid) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare e bigint;
+begin
+  select earned into e from public.podium_passes where uid = p_uid for update;
+  if not found then return; end if;
+  update public.podium_passes set expires_at = least(expires_at, now()), paid_to = least(expires_at, now()), earned = 0 where uid = p_uid;
+  if coalesce(e, 0) > 0 then
+    insert into public.credit_events (uid, delta, kind, note) values (p_uid, -e, 'refund', 'Podium Pass refunded');
+  end if;
+end $$;
+/** the player's pass: paid up to now first. {active, expires_at, starts_at, earned, maps (podiums held now), rate, balance} */
+create or replace function public.my_podium_pass() returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); pp public.podium_passes; maps text[];
+begin
+  perform public._podium_pay(p.id);
+  select * into pp from public.podium_passes where uid = p.id;
+  maps := public._podium_maps(p.id);
+  return jsonb_build_object('active', pp.uid is not null and pp.expires_at > now(),
+    'expires_at', pp.expires_at, 'starts_at', pp.starts_at, 'earned', coalesce(pp.earned, 0),
+    'maps', to_jsonb(maps), 'rate', cardinality(maps), 'now', now(), 'balance', public._balance(p.id));
+end $$;
 create or replace function public.admin_shop_stats() returns jsonb
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 begin
@@ -2719,7 +2825,9 @@ begin
     'passPlayers', (select count(*) from public.garage where pass_season = public._pass_season() and pass_runs > 0),
     'auctionsOpen', (select count(*) from public.auctions where status = 'open'),
     'auctionsSold', (select count(*) from public.auctions where status = 'sold' and settled_at > now() - interval '1 day'),
-    'auctionFees', (select coalesce(sum(fee), 0) from public.auctions where status = 'sold'));
+    'auctionFees', (select coalesce(sum(fee), 0) from public.auctions where status = 'sold'),
+    'podiumActive', (select count(*) from public.podium_passes where expires_at > now()),
+    'podiumPaid', (select coalesce(sum(earned), 0) from public.podium_passes));
 end $$;
 
 -- ------------------------------------------ rivals, driver level, the Pot map,
@@ -2869,9 +2977,12 @@ language sql immutable as $$
   select case p_code
     when 'holo' then '{"cents": 200, "name": "Holo paint", "items": ["finish:holo"], "once": true}'
     when 'goldrush' then '{"cents": 200, "name": "Gold Rush paint", "items": ["finish:goldrush"], "once": true}'
-    when 'passbundle' then '{"cents": 300, "name": "Pass+ Bundle", "plus": true, "tiers": 10}'
+    when 'podium' then '{"cents": 300, "name": "Podium Pass", "podium_days": 14}'
+    -- retired: not sold any more (a payment on its old link is paid as credits), kept so a refund still takes it back
+    when 'passbundle' then '{"cents": 300, "name": "Pass+ Bundle", "plus": true, "tiers": 10, "retired": true}'
   end::jsonb
 $$;
+update public.settings set value = value - 'passbundle' where key = 'money_links';
 -- the Founder's Pack is gone: its items, its link, and anyone wearing them
 do $$
 begin
@@ -2890,7 +3001,9 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare l text := btrim(coalesce(p_link, ''));
 begin
   perform public._require_admin();
-  if public._money_item(p_code) is null then raise exception 'No such item.' using errcode = 'P0001'; end if;
+  if public._money_item(p_code) is null or coalesce((public._money_item(p_code) ->> 'retired')::boolean, false) then
+    raise exception 'No such item.' using errcode = 'P0001';
+  end if;
   if l <> '' and l !~ '^https://buy\.stripe\.com/[A-Za-z0-9_]+$' then
     raise exception 'That isn''t a Stripe Payment Link (they start https://buy.stripe.com/).' using errcode = 'P0001';
   end if;
@@ -4352,6 +4465,7 @@ revoke execute on function public._pot_settle(text) from public, anon, authentic
 revoke execute on function public._pot_ensure(text) from public, anon, authenticated;
 revoke execute on function public._auction_give(uuid, text) from public, anon, authenticated;
 revoke execute on function public._auction_settle(bigint) from public, anon, authenticated;
+revoke execute on function public._podium_pay(uuid), public._podium_start(uuid, integer), public._podium_end(uuid) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
 
 -- ------------------------------------------------------------- season 1, closed

@@ -2418,6 +2418,59 @@ button.danger-outline{background:none}
   border-radius:6px;padding:10px;resize:vertical}
 .bdIORow{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .tkImport{margin-left:auto}
+/* the builder's AI designer */
+.bdSide{display:flex;gap:6px;margin-bottom:12px}
+.bdSide .tab{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.aiIc{width:14px;height:14px;fill:currentColor;flex:none}
+.bdSide .aiTab{color:#ffd27a}
+.bdSide .aiTab.on{border-color:#ffd27a;background:rgba(255,210,122,.1);color:#ffe2a6}
+.aiLede{font-size:12.5px;line-height:1.45;color:var(--dim);margin:0 0 8px}
+.aiSide textarea{display:block;width:100%;font:13.5px/1.45 var(--sans);color:var(--ink);background:#0d0f11;border:1px solid var(--rule);
+  border-radius:6px;padding:9px 11px;resize:vertical;min-height:70px}
+.aiSide textarea:focus{border-color:#ffd27a;outline:none}
+.aiIdeas{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 10px}
+.aiIdeas .aiIdea{font-size:11.5px;padding:3px 9px;border-radius:999px;background:#16181c;border:1px solid rgba(255,255,255,.08);color:var(--dim)}
+.aiIdeas .aiIdea:hover{color:var(--ink);border-color:rgba(255,255,255,.22)}
+.aiRow{display:flex;gap:6px}
+.aiRow button{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.aiRow #aiGo{background:linear-gradient(135deg,#f2733f,#e8a23a);border-color:transparent;color:#fff}
+.aiRow #aiGo:disabled{opacity:.6}
+.aiMsg{font-size:12.5px;line-height:1.4;color:var(--dim);margin:9px 0 2px;min-height:18px}
+.aiMsg b{color:var(--ink)}
+.aiMsg.err{color:#ff8a7a}
+.aiMsg.busy::after{content:'';display:inline-block;width:9px;height:9px;margin-left:7px;border:2px solid #ffd27a;border-right-color:transparent;
+  border-radius:50%;animation:aiSpin .7s linear infinite;vertical-align:-1px}
+@keyframes aiSpin{to{transform:rotate(360deg)}}
+.aiDials{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding-top:10px;border-top:1px solid var(--rule-2)}
+.aiDials[hidden]{display:none}
+.aiDials h4{font-size:12px;font-weight:600;color:var(--dim);margin:0 0 4px;display:flex;justify-content:space-between;gap:8px}
+.aiDials h4 small{font-weight:400;opacity:.75}
+.aiDial{display:grid;grid-template-columns:62px minmax(0,1fr);align-items:center;gap:6px}
+.aiDial>span{font-size:11.5px;color:var(--dim)}
+.aiSeg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;background:#0d0f11;border-radius:6px;padding:2px}
+.aiSeg.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.aiSeg button{font-size:10.5px;padding:4px 2px;border:0;border-radius:4px;background:none;color:var(--dim);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;min-width:0}
+.aiSeg button:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+.aiSeg button.on{background:#2b2620;color:#ffe2a6;box-shadow:inset 0 0 0 1px rgba(255,210,122,.55)}
+.tkNew.tkAI b{color:#ffd27a;font-size:26px}
+.tkNew.tkAI:hover{border-color:#ffd27a;background:rgba(255,210,122,.05)}
+@media(max-height:820px){.aiLede{display:none}.aiSide textarea{min-height:56px}}
+/* the Podium Pass: the menu chip and its shop card */
+.pdChip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px!important;border-radius:999px!important;border:1px solid rgba(255,207,92,.5)!important;
+  background:rgba(255,207,92,.08)!important;color:var(--ink)!important;font-family:var(--mono);font-size:11.5px!important}
+.pdChip[hidden]{display:none}
+.pdChip b{color:#ffcf5c;font-weight:800}
+.pdChip small{color:var(--dim);font-size:10.5px}
+.pdIc{width:14px;height:14px;fill:#ffcf5c;flex:none}
+.pdPic{display:flex;align-items:flex-end;justify-content:center;gap:4px;width:96px;height:66px}
+.pdPic i{display:flex;align-items:flex-start;justify-content:center;flex:1 1 0;border-radius:4px 4px 0 0;font:800 14px var(--mono);font-style:normal;
+  color:#1a1405;padding-top:5px;background:linear-gradient(180deg,#ffe08a,#e0a52c);box-shadow:inset 0 -6px 12px rgba(0,0,0,.18)}
+.pdPic i:nth-child(1){height:62%;background:linear-gradient(180deg,#eef2f7,#a9b3c0)}
+.pdPic i:nth-child(2){height:92%}
+.pdPic i:nth-child(3){height:46%;background:linear-gradient(180deg,#f0b88a,#b5713d)}
+.pdLine{display:block;font-size:11.5px;line-height:1.4;color:var(--dim);margin:-4px 0 8px}
+.pdLine b{color:#ffcf5c}
 
 /* ---------- Season 3: the home screen as widgets ---------- */
 .menuPanel{width:min(1320px,96vw);max-height:96vh;padding:20px 26px 22px}
@@ -2855,6 +2908,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           <button class="whoName" id="whoCard" title="Your profile card"><span id="whoIcon"></span><span class="whoTxt"><b id="whoName">—</b><small id="whoTitle"></small></span></button>
           <button class="lvChip" id="lvChip" hidden title="Your driver level: open the Driver Road"><b>LV <span id="lvNum">1</span></b><i><s id="lvBar"></s></i><em id="lvNew" hidden>!</em></button>
           <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
+          <button class="pdChip" id="pdChip" hidden title="Podium Pass"><svg class="pdIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h6v15H9zM2 11h6v10H2zM16 14h6v7h-6z"/></svg><b id="pdRate">+0</b><small>/min</small></button>
           <button class="small crBuy" id="bBuyCr" hidden title="Buy credits: 30 000 and 3 boxes for $1, or 180 000 and 18 boxes for $5">+ Buy</button>
           <button class="small refBtn" id="bInvite">Invite friends <span class="refGift">free boxes</span></button>
           <button class="small topBtn" id="bSettings">Settings</button>
@@ -3017,14 +3071,24 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       </div>
       <div class="bdGrid">
         <section class="bdAdd">
-          <h3>Pieces</h3>
-          <div class="bdCards" id="bdTypes"></div>
-          <div class="bdOpts" id="bdOpts"></div>
-          <div class="bdPiece" id="bdPiece"></div>
-          <div class="bdAddRow">
-            <button class="small" id="bdAddBefore" title="Put it in front of the selected piece">Add before</button>
-            <button class="primary small" id="bdAdd" title="Put it after the selected piece">Add after</button>
-            <button class="small" id="bdReplace" title="Swap the selected piece for this one">Replace</button>
+          <div class="bdSide" id="bdSide"><button class="tab on" data-side="pieces">Pieces</button><button class="tab aiTab" data-side="ai"><svg class="aiIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2l2.1 6.4L19.5 10.5l-6.4 2.1L11 19l-2.1-6.4L2.5 10.5l6.4-2.1z"/><path d="M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>Design with AI</button></div>
+          <div id="bdSidePieces">
+            <div class="bdCards" id="bdTypes"></div>
+            <div class="bdOpts" id="bdOpts"></div>
+            <div class="bdPiece" id="bdPiece"></div>
+            <div class="bdAddRow">
+              <button class="small" id="bdAddBefore" title="Put it in front of the selected piece">Add before</button>
+              <button class="primary small" id="bdAdd" title="Put it after the selected piece">Add after</button>
+              <button class="small" id="bdReplace" title="Swap the selected piece for this one">Replace</button>
+            </div>
+          </div>
+          <div class="aiSide" id="bdSideAI" hidden>
+            <p class="aiLede">Describe the track you want to drive. AI designs it from real track pieces; then change anything you like, test drive it and save.</p>
+            <textarea id="aiText" rows="3" maxlength="300" placeholder="A long icy mountain road with big jumps and tight hairpins" aria-label="Describe your track"></textarea>
+            <div class="aiIdeas" id="aiIdeas"></div>
+            <div class="aiRow"><button class="primary" id="aiGo"><svg class="aiIc" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2l2.1 6.4L19.5 10.5l-6.4 2.1L11 19l-2.1-6.4L2.5 10.5l6.4-2.1z"/><path d="M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>Design it</button><button id="aiAgain" disabled title="A different track from the same description">Another version</button></div>
+            <div class="aiMsg" id="aiMsg" aria-live="polite"></div>
+            <div class="aiDials" id="aiDials" hidden></div>
           </div>
         </section>
         <section class="bdView">
@@ -5469,6 +5533,7 @@ const Cloud = {
           UI.toast('Your purchase arrived' + (Number(row.delta) > 0 ? ': ' + fmtCredits(Number(row.delta)) + ' credits and your free boxes' : '') +
             '. Thanks for supporting aiPolytrack!');
           Garage.load();
+          PodiumPass.load(true);
         } else if (row && /^auction_(refund|sale|won|unsold)$/.test(row.kind)) {
           const it = Catalog.get(row.note), nm = it ? it.name : 'an item';
           if (row.kind === 'auction_refund') UI.toast('You were outbid on ' + nm + '. Your ' + fmtCredits(Number(row.delta)) + ' credits are back: bid again in the Auctions.');
@@ -9769,6 +9834,211 @@ const TrackKit = {
       author: t.author || '', blurb: '', rev: JSON.stringify([t.w, t.pieces]), build: () => this.build(t) };
   }
 };
+/* ------------------------------------------------ a track designed from words
+ * "A long icy mountain road with big jumps" becomes a few dials (how long, how
+ * twisty, how tight, jumps, hills...), and the dials become builder pieces. It
+ * only ever makes pieces the builder makes and keeps the daily map's rules (a
+ * real straight between turns the opposite way, a settle after every lip, a
+ * run-up to every jump); TrackKit.check has the last word, as on a hand-built
+ * road. The words are read by keyword here; the builder can also have the
+ * browser's own helper read them (Tracks.aiRead), and its dials win where the
+ * player's words didn't say. */
+const TrackGen = {
+  DIALS: [
+    ['size', 'Length', ['Short', 'Medium', 'Long', 'Huge']],
+    ['turns', 'Turns', ['Few', 'Some', 'Lots', 'Non-stop']],
+    ['tight', 'Corners', ['Sweeping', 'Open', 'Tight', 'Hairpins']],
+    ['speed', 'Speed', ['Calm', 'Quick', 'Fast', 'Rocket']],
+    ['jumps', 'Jumps', ['None', 'One', 'Some', 'Lots']],
+    ['hills', 'Hills', ['Flat', 'Rolling', 'Hilly', 'Mountain']],
+    ['bumps', 'Bumps', ['Smooth', 'A few', 'Bumpy', 'Wild']],
+    ['bank', 'Banking', ['Flat', 'Light', 'Banked', 'Steep']],
+    ['ice', 'Ice', ['None', 'A little', 'Icy', 'All ice']],
+    ['width', 'Road', ['Narrow', 'Normal', 'Wide', 'Huge']]
+  ],
+  BASE: { size: 1, turns: 2, tight: 1, speed: 1, jumps: 1, hills: 1, bumps: 1, bank: 1, ice: 0, width: 1, squeeze: 0, open: 0 },
+  /** words, each [pattern, dial, value] or [pattern, { dial: value, ... }] (a mood); later ones win */
+  WORDS: [
+    [/short|tiny|small|mini|little|quick one|sprint/, 'size', 0],
+    [/medium|normal length|average length/, 'size', 1],
+    [/long|big track|large|lengthy/, 'size', 2],
+    [/huge|epic|marathon|endless|very long|super long|massive track|giant|enormous|longest|forever/, 'size', 3],
+    [/straightaway|drag ?(race|strip)|flat out|all straight|mostly straight|straight line|no turns/, 'turns', 0],
+    [/straights|long straights?|drag ?(race|strip)/, 'speed', 3],
+    [/curvy|curves|winding|turns|corners|bends|turny|flowing/, 'turns', 2],
+    [/twisty|twisting|twists|snake|snaky|serpent|zig ?zags?|slalom|spaghetti|squiggly|technical|wiggly|very curvy/, 'turns', 3],
+    [/sweeping|smooth turns|gentle|wide turns|cruise|cruising|relaxing|big turns|long turns/, 'tight', 0],
+    [/tight|sharp|technical/, 'tight', 2],
+    [/hairpins?|switchbacks?|very tight|super tight|u ?turns?/, 'tight', 3],
+    [/fast|speed|speedy|boosts?|turbo|zoom|racing|quick/, 'speed', 2],
+    [/rocket|super fast|very fast|insanely fast|hyper|lightning|blazing|nitro|sonic|warp|supersonic/, 'speed', 3],
+    [/slow|calm|relaxed|chill/, 'speed', 0],
+    [/jumps?|ramps?|air|flying|fly|launch|stunts?|airtime|gaps?|leaps?/, 'jumps', 2],
+    [/one jump|a jump|single jump/, 'jumps', 1],
+    [/big jumps?|huge jumps?|giant jumps?|mega jumps?|jumps? everywhere|tabletops?|sky|skyway/, 'jumps', 3],
+    [/hills?|hilly|climbs?|slopes?|up and down|valley|elevation/, 'hills', 2],
+    [/mountains?|steep|alpine|alps|cliffs?|peaks?|summit/, 'hills', 3],
+    [/flat track|flat road|totally flat|no hills/, 'hills', 0],
+    [/bumps?|bumpy|rollers?|crests?|rough|off ?road|rally|dirt|humps?|wavy|waves|desert|dunes?/, 'bumps', 2],
+    [/very bumpy|roller ?coaster|chaos|chaotic|wild|crazy bumps/, 'bumps', 3],
+    [/banked|banking|banks|nascar|oval|velodrome|bowl/, 'bank', 2],
+    [/steep banks?|wall ?ride|walls/, 'bank', 3],
+    [/ice|icy|snow|snowy|frozen|winter|slippery|slidey|drift|drifting|arctic|frost|frosty|glacier|christmas|polar/, 'ice', 2],
+    [/all ice|ice rink|skating|only ice|full ice|ice everywhere/, 'ice', 3],
+    [/narrow|thin|skinny|one lane|tight road/, 'width', 0],
+    [/wide|big road|highway|freeway|motorway|broad/, 'width', 2],
+    [/super wide|very wide|massive road|huge road|airport|runway/, 'width', 3],
+    [/bottlenecks?|squeeze|pinch/, 'squeeze', 1],
+    [/open areas?|arena|plaza|wide areas?|open spaces?/, 'open', 1],
+    [/easy|beginner|newbie|noob|for kids|simple/, { tight: 0, jumps: 0, ice: 0, bumps: 0, turns: 1 }],
+    [/hard|difficult|insane|extreme|crazy|brutal|impossible|nightmare|expert|tricky|challenging/, { tight: 3, jumps: 2, ice: 1, bumps: 2, turns: 3 }]
+  ],
+  NO: /\b(no|not|without|zero|avoid|never|nothing|none|less|fewer|don'?t want|skip)\b(\s+\w+){0,2}\s*$/,
+  MORE: /\b(lots of|lot of|loads of|tons of|plenty of|many|more|very|super|really|extra|so many|full of)\s*$/,
+  /** a description in words to { dials, said: the dials the words set, name } */
+  read(text) {
+    const s = ' ' + String(text || '').toLowerCase().replace(/[^a-z0-9.' ]+/g, ' ').replace(/\s+/g, ' ') + ' ';
+    const D = Object.assign({}, this.BASE), said = new Set();
+    for (const [re, k, v] of this.WORDS) {
+      const g = new RegExp('\\b(?:' + re.source + ')\\b', 'g');
+      let m;
+      while ((m = g.exec(s))) {
+        const before = s.slice(Math.max(0, m.index - 24), m.index);
+        if (typeof k === 'object') { if (!this.NO.test(before)) for (const j in k) if (!said.has(j)) D[j] = k[j]; continue; }
+        if (this.NO.test(before)) D[k] = 0;
+        else D[k] = this.MORE.test(before) ? Math.min(3, Math.max(v, 2) + 1) : v;
+        said.add(k);
+      }
+    }
+    // numbers: "2 km", "800 m", "5 jumps"
+    const km = s.match(/(\d+(?:\.\d+)?)\s*(km|kilomet\w*|k)\b/), m = s.match(/(\d{3,4})\s*(m|meters?|metres?)\b/), mi = s.match(/(\d+(?:\.\d+)?)\s*(mi|miles?)\b/);
+    const L = km ? +km[1] * 1000 : m ? +m[1] : mi ? +mi[1] * 1609 : 0;
+    if (L) { D.km = clamp(L, 300, 3500) / 1000; D.size = L < 900 ? 0 : L < 1600 ? 1 : L < 2500 ? 2 : 3; said.add('size'); }
+    const nj = s.match(/\b(\d|one|two|three|four|five|six)\s+(big\s+|huge\s+|small\s+)?jumps?\b/);
+    if (nj) {
+      const n = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 }[nj[1]] || +nj[1];
+      D.nJ = clamp(n, 0, 6); D.jumps = n === 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : 3; said.add('jumps');
+    }
+    const called = String(text || '').match(/\b(?:called|named|name it|title)\s+["']?([A-Za-z0-9][A-Za-z0-9 '!?.,&-]{1,28})/i);
+    return { dials: D, said, name: called ? this.cleanName(called[1]) : '' };
+  },
+  /** a name the server takes (3 to 30 letters, numbers and spaces), or '' */
+  cleanName(n) {
+    let s = String(n || '').replace(/[^A-Za-z0-9 '!?.,&-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30);
+    s = s.replace(/^[^A-Za-z0-9]+/, '').replace(/[^A-Za-z0-9!?.']+$/, '');
+    return /^[A-Za-z0-9][A-Za-z0-9 '!?.,&-]{1,28}[A-Za-z0-9!?.']$/.test(s) ? s : '';
+  },
+  /** a name from the dials, when the words didn't give one */
+  nameFor(D, seed) {
+    const R = DailyGen.rng(seed ^ 0x5bd1);
+    const pick = (a) => a[Math.floor(R() * a.length)];
+    const adj = D.ice >= 2 ? ['Frozen', 'Glacier', 'Frost', 'Polar', 'Icebound'] : D.hills >= 3 ? ['Summit', 'Alpine', 'Ridge', 'Peak'] :
+      D.jumps >= 3 ? ['Sky', 'Flying', 'Leap', 'Orbit'] : D.speed >= 3 ? ['Rocket', 'Turbo', 'Warp', 'Nitro'] :
+      D.turns >= 3 ? ['Serpent', 'Viper', 'Coil', 'Twister'] : D.bumps >= 3 ? ['Rumble', 'Thunder', 'Quake'] : DailyGen.ADJ;
+    const noun = D.turns >= 3 ? ['Slalom', 'Switch', 'Spiral', 'Hook', 'Bend'] : D.speed >= 2 ? ['Dash', 'Rush', 'Sprint', 'Skyway', 'Run'] : DailyGen.NOUN;
+    return pick(adj) + ' ' + pick(noun);
+  },
+  /** the pieces for one try (every piece in full form) */
+  pieces(D, seed) {
+    const R = DailyGen.rng(seed);
+    const rr = (a, b) => a + R() * (b - a), pick = (a) => a[Math.floor(R() * a.length)];
+    const ten = (v) => clamp(Math.round(v / 10) * 10, 10, 300);
+    const W = [10, 15, 20, 25][D.width];
+    const target = D.km ? D.km * 1000 : [650, 1250, 2000, 3000][D.size];
+    const radii = [[90, 120, 150], [60, 75, 90, 120], [40, 50, 60, 75], [20, 24, 30, 40]][D.tight];
+    const angles = [[30, 45, 60], [45, 60, 90], [60, 90, 120], [90, 120, 135, 180]][D.turns];
+    const banks = [[0, 0, 5], [5, 10], [10, 15, 20], [20, 25, 30]][D.bank];
+    const iceP = [0, 0.25, 0.6, 1][D.ice];
+    const maxJ = D.nJ !== undefined ? D.nJ : [0, 1, 3, 5][D.jumps];
+    const longS = D.speed >= 2 || D.size >= 2;
+    const P = [];
+    let len = 110, heading = 0, height = 0, since = 999, lastDir = 0, after = '', jumps = 0, xs = 0;
+    const put = (p, L) => { P.push(p); len += L; since += L; };
+    const straight = (L, w) => put(['S', ten(L), w || W], ten(L));
+    const w8 = {
+      T: [0.14, 0.3, 0.44, 0.58][D.turns],
+      S: Math.max(0.06, 0.2 + 0.05 * D.speed - 0.04 * D.turns + (D.size >= 3 ? 0.08 : 0)),
+      B: [0, 0.05, 0.09, 0.11][D.speed], X: [0, 0, 0.03, 0.07][D.speed],
+      H: [0, 0.07, 0.12, 0.17][D.hills], C: [0, 0.04, 0.07, 0.09][D.bumps], R: [0, 0.03, 0.06, 0.09][D.bumps],
+      J: [0, 0.1, 0.12, 0.17][D.jumps], N: D.squeeze ? 0.06 : 0, W: D.open ? 0.06 : 0
+    };
+    const kinds = Object.keys(w8);
+    const room = () => P.length < 37;
+    // a few metres to start on before anything happens
+    straight(rr(20, 40));
+    while (len < target && room()) {
+      // something with a lip (crest, rollers, a jump) is followed by a straight to settle on
+      if (after) { straight(after === 'J' ? rr(40, 60) : after === 'R' ? rr(30, 45) : rr(25, 40)); after = ''; continue; }
+      let k = 'S', u = R() * kinds.reduce((a, j) => a + w8[j], 0);
+      for (const j of kinds) { u -= w8[j]; if (u <= 0) { k = j; break; } }
+      if (k === 'J' && jumps >= maxJ) k = 'S';
+      if (k === 'X' && xs >= 3) k = 'B';
+      if (k === 'T') {
+        let a = pick(angles), dir = R() < 0.5 ? -1 : 1;
+        const r = pick(radii), lim = D.turns >= 2 ? 165 : 120;
+        if (Math.abs(heading + a * dir) > lim) dir = -dir;
+        while (a > 15 && Math.abs(heading + a * dir) > lim) a -= 15;
+        // a turn the other way gets a real straight first
+        if (lastDir && dir !== lastDir && since < 50) straight(50 - since + 10);
+        let bank = pick(banks);
+        if (r * a * Math.PI / 180 < 40) bank = Math.min(bank, 20);
+        const ice = R() < iceP ? 1 : 0;
+        put(['T', r, a * dir, bank, ice, Math.min(W, 2 * (r - 8))], r * a * Math.PI / 180);
+        heading += a * dir; lastDir = dir; since = 0;
+      } else if (k === 'S') {
+        straight(longS && R() < 0.4 ? rr(120, D.size >= 3 ? 300 : 200) : rr(30, 100));
+      } else if (k === 'B' || k === 'X') {
+        if (k === 'X') xs++;
+        put([k, pick(k === 'X' ? [10, 20, 30] : [20, 30, 40]), W], 30);
+        if (k === 'X') straight(rr(40, 70));
+      } else if (k === 'H') {
+        if (since < 20) straight(30);                       // the bank untwists before the road tilts
+        const top = [0, 12, 30, 60][D.hills];
+        const up = height < 3 ? 1 : height > top ? -1 : R() < 0.55 ? 1 : -1;
+        const run = pick([[40, 50, 60], [40, 50, 60], [30, 40, 50, 60], [40, 50, 60, 80]][D.hills]);
+        const rises = [[2, 3], [2, 3, 4], [4, 5, 6, 8], [8, 10, 12, 15, 20]][D.hills].filter((x) => x / run <= 0.36);
+        const rise = rises.length ? pick(rises) : 3;
+        put(['H', rise * up, run, W], run);
+        height += rise * up;
+      } else if (k === 'C') {
+        if (since < 20) straight(30);                       // never straight off a turn into a lip
+        put(['C', pick([[3, 5], [3, 5], [5, 7], [7, 9]][D.bumps]), W], 26); after = 'C';
+      } else if (k === 'R') {
+        if (since < 30) straight(40);                       // square to the bumps before they start
+        put(['R', pick([[2, 3], [2, 3], [3, 4], [4, 5, 6]][D.bumps]), pick([[0.3, 0.6], [0.3, 0.6], [0.6, 0.9], [0.9, 1.2]][D.bumps]), W], 90);
+        after = 'R';
+      } else if (k === 'J') {
+        const kind = pick([[1], [2, 3], [2, 3, 4], [3, 4]][D.jumps]);
+        // a run-up: jumps need speed
+        straight(kind >= 3 ? rr(80, 120) : rr(60, 90));
+        if (kind >= 3 && R() < 0.5) put(['B', 20, W], 20);
+        put(['J', kind, W], [40, 60, 70, 100][kind - 1]);
+        jumps++; after = 'J';
+      } else if (k === 'N') {
+        if (since < 20) straight(30);
+        put(['N', pick([20, 30, 40]), pick([6, 7, 8])], 30);
+      } else if (k === 'W') {
+        if (since < 20) straight(30);
+        put(['W', pick([30, 40, 60]), pick([30, 40])], 45);
+      }
+    }
+    if (after || since < 40 || P[P.length - 1][0] !== 'S') straight(rr(40, 70));
+    return P.slice(0, TrackKit.MAX);
+  },
+  /** a track from the dials: { ok, pieces, w, len, seed } (tries seeds from `seed` on until one passes TrackKit.check) */
+  design(D, seed, tries) {
+    for (let k = 0; k < (tries || 24); k++) {
+      const s = (seed + k * 7919) >>> 0, P = this.pieces(D, s);
+      const t = { w: P[0][P[0].length - 1], pieces: P };
+      const c = TrackKit.check(t);
+      if (c.ok) return { ok: true, pieces: P, w: t.w, len: c.len, seed: s, check: c, dials: D };
+    }
+    // asked for more than fits: a little less twisty, a little narrower, until it does
+    const E = Object.assign({}, D);
+    if (E.turns > 1) E.turns--; else if (E.width > 1) E.width--; else if (E.size > 0) { E.size--; delete E.km; } else return { ok: false };
+    return this.design(E, seed + 1, tries);
+  }
+};
 // the daily map is played as level DAILY_I, one past the season's
 const DAILY_I = LEVELS.length;
 // the private preview's maps come after the daily
@@ -11658,7 +11928,8 @@ const Tracks = {
     const f = ($('tkFind').value || '').trim().toLowerCase(), me = Cloud.user && Cloud.user.uid;
     $('tkMineN').textContent = this.loaded ? this.mine.length + ' of ' + this.limit : '';
     $('tkMine').innerHTML = this.mine.map((t) => this.card(t, true)).join('') +
-      (this.loaded && this.mine.length < this.limit ? '<button class="tkNew" id="bTkNew"><b>+</b><span>Build a new track</span></button>' : '');
+      (this.loaded && this.mine.length < this.limit ? '<button class="tkNew" id="bTkNew"><b>+</b><span>Build a new track</span></button>' +
+        '<button class="tkNew tkAI" id="bTkAI"><b>✦</b><span>Design one with AI</span><small>Say what you want: AI builds it</small></button>' : '');
     const list = this.pub.filter((t) => t.uid !== me && (!f || (t.name + ' ' + (t.author || '')).toLowerCase().includes(f)));
     $('tkPublic').innerHTML = list.slice(0, this.shown).map((t) => this.card(t, false)).join('') ||
       '<p class="dNote">' + (!this.loaded ? 'Loading…' : f ? 'No public track matches.' : 'No public tracks from anyone else yet. Build one and make it public!') + '</p>';
@@ -11666,6 +11937,7 @@ const Tracks = {
   },
   async onClick(ev) {
     if (ev.target.closest('#bTkNew')) { this.edit(null); return; }
+    if (ev.target.closest('#bTkAI')) { this.edit(null); this.side('ai'); return; }
     const b = ev.target.closest('button[data-act]');
     if (!b) return;
     const card = b.closest('.tkCard'), t = card && this.find(card.dataset.id);
@@ -11749,6 +12021,9 @@ const Tracks = {
     $('bdName').value = this.draft.name;
     $('bdPublic').checked = this.draft.pub;
     $('bdMsg').textContent = '';
+    this.sideNow = 'pieces';
+    this.ai = { dials: null, seed: 0, name: '', auto: '' };
+    $('aiMsg').textContent = ''; $('aiMsg').className = 'aiMsg';
     this.showBuilder();
   },
   stamp() { const d = this.draft; return JSON.stringify([d.name, d.pub, d.pieces]); },
@@ -11766,6 +12041,7 @@ const Tracks = {
     Sound.stopEngine();
     UI.show('builder');
     this.renderBuilder();
+    this.side(this.sideNow || 'pieces');
   },
   /* undo / redo: every change to the pieces is remembered (100 steps) */
   remember() {
@@ -12026,6 +12302,123 @@ const Tracks = {
     $('bdIO').hidden = true;
     this.open();
   },
+  /* ------------------------------------------------- designing with AI */
+  IDEAS: ['A long icy mountain road with big jumps', 'Short and fast with speed strips', 'Twisty hairpins, no jumps', 'A bumpy desert rally',
+    'A wide banked oval, rocket fast', 'Insane: everything at once'],
+  /** the left column: 'pieces' (the hand tools) or 'ai' (describe it) */
+  side(v) {
+    this.sideNow = v;
+    $('bdSidePieces').hidden = v !== 'pieces';
+    $('bdSideAI').hidden = v !== 'ai';
+    document.querySelectorAll('#bdSide .tab').forEach((b) => b.classList.toggle('on', b.dataset.side === v));
+    if (v === 'ai') {
+      this.renderAI();
+      if (!this.ai || !this.ai.dials) setTimeout(() => $('aiText').focus(), 30);
+    }
+  },
+  renderAI() {
+    const A = this.ai || {}, D = A.dials, E = escapeHtml;
+    $('aiIdeas').innerHTML = this.IDEAS.map((t) => '<button class="aiIdea" type="button">' + E(t) + '</button>').join('');
+    $('aiGo').disabled = !!this.aiBusy;
+    $('aiAgain').disabled = !D || !!this.aiBusy;
+    $('aiDials').hidden = !D;
+    if (!D) return;
+    const seg = (k, names, two) => '<div class="aiSeg' + (two ? ' two' : '') + '">' + names.map((n, v) => '<button type="button" data-d="' + k + '" data-v="' + v + '"' +
+      ((D[k] || 0) === v ? ' class="on"' : '') + '>' + E(n) + '</button>').join('') + '</div>';
+    $('aiDials').innerHTML = '<h4>What AI went for <small>click to change</small></h4>' +
+      TrackGen.DIALS.map(([k, lab, names]) => '<div class="aiDial"><span>' + E(lab) + '</span>' + seg(k, names) + '</div>').join('') +
+      '<div class="aiDial"><span>Bottlenecks</span>' + seg('squeeze', ['No', 'Yes'], true) + '</div>' +
+      '<div class="aiDial"><span>Open areas</span>' + seg('open', ['No', 'Yes'], true) + '</div>';
+  },
+  /** the browser's own helper reads the words into dials, when it has one ready (null otherwise; never downloads anything) */
+  async aiRead(text) {
+    if (!Coach.api() || Coach.api() !== 'new' || (await Coach.availability()) !== 'available') return null;
+    const props = { name: { type: 'string' } }, B = TrackGen.BASE;
+    for (const [k] of TrackGen.DIALS) props[k] = { type: 'integer', minimum: 0, maximum: 3 };
+    props.squeeze = { type: 'integer', minimum: 0, maximum: 1 };
+    props.open = { type: 'integer', minimum: 0, maximum: 1 };
+    const schema = { type: 'object', properties: props, required: Object.keys(props) };
+    const sys = 'You turn a player\'s description of a race track into settings for the track generator of the racing game aiPolytrack. ' +
+      'Each setting is a whole number: ' + TrackGen.DIALS.map(([k, l, n]) => k + ' (' + l.toLowerCase() + ': ' + n.map((x, i) => i + ' = ' + x.toLowerCase()).join(', ') + ')').join('; ') +
+      '; squeeze (1 = narrow bottlenecks, 0 = none); open (1 = wide open areas, 0 = none). For anything the player did not ask about, use ' +
+      Object.keys(props).filter((k) => k !== 'name').map((k) => k + ' ' + (B[k] || 0)).join(', ') + '. ' +
+      'name: a short, cool name for the track, 2 or 3 words, letters and spaces only. Answer with the JSON only.';
+    const s = await self.LanguageModel.create({ initialPrompts: [{ role: 'system', content: sys }],
+      expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] });
+    try {
+      const out = await Promise.race([s.prompt(String(text).slice(0, 300), { responseConstraint: schema }),
+        new Promise((res, no) => setTimeout(() => no(new Error('slow')), 12000))]);
+      const o = JSON.parse(String(out).replace(/^\s*```(?:json)?|```\s*$/g, ''));
+      return o && typeof o === 'object' ? o : null;
+    } finally { try { s.destroy(); } catch (e) { /* gone already */ } }
+  },
+  /** design from the words (again: another version of the same) */
+  async aiDesign(again) {
+    if (this.aiBusy || !this.draft) return;
+    const msg = $('aiMsg');
+    if (!again) {
+      const text = $('aiText').value.trim();
+      if (!text) { msg.className = 'aiMsg err'; msg.textContent = 'Say what kind of track you want, or pick one of the ideas.'; return; }
+      this.aiBusy = true; this.renderAI();
+      msg.className = 'aiMsg busy'; msg.textContent = 'Reading what you want';
+      const r = TrackGen.read(text), D = Object.assign({}, r.dials);
+      let name = r.name;
+      let smart = null;
+      try { smart = await this.aiRead(text); } catch (e) { smart = null; }
+      if (smart) {
+        // the player's own words win; the helper fills in the rest
+        for (const [k] of TrackGen.DIALS) if (!r.said.has(k) && Number.isInteger(smart[k])) D[k] = clamp(smart[k], 0, 3);
+        for (const k of ['squeeze', 'open']) if (!r.said.has(k) && Number.isInteger(smart[k])) D[k] = clamp(smart[k], 0, 1);
+        const nm = TrackGen.cleanName(smart.name);
+        if (!name && nm && !Coach.BANNED.test(nm) && !(typeof Coach.badWord === 'function' && Coach.badWord(nm))) name = nm;
+      }
+      this.ai = Object.assign(this.ai || {}, { text, dials: D, seed: (Math.random() * 2147483647) >>> 0, name });
+    } else {
+      this.ai.seed = (this.ai.seed + 104729) >>> 0;
+    }
+    this.aiBuild();
+  },
+  /** build the track the dials describe, into the builder (Undo brings the old road back) */
+  aiBuild() {
+    const A = this.ai, msg = $('aiMsg');
+    if (!A || !A.dials || !this.draft) return;
+    this.aiBusy = true; this.renderAI();
+    msg.className = 'aiMsg busy'; msg.textContent = 'Designing your track';
+    setTimeout(() => {
+      let d;
+      try { d = TrackGen.design(A.dials, A.seed); } catch (e) { d = { ok: false }; }
+      this.aiBusy = false;
+      if (!d.ok) { msg.className = 'aiMsg err'; msg.textContent = 'That much doesn\'t fit in one track. Ask for a little less, or make it shorter.'; this.renderAI(); return; }
+      this.remember();
+      this.draft.pieces = d.pieces.map((p) => p.slice());
+      this.sel = this.draft.pieces.length - 1;
+      // its name, unless the player has named it themselves
+      const cur = $('bdName').value.trim();
+      let nm = cur;
+      if (!cur || cur === A.auto) { nm = A.name || TrackGen.nameFor(d.dials, d.seed); $('bdName').value = nm; this.draft.name = nm; A.auto = nm; }
+      const less = d.dials !== A.dials ? ' It had to be a little ' + (d.dials.turns < A.dials.turns ? 'less twisty' : d.dials.width < A.dials.width ? 'narrower' : 'shorter') + ' to fit.' : '';
+      msg.className = 'aiMsg';
+      msg.innerHTML = 'Made <b>' + escapeHtml(nm || 'your track') + '</b>: ' + (d.len / 1000).toFixed(2) + ' km, ' + d.pieces.length + ' pieces.' + escapeHtml(less) +
+        ' Test drive it, change any piece, then save.';
+      this.renderBuilder();
+      this.renderAI();
+      Sound.click && Sound.click();
+    }, 40);
+  },
+  onAIClick(ev) {
+    const idea = ev.target.closest('.aiIdea');
+    if (idea) { $('aiText').value = idea.textContent; this.aiDesign(false); return; }
+    const b = ev.target.closest('button[data-d]');
+    if (b && this.ai && this.ai.dials && !this.aiBusy) {
+      const k = b.dataset.d, v = +b.dataset.v;
+      if (this.ai.dials[k] === v) return;
+      this.ai.dials = Object.assign({}, this.ai.dials, { [k]: v });
+      if (k === 'size') delete this.ai.dials.km;
+      if (k === 'jumps') delete this.ai.dials.nJ;
+      this.aiBuild();
+    }
+  },
+
   /* ------------------------------------------------- track data in and out */
   io(mode) {
     this.ioMode = mode;
@@ -12095,6 +12488,11 @@ const Tracks = {
     $('bdImport').addEventListener('click', () => this.io('import'));
     $('bdIOGo').addEventListener('click', () => this.ioGo());
     $('bdIOClose').addEventListener('click', () => { $('bdIO').hidden = true; });
+    $('bdSide').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-side]'); if (b) this.side(b.dataset.side); });
+    $('aiGo').addEventListener('click', () => this.aiDesign(false));
+    $('aiAgain').addEventListener('click', () => this.aiDesign(true));
+    $('bdSideAI').addEventListener('click', (ev) => this.onAIClick(ev));
+    $('aiText').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.aiDesign(false); } });
     $('bdList').addEventListener('click', (ev) => {
       const li = ev.target.closest('li[data-k]');
       if (li) this.select(+li.dataset.k);
@@ -13019,6 +13417,60 @@ const Flair = {
 };
 
 /**
+ * The Podium Pass ($3 on Stripe): for 14 days the server pays 1 credit a
+ * minute for every season map the player is top 3 on (my_podium_pass pays up
+ * to now whenever it's asked, and submit_best pays everyone before a season
+ * podium changes). Here: its state for the shop card and the menu chip, asked
+ * about once a minute while a pass runs (each payment arrives as a credit line
+ * and the balance follows by itself).
+ */
+const PodiumPass = {
+  st: null, at: 0, timer: 0, skew: 0,
+  async load(force) {
+    if (!Cloud.on || !Cloud.user) { this.st = null; this.show(); return; }
+    if (!force && Date.now() - this.at < 55000) { this.show(); return; }
+    this.at = Date.now();
+    try {
+      const r = await Cloud.rpc('my_podium_pass');
+      this.st = r && typeof r === 'object' ? r : null;
+      this.skew = this.st && this.st.now ? Date.parse(this.st.now) - Date.now() : 0;
+    } catch (e) { this.st = null; }        // a server from before the pass
+    this.show();
+    clearInterval(this.timer); this.timer = 0;
+    if (this.active()) this.timer = setInterval(() => { if (!document.hidden) this.load(true); }, 60000);
+  },
+  active() { return !!(this.st && this.st.active); },
+  left() { return this.st && this.st.expires_at ? Math.max(0, Date.parse(this.st.expires_at) - (Date.now() + this.skew)) : 0; },
+  leftText() {
+    const ms = this.left(), d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24, m = Math.floor(ms / 60000) % 60;
+    return d ? d + 'd ' + h + 'h' : h ? h + 'h ' + m + 'm' : m + 'm';
+  },
+  /** the line on the shop card (HTML) */
+  line() {
+    const S = this.st;
+    if (!S) return 'Get on a season map\'s podium and the pass pays you for every minute you stay there.';
+    const n = Number(S.rate) || 0;
+    if (S.active) return '<b>Active</b> · ' + this.leftText() + ' left · earning <b>' + n + '</b> a minute · ' + fmtCredits(Number(S.earned) || 0) + ' earned so far';
+    return n ? 'You\'re top 3 on <b>' + n + '</b> season map' + (n === 1 ? '' : 's') + ' right now: that would be <b>' + fmtCredits(n * 1440) + '</b> credits a day.'
+      : 'You\'re not top 3 on a season map yet. Get on a podium first, then every minute there pays.';
+  },
+  show() {
+    const c = $('pdChip');
+    if (!c) return;
+    const on = this.active();
+    c.hidden = !on;
+    if (on) {
+      const n = Number(this.st.rate) || 0;
+      $('pdRate').textContent = '+' + n;
+      c.title = 'Podium Pass: ' + n + ' credit' + (n === 1 ? '' : 's') + ' a minute (top 3 on ' + n + ' season map' + (n === 1 ? '' : 's') + ') · ' +
+        this.leftText() + ' left · ' + fmtCredits(Number(this.st.earned) || 0) + ' earned so far';
+    }
+    const l = $('pdLine');
+    if (l) l.innerHTML = this.line();
+  }
+};
+
+/**
  * Buying credits: 30 000 and 3 boxes for $1 (or 180 000 and 18 boxes for
  * $5) on Stripe's own checkout page (a Payment
  * Link the admin sets up). The link gets the player's id, and Stripe's
@@ -13031,12 +13483,13 @@ const Shop = {
   /** the items only money buys: [code, name, dollars, what you get, the item that shows it's owned] */
   MONEY: [['holo', 'Holo paint', 2, 'A holographic rainbow that shifts as you move and as the light catches it.', 'finish:holo'],
     ['goldrush', 'Gold Rush paint', 2, 'Liquid gold with light running over it.', 'finish:goldrush'],
-    ['passbundle', 'Pass+ Bundle', 3, 'Pass+ for this season and 10 tiers skipped at once.', null]],
+    ['podium', 'Podium Pass', 3, 'For 14 days: 1 credit every minute for each season map you\'re top 3 on.', null]],
   buyMoney(code) {
     const m = this.MONEY.find((x) => x[0] === code), link = this.money[code];
     if (!m || !link || !Cloud.user) return;
     if (!this.allowed(m[2])) { UI.toast('That would go over today\'s spending limit of $' + this.limit + '. Try again tomorrow.'); return; }
-    if (!confirm('Buy ' + m[1] + ' for $' + m[2] + '? You pay on Stripe\'s secure page and come straight back.')) return;
+    const what = code === 'podium' ? (PodiumPass.active() ? '14 more days of your Podium Pass' : 'the Podium Pass (14 days of 1 credit a minute for every season map you\'re top 3 on)') : m[1];
+    if (!confirm('Buy ' + what + ' for $' + m[2] + '? You pay on Stripe\'s secure page and come straight back.')) return;
     location.href = link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid + '--' + code);
   },
   async load() {
@@ -13592,6 +14045,7 @@ const Garage = {
   show(tab) {
     this.tab = tab || this.tab || 'boxes';
     Shop.load();
+    PodiumPass.load();
     this.loadShop();
     Prefs.set('garageSeen', true);
     this.badge();
@@ -13682,9 +14136,9 @@ const Garage = {
     if (!S) { pane.innerHTML = '<p class="lede">Loading today\'s shop…</p>'; this.loadShop(true); return; }
     const left = Math.max(0, S.ends - Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60;
     const have = Records.credits || 0;
-    const money = Shop.MONEY.filter((m) => Shop.money[m[0]] && !(m[0] === 'passbundle' && this.pass && this.pass.plus));
+    const money = Shop.MONEY.filter((m) => Shop.money[m[0]]);
     const mpic = (m) => {
-      if (m[0] === 'passbundle') return '<span class="pPlus on big">PASS+</span>';
+      if (m[0] === 'podium') return '<span class="pdPic"><i>2</i><i>1</i><i>3</i></span>';
       const it = Catalog.get(m[4]);
       return it ? Catalog.pic(it) : '';
     };
@@ -13692,8 +14146,9 @@ const Garage = {
       '<div class="gShopGrid">' + money.map((m) => {
         const owned = m[4] && this.owned(m[4]);
         return '<div class="gShopCard gMoney' + (owned ? ' owned' : '') + '" style="--kc:#ffcf5c"><div class="gPic">' + mpic(m) + '</div><small class="gShopK">Exclusive</small><b>' + E(m[1]) + '</b>' +
-          '<small class="gMoneyNote">' + E(m[3]) + '</small>' +
-          (owned ? '<button class="small" disabled>Owned</button>' : '<button class="small primary" data-money="' + m[0] + '">$' + m[2] + '</button>') + '</div>';
+          '<small class="gMoneyNote">' + E(m[3]) + '</small>' + (m[0] === 'podium' ? '<small class="pdLine" id="pdLine">' + PodiumPass.line() + '</small>' : '') +
+          (owned ? '<button class="small" disabled>Owned</button>' : '<button class="small primary" data-money="' + m[0] + '">' +
+            (m[0] === 'podium' && PodiumPass.active() ? '+14 days · $' : '$') + m[2] + '</button>') + '</div>';
       }).join('') + '</div>' : '') +
       '<div class="gShopHead" style="margin-top:' + (money.length ? 18 : 0) + 'px"><div><h3 class="gh">TODAY\'S SHOP</h3><small>Six new items in <b>' + hh + 'h ' + mm + 'm</b> (midnight Pacific)</small></div></div>' +
       '<div class="gShopGrid">' + S.items.map((x) => {
@@ -14476,8 +14931,10 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
   // everyone who saw an earlier list sees it again
-  SEASON: 3, EDITION: 3.6, KEY: 'whatsNew',
+  SEASON: 3, EDITION: 3.7, KEY: 'whatsNew',
   ITEMS: [
+    ['build', 'Design a track with AI', 'In the track builder, describe the track you want ("a long icy road with big jumps") and AI builds it. Then change anything, test drive it and save.'],
+    ['crown', 'Podium Pass', 'In the garage shop: for 14 days, 1 credit every minute for each season map you\'re top 3 on.'],
     ['gem', 'Only 100 of each', 'Every box and shop item now exists in at most 100 copies. When it\'s gone, it\'s gone.'],
     ['card', 'Auctions', 'Sell what you have and bid on what you want, in the garage. Your bid is held until someone beats it.'],
     ['flag', 'New ways to race', 'The Race tile: Escape (outrun a storm on a 25 km road), Knockout (last place goes out every map) and the daily Pot map.'],
@@ -16798,7 +17255,8 @@ const Coach = {
       '\nGARAGE: boxes cost 100 credits, or one is free every 50 finished runs. A box holds a car (1%), an animated decal (2%), a decal (3%), a finish celebration (4%), a boost (5%), wheels (5%), a title (10%), a profile icon (10%), or 1-25 credits or a hue pack (50%); 10% of boxes split into two more (up to 8). Items sell for credits in the Collection; hues can\'t be sold or bought.' +
       '\nSTREAKS: finishing at least one run every day (Pacific time) builds a streak: 25 credits a day of streak, up to 175 a day, and a free box every 7th day in a row. Missing a day starts it again. The streak shows on the daily challenge tile.' +
       '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 30 000 credits and 3 free boxes for $1, or 180 000 credits and 18 free boxes for $5, from the + Buy button.' +
-      '\nLEVELS AND MODES: every player has a driver level (XP: 10 a finished run, 25 a personal best, 20 a streak day, 100 the daily challenge, up to 50 an Escape run); the Driver Road in the garage pays a reward every level, with exclusive titles, icons and Gold and Obsidian paint at levels 5 to 50. The Race tile on the menu has Knockout (7 ghosts, the slowest goes out after each map until one is left), Escape (one 25 km road, the same for everyone, with a storm chasing you; score is distance) and the Pot map (a new map each day: put in 100 to 5 000 credits to race it, and after midnight the fastest 40% share the pot, weighted by place and stake). Rival alerts: Coach tells the player when someone beats their time on any map. The Race Pass has 50 tiers and tiers can be skipped for 2 500 credits each. Exclusives only buyable with real money: Holo paint ($2), Gold Rush paint ($2) and the Pass+ Bundle ($3).' +
+      '\nLEVELS AND MODES: every player has a driver level (XP: 10 a finished run, 25 a personal best, 20 a streak day, 100 the daily challenge, up to 50 an Escape run); the Driver Road in the garage pays a reward every level, with exclusive titles, icons and Gold and Obsidian paint at levels 5 to 50. The Race tile on the menu has Knockout (7 ghosts, the slowest goes out after each map until one is left), Escape (one 25 km road, the same for everyone, with a storm chasing you; score is distance) and the Pot map (a new map each day: put in 100 to 5 000 credits to race it, and after midnight the fastest 40% share the pot, weighted by place and stake). Rival alerts: Coach tells the player when someone beats their time on any map. The Race Pass has 50 tiers and tiers can be skipped for 2 500 credits each. Exclusives only buyable with real money: Holo paint ($2), Gold Rush paint ($2) and the Podium Pass ($3: for 14 days it pays 1 credit every minute for each season map the player is top 3 on; buying it again adds 14 days).' +
+      '\nTRACK BUILDER: Tracks on the menu: build up to 3 tracks piece by piece, or press "Design with AI" and describe one in words (for example "a long icy road with big jumps"); it builds the track from real pieces, and the player can change any piece, test drive it and save it.' +
       '\nLIMITED ITEMS AND AUCTIONS: every box and shop item exists in at most 100 copies (the garage shows how many exist); when one is all owned, boxes give another of its kind and the shop shows it sold out. Selling an item back to the game frees a copy. Race Pass, Driver Road and exclusive items have no limit. Players trade in the garage\'s Auctions: list an item with a starting price, an optional buy-now price and 1 to 48 hours; bids hold the bidder\'s credits until outbid; a bid in the last 2 minutes adds 2 minutes; the best bid wins and the seller gets it less a 5% fee; no bids and the item comes back.' +
       '\nINVITES: "Invite friends" at the top of the menu gives a link; a friend who makes an account with it needs no invite code, and when they finish 10 runs both of you get a free box. After a run, "Challenge a friend" on the finish screen copies a link that puts a friend on that map against your ghost.';
   },
@@ -20224,6 +20682,7 @@ const UI = {
     Online.load();
     Rivals.check();
     Shop.load();
+    PodiumPass.load();
     Champion.render();
     Champion.load();
     $('overallLeaderKick').textContent = 'Season ' + SEASON + ' leader';
@@ -22265,6 +22724,7 @@ const Game = {
     $('bPreview').addEventListener('click', () => Preview.open());
     $('bMulti').addEventListener('click', () => Modes.open());
     $('lvChip').addEventListener('click', () => { Morph.note($('lvChip')); this.toGarage('road'); });
+    $('pdChip').addEventListener('click', () => { Morph.note($('pdChip')); this.toGarage('shop'); });
     $('bModesBack').addEventListener('click', () => this.toMenu());
     $('mKo').addEventListener('click', () => Modes.knockout());
     $('mEsc').addEventListener('click', () => Escape.start());

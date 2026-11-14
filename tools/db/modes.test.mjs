@@ -148,12 +148,12 @@ ok(!g4.item && g4.credits === 90000, 'the Founder\'s Pack is gone: its old code 
 ok((await t.owner("select count(*)::int n from public.items where id like '%founder%'")).rows[0].n === 0, 'and its items are gone');
 const g5 = await grant('cs_m5', t.users.Mo + '--passbundle', 300, 'pi_m5');
 ps = (await t.one('Mo', 'select public.my_pass() as j')).j;
-ok(g5.item === 'passbundle' && ps.plus && ps.tier === 10, 'the Pass+ Bundle: Pass+ and 10 tiers ' + JSON.stringify({ plus: ps.plus, tier: ps.tier }));
+ok(!g5.item && g5.credits === 90000 && !ps.plus, 'the Pass+ Bundle is retired: its old link pays credits ' + JSON.stringify({ g5, plus: ps.plus }));
 ok(!(await grant('cs_m6', t.users.Mo + '--nothing', 200, 'pi_m6')).item, 'an unknown code is just credits');
 await svc('select public.refund_purchase($1)', ['pi_m1']);
 ok((await owns('Mo', 'finish:holo')) === 0, 'a refund takes a money item back');
 await svc('select public.refund_purchase($1)', ['pi_m5']);
-ok(!(await t.one('Mo', 'select public.my_pass() as j')).j.plus, 'and Pass+');
+ok(!(await t.one('Mo', 'select public.my_pass() as j')).j.plus, 'and a refund of it takes the credits back');
 const items = (await t.owner("select source, count(*)::int n from public.items group by source")).rows;
 const shopNever = (await t.owner("select count(*)::int n from public.items where source in ('money', 'level', 'pass') and id = any(public._shop_items(null))")).rows[0].n;
 ok(shopNever === 0, 'the shop never sells level, pass or money items ' + JSON.stringify(items));
