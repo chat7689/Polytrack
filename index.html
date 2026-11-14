@@ -827,7 +827,7 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .aRow input{width:130px;font-family:var(--mono)}
 .aNote{font-size:12.5px;margin-top:10px}
 .modesPanel{width:min(980px,95vw)}
-.modeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 16px}
+.modeGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 16px}
 @media(max-width:820px){.modeGrid{grid-template-columns:1fr 1fr}}
 .modeCard{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:150px;padding:16px;border-radius:14px;text-align:left;
   border:1px solid color-mix(in srgb,var(--mc) 45%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--mc) 18%,transparent),rgba(255,255,255,.015));color:var(--ink)}
@@ -2154,7 +2154,6 @@ h2.big{font-size:28px;letter-spacing:-.025em}
   .rwCard.ready{animation:readyPulse 2.2s ease-in-out infinite}
   .gBar i,.pBar i,.dayChBar i,.lvChip s,.refBar i{transition:width .7s cubic-bezier(.2,.8,.2,1)}
   .toast{transition:opacity .25s ease,transform .3s cubic-bezier(.2,.9,.25,1.2)}
-  .layer:not([hidden])>.scrim{animation:boxFade .3s ease}
   /* after any run: the dark fades in, the card rises into focus, and what's on it arrives in turn */
   #result:not([hidden])>.scrim{animation:scrimIn .45s ease both}
   #result:not([hidden])>.panel.result{animation:resultIn .62s cubic-bezier(.16,1,.3,1) both}
@@ -2520,7 +2519,8 @@ button.wChamp:hover{background:#17181b;border-color:rgba(242,115,63,.35)}
 .morphGhost{position:fixed;pointer-events:none;background:#121417;border:1px solid rgba(255,255,255,.07);
   box-shadow:0 18px 48px rgba(0,0,0,.32)}
 .panel.morphIn{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
-.panel.morphIn > *{animation:morphKids .26s ease-out .08s both}
+.panel.morphIn > *{opacity:var(--mk,0);animation:none!important}
+.panel.morphIn *{animation-play-state:paused!important}
 @keyframes morphKids{from{opacity:0}to{opacity:1}}
 .panel.fadeIn{animation:panelIn .3s cubic-bezier(.2,.8,.2,1) both}
 @keyframes panelIn{from{opacity:0}to{opacity:1}}
@@ -2900,7 +2900,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 
         <button class="w wAct wRace" id="bMulti">
           <span class="wIc"><svg viewBox="0 0 24 24"><path d="M5 20V4M5 4h10l-2 3.5 2 3.5H5"/><path d="M15 20v-6h5"/></svg></span>
-          <b>Race</b><small>Quick race, modes, the Pot map</small>
+          <b>Race</b><small>Escape, Knockout, the Pot map</small>
         </button>
         <button class="w wAct wBuild" id="bTracks">
           <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 19c4 0 5-4 8-7s5-6 10-6"/><circle cx="3" cy="19" r="1.6"/><circle cx="21" cy="6" r="1.6"/><path d="M12 19h9"/></svg></span>
@@ -3252,7 +3252,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
     </div>
   </div>
 
-  <!-- the Race hub: quick race, knockout, escape, the Pot map, friends -->
+  <!-- the Race hub: escape, knockout, the Pot map, friends -->
   <div class="layer" id="modes" hidden>
     <div class="scrim"></div>
     <div class="panel widePanel modesPanel">
@@ -3261,9 +3261,6 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <button class="ghost" id="bModesBack">&larr; Menu</button>
       </div>
       <div class="modeGrid">
-        <button class="modeCard" id="mQuick" style="--mc:#3ddbb8">
-          <span class="mIc"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>
-          <b>Quick race</b><small>You against 5 drivers at your level, on a random map.</small></button>
         <button class="modeCard" id="mKo" style="--mc:#f2733f">
           <span class="mIc"><svg viewBox="0 0 24 24"><path d="M5 3h14l-2 7H7z M8 10l4 11 4-11"/></svg></span>
           <b>Knockout</b><small>7 rivals near your level. After every map the slowest goes out, and it gets tighter each round.</small></button>
@@ -12356,12 +12353,14 @@ const Multi = {
       for (let f = 1; f < F.length; f++) {
         cum += Math.hypot(F[f].p[0] - F[f - 1].p[0], F[f].p[2] - F[f - 1].p[2]);
         const left = F.length - 1 - f;
-        if (cum < 8 || left < 3 || Math.abs(F[f].r) > 0.18 || Math.abs(F[f].t) > 0.12) continue;
+        // follow the road at every frame, not only the usable ones: after a long run of
+        // banked turns the next usable frame was out of reach, and every spot after it was lost
         const p = new THREE.Vector3(F[f].p[0], F[f].p[1], F[f].p[2]);
         let best = j, bd = Infinity;
         for (let k = j; k < Math.min(path.length, j + 400); k++) { const d = path[k].distanceToSquared(p); if (d < bd) { bd = d; best = k; } }
-        if (bd > 25) continue;
         j = best;
+        if (bd > 400) continue;                // (the course path runs within a few metres of the deck; on a 25 km road up to ~15 m)
+        if (cum < 8 || left < 3 || Math.abs(F[f].r) > 0.18 || Math.abs(F[f].t) > 0.12) continue;
         const c = course.cum[best];
         if (c - lastCum < 15) continue;
         lastCum = c;
@@ -14481,7 +14480,7 @@ const WhatsNew = {
   ITEMS: [
     ['gem', 'Only 100 of each', 'Every box and shop item now exists in at most 100 copies. When it\'s gone, it\'s gone.'],
     ['card', 'Auctions', 'Sell what you have and bid on what you want, in the garage. Your bid is held until someone beats it.'],
-    ['flag', 'New ways to race', 'The Race tile: Quick race against drivers at your level, Knockout (last place goes out every map), Escape (outrun a storm on an endless road) and the daily Pot map.'],
+    ['flag', 'New ways to race', 'The Race tile: Escape (outrun a storm on a 25 km road), Knockout (last place goes out every map) and the daily Pot map.'],
     ['gem', 'The Pot map', 'Put credits in to race the day\'s Pot map. After midnight the fastest share the whole pot.'],
     ['crown', 'Driver levels', 'Everything you do earns XP. Every level pays out on the Driver Road, with exclusive titles, icons and Gold paint.'],
     ['crown', 'Race Pass', '50 tiers of rewards for finishing runs this season. Pass+ adds a box at every tier, four exclusive paints and pass-only titles and icons.'],
@@ -14765,7 +14764,7 @@ const Rivals = {
 };
 
 /**
- * Escape: always the same 10 km road (seed ESC.seed), built from the daily
+ * Escape: always the same 25 km road (seed ESC.seed; its first 10 km are the old road), built from the daily
  * maps' pieces: lots of turns (left-right pairs), boost pads, big and huge
  * jumps off a boost pad (their landings tried with the test driver),
  * rollers and crests; never more than 65 degrees off the start's heading,
@@ -14778,7 +14777,7 @@ const Rivals = {
  * car back on it (the storm gains); boost refills float above the road.
  * The car and its physics are the game's own.
  */
-const ESC = { seed: 77003, d0: 300, v0: 10.4, acc: 0.57, vmax: 95, feel: 230, every: 1100 };
+const ESC = { seed: 77003, d0: 300, v0: 10.4, acc: 0.57, vmax: 160, feel: 230, every: 1100 };
 const EscapeGen = {
   plan(seed) {
     const R = DailyGen.rng(seed);
@@ -14788,7 +14787,7 @@ const EscapeGen = {
     const ops = [['pad', 22, W + 4], ['straight', 80]];
     let len = 102, heading = 0, height = 0, sinceTurn = Infinity, sinceJump = 0, after = '', lastDir = 0;
     const straight = (L) => { ops.push(['straight', r1(L)]); len += L; sinceTurn += L; sinceJump += L; };
-    while (len < 10000) {
+    while (len < 25000) {
       if (after) { straight(after === 'rollers' ? rr(32, 42) : after === 'jump' ? rr(40, 55) : rr(26, 34)); after = ''; continue; }
       const u = R();
       if (u < 0.56) {
@@ -14894,6 +14893,13 @@ const Escape = {
     this.ticket = Cloud.on && Cloud.user ? Cloud.rpc('start_escape').catch(() => null) : null;
   },
   speed() { return Math.min(ESC.vmax, ESC.v0 + ESC.acc * this.t); },
+  /** where the storm is t seconds after the launch: the same for everyone (it runs on the
+   *  physics clock, not the frame rate, so a slow computer neither gains nor loses) */
+  stormAt(t) {
+    const tc = (ESC.vmax - ESC.v0) / ESC.acc;
+    const s0 = -ESC.d0 + ESC.v0 * Math.min(t, tc) + 0.5 * ESC.acc * Math.min(t, tc) ** 2;
+    return t > tc ? s0 + ESC.vmax * (t - tc) : s0;
+  },
   /** how far along the road the car is, smoothly (between the path's points) */
   dist() {
     const C = Game.course, i = Game.pathIdx, P = C.path, cum = C.cum;
@@ -14916,8 +14922,8 @@ const Escape = {
   },
   step(dt) {
     if (!this.live || this.done || this.death) return;
-    this.t += dt;
-    this.storm += this.speed() * dt;
+    this.t = Game.time;
+    this.storm = this.stormAt(this.t);
     this.me = this.dist();
     this.maxIdx = Math.max(this.maxIdx, Game.pathIdx);
     const gap = this.me - this.storm;
@@ -15126,7 +15132,7 @@ const Escape = {
     const C = Game.course, P = C.path, cum = C.cum;
     const a = P[0], b = P[P.length - 1];
     let fx = b.x - a.x, fz = b.z - a.z; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
-    const px = fz, pz = -fx;
+    const px = -fz, pz = fx;                // (to the right of the way the road runs)
     const pts = [];
     let last = -1e9;
     for (let i = 0; i < P.length; i++) {
@@ -15499,7 +15505,7 @@ const Escape = {
 };
 
 /**
- * The Race hub: Quick race (ghosts of drivers at your level on a random
+ * The Race hub:
  * map), Knockout (7 rivals; after each map the slowest goes out), Escape,
  * the Pot map and live races with friends.
  */
@@ -15518,28 +15524,6 @@ const Modes = {
     this.renderPot();
     this.loadPot(true);
     this.escBoard($('escBoard'), 10);
-  },
-  /** a map, and the drivers on it nearest my time (or, with no time of mine, a bit slower than the middle) */
-  pick(n, avoid) {
-    const me = Cloud.user && Cloud.user.uid;
-    const all = COURSE_IDS.filter((id) => Game.playable[courseIndexOf(id)] && !(avoid || []).includes(id)).map((id) => ({
-      id, b: (Records.board(id) || []).filter((e) => e.uid !== me && !RunHides.closed(e.uid, id))
-    }));
-    let cands = all.filter((c) => c.b.length >= n);
-    if (!cands.length) cands = all.filter((c) => c.b.length >= 2);
-    if (!cands.length) return null;
-    const c = cands[Math.floor(Math.random() * cands.length)];
-    let ref = Records.best(c.id);
-    if (!ref) { const ts = c.b.map((e) => e.t).sort((a, b) => a - b); ref = ts[Math.floor(ts.length * 0.6)]; }
-    const near = c.b.slice().sort((a, b) => Math.abs(a.t - ref) - Math.abs(b.t - ref)).slice(0, n);
-    return { id: c.id, uids: near.map((e) => e.uid) };
-  },
-  quick() {
-    Escape.stop();
-    const p = this.pick(5);
-    if (!p) { UI.toast('Not enough times on the boards for a quick race yet.'); return; }
-    this.mode = 'quick'; this.ko = null;
-    Game.raceGhostOfMany(p.id, p.uids);
   },
   knockout() {
     Escape.stop();
@@ -15581,18 +15565,13 @@ const Modes = {
     this.mode = 'ko';
     Game.raceGhostOfMany(p.id, p.uids);
   },
-  /** the finish screen, for a quick race or a Knockout round */
+  /** the finish screen, for a Knockout round */
   afterResult(raceResult) {
-    if (!raceResult || (this.mode !== 'quick' && this.mode !== 'ko')) return;
+    if (!raceResult || this.mode !== 'ko') return;
     const n = raceResult.length, me = raceResult.find((e) => e.isMe);
     const sub = $('rSub').innerHTML;
     $('bResCourses').textContent = 'Race';
     $('bNext').hidden = false;
-    if (this.mode === 'quick') {
-      $('rKick').textContent = 'Quick race · ' + Insight.ord(me.place) + ' of ' + n;
-      $('bNext').textContent = 'New quick race';
-      return;
-    }
     const K = this.ko;
     $('bRetry').hidden = true;
     if (me.place === n) {
@@ -15620,7 +15599,6 @@ const Modes = {
   },
   /** the finish screen's Next button, in a mode */
   onNext() {
-    if (this.mode === 'quick') { this.quick(); return true; }
     if (this.mode === 'ko' && this.ko) { if (this.ko.dead || this.ko.won) this.knockout(); else this.koRound(); return true; }
     return false;
   },
@@ -16302,8 +16280,8 @@ const CoachAlerts = {
         el.classList.add('unbox');
         el.style.setProperty('--kc', '#3ddbb8');
         el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Coach</b><button title="Dismiss">×</button></div>' +
-          '<p><b>New here? Try the Race tile.</b> <b>Quick race</b> puts you against drivers at your level right away, <b>Knockout</b> drops the slowest every map, ' +
-          '<b>Escape</b> is you against a storm on a 10 km road, and the <b>Pot map</b> pays the fastest. Every run earns XP.</p>' +
+          '<p><b>New here? Try the Race tile.</b> <b>Escape</b> is you against a storm on a 25 km road, <b>Knockout</b> drops the slowest every map, ' +
+          'and the <b>Pot map</b> pays the fastest. Every run earns XP.</p>' +
           '<div class="ab"><button class="primary small">Show me</button><button class="ghost small">Later</button></div>';
         const closeQ = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
         el.querySelector('.ah button').addEventListener('click', closeQ);
@@ -16820,7 +16798,7 @@ const Coach = {
       '\nGARAGE: boxes cost 100 credits, or one is free every 50 finished runs. A box holds a car (1%), an animated decal (2%), a decal (3%), a finish celebration (4%), a boost (5%), wheels (5%), a title (10%), a profile icon (10%), or 1-25 credits or a hue pack (50%); 10% of boxes split into two more (up to 8). Items sell for credits in the Collection; hues can\'t be sold or bought.' +
       '\nSTREAKS: finishing at least one run every day (Pacific time) builds a streak: 25 credits a day of streak, up to 175 a day, and a free box every 7th day in a row. Missing a day starts it again. The streak shows on the daily challenge tile.' +
       '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 30 000 credits and 3 free boxes for $1, or 180 000 credits and 18 free boxes for $5, from the + Buy button.' +
-      '\nLEVELS AND MODES: every player has a driver level (XP: 10 a finished run, 25 a personal best, 20 a streak day, 100 the daily challenge, up to 50 an Escape run); the Driver Road in the garage pays a reward every level, with exclusive titles, icons and Gold and Obsidian paint at levels 5 to 50. The Race tile on the menu has Quick race (you against ghosts of drivers at your level on a random map), Knockout (7 ghosts, the slowest goes out after each map until one is left), Escape (an endless road with a storm chasing you; score is distance) and the Pot map (a new map each day: put in 100 to 5 000 credits to race it, and after midnight the fastest 40% share the pot, weighted by place and stake). Rival alerts: Coach tells the player when someone beats their time on any map. The Race Pass has 50 tiers and tiers can be skipped for 2 500 credits each. Exclusives only buyable with real money: Holo paint ($2), Gold Rush paint ($2) and the Pass+ Bundle ($3).' +
+      '\nLEVELS AND MODES: every player has a driver level (XP: 10 a finished run, 25 a personal best, 20 a streak day, 100 the daily challenge, up to 50 an Escape run); the Driver Road in the garage pays a reward every level, with exclusive titles, icons and Gold and Obsidian paint at levels 5 to 50. The Race tile on the menu has Knockout (7 ghosts, the slowest goes out after each map until one is left), Escape (one 25 km road, the same for everyone, with a storm chasing you; score is distance) and the Pot map (a new map each day: put in 100 to 5 000 credits to race it, and after midnight the fastest 40% share the pot, weighted by place and stake). Rival alerts: Coach tells the player when someone beats their time on any map. The Race Pass has 50 tiers and tiers can be skipped for 2 500 credits each. Exclusives only buyable with real money: Holo paint ($2), Gold Rush paint ($2) and the Pass+ Bundle ($3).' +
       '\nLIMITED ITEMS AND AUCTIONS: every box and shop item exists in at most 100 copies (the garage shows how many exist); when one is all owned, boxes give another of its kind and the shop shows it sold out. Selling an item back to the game frees a copy. Race Pass, Driver Road and exclusive items have no limit. Players trade in the garage\'s Auctions: list an item with a starting price, an optional buy-now price and 1 to 48 hours; bids hold the bidder\'s credits until outbid; a bid in the last 2 minutes adds 2 minutes; the best bid wins and the seller gets it less a 5% fee; no bids and the item comes back.' +
       '\nINVITES: "Invite friends" at the top of the menu gives a link; a friend who makes an account with it needs no invite code, and when they finish 10 runs both of you get a free box. After a run, "Challenge a friend" on the finish screen copies a link that puts a friend on that map against your ghost.';
   },
@@ -19529,10 +19507,11 @@ const Morph = {
     g.className = 'morphGhost';
     L.insertBefore(g, to);                               // under the new panel, over its scrim
     to.classList.add('morphIn');
-    const a = src.rect, t0 = performance.now(), D = origin ? 440 : 380;
+    const a = src.rect, t0 = performance.now(), D = origin ? 460 : 420;
+    to.style.setProperty('--mk', '0');
     const r0 = parseFloat(src.radius) || 8, r1 = parseFloat(getComputedStyle(to).borderTopLeftRadius) || 8;
     const c0 = (String(src.bg).match(/\d+(\.\d+)?/g) || [18, 20, 23]).slice(0, 3).map(Number), c1 = [18, 20, 23];
-    const ease = (x) => 1 - Math.pow(1 - x, 4);
+    const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
     // The panel's live place every frame, not one measured at the start: a
     // screen that fills in its contents just after opening still lands
     // exactly on its panel, with no jump at the end.
@@ -19543,6 +19522,8 @@ const Morph = {
       g.style.width = mix(a.width, b.width) + 'px'; g.style.height = mix(a.height, b.height) + 'px';
       g.style.borderRadius = mix(r0, r1) + 'px';
       g.style.backgroundColor = 'rgb(' + c0.map((v, i) => Math.round(mix(v, c1[i]))).join(',') + ')';
+      const f = clamp((k - 0.62) / 0.38, 0, 1);
+      to.style.setProperty('--mk', (f * f * (3 - 2 * f)).toFixed(3));
       if (k < 1) this.raf = requestAnimationFrame(step);
       else this.finish();
     };
@@ -19560,6 +19541,7 @@ const Morph = {
     if (!c) return;
     c.g.remove();
     c.to.classList.remove('morphIn');
+    c.to.style.removeProperty('--mk');
   }
 };
 // a press on a widget, a card or a menu button: where the next screen grows from
@@ -22284,7 +22266,6 @@ const Game = {
     $('bMulti').addEventListener('click', () => Modes.open());
     $('lvChip').addEventListener('click', () => { Morph.note($('lvChip')); this.toGarage('road'); });
     $('bModesBack').addEventListener('click', () => this.toMenu());
-    $('mQuick').addEventListener('click', () => Modes.quick());
     $('mKo').addEventListener('click', () => Modes.knockout());
     $('mEsc').addEventListener('click', () => Escape.start());
     $('mFriends').addEventListener('click', () => Multi.open());
