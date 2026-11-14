@@ -1994,7 +1994,7 @@ async function loadShop() {
   } catch (e) { /* from before the pass */ }
   try {
     const l = await rpc('shop_links'); $('shopLink').value = l.one || ''; $('shopLink5').value = l.five || ''; $('shopLimit').value = l.limit;
-    const M = [['founder', "Founder's Pack", 3], ['holo', 'Holo paint', 2], ['goldrush', 'Gold Rush paint', 2], ['passbundle', 'Pass+ Bundle', 3]];
+    const M = [['holo', 'Holo paint', 2], ['goldrush', 'Gold Rush paint', 2], ['passbundle', 'Pass+ Bundle', 3]];
     $('moneyLinks').innerHTML = M.map(([c, n, d]) => '<div class="row" style="align-items:flex-end;margin-top:6px"><div><label for="ml_' + c + '">' + esc(n) + ' ($' + d + '.00)</label>' +
       '<input type="text" id="ml_' + c + '" style="width:420px" placeholder="https://buy.stripe.com/…" value="' + esc((l.money || {})[c] || '') + '"></div>' +
       '<button data-ml="' + c + '">Save</button></div>').join('');

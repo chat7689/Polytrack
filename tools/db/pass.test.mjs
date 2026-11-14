@@ -13,7 +13,7 @@ const boxes = async (name) => (await t.owner('select coalesce((select free_boxes
 
 // --- items
 const items = (await t.owner('select id, kind, source, sell from public.items')).rows;
-ok(items.length === 125, '97 box items, 6 shop finishes, 12 pass items, 8 driver-level items, 4 money-only items = ' + items.length);
+ok(items.length === 123, '97 box items, 6 shop finishes, 12 pass items, 8 driver-level items, 2 money-only items = ' + items.length);
 ok(items.filter((i) => i.kind === 'finish').length === 12 && items.filter((i) => i.source === 'pass').length === 12, 'finishes and pass-only items');
 ok(items.filter((i) => i.source === 'box').length === 97, 'boxes hold the 96 from before and Slick');
 await t.mkUser('Box');

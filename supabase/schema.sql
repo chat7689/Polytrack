@@ -2702,7 +2702,6 @@ insert into public.items (id, kind, name, sell, source) values
   ('finish:frost', 'finish', 'Frost', 400, 'pass'), ('title:unstoppable', 'title', 'Unstoppable', 100, 'pass'),
   ('icon:pass-wing', 'icon', 'Jet', 100, 'pass'), ('finish:aurora', 'finish', 'Aurora', 400, 'pass'),
   ('title:grinder', 'title', 'Grinder', 100, 'pass'), ('icon:pass-medal', 'icon', 'Medal', 100, 'pass'),
-  ('title:founder', 'title', 'Founder', 100, 'money'), ('icon:founder', 'icon', 'Founder', 100, 'money'),
   ('finish:holo', 'finish', 'Holo', 400, 'money'), ('finish:goldrush', 'finish', 'Gold Rush', 400, 'money')
 on conflict (id) do update set kind = excluded.kind, name = excluded.name, sell = excluded.sell, source = excluded.source;
 
@@ -2817,12 +2816,24 @@ end $$;
 create or replace function public._money_item(p_code text) returns jsonb
 language sql immutable as $$
   select case p_code
-    when 'founder' then '{"cents": 300, "name": "Founder''s Pack", "items": ["title:founder", "icon:founder"], "credits": 60000, "boxes": 10, "once": true}'
     when 'holo' then '{"cents": 200, "name": "Holo paint", "items": ["finish:holo"], "once": true}'
     when 'goldrush' then '{"cents": 200, "name": "Gold Rush paint", "items": ["finish:goldrush"], "once": true}'
     when 'passbundle' then '{"cents": 300, "name": "Pass+ Bundle", "plus": true, "tiers": 10}'
   end::jsonb
 $$;
+-- the Founder's Pack is gone: its items, its link, and anyone wearing them
+do $$
+begin
+  perform set_config('app.garage', 'on', true);
+  update public.car_customization set loadout = loadout - 'title' where loadout ->> 'title' = 'title:founder';
+  update public.car_customization set loadout = loadout - 'icon' where loadout ->> 'icon' = 'icon:founder';
+  if to_regclass('public.auctions') is not null then
+    delete from public.auctions where item in ('title:founder', 'icon:founder');
+  end if;
+  delete from public.inventory where item in ('title:founder', 'icon:founder');
+  delete from public.items where id in ('title:founder', 'icon:founder');
+  update public.settings set value = value - 'founder' where key = 'money_links';
+end $$;
 create or replace function public.admin_set_money_link(p_code text, p_link text) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare l text := btrim(coalesce(p_link, ''));
