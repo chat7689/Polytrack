@@ -7497,7 +7497,7 @@ const Look = {
     c.fillText(String(n), 128, 140);
     return (this._num[n] = new THREE.CanvasTexture(cv));
   },
-  tick(dt) { this.time.value += dt; Celebrate.step(dt); },
+  tick(dt) { this.time.value += dt; Celebrate.step(dt); Landmarks.step(dt); },
   /** the signed-in player's colours and loadout, as fetchCarColorsOf gives anyone's */
   mine() { return typeof CarColor === 'undefined' ? { loadout: this.own } : { primary: CarColor.primary, secondary: CarColor.secondary, loadout: this.own }; },
   paint(car, colors) {
@@ -9216,7 +9216,8 @@ function buildCourse(data, scene, world) {
     const denseAll = densePath(data);
     const under = (x, z, y) => denseAll.some((q) => q.y < y - 3 && Math.hypot(q.x - x, q.z - z) < q.hw + 4);
     const posts = [];
-    for (const b of pillarAt) {
+    // (a Season 4 map draws its own supports: columns, an aqueduct, steel)
+    for (const b of data.decor && data.decor.piers === false ? [] : pillarAt) {
       const top = b.p.y - DECK_T - GIRDER_D - 0.05, h = top - GROUND_Y;
       if (h < 1.5 || b.u.y < 0.7 || under(b.p.x, b.p.z, b.p.y)) continue;
       posts.push(new THREE.Matrix4().compose(new THREE.Vector3(b.p.x, GROUND_Y + h / 2, b.p.z), new THREE.Quaternion(), new THREE.Vector3(1.6, h, 1.6)));
@@ -9254,10 +9255,12 @@ function buildCourse(data, scene, world) {
   };
   if (dense.length > 1) {
     const pq = new THREE.Quaternion(), pp = new THREE.Vector3(), ps = new THREE.Vector3();
-    for (let n = 0; n < 1600 && props.tree.length + props.rock.length < 420; n++) {
+    // (a Season 4 map's decor can thin them out: a city has few trees)
+    const dec = data.decor || {}, maxProps = dec.props !== undefined ? dec.props : 420, treeShare = dec.trees !== undefined ? dec.trees : 0.72;
+    for (let n = 0; n < 1600 && props.tree.length + props.rock.length < maxProps; n++) {
       const anchor = dense[Math.floor(rnd() * dense.length)];
       const ang = rnd() * Math.PI * 2;
-      const tree = rnd() < 0.72;
+      const tree = rnd() < treeShare;
       const h = tree ? 5 + rnd() * 7 : 0.8 + rnd() * 1.6;
       const w = tree ? h * (0.26 + rnd() * 0.14) : h * (0.7 + rnd() * 0.5);
       const rad = anchor.reach + w + PROP_MARGIN + 2 + rnd() * 90;
@@ -9569,6 +9572,110 @@ const COURSE_IDS = LEVELS.map((l) => l.id);
    Empty between seasons. */
 const NEXT_SEASON = 4;
 const NEXT_LEVELS = [
+  // ---------------------------------------------------------- Section A: Skyline (a city at golden hour)
+  {
+    id: 's5c1', section: 0, name: 'Downtown', look: 4,
+    decor: { theme: 'city', props: 90, trees: 0.9, piers: false },
+    blurb: 'Past the stands, under a ring, up onto the skyway between the towers and its sky bridges, down for a jump.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(110);
+      b.curve(70, -55, { bank: 10, chev: 1 });
+      b.straight(130);
+      b.slope(60, 9, { bridge: true });
+      b.bridge(150);
+      b.curve(85, 70, { bank: 14, bridge: true, chev: 1 });
+      b.bridge(70);
+      b.slope(60, -9, { bridge: true });
+      b.straight(40);
+      b.strip(30);
+      b.straight(70);
+      b.slope(20, 2); b.ramp(12, 7); b.gap(16, -1.5); b.landing(14, -6, { w: 18 });
+      b.straight(60);
+      b.curve(60, -50, { bank: 10, chev: 1 });
+      b.straight(90);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section B: Wonders (the ancient desert)
+  {
+    id: 's5c5', section: 1, name: 'Aqueduct', look: 5,
+    decor: { theme: 'ancient', props: 160, trees: 0.35, piers: false },
+    blurb: 'Through the great arch, up onto a two-tier aqueduct 22 m over the sand, down along the colonnade and over a big jump.',
+    build() {
+      const b = new TrackBuilder({ width: 16, fine: true });
+      b.pad(24, 20);
+      b.straight(120);
+      b.curve(90, 50, { bank: 10, chev: 1 });
+      b.straight(40);
+      b.slope(110, 22, { bridge: true });
+      b.bridge(200);
+      b.curve(120, -45, { bank: 8, bridge: true, chev: 1 });
+      b.bridge(70);
+      b.slope(110, -22, { bridge: true });
+      b.straight(110);
+      b.curve(65, 70, { bank: 16, chev: 1 });
+      b.straight(60);
+      b.slope(24, 2.5); b.ramp(14, 9); b.gap(22, -2); b.landing(18, -8, { w: 19 });
+      b.straight(70);
+      b.gate('finish');
+      b.straight(34, { w: 20 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section C: Powerworks (dam, turbines, bridges)
+  {
+    id: 's5c9', section: 2, name: 'Suspension', look: 6,
+    decor: { theme: 'power', props: 380, trees: 0.85, piers: false },
+    blurb: 'Climb to a 260 m suspension bridge 20 m up, turbines turning all round, then down, a banked hairpin and rollers to the line.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(80);
+      b.curve(80, 60, { bank: 12, chev: 1 });
+      b.straight(60);
+      b.slope(100, 20, { bridge: true });
+      b.bridge(260);
+      b.slope(100, -20, { bridge: true });
+      b.straight(50);
+      b.curve(60, -75, { bank: 16, chev: 1 });
+      b.straight(50);
+      b.strip(30);
+      b.straight(60);
+      b.rollers(3, 22, 0.6);
+      b.straight(50);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
+  // ---------------------------------------------------------- Section D: Sky Citadel (twilight, floating islands)
+  {
+    id: 's5c13', section: 3, name: 'Skyreach', look: 7,
+    decor: { theme: 'sky', props: 60, trees: 0.5, piers: false },
+    blurb: 'A road in the sky with nothing under it: a jump from one span to the next 18 m up, a banked sweep, rings to fly through.',
+    build() {
+      const b = new TrackBuilder({ width: 15, fine: true });
+      b.pad(24, 19);
+      b.straight(60);
+      b.slope(90, 18, { bridge: true });
+      b.bridge(90);
+      b.slope(16, 2, { bridge: true }); b.ramp(14, 8, { bridge: true }); b.gap(24, -2.5); b.landing(18, -8, { bridge: true, w: 19 });
+      b.bridge(70, { w: 16 });
+      b.curve(100, -70, { bank: 14, bridge: true, chev: 1 });
+      b.bridge(110);
+      b.slope(90, -17, { bridge: true });
+      b.straight(40);
+      b.curve(60, 60, { bank: 12, chev: 1 });
+      b.straight(70);
+      b.gate('finish');
+      b.straight(34, { w: 19 });
+      return b.build();
+    }
+  },
 /*NEXT_LEVELS*/
 
 
@@ -11193,6 +11300,652 @@ class SkidMarks {
   }
 }
 
+/* ------------------------------------------------- landmarks (Season 4)
+ * The big set pieces around a map, from its level's decor: { theme }.
+ * Purely cosmetic (nothing here is solid; the road and its banks are the
+ * course's own): skylines and sky bridges, arched aqueducts under raised
+ * road, suspension and cable-stayed bridges, wind turbines and a dam,
+ * pyramids and colonnades, floating islands. Everything is placed from the
+ * road itself (where it runs, how high, where it's straight, where it's a
+ * bridge) with a generator seeded by the map's id, so a map looks the same
+ * every time; free-standing pieces keep clear of the road and its banks,
+ * and the ones that span it leave room to drive under. Merged by material,
+ * so a whole skyline is a handful of draw calls.                         */
+const Landmarks = {
+  anim: [],
+  mats: null,
+  M() {
+    if (this.mats) return this.mats;
+    const std = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.8, metalness: 0.05, flatShading: true }, o || {}));
+    const win = (frame, glass, lit, seed) => {
+      const t = this.windows(frame, glass, lit, seed);
+      return std(0xffffff, { map: t.map, emissiveMap: t.emap, emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.38, metalness: 0.25 });
+    };
+    this.mats = {
+      concrete: std(0xd8d4cc, { roughness: 0.95 }), concreteDark: std(0x9b9a96, { roughness: 0.95 }),
+      stone: std(0xc9a06a, { roughness: 0.95 }), stoneDark: std(0x9a7246, { roughness: 0.95 }),
+      steel: std(0x6d7a88, { roughness: 0.5, metalness: 0.45 }), red: std(0xc8452f, { roughness: 0.55, metalness: 0.25 }),
+      white: std(0xf1f3f5, { roughness: 0.55 }), cable: std(0x2a2f36, { roughness: 0.6, metalness: 0.4 }),
+      gold: std(0xe6b850, { roughness: 0.32, metalness: 0.75 }),
+      glow: std(0xa8f4ff, { emissive: 0x39d8ff, emissiveIntensity: 1.3, roughness: 0.4 }),
+      glow2: std(0xffb6f2, { emissive: 0xff4fd8, emissiveIntensity: 1.2, roughness: 0.4 }),
+      warm: std(0xfff0c8, { emissive: 0xffc25a, emissiveIntensity: 1.1 }),
+      water: std(0x3f86ad, { roughness: 0.12, metalness: 0.35, flatShading: false }),
+      rock: std(0x7a6c5e, { roughness: 1 }), grass: std(0x6fa24f, { roughness: 1 }),
+      crystal: std(0xc4b2ff, { emissive: 0x7350ff, emissiveIntensity: 0.75, roughness: 0.2, metalness: 0.3 }),
+      seatA: std(0x2f6fd8, { roughness: 0.7 }), seatB: std(0xe8544c, { roughness: 0.7 }),
+      roof: std(0xeef1f4, { roughness: 0.5, metalness: 0.2 }),
+      cloud: std(0xfff4fb, { roughness: 1, emissive: 0xf3c6e6, emissiveIntensity: 0.35 }),
+      glass: std(0x7fb4d8, { roughness: 0.15, metalness: 0.5, emissive: 0x1d4f73, emissiveIntensity: 0.35 }),
+      towerA: win('#2c3e52', '#2f5f8a', '#ffd38a', 1), towerB: win('#bfb6a6', '#3d5570', '#ffe2a8', 2), towerC: win('#1b2230', '#223349', '#9fe8ff', 3)
+    };
+    return this.mats;
+  },
+  /** a facade: 4 x 4 windows (one per 4 m bay and 3.6 m floor), some lit */
+  windows(frame, glass, lit, seed) {
+    const mk = () => { const c = document.createElement('canvas'); c.width = c.height = 128; return c; };
+    const a = mk(), e = mk(), g = a.getContext('2d'), ge = e.getContext('2d');
+    let s = seed * 9301 + 49297;
+    const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    g.fillStyle = frame; g.fillRect(0, 0, 128, 128);
+    ge.fillStyle = '#000'; ge.fillRect(0, 0, 128, 128);
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+      const on = rnd() < 0.4;
+      g.fillStyle = on ? lit : glass; g.fillRect(x * 32 + 3, y * 32 + 5, 26, 21);
+      if (on) { ge.fillStyle = lit; ge.fillRect(x * 32 + 3, y * 32 + 5, 26, 21); }
+    }
+    const tex = (c) => { const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t; };
+    return { map: tex(a), emap: tex(e) };
+  },
+
+  /* ---------------------------------------------- building geometry */
+  _geo: {},
+  geo(key, make) { return this._geo[key] || (this._geo[key] = make()); },
+  /** pieces by material, merged into one mesh each at the end */
+  batch() {
+    const by = new Map();
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sv = new THREE.Vector3();
+    const put = (mat, geo, mtx) => { let a = by.get(mat); if (!a) by.set(mat, (a = [])); a.push([geo, mtx]); };
+    const B = {
+      /** a piece: geo at (x, y, z), scaled (sx, sy, sz), turned (rx, ry, rz) */
+      add(mat, geo, x, y, z, sx, sy, sz, ry, rx, rz) {
+        put(mat, geo, new THREE.Matrix4().compose(v.set(x, y, z), q.setFromEuler(e.set(rx || 0, ry || 0, rz || 0, 'YXZ')), sv.set(sx, sy, sz)));
+      },
+      box(mat, x, y, z, sx, sy, sz, ry, rx, rz) { B.add(mat, Landmarks.geo('box', () => new THREE.BoxGeometry(1, 1, 1)), x, y, z, sx, sy, sz, ry, rx, rz); },
+      /** a beam from a to b: sx thick toward `hint` (up, unless given), sz the other way across */
+      beam(mat, a, b, sx, sz, hint) {
+        const d = new THREE.Vector3().subVectors(b, a), L = d.length();
+        if (L < 1e-3) return;
+        d.multiplyScalar(1 / L);
+        const h = hint ? hint.clone() : new THREE.Vector3(0, 1, 0);
+        if (Math.abs(h.dot(d)) > 0.98) h.set(1, 0, 0);
+        const X = h.addScaledVector(d, -h.dot(d)).normalize(), Z = new THREE.Vector3().crossVectors(X, d);
+        const mtx = new THREE.Matrix4().makeBasis(X, d, Z);
+        mtx.scale(new THREE.Vector3(sx, L, sz || sx));
+        mtx.setPosition(new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5));
+        put(mat, Landmarks.geo('box', () => new THREE.BoxGeometry(1, 1, 1)), mtx);
+      },
+      /** a building with windows: its facades' UVs in metres (a 4 m bay, a 3.6 m floor) */
+      facade(mat, x, y, z, sx, sy, sz, ry) {
+        const g = new THREE.BoxGeometry(sx, sy, sz), uv = g.attributes.uv;
+        const dims = [[sz, sy], [sz, sy], [0, 0], [0, 0], [sx, sy], [sx, sy]];
+        for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) {
+          const i = f * 4 + k;
+          uv.setXY(i, uv.getX(i) * dims[f][0] / 16, uv.getY(i) * dims[f][1] / 14.4);
+        }
+        put(mat, g, new THREE.Matrix4().compose(v.set(x, y, z), q.setFromEuler(e.set(0, ry || 0, 0)), sv.set(1, 1, 1)));
+      },
+      build(parent) {
+        for (const [mat, list] of by) {
+          const mesh = new THREE.Mesh(Landmarks.merge(list), mat);
+          mesh.castShadow = false; mesh.receiveShadow = false;
+          parent.add(mesh);
+        }
+      }
+    };
+    return B;
+  },
+  merge(list) {
+    let total = 0;
+    for (const [g] of list) total += g.index ? g.index.count : g.attributes.position.count;
+    const pos = new Float32Array(total * 3), nrm = new Float32Array(total * 3), uvs = new Float32Array(total * 2);
+    const v = new THREE.Vector3(), nm = new THREE.Matrix3();
+    let o = 0;
+    for (const [g, m] of list) {
+      const P = g.attributes.position.array, N = g.attributes.normal.array, U = g.attributes.uv ? g.attributes.uv.array : null;
+      const idx = g.index ? g.index.array : null, n = idx ? idx.length : g.attributes.position.count;
+      nm.getNormalMatrix(m);
+      for (let i = 0; i < n; i++) {
+        const k = idx ? idx[i] : i;
+        v.set(P[k * 3], P[k * 3 + 1], P[k * 3 + 2]).applyMatrix4(m);
+        pos[o * 3] = v.x; pos[o * 3 + 1] = v.y; pos[o * 3 + 2] = v.z;
+        v.set(N[k * 3], N[k * 3 + 1], N[k * 3 + 2]).applyMatrix3(nm).normalize();
+        nrm[o * 3] = v.x; nrm[o * 3 + 1] = v.y; nrm[o * 3 + 2] = v.z;
+        if (U) { uvs[o * 2] = U[k * 2]; uvs[o * 2 + 1] = U[k * 2 + 1]; }
+        o++;
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    g.computeBoundingSphere();
+    return g;
+  },
+  cyl(rt, rb, seg) { return this.geo('cyl' + rt + ':' + rb + ':' + seg, () => new THREE.CylinderGeometry(rt, rb, 1, seg || 10)); },
+  cone(seg) { return this.geo('cone' + seg, () => new THREE.ConeGeometry(1, 1, seg)); },
+
+  /* ---------------------------------------------- the road, read for placing things */
+  read(data) {
+    const pts = [];
+    let cum = 0, prev = null;
+    data.strips.forEach((st, si) => st.frames.forEach((f, i) => {
+      const seg = st.segs[Math.min(i, st.segs.length - 1)] || {};
+      if (prev) {
+        const gap = Math.hypot(f.p[0] - prev.x, f.p[2] - prev.z);
+        // across a jump: points every 3 m, so nothing lands in the gap
+        if (i === 0 && gap > 4) for (let k = 1; k < gap / 3; k++) {
+          const t = k * 3 / gap;
+          pts.push({ x: prev.x + (f.p[0] - prev.x) * t, y: prev.y + (f.p[1] - prev.y) * t, z: prev.z + (f.p[2] - prev.z) * t, hw: f.w / 2, yaw: f.y,
+            bridge: false, h: 0, reach: f.w / 2 + 6, cum: cum + gap * t, strip: -1 });
+        }
+        cum += Math.hypot(f.p[0] - prev.x, f.p[1] - prev.y, f.p[2] - prev.z);
+      }
+      const h = Math.max(f.p[1] - GROUND_Y, 0), hw = f.w / 2;
+      const p = { x: f.p[0], y: f.p[1], z: f.p[2], hw, yaw: f.y, roll: f.r, bridge: !!seg.noBank, h, cum, strip: si,
+        reach: seg.noBank ? hw + 2.5 : hw + Math.max(h * 2, 2.2) + 1 };
+      pts.push(p); prev = p;
+    }));
+    // stretches that run straight on (within ~4 degrees), long enough to dress
+    const runs = [];
+    let a = 0;
+    for (let i = 1; i <= pts.length; i++) {
+      const p = pts[i], s = pts[a];
+      const same = p && p.strip === s.strip && p.strip >= 0 && p.bridge === s.bridge && Math.abs(Math.atan2(Math.sin(p.yaw - s.yaw), Math.cos(p.yaw - s.yaw))) < 0.07 && Math.abs(p.y - s.y) < 3;
+      if (!same) {
+        if (pts[i - 1].cum - s.cum > 25) runs.push({ a, b: i - 1, len: pts[i - 1].cum - s.cum, bridge: s.bridge, h: s.h });
+        a = i;
+      }
+    }
+    return { pts, runs, len: cum };
+  },
+
+  /** dress a freshly built course */
+  dress(lv, data, course) {
+    this.anim = [];
+    const D = lv && lv.decor;
+    if (!D || !course || !this.themes[D.theme]) return;
+    this.M();
+    const g = new THREE.Group();
+    course.root.add(g);
+    const R = this.read(data), B = this.batch();
+    let seed = 2166136261;
+    for (const ch of String(lv.id)) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const placed = [];
+    const ctx = {
+      R, B, g, rnd, D, M: this.mats, GY: GROUND_Y,
+      rr: (a, b) => a + rnd() * (b - a),
+      pick: (arr) => arr[Math.floor(rnd() * arr.length)],
+      /** is (x, z) at least r clear of the road, its banks and everything else placed? */
+      clear(x, z, r) {
+        for (const q of R.pts) { const need = q.reach + r + 3; if ((q.x - x) ** 2 + (q.z - z) ** 2 < need * need) return false; }
+        for (const o of placed) { const need = o.r + r + 2; if ((o.x - x) ** 2 + (o.z - z) ** 2 < need * need) return false; }
+        return true;
+      },
+      take(x, z, r) { placed.push({ x, z, r }); },
+      /** the nearest road point to (x, z) */
+      near(x, z) { let b = null, bd = Infinity; for (const q of R.pts) { const d = (q.x - x) ** 2 + (q.z - z) ** 2; if (d < bd) { bd = d; b = q; } } return { q: b, d: Math.sqrt(bd) }; },
+      /** a point off to one side of road point q: side +1/-1, d metres from its middle */
+      off(q, side, d) { return { x: q.x + Math.cos(q.yaw) * d * side, z: q.z - Math.sin(q.yaw) * d * side }; },
+      /** a random spot near the road, between d0 and d1 metres beyond its reach */
+      around(d0, d1) {
+        const q = R.pts[Math.floor(rnd() * R.pts.length)], a = rnd() * Math.PI * 2, d = q.reach + d0 + rnd() * (d1 - d0);
+        return { x: q.x + Math.cos(a) * d, z: q.z + Math.sin(a) * d };
+      },
+      center: courseCenterAndExtent(R.pts),
+      /** the middle of a straight run that isn't near a jump (for pieces over the road) */
+      spans(minLen, bridge) {
+        return R.runs.filter((r) => r.len >= minLen && (bridge === undefined || r.bridge === bridge)).map((r) => R.pts[Math.floor((r.a + r.b) / 2)]);
+      }
+    };
+    this.themes[D.theme].call(this, ctx);
+    B.build(g);
+  },
+  step(dt) {
+    for (const a of this.anim) a(dt);
+  },
+
+  /* ---------------------------------------------- the pieces */
+  /** a skyscraper: podium, shaft with windows, a setback and a crown */
+  tower(c, x, z, w, d, h, ry, mat) {
+    const { B, M, GY } = c, f = mat || c.pick([M.towerA, M.towerA, M.towerB, M.towerC]);
+    B.box(M.concrete, x, GY + 3, z, w * 1.25, 6, d * 1.25, ry);
+    const h1 = h > 70 && c.rnd() < 0.6 ? h * c.rr(0.62, 0.78) : h;
+    B.facade(f, x, GY + 6 + h1 / 2, z, w, h1, d, ry);
+    let top = GY + 6 + h1;
+    if (h1 < h) { const h2 = h - h1; B.facade(f, x, top + h2 / 2, z, w * 0.72, h2, d * 0.72, ry); top += h2; }
+    B.box(M.concreteDark, x, top + 0.8, z, w * (h1 < h ? 0.76 : 1.04), 1.6, d * (h1 < h ? 0.76 : 1.04), ry);
+    const crown = c.rnd();
+    if (crown < 0.35) { B.add(M.steel, this.cyl(0.25, 0.9, 6), x, top + 1.6 + h * 0.08, z, 1, h * 0.16, 1); B.box(M.glow2, x, top + 1.6 + h * 0.16, z, 0.7, 0.7, 0.7); }
+    else if (crown < 0.6) B.box(M.glow, x, top + 2, z, w * 0.5, 0.6, d * 0.5, ry);
+    else if (crown < 0.8) B.add(M.steel, this.cone(4), x, top + 1.6 + h * 0.06, z, w * 0.5, h * 0.12, d * 0.5, ry + Math.PI / 4);
+    return top;
+  },
+  /** a glass bridge between two towers, across the road at height y */
+  skyBridge(c, a, b, y) {
+    const { B, M } = c, A = new THREE.Vector3(a.x, y, a.z), Bv = new THREE.Vector3(b.x, y, b.z);
+    B.beam(M.glass, A, Bv, 4.2, 5);
+    B.beam(M.steel, A.clone().setY(y - 2.3), Bv.clone().setY(y - 2.3), 0.5, 5.6);
+    B.beam(M.glow, A.clone().setY(y - 2.65), Bv.clone().setY(y - 2.65), 0.25, 0.5);
+    B.beam(M.steel, A.clone().setY(y + 2.3), Bv.clone().setY(y + 2.3), 0.4, 5.6);
+  },
+  /** a giant ring standing over the road at road point q */
+  ring(c, q, r, mat) {
+    const { B, M, GY } = c;
+    const cy = Math.max(GY + r * 0.42, q.y - r * 0.3);
+    B.add(mat || M.glow, this.geo('torus', () => new THREE.TorusGeometry(1, 0.06, 6, 56)), q.x, cy, q.z, r, r, r, q.yaw);
+    B.add(M.steel, this.geo('torusB', () => new THREE.TorusGeometry(1, 0.035, 6, 56)), q.x, cy, q.z, r * 1.09, r * 1.09, r * 1.09, q.yaw);
+    if (cy - r < GY + 1) for (const s of [-1, 1]) { const o = c.off(q, s, Math.sqrt(Math.max(0, r * r - (cy - GY) ** 2))); B.box(M.concreteDark, o.x, GY + 1, o.z, 4, 2, 6, q.yaw); }
+  },
+  /** a stone arch over the road at road point q */
+  stoneArch(c, q) {
+    const { B, M, GY } = c, half = q.hw + 4.5, H = q.y - GY + 15, top = GY + H;
+    for (const s of [-1, 1]) {
+      const o = c.off(q, s, half + 3.5);
+      B.box(M.stone, o.x, GY + H / 2, o.z, 7, H, 9, q.yaw);
+      B.box(M.stoneDark, o.x, GY + 1, o.z, 8.4, 2, 10.4, q.yaw);
+    }
+    B.box(M.stone, q.x, top + 3, q.z, half * 2 + 14, 6, 9.4, q.yaw);
+    B.box(M.stoneDark, q.x, top + 6.4, q.z, half * 2 + 15, 0.8, 10, q.yaw);
+    B.box(M.gold, q.x, top + 3, q.z, 9, 2.4, 9.6, q.yaw);
+    // the arch's curve under the lintel
+    for (let k = 1; k < 8; k++) {
+      const a0 = Math.PI * (k - 1) / 8, a1 = Math.PI * k / 8;
+      const p0 = c.off(q, 1, Math.cos(a0) * half), p1 = c.off(q, 1, Math.cos(a1) * half);
+      B.beam(M.stoneDark, new THREE.Vector3(p0.x, top - 5 + Math.sin(a0) * 5, p0.z), new THREE.Vector3(p1.x, top - 5 + Math.sin(a1) * 5, p1.z), 9.2, 1.2,
+        new THREE.Vector3(Math.sin(q.yaw), 0, Math.cos(q.yaw)));
+    }
+  },
+  /** the supports under raised road: 'columns' (round), 'arches' (an aqueduct, two tiers when high), 'aframe' (steel) */
+  supports(c, style) {
+    const { B, M, GY, R } = c, P = R.pts;
+    let last = -1e9, prevPier = null;
+    const every = style === 'arches' ? 13 : 16;
+    for (let i = 0; i < P.length; i++) {
+      const q = P[i];
+      if (!q.bridge) { prevPier = null; continue; }
+      if (q.cum - last < every) continue;
+      const deckB = q.y - DECK_T - GIRDER_D, h = deckB - GY;
+      if (h < 2.5) { prevPier = null; continue; }
+      last = q.cum;
+      const fw = q.hw * 2 * 0.85;
+      if (style === 'columns') {
+        B.add(M.concrete, this.cyl(1.3, 1.5, 12), q.x, GY + h / 2, q.z, 1, h, 1);
+        B.box(M.concrete, q.x, deckB - 0.6, q.z, fw, 1.2, 3, q.yaw);
+      } else if (style === 'aframe') {
+        for (const s of [-1, 1]) {
+          const top = c.off(q, s, q.hw * 0.55), foot = c.off(q, s, q.hw * 0.55 + h * 0.22);
+          B.beam(M.steel, new THREE.Vector3(foot.x, GY, foot.z), new THREE.Vector3(top.x, deckB, top.z), 1.1, 1.1);
+        }
+        B.box(M.steel, q.x, deckB - 0.5, q.z, fw, 1, 2, q.yaw);
+      } else {
+        // an aqueduct: a stone pier, and an arch back to the one before
+        B.box(M.stone, q.x, GY + h / 2, q.z, fw, h, 3.2, q.yaw);
+        B.box(M.stoneDark, q.x, GY + 0.8, q.z, fw + 1.2, 1.6, 4.4, q.yaw);
+        if (prevPier) {
+          const tiers = h > 20 ? 2 : 1;
+          for (let t = 0; t < tiers; t++) {
+            const topY = tiers === 2 && t === 0 ? GY + h * 0.5 : deckB, span = Math.hypot(q.x - prevPier.x, q.z - prevPier.z), rad = span / 2;
+            const ax = (prevPier.x + q.x) / 2, az = (prevPier.z + q.z) / 2, dx = (q.x - prevPier.x) / span, dz = (q.z - prevPier.z) / span;
+            const springY = topY - rad * 0.9;
+            for (let k = 1; k <= 8; k++) {
+              const a0 = Math.PI * (k - 1) / 8, a1 = Math.PI * k / 8;
+              const P0 = new THREE.Vector3(ax - dx * Math.cos(a0) * rad, springY + Math.sin(a0) * rad * 0.9, az - dz * Math.cos(a0) * rad);
+              const P1 = new THREE.Vector3(ax - dx * Math.cos(a1) * rad, springY + Math.sin(a1) * rad * 0.9, az - dz * Math.cos(a1) * rad);
+              B.beam(M.stoneDark, P0, P1, fw * 0.96, 1.1, new THREE.Vector3(dz, 0, -dx));
+            }
+            // the wall above the arch, up to the deck (or the tier above)
+            B.box(M.stone, ax, (springY + rad * 0.9 + topY) / 2 + 0.3, az, span - 3.2, Math.max(0.6, topY - springY - rad * 0.9 + 0.6), fw * 0.9, Math.atan2(dx, dz) + Math.PI / 2);
+            if (tiers === 2 && t === 0) B.box(M.stoneDark, ax, topY, az, span + 1, 1.2, fw + 0.8, Math.atan2(dx, dz) + Math.PI / 2);
+          }
+        }
+        prevPier = q;
+      }
+    }
+  },
+  /** a suspension bridge along straight raised road from point a to point b (indices) */
+  suspension(c, ia, ib, mat) {
+    const { B, M, GY, R } = c, P = R.pts, A = P[ia], Z = P[ib];
+    const top = Math.max(A.y, Z.y) + 26, sag = 15, legs = A.hw + 2.2;
+    const towerAt = (q) => {
+      for (const s of [-1, 1]) {
+        const o = c.off(q, s, legs);
+        B.box(mat || M.red, o.x, (GY + top) / 2, o.z, 2.2, top - GY, 2.6, q.yaw);
+      }
+      for (const yy of [q.y - DECK_T - GIRDER_D - 1, top - 1, (q.y + top) / 2 + 2]) B.box(mat || M.red, q.x, yy, q.z, legs * 2 + 2, 1.6, 2, q.yaw);
+      B.box(M.concreteDark, q.x, GY + 1.5, q.z, legs * 2 + 6, 3, 6, q.yaw);
+    };
+    towerAt(A); towerAt(Z);
+    const L = Z.cum - A.cum;
+    for (const s of [-1, 1]) {
+      const a = c.off(A, s, legs), z = c.off(Z, s, legs);
+      // the main cable, sagging between the towers, and a hanger every 6 m
+      let prev = null;
+      for (let k = 0; k <= 24; k++) {
+        const t = k / 24, x = a.x + (z.x - a.x) * t, zz = a.z + (z.z - a.z) * t, y = top - sag * 4 * t * (1 - t) * (1 - 0.0) - 0.2;
+        const pt = new THREE.Vector3(x, y, zz);
+        if (prev) B.beam(M.cable, prev, pt, 0.45, 0.45);
+        prev = pt;
+      }
+      for (let d = 6; d < L - 3; d += 6) {
+        const t = d / L, x = a.x + (z.x - a.x) * t, zz = a.z + (z.z - a.z) * t, y = top - sag * 4 * t * (1 - t);
+        const q = c.near(x, zz).q, dy = q ? q.y : A.y;
+        B.beam(M.cable, new THREE.Vector3(x, y, zz), new THREE.Vector3(x, dy + 0.2, zz), 0.16, 0.16);
+      }
+      // back stays down to anchors in the ground
+      const fwd = { x: (z.x - a.x) / L, z: (z.z - a.z) / L };
+      B.beam(M.cable, new THREE.Vector3(a.x, top, a.z), new THREE.Vector3(a.x - fwd.x * 38, GY + 1, a.z - fwd.z * 38), 0.45, 0.45);
+      B.beam(M.cable, new THREE.Vector3(z.x, top, z.z), new THREE.Vector3(z.x + fwd.x * 38, GY + 1, z.z + fwd.z * 38), 0.45, 0.45);
+      B.box(M.concreteDark, a.x - fwd.x * 38, GY + 1, a.z - fwd.z * 38, 5, 3, 5);
+      B.box(M.concreteDark, z.x + fwd.x * 38, GY + 1, z.z + fwd.z * 38, 5, 3, 5);
+    }
+  },
+  /** a cable-stayed pylon beside the road at road point q, cables fanning to the deck */
+  pylon(c, q, mat) {
+    const { B, M, GY, R } = c, H = q.y + 34, side = c.rnd() < 0.5 ? -1 : 1, o = c.off(q, side, q.hw + 2.6);
+    B.add(mat || M.white, this.cyl(0.9, 1.9, 8), o.x, (GY + H) / 2, o.z, 1, H - GY, 1);
+    B.box(M.glow, o.x, H + 0.6, o.z, 1.2, 1.2, 1.2);
+    for (let dd = -48; dd <= 48; dd += 8) {
+      if (Math.abs(dd) < 8) continue;
+      let q2 = null, bd = Infinity;
+      for (const p of R.pts) { const e = Math.abs(p.cum - q.cum - dd); if (e < bd) { bd = e; q2 = p; } }
+      if (!q2 || !q2.bridge || bd > 4) continue;
+      const e = c.off(q2, side, q2.hw + 0.3);
+      B.beam(M.cable, new THREE.Vector3(o.x, H - 2 - Math.abs(dd) * 0.25, o.z), new THREE.Vector3(e.x, q2.y + 0.3, e.z), 0.22, 0.22);
+    }
+  },
+  /** a wind turbine, its rotor turning */
+  turbine(c, x, z, h, wind) {
+    const { B, M, GY, g } = c;
+    B.add(M.white, this.cyl(0.9, 1.7, 10), x, GY + h / 2, z, 1, h, 1);
+    const hx = x + Math.sin(wind) * 2.4, hz = z + Math.cos(wind) * 2.4;
+    B.box(M.white, x + Math.sin(wind) * 0.8, GY + h, z + Math.cos(wind) * 0.8, 2.4, 2.6, 6, wind);
+    const rotor = new THREE.Group();
+    rotor.position.set(hx, GY + h, hz);
+    rotor.rotation.y = wind;
+    const L = Math.round(h * 0.42);
+    const geo = this.geo('rotor' + L, () => {
+      const blade = new THREE.BoxGeometry(1.4, L, 0.35); blade.translate(0, L / 2 + 0.8, 0);
+      const parts = [0, 1, 2].map((k) => [blade, new THREE.Matrix4().makeRotationZ(k * Math.PI * 2 / 3)]);
+      parts.push([new THREE.SphereGeometry(1.3, 8, 6), new THREE.Matrix4()]);
+      return Landmarks.merge(parts);
+    });
+    const blades = new THREE.Mesh(geo, M.white);
+    blades.rotation.z = c.rnd() * 6;
+    rotor.add(blades);
+    g.add(rotor);
+    const speed = 0.6 + c.rnd() * 0.5;
+    this.anim.push((dt) => { blades.rotation.z += speed * dt; });
+  },
+  /** a lattice pylon carrying power lines */
+  lattice(c, x, z, h, ry) {
+    const { B, M, GY } = c, w = 7;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      B.beam(M.steel, new THREE.Vector3(x + Math.cos(ry) * sx * w / 2 + Math.sin(ry) * sz * w / 2, GY, z - Math.sin(ry) * sx * w / 2 + Math.cos(ry) * sz * w / 2),
+        new THREE.Vector3(x + Math.cos(ry) * sx * 1.2 + Math.sin(ry) * sz * 1.2, GY + h, z - Math.sin(ry) * sx * 1.2 + Math.cos(ry) * sz * 1.2), 0.5, 0.5);
+    }
+    for (const yy of [h * 0.45, h * 0.7, h * 0.95]) B.box(M.steel, x, GY + yy, z, 18 * (yy / h), 0.6, 0.8, ry);
+  },
+  /** a dam between two mountains, a reservoir behind it, facing point (fx, fz) */
+  dam(c, x, z, fx, fz) {
+    const { B, M, GY } = c, face = Math.atan2(fx - x, fz - z), H = 70, Rd = 170, arc = 0.75;
+    const cx = x - Math.sin(face) * Rd, cz = z - Math.cos(face) * Rd;     // the arc's centre, behind
+    for (let k = 0; k < 16; k++) {
+      const a = face - arc / 2 + arc * (k + 0.5) / 16, px = cx + Math.sin(a) * Rd, pz = cz + Math.cos(a) * Rd, seg = Rd * arc / 16 + 0.6;
+      B.box(M.concrete, px, GY + H / 2, pz, seg, H, 14, a);
+      B.box(M.concrete, px + Math.sin(a) * 7, GY + H * 0.3, pz + Math.cos(a) * 7, seg, H * 0.6, 12, a);
+      B.box(M.concreteDark, px, GY + H + 1, pz, seg, 2, 15, a);
+      if (k === 7 || k === 8) B.box(M.water, px + Math.sin(a) * 13.5, GY + H * 0.5, pz + Math.cos(a) * 13.5, seg * 0.8, H, 1.5, a);
+    }
+    B.add(M.water, this.geo('disc', () => new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2)), cx, GY + H - 4, cz, Rd * 0.97, 1, Rd * 0.97);
+    for (const s of [-1, 1]) {
+      const a = face + s * (arc / 2 + 0.22), px = cx + Math.sin(a) * Rd * 1.1, pz = cz + Math.cos(a) * Rd * 1.1;
+      B.add(M.rock, this.cone(7), px, GY + 65, pz, 95, 130, 95, a);
+    }
+  },
+  /** a pyramid (stepped or smooth) */
+  pyramid(c, x, z, s, stepped, ry) {
+    const { B, M, GY } = c;
+    if (stepped) {
+      for (let k = 0; k < 7; k++) { const w = s * (1 - k / 8), hh = s * 0.09; B.box(k % 2 ? M.stoneDark : M.stone, x, GY + hh * (k + 0.5), z, w, hh, w, ry); }
+      B.box(M.stone, x, GY + s * 0.09 * 7 + 3, z, s * 0.14, 6, s * 0.14, ry);
+    } else {
+      B.add(M.stone, this.cone(4), x, GY + s * 0.33, z, s * 0.71, s * 0.66, s * 0.71, ry + Math.PI / 4);
+      B.add(M.gold, this.cone(4), x, GY + s * 0.63, z, s * 0.07, s * 0.07, s * 0.07, ry + Math.PI / 4);
+    }
+  },
+  obelisk(c, x, z, h, ry) {
+    const { B, M, GY } = c;
+    B.box(M.stoneDark, x, GY + 1, z, 4.4, 2, 4.4, ry);
+    B.add(M.stone, this.cyl(0.95, 1.45, 4), x, GY + 2 + h / 2, z, 1, h, 1, ry + Math.PI / 4);
+    B.add(M.gold, this.cone(4), x, GY + 2 + h + 1, z, 1.1, 2, 1.1, ry + Math.PI / 4);
+  },
+  /** columns along a straight run, both sides, with a beam along their tops */
+  colonnade(c, run) {
+    const { B, M, GY, R } = c, P = R.pts;
+    for (const s of [-1, 1]) {
+      let last = -1e9, prev = null;
+      for (let i = run.a; i <= run.b; i++) {
+        const q = P[i];
+        if (q.cum - last < 7) continue;
+        last = q.cum;
+        const o = c.off(q, s, q.reach + 3), top = GY + 13;
+        B.add(M.stone, this.cyl(0.85, 1.0, 10), o.x, GY + 6.5, o.z, 1, 13, 1);
+        B.box(M.stoneDark, o.x, GY + 0.5, o.z, 2.6, 1, 2.6, q.yaw);
+        B.box(M.stoneDark, o.x, top + 0.4, o.z, 2.6, 0.8, 2.6, q.yaw);
+        if (prev && Math.hypot(prev.x - o.x, prev.z - o.z) < 12) B.beam(M.stone, new THREE.Vector3(prev.x, top + 1.4, prev.z), new THREE.Vector3(o.x, top + 1.4, o.z), 1.4, 2.4);
+        prev = o;
+      }
+    }
+  },
+  /** a floating island: a rock cone point-down, a grassy top, sometimes a spire on it; it bobs */
+  island(c, x, y, z, r) {
+    const { M, g } = c, grp = new THREE.Group();
+    const rock = new THREE.Mesh(this.cone(7), M.rock);
+    rock.scale.set(r, r * 1.5, r); rock.rotation.x = Math.PI; rock.position.y = -r * 0.75;
+    const top = new THREE.Mesh(this.cyl(1, 0.92, 7), M.grass);
+    top.scale.set(r * 1.02, 1.6, r * 1.02); top.position.y = 0.4;
+    grp.add(rock, top);
+    const k = c.rnd();
+    if (k < 0.4) {
+      const sp = new THREE.Mesh(this.cone(6), M.white); sp.scale.set(r * 0.16, r * 1.4, r * 0.16); sp.position.y = r * 0.7 + 1; grp.add(sp);
+      const rg = new THREE.Mesh(this.geo('torus', () => new THREE.TorusGeometry(1, 0.06, 6, 56)), M.glow2); rg.scale.setScalar(r * 0.32); rg.rotation.x = Math.PI / 2; rg.position.y = r * 0.9; grp.add(rg);
+    } else if (k < 0.7) {
+      for (let n = 0; n < 3; n++) { const cr = new THREE.Mesh(this.geo('octa', () => new THREE.OctahedronGeometry(1, 0)), M.crystal); cr.scale.set(r * 0.12, r * c.rr(0.3, 0.55), r * 0.12); cr.position.set(c.rr(-r, r) * 0.4, r * 0.2, c.rr(-r, r) * 0.4); grp.add(cr); }
+    }
+    grp.position.set(x, y, z);
+    grp.rotation.y = c.rnd() * 6.28;
+    g.add(grp);
+    const ph = c.rnd() * 6.28, amp = 0.6 + r * 0.04;
+    let t = 0;
+    this.anim.push((dt) => { t += dt; grp.position.y = y + Math.sin(t * 0.5 + ph) * amp; grp.rotation.y += dt * 0.02; });
+  },
+  /** a needle spire with glowing rings */
+  spire(c, x, z, h) {
+    const { B, M, GY } = c;
+    B.add(M.white, this.cyl(1.2, 5, 8), x, GY + h * 0.3, z, 1, h * 0.6, 1);
+    B.add(M.white, this.cone(8), x, GY + h * 0.6 + h * 0.2, z, 1.4, h * 0.4, 1.4);
+    for (const f of [0.35, 0.55, 0.72]) B.add(M.glow2, this.geo('torus', () => new THREE.TorusGeometry(1, 0.06, 6, 56)), x, GY + h * f, z, 6 - f * 4, 6 - f * 4, 6 - f * 4, 0, Math.PI / 2);
+    B.box(M.glow, x, GY + h + 1, z, 1, 1, 1);
+  },
+  /** stands along the start, with a roof and floodlights */
+  grandstand(c) {
+    const { B, M, GY, R } = c, P = R.pts.filter((q) => q.cum > 6 && q.cum < 80 && !q.bridge && q.h < 2);
+    if (P.length < 6) return;
+    const side = c.rnd() < 0.5 ? -1 : 1, q = P[Math.floor(P.length / 2)], len = Math.min(70, P[P.length - 1].cum - P[0].cum), d0 = q.reach + 5;
+    for (let k = 0; k < 6; k++) {
+      const o = c.off(q, side, d0 + 3 + k * 2.4);
+      B.box(M.concrete, o.x, GY + 0.6 + k * 1.3, o.z, 2.4, 1.2 + k * 2.6, len, q.yaw);
+      B.box(k % 2 ? M.seatA : M.seatB, o.x, GY + 1.4 + k * 1.3 * 2, o.z, 2.2, 0.5, len - 1, q.yaw);
+    }
+    const back = c.off(q, side, d0 + 3 + 6 * 2.4 + 1);
+    B.box(M.concreteDark, back.x, GY + 9, back.z, 1.2, 18, len, q.yaw);
+    const roof = c.off(q, side, d0 + 3 + 3 * 2.4);
+    B.box(M.roof, roof.x, GY + 19, roof.z, 18, 0.8, len + 4, q.yaw, 0, side * 0.08);
+    for (const t of [-0.45, 0.45]) {
+      const f = { x: back.x + Math.sin(q.yaw) * len * t, z: back.z + Math.cos(q.yaw) * len * t };
+      B.box(M.steel, f.x, GY + 15, f.z, 1, 30, 1);
+      B.box(M.warm, f.x, GY + 30, f.z, 3, 2, 1.6, q.yaw);
+    }
+    c.take(roof.x, roof.z, 14);
+  },
+
+  /* ---------------------------------------------- the four Season 4 settings */
+  themes: {
+    /** a city at golden hour: towers, sky bridges over the road, a ring gate, stands at the start */
+    city(c) {
+      const { R, M } = c;
+      this.supports(c, 'columns');
+      this.grandstand(c);
+      // a ring over the first straight, sky bridges over two others
+      const spans = c.spans(40, false).filter((q) => q.cum > 100);
+      if (spans[0]) this.ring(c, spans[0], spans[0].hw + 9);
+      const lifted = c.spans(50).filter((q) => q !== spans[0]).slice(0, 3);
+      for (const q of lifted) {
+        const w = 16, d = q.reach + w / 2 + 5, a = c.off(q, -1, d), b = c.off(q, 1, d);
+        if (!c.clear(a.x, a.z, w * 0.6) || !c.clear(b.x, b.z, w * 0.6)) continue;
+        const y = q.y + 17, h = y - c.GY + c.rr(14, 40);
+        this.tower(c, a.x, a.z, w, w, h, q.yaw); this.tower(c, b.x, b.z, w, w, h * c.rr(0.8, 1.2), q.yaw);
+        c.take(a.x, a.z, w * 0.6); c.take(b.x, b.z, w * 0.6);
+        this.skyBridge(c, a, b, y);
+      }
+      // the skyline: taller further out
+      for (let n = 0, made = 0; n < 900 && made < (c.D.towers || 75); n++) {
+        const near = n % 3 !== 0, p = near ? c.around(8, 70) : c.around(70, 320);
+        const w = c.rr(12, 26), d = c.rr(12, 26), r = Math.max(w, d) * 0.72;
+        if (!c.clear(p.x, p.z, r)) continue;
+        const nq = c.near(p.x, p.z), h = nq.d < 80 ? c.rr(22, 70) : c.rr(55, 190);
+        this.tower(c, p.x, p.z, w, d, h, nq.d < 90 ? nq.q.yaw : c.pick([0, Math.PI / 4, 0.3]));
+        c.take(p.x, p.z, r);
+        made++;
+      }
+      // a great steel arch in the distance
+      const C = c.center.center, ext = c.center.extent;
+      for (let k = 0; k < 20; k++) {
+        const a = c.rnd() * 6.28, x = C.x + Math.cos(a) * (ext + 120), z = C.z + Math.sin(a) * (ext + 120);
+        if (!c.clear(x, z, 70)) continue;
+        const ry = a + Math.PI / 2;
+        let prev = null;
+        for (let i = 0; i <= 20; i++) {
+          const t = i / 20, u = (t - 0.5) * 2, px = x + Math.cos(ry) * u * 60, pz = z - Math.sin(ry) * u * 60, py = c.GY + 150 * (1 - u * u);
+          const pt = new THREE.Vector3(px, py, pz);
+          if (prev) c.B.beam(M.steel, prev, pt, 4.5 - Math.abs(u) * 1.5 + 2, 4.5);
+          prev = pt;
+        }
+        c.take(x, z, 70);
+        break;
+      }
+    },
+    /** ancient wonders in the desert: an aqueduct, pyramids, obelisks, a colonnade, an arch */
+    ancient(c) {
+      const { R } = c;
+      this.supports(c, 'arches');
+      const ground = c.spans(40, false);
+      if (ground[0]) this.stoneArch(c, ground[0]);
+      const longest = R.runs.filter((r) => !r.bridge && r.len > 50 && R.pts[r.a].h < 2).sort((a, b) => b.len - a.len)[0];
+      if (longest && longest !== undefined) this.colonnade(c, longest);
+      for (const q of ground.slice(1, 4)) for (const s of [-1, 1]) { const o = c.off(q, s, q.reach + 5); if (c.clear(o.x, o.z, 2.5)) { this.obelisk(c, o.x, o.z, c.rr(16, 24), q.yaw); c.take(o.x, o.z, 3); } }
+      // great pyramids out in the desert, a stepped one nearer
+      let n = 0;
+      for (let k = 0; k < 200 && n < 4; k++) {
+        const s = n === 0 ? 70 : c.rr(90, 170), p = c.around(n === 0 ? 40 : 140, n === 0 ? 90 : 420);
+        if (!c.clear(p.x, p.z, s * 0.75)) continue;
+        this.pyramid(c, p.x, p.z, s, n === 0, c.rnd() * 0.5);
+        c.take(p.x, p.z, s * 0.75); n++;
+      }
+      // fallen columns and lone obelisks in the sand
+      for (let k = 0; k < 200; k++) {
+        const p = c.around(10, 140);
+        if (!c.clear(p.x, p.z, 3)) continue;
+        if (c.rnd() < 0.3) this.obelisk(c, p.x, p.z, c.rr(10, 18), c.rnd() * 3);
+        else c.B.add(c.M.stone, this.cyl(0.9, 1.0, 10), p.x, c.GY + 2, p.z, 1, c.rr(2, 9), 1);
+        c.take(p.x, p.z, 3);
+        if (k > 60) break;
+      }
+    },
+    /** a powerworks valley: suspension bridges, wind turbines, a dam, power lines */
+    power(c) {
+      const { R } = c;
+      this.supports(c, 'aframe');
+      const big = R.runs.filter((r) => r.bridge && r.len >= 70 && R.pts[r.a].h > 6);
+      for (const r of big) this.suspension(c, r.a, r.b);
+      const C = c.center.center, ext = c.center.extent;
+      for (let k = 0; k < 30; k++) {
+        const a = c.rnd() * 6.28, x = C.x + Math.cos(a) * (ext + 200), z = C.z + Math.sin(a) * (ext + 200);
+        if (!c.clear(x, z, 150)) continue;
+        this.dam(c, x, z, C.x, C.z); c.take(x, z, 220); break;
+      }
+      const wind = c.rnd() * 6.28;
+      let n = 0;
+      for (let k = 0; k < 400 && n < 14; k++) {
+        const p = c.around(25, 260), h = c.rr(55, 85);
+        if (!c.clear(p.x, p.z, h * 0.45)) continue;
+        this.turbine(c, p.x, p.z, h, wind); c.take(p.x, p.z, h * 0.45); n++;
+      }
+      // a power line across the far side
+      const a0 = c.rnd() * 6.28, d0 = ext + 90;
+      let prev = null;
+      for (let k = -3; k <= 3; k++) {
+        const ax = C.x + Math.cos(a0) * d0 + Math.cos(a0 + Math.PI / 2) * k * 70, az = C.z + Math.sin(a0) * d0 + Math.sin(a0 + Math.PI / 2) * k * 70;
+        if (!c.clear(ax, az, 6)) { prev = null; continue; }
+        this.lattice(c, ax, az, 38, a0);
+        c.take(ax, az, 6);
+        if (prev) for (const s of [-1, 1]) {
+          const o1 = { x: prev.x + Math.cos(a0) * s * 8, z: prev.z - Math.sin(a0) * s * 8 }, o2 = { x: ax + Math.cos(a0) * s * 8, z: az - Math.sin(a0) * s * 8 };
+          let pp = null;
+          for (let i = 0; i <= 8; i++) { const t = i / 8, pt = new THREE.Vector3(o1.x + (o2.x - o1.x) * t, c.GY + 36 - 7 * 4 * t * (1 - t), o1.z + (o2.z - o1.z) * t); if (pp) c.B.beam(c.M.cable, pp, pt, 0.18, 0.18); pp = pt; }
+        }
+        prev = { x: ax, z: az };
+      }
+    },
+    /** a sky citadel at twilight: floating islands, spires, rings over the road, cable-stayed pylons */
+    sky(c) {
+      const { R } = c;
+      for (const r of R.runs.filter((r) => r.bridge && r.len >= 40)) this.pylon(c, R.pts[Math.floor((r.a + r.b) / 2)]);
+      for (const q of c.spans(35).slice(0, 3)) this.ring(c, q, q.hw + 8, c.M.glow2);
+      let n = 0;
+      for (let k = 0; k < 500 && n < 16; k++) {
+        const p = c.around(15, 260), r = c.rr(8, 28);
+        if (!c.clear(p.x, p.z, r)) continue;
+        this.island(c, p.x, c.GY + c.rr(18, 90), p.z, r); c.take(p.x, p.z, r); n++;
+      }
+      n = 0;
+      for (let k = 0; k < 300 && n < 5; k++) {
+        const p = c.around(40, 300), h = c.rr(80, 170);
+        if (!c.clear(p.x, p.z, 8)) continue;
+        this.spire(c, p.x, p.z, h); c.take(p.x, p.z, 8); n++;
+      }
+      // a sea of cloud below: puffs everywhere off the road (and under the raised road)
+      const puff = this.geo('puff', () => new THREE.IcosahedronGeometry(1, 1));
+      for (let k = 0, made = 0; k < 900 && made < 220; k++) {
+        const p = k % 4 ? c.around(-2, 160) : c.around(160, 420), r = c.rr(9, 26);
+        const nq = c.near(p.x, p.z);
+        if (nq.d < (nq.q.bridge ? 0 : nq.q.reach + r * 0.6)) continue;
+        c.B.add(c.M.cloud, puff, p.x, c.GY + c.rr(-1, 2.5), p.z, r, r * c.rr(0.3, 0.45), r * c.rr(0.8, 1.2), c.rnd() * 3);
+        made++;
+      }
+      for (let k = 0; k < 160; k++) {
+        const p = c.around(6, 120);
+        if (!c.clear(p.x, p.z, 3)) continue;
+        c.B.add(c.M.crystal, this.geo('octa', () => new THREE.OctahedronGeometry(1, 0)), p.x, c.GY + 2, p.z, c.rr(1, 2.4), c.rr(3, 9), c.rr(1, 2.4), c.rnd() * 3, c.rr(-0.3, 0.3));
+        c.take(p.x, p.z, 3);
+        if (k > 70) break;
+      }
+    }
+  }
+};
+
 /* ------------------------------------------------------------- 10. scene */
 /**
  * The look of each section: sky, light, fog, ground, embankments, mountains,
@@ -11215,10 +11968,24 @@ const Looks = {
       peaks: 0xcad8e5, peaksFar: 0xdee8f0, tree: 0x2c5a48, rock: 0x7b8795, exposure: 1.0 },
     { name: 'Sunset', zenith: 0x2f5a9a, band: 0xffc28e, nadir: 0xe0ae8c, glow: 0xffd59a, sun: [70, 30, -24], sunCol: 0xffd0a0, sunI: 2.0,
       hemiSky: 0xffdcb8, hemiGround: 0x6d7a55, hemiI: 0.9, fog: 0xefc7a4, floor: 0x86a05e, bank: 0x8ea865,
-      peaks: 0x76809c, peaksFar: 0xa8a8bc, tree: 0x416b45, rock: 0x948c88, exposure: 1.08 }
+      peaks: 0x76809c, peaksFar: 0xa8a8bc, tree: 0x416b45, rock: 0x948c88, exposure: 1.08 },
+    // Season 4 (the maps' `look`): a city at golden hour, ancient wonders in the desert,
+    // a powerworks valley, a sky citadel at twilight
+    { name: 'Skyline', zenith: 0x34579a, band: 0xffcf9a, nadir: 0xd6b493, glow: 0xffcc80, sun: [72, 26, 30], sunCol: 0xffd3a2, sunI: 2.15,
+      hemiSky: 0xffe0c0, hemiGround: 0x5d5a52, hemiI: 0.8, fog: 0xe8c39c, floor: 0x3f4547, bank: 0x5f6b56,
+      peaks: 0x6b7586, peaksFar: 0x969bab, tree: 0x3f6a3a, rock: 0x7f7a74, exposure: 1.0 },
+    { name: 'Wonders', zenith: 0x3c7ec6, band: 0xf8e2ba, nadir: 0xe8c99c, glow: 0xfff0c8, sun: [40, 80, 22], sunCol: 0xfff1d6, sunI: 2.3,
+      hemiSky: 0xffefd2, hemiGround: 0xa9834e, hemiI: 0.9, fog: 0xf0d6a8, floor: 0xa8844f, bank: 0xb08a55,
+      peaks: 0xb4864e, peaksFar: 0xcaa476, tree: 0x5e7a2e, rock: 0x9a744a, exposure: 0.95 },
+    { name: 'Powerworks', zenith: 0x2f78c4, band: 0xd8ecf6, nadir: 0xb4ccbe, glow: 0xfff8e0, sun: [-50, 62, 40], sunCol: 0xfff6e6, sunI: 2.0,
+      hemiSky: 0xdcecf8, hemiGround: 0x4a6a45, hemiI: 0.95, fog: 0xcfe2ec, floor: 0x4f7a3e, bank: 0x587f46,
+      peaks: 0x55705f, peaksFar: 0x869a96, tree: 0x24503a, rock: 0x7c838a, exposure: 1.0 },
+    { name: 'Sky Citadel', zenith: 0x23245a, band: 0xf29ab6, nadir: 0x6f5e94, glow: 0xffb38a, sun: [-60, 20, -40], sunCol: 0xffc6a6, sunI: 1.7,
+      hemiSky: 0xc4b2ee, hemiGround: 0x4d4672, hemiI: 1.0, fog: 0xcfa6cc, floor: 0x9a8fc4, bank: 0x6f7f8c,
+      peaks: 0x5c5182, peaksFar: 0x8c7baa, tree: 0x3e6a5a, rock: 0x7d7896, exposure: 1.05 }
   ],
   /** the look for level i: its section's, or the first */
-  of(i) { const lv = levelAt(i); return lv && lv.section >= 0 ? lv.section % this.LIST.length : 0; },
+  of(i) { const lv = levelAt(i); return lv && lv.look !== undefined ? lv.look : lv && lv.section >= 0 ? lv.section % 4 : 0; },
   apply(k) {
     k = k >= 0 && k < this.LIST.length ? k : 0;
     if (k === this.cur || !App.sky) return;
@@ -23820,8 +24587,11 @@ const Game = {
     if (!this.data[i]) return false;
     disposeCourse(this.course, App.scene);
     this.world.clear();
+    const lvd = levelAt(i);
+    if (lvd && lvd.decor) this.data[i].decor = lvd.decor;
     try {
       this.course = buildCourse(this.data[i], App.scene, this.world);
+      try { Landmarks.dress(lvd, this.data[i], this.course); } catch (e) { console.warn('aiPolytrack: landmarks', e); }
     } catch (err) {
       console.error('aiPolytrack: failed to build course', i + 1, err);
       this.playable[i] = false;
