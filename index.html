@@ -679,6 +679,64 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .pChip.lock{color:var(--dim)}
 .pChip.plusLock{color:var(--dim);border-style:dashed}
 .pPic{display:inline-flex;width:40px;height:26px;align-items:center;justify-content:center}
+.pSkip{display:flex;gap:8px;margin:-4px 0 12px}
+.modesPanel{width:min(980px,95vw)}
+.modeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 16px}
+@media(max-width:820px){.modeGrid{grid-template-columns:1fr 1fr}}
+.modeCard{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:150px;padding:16px;border-radius:14px;text-align:left;
+  border:1px solid color-mix(in srgb,var(--mc) 45%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--mc) 18%,transparent),rgba(255,255,255,.015));color:var(--ink)}
+.modeCard:hover{transform:translateY(-2px);box-shadow:0 12px 30px -14px var(--mc)}
+.modeCard b{font-size:18px;margin-top:auto}
+.modeCard small{font-size:12.5px;color:var(--dim);line-height:1.35}
+.mIc svg{width:30px;height:30px;fill:none;stroke:var(--mc);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.mBest{position:absolute;top:12px;right:12px;font-style:normal;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--mc)}
+.potCard{border-radius:14px;padding:16px 18px;border:1px solid rgba(255,207,92,.5);background:linear-gradient(160deg,rgba(255,207,92,.13),rgba(242,115,63,.04))}
+.potHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.potHead h3{font-size:22px;margin:2px 0 0;letter-spacing:-.02em}
+.potKick{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.12em;color:#ffcf5c}
+.potBig{text-align:right}
+.potBig b{display:block;font-size:26px;font-family:var(--mono);color:#ffcf5c}
+.potBig small{font-size:12px;color:var(--dim)}
+.potRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.potRow input{width:110px;font-family:var(--mono);background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--rule-2);border-radius:8px;padding:6px 8px}
+.potNote{font-size:12.5px;color:var(--dim);margin:8px 0 0;line-height:1.45}
+.potCols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+@media(max-width:700px){.potCols{grid-template-columns:1fr}}
+.potList{list-style:none;margin:0;padding:0;font-size:13px}
+.potList li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px solid rgba(255,255,255,.05)}
+.potList li.me{color:var(--aqua)}
+.potList h4{margin:0 0 4px;font-size:11px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+.escBoard{margin-top:14px}
+.hEscape{position:absolute;top:96px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 18px;
+  border-radius:12px;background:rgba(20,8,30,.55);border:1px solid rgba(196,92,255,.5);color:#fff;pointer-events:none}
+.hEscape[hidden]{display:none}
+.stormFx{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:1;
+  background:radial-gradient(ellipse at 50% 45%,transparent 42%,rgba(150,40,255,.45) 78%,rgba(255,40,100,.85) 100%)}
+.hEscape b{font-family:var(--mono);font-size:24px}
+.hEscape span{font-size:12.5px;color:#d9b8ff}
+.hEscape.near{border-color:#ff3d6e;background:rgba(60,6,20,.65);animation:wHot .8s ease-in-out infinite}
+.hEscape.near span{color:#ff9ab0}
+.pSkip button{display:inline-flex;align-items:center;gap:5px}
+.pPlus.big{font-size:20px;padding:8px 16px}
+.rBadge{font-family:var(--mono);font-weight:800;font-size:22px;padding:6px 14px;border-radius:12px;color:#06141a;background:linear-gradient(135deg,#8fe3ff,#3ddbb8)}
+.rTrack{max-height:360px;overflow:auto;padding-right:4px;margin-bottom:12px}
+.rRow{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:center;padding:4px 0;border-top:1px solid rgba(255,255,255,.05)}
+.rRow.reached .pTier{color:var(--ink)}
+.rRow.next .pTier{color:var(--aqua)}
+.rRow.big .pChip{min-height:42px;border-color:rgba(143,227,255,.55);background:rgba(143,227,255,.07)}
+.gMoney{background:linear-gradient(160deg,rgba(255,207,92,.16),rgba(242,115,63,.05));border-color:rgba(255,207,92,.45)}
+.gMoneyNote{font-size:11.5px;color:var(--dim);margin:-2px 0 8px;line-height:1.35}
+.lvChip{display:inline-flex;align-items:center;gap:7px;padding:3px 9px!important;border-radius:999px!important;border:1px solid rgba(61,219,184,.45)!important;
+  background:rgba(61,219,184,.08)!important;color:var(--ink)!important;font-family:var(--mono);font-size:11.5px!important;position:relative}
+.lvChip[hidden]{display:none}
+.lvChip b{color:var(--aqua);font-weight:800}
+.lvChip i{display:block;width:46px;height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+.lvChip s{display:block;height:100%;width:0;background:var(--aqua);text-decoration:none}
+.lvChip em{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;background:var(--ember);color:#fff;font-style:normal;font-size:10px;font-weight:800;line-height:15px;text-align:center}
+.lvChip em[hidden]{display:none}
+.pcLv{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:999px;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--aqua);background:rgba(61,219,184,.12)}
+.pcLv[hidden]{display:none}
+.alertCard.rival{border-color:rgba(242,115,63,.6)}
 .pPic img{max-width:40px;max-height:26px}
 .pPic .kPic{width:36px;height:24px}
 .gTile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border-radius:10px;border:1px solid var(--rule-2);
@@ -2389,6 +2447,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   <div class="layer" id="hud" hidden>
     <div class="hud">
       <div class="hud-tl"><div class="n" id="hNum">Course 1</div><div class="t" id="hName">—</div></div>
+      <div class="hEscape" id="hEscape" hidden><b id="hEscM">0 m</b><span id="hEscGap">The storm is coming</span></div>
+      <div class="stormFx" id="stormFx"></div>
       <div class="hud-tc"><div class="clock" id="hClock">0:00.000</div><div class="split" id="hSplit"></div>
         <div class="hudTimes"><span class="pb" id="hPB">PB —</span><span class="wr" id="hWR"></span></div></div>
       <div class="hud-tr">
@@ -2544,6 +2604,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         </div>
         <div class="who" id="who" hidden>
           <button class="whoName" id="whoCard" title="Your profile card"><span id="whoIcon"></span><span class="whoTxt"><b id="whoName">—</b><small id="whoTitle"></small></span></button>
+          <button class="lvChip" id="lvChip" hidden title="Your driver level: open the Driver Road"><b>LV <span id="lvNum">1</span></b><i><s id="lvBar"></s></i><em id="lvNew" hidden>!</em></button>
           <span class="cr"><span class="gem2d"></span> <b id="whoCredits">0</b></span>
           <button class="small crBuy" id="bBuyCr" hidden title="Buy credits: 30 000 and 3 boxes for $1, or 180 000 and 18 boxes for $5">+ Buy</button>
           <button class="small refBtn" id="bInvite">Invite friends <span class="refGift">free boxes</span></button>
@@ -2590,7 +2651,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 
         <button class="w wAct wRace" id="bMulti">
           <span class="wIc"><svg viewBox="0 0 24 24"><path d="M5 20V4M5 4h10l-2 3.5 2 3.5H5"/><path d="M15 20v-6h5"/></svg></span>
-          <b>Race friends</b><small>Live, up to 8</small>
+          <b>Race</b><small>Quick race, modes, the Pot map</small>
         </button>
         <button class="w wAct wBuild" id="bTracks">
           <span class="wIc"><svg viewBox="0 0 24 24"><path d="M3 19c4 0 5-4 8-7s5-6 10-6"/><circle cx="3" cy="19" r="1.6"/><circle cx="21" cy="6" r="1.6"/><path d="M12 19h9"/></svg></span>
@@ -2912,7 +2973,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <button class="ghost small pcX" id="bPcClose">Close</button>
       <div class="pcTop">
         <span class="pcIcon" id="pcIcon"></span>
-        <div class="pcWho"><b id="pcName">—</b><span class="pcTitle" id="pcTitle"></span></div>
+        <div class="pcWho"><b id="pcName">—</b><span class="pcTitle" id="pcTitle"></span><span class="pcLv" id="pcLv" hidden></span></div>
       </div>
       <div class="garagePreviewWrap pcCar"><canvas id="pcCanvas"></canvas></div>
       <div class="pcStats" id="pcStats"></div>
@@ -2939,6 +3000,33 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <textarea id="refMsg" rows="3" readonly></textarea>
       <div class="row refRow"><button id="bRefCopyMsg">Copy message</button><span class="refCount" id="refCount"></span></div>
       <div class="refFriends" id="refFriends" hidden></div>
+    </div>
+  </div>
+
+  <!-- the Race hub: quick race, knockout, escape, the Pot map, friends -->
+  <div class="layer" id="modes" hidden>
+    <div class="scrim"></div>
+    <div class="panel widePanel modesPanel">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><div class="kick">PICK HOW TO RACE</div><h2 class="big">Race</h2></div>
+        <button class="ghost" id="bModesBack">&larr; Menu</button>
+      </div>
+      <div class="modeGrid">
+        <button class="modeCard" id="mQuick" style="--mc:#3ddbb8">
+          <span class="mIc"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>
+          <b>Quick race</b><small>You against 5 drivers at your level, on a random map.</small></button>
+        <button class="modeCard" id="mKo" style="--mc:#f2733f">
+          <span class="mIc"><svg viewBox="0 0 24 24"><path d="M5 3h14l-2 7H7z M8 10l4 11 4-11"/></svg></span>
+          <b>Knockout</b><small>7 rivals. After every map the slowest goes out. Last one standing wins.</small></button>
+        <button class="modeCard" id="mEsc" style="--mc:#c45cff">
+          <span class="mIc"><svg viewBox="0 0 24 24"><path d="M3 12c3-6 6-6 9 0s6 6 9 0 M3 18c3-6 6-6 9 0s6 6 9 0 M3 6c3-6 6-6 9 0s6 6 9 0"/></svg></span>
+          <b>Escape</b><small>An endless road and a storm that never stops. How far can you get?</small><em class="mBest" id="mEscBest"></em></button>
+        <button class="modeCard" id="mFriends" style="--mc:#8fe3ff">
+          <span class="mIc"><svg viewBox="0 0 24 24"><path d="M5 20V4M5 4h10l-2 3.5 2 3.5H5 M15 20v-6h5"/></svg></span>
+          <b>Race friends</b><small>Live, up to 8 drivers, with a room code.</small></button>
+      </div>
+      <div class="potCard" id="potCard"></div>
+      <div class="escBoard" id="escBoard"></div>
     </div>
   </div>
 
@@ -3449,6 +3537,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <button data-tab="boxes">Boxes<i id="gFreeBadge" hidden></i></button>
         <button data-tab="shop">Shop</button>
         <button data-tab="pass">Race Pass<i id="gPassBadge" hidden></i></button>
+        <button data-tab="road">Driver Road<i id="gRoadBadge" hidden></i></button>
         <button data-tab="car">Car</button>
         <button data-tab="paint">Paint</button>
         <button data-tab="profile">Profile</button>
@@ -3480,6 +3569,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
           </section>
           <section class="gPane" data-pane="shop" hidden></section>
           <section class="gPane" data-pane="pass" hidden></section>
+          <section class="gPane" data-pane="road" hidden></section>
           <section class="gPane" data-pane="car" hidden></section>
           <section class="gPane" data-pane="paint" hidden>
             <p class="lede" style="margin-bottom:14px">Hue packs come out of boxes. Click any hue you own to use it; the sliders are free.
@@ -5118,10 +5208,15 @@ const Cloud = {
         if (row && row.kind === 'invite_box') {
           UI.toast((row.note || 'A friend') + ' finished 10 runs with your invite: a free box for you both!');
           Garage.load();
-        } else if (row && row.kind === 'purchase' && Number(row.delta) > 0) {
-          const bx = Math.round(Number(row.delta) / 10000);       // (3 boxes per 30 000)
-          UI.toast(fmtCredits(Number(row.delta)) + ' credits and ' + bx + ' free boxes arrived. Thanks for supporting aiPolytrack!');
+        } else if (row && row.kind === 'purchase') {
+          UI.toast('Your purchase arrived' + (Number(row.delta) > 0 ? ': ' + fmtCredits(Number(row.delta)) + ' credits and your free boxes' : '') +
+            '. Thanks for supporting aiPolytrack!');
           Garage.load();
+        } else if (row && row.kind === 'pot_win' && Number(row.delta) > 0) {
+          UI.toast('You won ' + fmtCredits(Number(row.delta)) + ' credits from the Pot map!');
+          Sound.creditWin();
+        } else if (row && row.kind === 'pot_refund') {
+          UI.toast('Nobody finished the Pot map, so your ' + fmtCredits(Number(row.delta)) + ' credits came back.');
         }
       })
       .subscribe();
@@ -6817,6 +6912,30 @@ const DECAL_FINISH = `
   vec3 fSky = mix(vec3(0.05, 0.05, 0.06), mix(vec3(1.0, 0.96, 0.88), vec3(0.16, 0.36, 0.85), smoothstep(0.02, 0.5, fR.y)), smoothstep(-0.06, 0.02, fR.y));
   fSky += vec3(1.0, 0.96, 0.88) * pow(max(dot(fR, normalize(vec3(0.35, 0.85, 0.4))), 0.0), 48.0) * 2.2;
   vec3 fBase = diffuseColor.rgb;
+  // a metal of its own colour in place of the paint (gold, obsidian, frost)
+  if (uFin2.a > 0.0) {
+    float fLum = dot(outgoingLight, vec3(0.3, 0.59, 0.11));
+    outgoingLight = mix(outgoingLight, uFin2.rgb * fLum * 1.5, uFin2.a);
+    fBase = mix(fBase, uFin2.rgb, uFin2.a);
+  }
+  // moving finishes: aurora (the two colours flowing over the car), holo (a
+  // rainbow that turns with the angle) and gold rush (light running over gold)
+  if (uFinMode > 0.5) {
+    float fW = sin(dot(vDecalPos, vec3(0.9, 0.6, 1.3)) * 1.3 - uTime * 1.5);
+    if (uFinMode < 1.5) {
+      vec3 fC = mix(uP, uS, 0.5 + 0.5 * fW);
+      outgoingLight = mix(outgoingLight, fC * (0.55 + 0.6 * fSky.b), 0.6);
+      fBase = fC;
+    } else if (uFinMode < 2.5) {
+      float fH = fract(dot(fR, vec3(0.5, 0.8, 0.3)) * 0.7 + uTime * 0.07 + fres * 0.6 + dot(vDecalPos, vec3(0.05, 0.08, 0.04)));
+      vec3 fRb = clamp(abs(mod(fH * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+      outgoingLight = mix(outgoingLight, fRb * (0.5 + 0.55 * fSky), 0.62);
+      fBase = fRb;
+    } else {
+      float fB = smoothstep(0.8, 1.0, sin(dot(vDecalPos, vec3(0.15, 0.35, 1.0)) * 0.8 - uTime * 3.2));
+      outgoingLight += vec3(1.0, 0.86, 0.5) * fB * 0.9;
+    }
+  }
   vec3 fRefl = fSky * mix(vec3(1.0), fBase * 1.7 + 0.04, uFin.y);
   float fK = uFin.x * mix(0.3 + 0.7 * fres, 1.0, uFin.y);
   outgoingLight = mix(outgoingLight, fRefl, clamp(fK, 0.0, 1.0));
@@ -6837,19 +6956,25 @@ const FINISHES = {
   metallic: { rough: 0.3, fin: [0.42, 0.85, 0, 0] },
   pearl: { rough: 0.22, fin: [0.26, 0, 0, 0.6] },
   neon: { rough: 0.4, fin: [0.1, 0, 0.85, 0] },
-  chrome: { rough: 0.12, fin: [0.92, 0.3, 0, 0] }
+  chrome: { rough: 0.12, fin: [0.92, 0.3, 0, 0] },
+  gold: { rough: 0.25, fin: [0.55, 0.9, 0, 0], fin2: [1, 0.72, 0.22, 1] },
+  obsidian: { rough: 0.15, fin: [0.55, 0.1, 0, 0], fin2: [0.025, 0.025, 0.03, 0.92] },
+  frost: { rough: 0.3, fin: [0.38, 0.3, 0.12, 0], fin2: [0.72, 0.9, 1, 0.6] },
+  aurora: { rough: 0.3, fin: [0.25, 0, 0.2, 0], mode: 1 },
+  holo: { rough: 0.2, fin: [0.3, 0, 0.1, 0], mode: 2 },
+  goldrush: { rough: 0.22, fin: [0.6, 0.9, 0.05, 0], fin2: [1, 0.74, 0.25, 1], mode: 3 }
 };
 const DECAL_U = new WeakMap();
 function decalify(mat, dark) {
   if (DECAL_U.has(mat)) return DECAL_U.get(mat);
   const U = { uDecal: { value: 0 }, uP: { value: new THREE.Color() }, uS: { value: new THREE.Color() }, uTime: Look.time, uNum: { value: Look.numTex(7) },
-    uFin: { value: new THREE.Vector4() } };
+    uFin: { value: new THREE.Vector4() }, uFin2: { value: new THREE.Vector4() }, uFinMode: { value: 0 } };
   DECAL_U.set(mat, U);
   U.r0 = dark ? 0.5 : 0.42;                 // the paint's own (a copy of a car's material may carry its finish)
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec3 vDecalPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvDecalPos = transformed;');
-    sh.fragmentShader = (dark ? '#define DECAL_DARK\n' : '') + 'uniform vec4 uFin;\n' + DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT)
+    sh.fragmentShader = (dark ? '#define DECAL_DARK\n' : '') + 'uniform vec4 uFin; uniform vec4 uFin2; uniform float uFinMode;\n' + DECAL_GLSL + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_PAINT)
       .replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );', DECAL_FINISH + 'gl_FragColor = vec4( outgoingLight, diffuseColor.a );');
   };
   mat.customProgramCacheKey = () => (dark ? 'decalDark' : 'decal');
@@ -6927,6 +7052,9 @@ const Look = {
       const U = decalify(mat, dark);
       U.uDecal.value = id;
       U.uFin.value.set(F.fin[0], F.fin[1], F.fin[2], F.fin[3]);
+      const F2 = F.fin2 || [0, 0, 0, 0];
+      U.uFin2.value.set(F2[0], F2[1], F2[2], F2[3]);
+      U.uFinMode.value = F.mode || 0;
       mat.roughness = F.rough === null ? U.r0 : F.rough;
       U.uP.value.copy(m.body.color);
       U.uS.value.copy(m.dark.color);
@@ -11290,7 +11418,10 @@ const Tracks = {
     Game.startLevel(UTRACK_I);
   },
   /** from a run on a player track: back where it was started from */
-  back() { if (this.level && this.level.draft && this.draft) this.showBuilder(); else this.open(); },
+  back() {
+    if (this.level && (this.level.pot || this.level.escape)) { Modes.open(); return; }
+    if (this.level && this.level.draft && this.draft) this.showBuilder(); else this.open();
+  },
 
   /* ------------------------------------------------------- the builder */
   /** a little drawing of each kind of piece, for the cards and the list */
@@ -12451,7 +12582,12 @@ const PROFILE_ICONS = {
   dice: '<path fill-rule="evenodd" d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm1.5 3.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-3.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>',
   crown: '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>',
   'pass-bolt': '<path d="M6.5 15A4.5 4.5 0 0 1 7 6a6 6 0 0 1 11 1.5A3.75 3.75 0 0 1 17.5 15h-3.2l1.2-2.5h-5.2L9 15z"/><path d="M10.6 13.5h3.6l-1.8 3.6h2.6L9.4 23l1.4-4.6H8.4z"/>',
-  'pass-gem': '<path d="M12 2l9.5 7.5L12 22 2.5 9.5z"/><path d="M2.5 9.5h19M12 2l-4.2 7.5L12 22l4.2-12.5z" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="1.1" stroke-linejoin="round"/>'
+  'pass-gem': '<path d="M12 2l9.5 7.5L12 22 2.5 9.5z"/><path d="M2.5 9.5h19M12 2l-4.2 7.5L12 22l4.2-12.5z" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="1.1" stroke-linejoin="round"/>',
+  'lvl-shield': '<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M12 6.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1-2.8-1.5-2.8 1.5.6-3.1-2.3-2.2 3.1-.4z" fill="#000" fill-opacity=".25"/>',
+  'lvl-laurel': '<path d="M7 20c-3-2-5-6-4-11 2 1 3 3 3 5M5 15c-2 0-3-1-3-3 2 0 3 1 3 3M6 11C4 10 4 8 4 7c2 1 2.5 2 2 4M17 20c3-2 5-6 4-11-2 1-3 3-3 5M19 15c2 0 3-1 3-3-2 0-3 1-3 3M18 11c2-1 2-3 2-4-2 1-2.5 2-2 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 6l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z"/>',
+  'pass-wing': '<path d="M12 2c1.5 2 2.2 4.5 2.2 7.5L21 14v2l-6.8-2.2-.6 4.2 2.4 2V22L12 21l-4 1v-2l2.4-2-.6-4.2L3 16v-2l6.8-4.5C9.8 6.5 10.5 4 12 2z"/>',
+  'pass-medal': '<path d="M6 2h4l2 5 2-5h4l-4 8.2A6 6 0 1 1 10 10.2z"/>',
+  founder: '<path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/><path d="M4 19h16v3H4z"/>'
 };
 const Catalog = {
   items: [], byId: {},
@@ -12495,6 +12631,24 @@ const Catalog = {
     add('title:velocity', 'title', 'Velocity', 'A Race Pass+ reward.', 'pass');
     add('icon:pass-bolt', 'icon', 'Storm', 'A Race Pass+ reward.', 'pass');
     add('icon:pass-gem', 'icon', 'Prism', 'A Race Pass+ reward.', 'pass');
+    add('finish:frost', 'finish', 'Frost', 'Icy, glassy paint with a cold glow: a Race Pass+ reward.', 'pass');
+    add('finish:aurora', 'finish', 'Aurora', 'Your two colours flow over the car like the northern lights: the last Race Pass+ reward.', 'pass');
+    add('title:unstoppable', 'title', 'Unstoppable', 'A Race Pass+ reward.', 'pass');
+    add('icon:pass-wing', 'icon', 'Jet', 'A Race Pass+ reward.', 'pass');
+    add('title:grinder', 'title', 'Grinder', 'The free Race Pass: tier 25.', 'pass');
+    add('icon:pass-medal', 'icon', 'Medal', 'The free Race Pass: tier 50.', 'pass');
+    add('title:road-rookie', 'title', 'Road Rookie', 'The Driver Road: level 5.', 'level');
+    add('icon:lvl-shield', 'icon', 'Shield', 'The Driver Road: level 10.', 'level');
+    add('title:road-warrior', 'title', 'Road Warrior', 'The Driver Road: level 15.', 'level');
+    add('finish:gold', 'finish', 'Gold', 'Solid gold paint: the Driver Road, level 20.', 'level');
+    add('icon:lvl-laurel', 'icon', 'Laurels', 'The Driver Road: level 25.', 'level');
+    add('title:veteran', 'title', 'Veteran', 'The Driver Road: level 30.', 'level');
+    add('finish:obsidian', 'finish', 'Obsidian', 'Black volcanic glass: the Driver Road, level 40.', 'level');
+    add('title:living-legend', 'title', 'Living Legend', 'The Driver Road: level 50.', 'level');
+    add('title:founder', 'title', 'Founder', 'From the Founder\'s Pack.', 'money');
+    add('icon:founder', 'icon', 'Founder', 'From the Founder\'s Pack.', 'money');
+    add('finish:holo', 'finish', 'Holo', 'A holographic rainbow that shifts as you move.', 'money');
+    add('finish:goldrush', 'finish', 'Gold Rush', 'Liquid gold with light running over it.', 'money');
   },
   get(id) { if (!this.items.length) this.build(); return this.byId[id] || null; },
   ofKind(k) { if (!this.items.length) this.build(); return this.items.filter((i) => i.kind === k); },
@@ -12580,7 +12734,19 @@ const Flair = {
  * ?purchase=done, and the credits show up by themselves (watchAdjust).
  */
 const Shop = {
-  link: '', link5: '', pack: 5, at: 0, limit: 0, spent: 0,
+  link: '', link5: '', pack: 5, at: 0, limit: 0, spent: 0, money: {},
+  /** the items only money buys: [code, name, dollars, what you get, the item that shows it's owned] */
+  MONEY: [['founder', 'Founder\'s Pack', 3, 'The Founder title and icon, 10 free boxes and 60 000 credits. One per player.', 'title:founder'],
+    ['holo', 'Holo paint', 2, 'A holographic rainbow that shifts as you move and as the light catches it.', 'finish:holo'],
+    ['goldrush', 'Gold Rush paint', 2, 'Liquid gold with light running over it.', 'finish:goldrush'],
+    ['passbundle', 'Pass+ Bundle', 3, 'Pass+ for this season and 10 tiers skipped at once.', null]],
+  buyMoney(code) {
+    const m = this.MONEY.find((x) => x[0] === code), link = this.money[code];
+    if (!m || !link || !Cloud.user) return;
+    if (!this.allowed(m[2])) { UI.toast('That would go over today\'s spending limit of $' + this.limit + '. Try again tomorrow.'); return; }
+    if (!confirm('Buy ' + m[1] + ' for $' + m[2] + '? You pay on Stripe\'s secure page and come straight back.')) return;
+    location.href = link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid + '--' + code);
+  },
   async load() {
     if (!Cloud.on || !Cloud.user || Date.now() - this.at < 120000) { this.show(); return; }
     this.at = Date.now();
@@ -12588,6 +12754,7 @@ const Shop = {
       const l = await Cloud.rpc('shop_links');
       this.link = (l && l.one) || ''; this.link5 = (l && l.five) || '';
       this.limit = Number(l && l.limit) || 0; this.spent = Number(l && l.spent) || 0;
+      this.money = (l && l.money) || {};
     } catch (e) {
       // a database from before the $5 pack
       this.link5 = '';
@@ -12672,7 +12839,7 @@ const UnboxNews = {
 };
 
 const Garage = {
-  data: null, tab: 'boxes', busy: false, pass: null, shop: null,
+  data: null, tab: 'boxes', busy: false, pass: null, shop: null, road: null,
   owned(id) { const r = this.data && this.data.inventory.find((i) => i.item === id); return r ? r.count : 0; },
   freeBoxes() { return (this.data && this.data.free_boxes) || 0; },
   async load() {
@@ -12687,9 +12854,23 @@ const Garage = {
     Look.refreshOwn();
     Flair.mine();
     try { this.pass = await Cloud.rpc('my_pass'); } catch (e) { /* a database from before the pass */ }
+    try { this.road = await Cloud.rpc('my_road'); } catch (e) { /* a database from before levels */ }
     this.badge();
     this.intro();
     if (Game.state === 'garage') this.render();
+  },
+  /** a level from total XP (the server's curve: 50 x L x (L - 1)) */
+  levelOf(xp) { return Math.floor((1 + Math.sqrt(1 + 0.08 * Math.max(0, xp || 0))) / 2); },
+  roadWaiting() { const R = this.road; return R ? Math.max(0, R.level - R.upto) : 0; },
+  /** the menu's level chip */
+  levelChip() {
+    const R = this.road, el = $('lvChip');
+    if (!el) return;
+    el.hidden = !R || !Cloud.user;
+    if (!R) return;
+    $('lvNum').textContent = String(R.level);
+    $('lvBar').style.width = Math.min(100, (R.xp - R.from) / Math.max(1, R.to - R.from) * 100).toFixed(1) + '%';
+    $('lvNew').hidden = !this.roadWaiting();
   },
   /** Race Pass rewards reached and not collected yet */
   passWaiting() {
@@ -12703,6 +12884,73 @@ const Garage = {
     if (!force && this.shop && Date.now() < this.shop.ends) return;
     try { this.shop = await Cloud.rpc('shop_today'); } catch (e) { this.shop = null; }
     if (Game.state === 'garage' && this.tab === 'shop') this.renderShop();
+  },
+  /** new XP from the server (a total, or with total false the amount gained) */
+  addXp(v, total) {
+    const R = this.road;
+    if (!R) return;
+    const before = R.level;
+    R.xp = total ? v : R.xp + v;
+    R.level = this.levelOf(R.xp);
+    R.from = 50 * R.level * (R.level - 1); R.to = 50 * (R.level + 1) * R.level;
+    if (R.level > before) {
+      Sound.creditWin();
+      UI.toast('Level up! You\'re driver level ' + R.level + '. Collect your reward on the Driver Road in the garage.');
+    }
+    this.badge();
+  },
+  /** the Driver Road: every level's reward */
+  renderRoad() {
+    const pane = document.querySelector('#garage .gPane[data-pane="road"]'), E = escapeHtml;
+    if (!Cloud.on || !Cloud.user) { pane.innerHTML = '<p class="lede">Sign in to see your driver level.</p>'; return; }
+    const R = this.road;
+    if (!R) { pane.innerHTML = '<p class="lede">Driver levels aren\'t set up on the server yet.</p>'; return; }
+    const wait = this.roadWaiting();
+    const chip = (r, cls) => {
+      const it = r.item && Catalog.get(r.item);
+      const pic = it ? (it.kind === 'icon' ? Flair.badge(it.id, Look.mine(), 22) : it.kind === 'title' ? '' : '<span class="pPic">' + Catalog.pic(it) + '</span>') : '';
+      return '<span class="pChip ' + cls + (it ? ' item' : r.boxes ? ' box' : '') + '">' + pic + '<span>' + E(this.rewardText(r)) + '</span></span>';
+    };
+    let rows = '';
+    for (const x of R.rewards) {
+      const cls = x.level <= R.upto ? 'got' : x.level <= R.level ? 'ready' : 'lock';
+      rows += '<div class="rRow' + (x.level <= R.level ? ' reached' : '') + (x.level === R.level + 1 ? ' next' : '') + (x.reward.item ? ' big' : '') + '"><b class="pTier">' + x.level + '</b>' + chip(x.reward, cls) + '</div>';
+    }
+    pane.innerHTML = '<div class="gPassHead"><div><div class="pKick">DRIVER ROAD</div><h3>Level ' + R.level + '</h3>' +
+      '<small>' + fmtCredits(R.xp - R.from) + ' / ' + fmtCredits(R.to - R.from) + ' XP to level ' + (R.level + 1) + '</small></div><span class="rBadge">LV ' + R.level + '</span></div>' +
+      '<div class="gBar pBar"><i style="width:' + Math.min(100, (R.xp - R.from) / Math.max(1, R.to - R.from) * 100).toFixed(1) + '%"></i></div>' +
+      (wait ? '<button class="primary gBig pClaim" id="bRoadClaim"><span>Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</span></button>' : '') +
+      '<p class="lede pPitch">XP for everything you do: <b>10</b> a finished run, <b>25</b> a personal best, <b>20</b> a day of your streak, <b>100</b> for the daily challenge, ' +
+      'and up to <b>50</b> an Escape run. Every level pays something; levels 5, 10, 15, 20, 25, 30, 40 and 50 pay titles, icons and paint you can\'t get anywhere else. Your level never resets.</p>' +
+      '<div class="rTrack">' + rows + '</div>';
+    const c = $('bRoadClaim');
+    if (c) c.addEventListener('click', () => this.claimRoad());
+    const next = pane.querySelector('.rRow.next');
+    if (next) next.scrollIntoView({ block: 'nearest' });
+  },
+  async claimRoad() {
+    if (this.busy) return;
+    this.busy = true;
+    try { const r = await Cloud.rpc('claim_road'); Records.credits = r.balance; UI.who(Cloud.name(), Records.credits); this.passToast(r.got); }
+    catch (e) { UI.toast(Cloud.errText(e)); }
+    this.busy = false;
+    await this.load();
+  },
+  async skipTiers(n) {
+    const P = this.pass;
+    if (this.busy || !P) return;
+    const cost = n * (P.tierPrice || 2500), have = Records.credits || 0;
+    if (have < cost) {
+      UI.toast('Skipping ' + n + ' tier' + (n > 1 ? 's' : '') + ' costs ' + fmtCredits(cost) + ' credits: you have ' + fmtCredits(have) + '.');
+      if (Shop.link || Shop.link5) Shop.open();
+      return;
+    }
+    if (!confirm('Skip ' + n + ' Race Pass tier' + (n > 1 ? 's' : '') + ' for ' + fmtCredits(cost) + ' credits?')) return;
+    this.busy = true;
+    try { const r = await Cloud.rpc('buy_tiers', { p_n: n }); Records.credits = r.balance; UI.who(Cloud.name(), Records.credits); this.passToast(r.got); }
+    catch (e) { UI.toast(Cloud.errText(e)); }
+    this.busy = false;
+    await this.load();
   },
   /** what a pass reward is, in words */
   rewardText(r) {
@@ -12721,10 +12969,13 @@ const Garage = {
     if (t) { t.hidden = !n; t.textContent = String(n); }
     const signed = Cloud.on && Cloud.user;
     const first = !this.data || !(this.data.opened > 0);
-    const pw = this.passWaiting();
+    const pw = this.passWaiting(), rw = this.roadWaiting();
     const pb = $('gPassBadge');
     if (pb) { pb.hidden = !pw; pb.textContent = String(pw); }
-    $('bGarage').classList.toggle('wHot', !!signed && (n > 0 || first || pw > 0));
+    const rb = $('gRoadBadge');
+    if (rb) { rb.hidden = !rw; rb.textContent = String(rw); }
+    this.levelChip();
+    $('bGarage').classList.toggle('wHot', !!signed && (n > 0 || first || pw > 0 || rw > 0));
     $('gNewMenu').hidden = !signed || !!Prefs.get('garageSeen', false);
   },
   /** Coach tells you about the boxes, once */
@@ -12737,6 +12988,7 @@ const Garage = {
   /** after a counted finish: progress toward a free box */
   onFinish(f) {
     if (!f || !this.data) return;
+    if (this.road && typeof f.xp === 'number') this.addXp(f.xp, true);
     if (this.pass && typeof f.pass_runs === 'number') {
       const before = this.pass.tier;
       this.pass.runs = f.pass_runs;
@@ -12821,6 +13073,7 @@ const Garage = {
     else if (this.tab === 'boxes') this.renderBoxes();
     else if (this.tab === 'shop') this.renderShop();
     else if (this.tab === 'pass') this.renderPass();
+    else if (this.tab === 'road') this.renderRoad();
     else if (this.tab === 'car') this.renderCar();
     else if (this.tab === 'profile') this.renderProfile();
     else if (this.tab === 'collection') this.renderCollection();
@@ -12844,7 +13097,21 @@ const Garage = {
     if (!S) { pane.innerHTML = '<p class="lede">Loading today\'s shop…</p>'; this.loadShop(true); return; }
     const left = Math.max(0, S.ends - Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60;
     const have = Records.credits || 0;
-    pane.innerHTML = '<div class="gShopHead"><div><h3 class="gh">TODAY\'S SHOP</h3><small>Six new items in <b>' + hh + 'h ' + mm + 'm</b> (midnight Pacific)</small></div></div>' +
+    const money = Shop.MONEY.filter((m) => Shop.money[m[0]] && !(m[0] === 'passbundle' && this.pass && this.pass.plus));
+    const mpic = (m) => {
+      if (m[0] === 'founder') return Flair.badge('icon:founder', Look.mine(), 56);
+      if (m[0] === 'passbundle') return '<span class="pPlus on big">PASS+</span>';
+      const it = Catalog.get(m[4]);
+      return it ? Catalog.pic(it) : '';
+    };
+    pane.innerHTML = (money.length ? '<div class="gShopHead"><div><h3 class="gh">EXCLUSIVES</h3><small>Only here, only with real money (Stripe)</small></div></div>' +
+      '<div class="gShopGrid">' + money.map((m) => {
+        const owned = m[4] && this.owned(m[4]);
+        return '<div class="gShopCard gMoney' + (owned ? ' owned' : '') + '" style="--kc:#ffcf5c"><div class="gPic">' + mpic(m) + '</div><small class="gShopK">Exclusive</small><b>' + E(m[1]) + '</b>' +
+          '<small class="gMoneyNote">' + E(m[3]) + '</small>' +
+          (owned ? '<button class="small" disabled>Owned</button>' : '<button class="small primary" data-money="' + m[0] + '">$' + m[2] + '</button>') + '</div>';
+      }).join('') + '</div>' : '') +
+      '<div class="gShopHead" style="margin-top:' + (money.length ? 18 : 0) + 'px"><div><h3 class="gh">TODAY\'S SHOP</h3><small>Six new items in <b>' + hh + 'h ' + mm + 'm</b> (midnight Pacific)</small></div></div>' +
       '<div class="gShopGrid">' + S.items.map((x) => {
         const it = Catalog.get(x.item) || { id: x.item, kind: x.kind, name: x.name };
         const K = ITEM_KIND[x.kind] || ITEM_KIND.credits;
@@ -12856,6 +13123,7 @@ const Garage = {
       '<p class="lede gShopNote">Pick exactly what you want: no luck needed. Paint finishes are only ever in the shop (and Chrome and Neon only in the Race Pass). ' +
       'Everything here can also be sold in your collection, for much less.</p>';
     pane.querySelectorAll('[data-buy]').forEach((b) => b.addEventListener('click', () => this.buy(b.dataset.buy, +b.dataset.price)));
+    pane.querySelectorAll('[data-money]').forEach((b) => b.addEventListener('click', () => Shop.buyMoney(b.dataset.money)));
   },
   async buy(id, price) {
     const it = Catalog.get(id);
@@ -12904,14 +13172,19 @@ const Garage = {
       '<small>' + (P.tier >= P.tiers ? 'Every tier reached!' : 'Tier ' + P.tier + ' of ' + P.tiers + ' · ' + into + ' / ' + P.perTier + ' finished runs to the next') + '</small></div>' +
       (P.plus ? '<span class="pPlus on">PASS+</span>' : '<button class="primary" id="bPassBuy">Get Pass+ · <span class="gem2d"></span> ' + fmtCredits(P.price) + '</button>') + '</div>' +
       '<div class="gBar pBar"><i style="width:' + (P.tier >= P.tiers ? 100 : into / P.perTier * 100).toFixed(1) + '%"></i></div>' +
+      (P.tier < P.tiers ? '<div class="pSkip"><button class="small" id="bSkip1">Skip a tier · <span class="gem2d"></span> ' + fmtCredits(P.tierPrice || 2500) + '</button>' +
+        (P.tier + 5 <= P.tiers ? '<button class="small" id="bSkip5">Skip 5 · <span class="gem2d"></span> ' + fmtCredits(5 * (P.tierPrice || 2500)) + '</button>' : '') + '</div>' : '') +
       (wait ? '<button class="primary gBig pClaim" id="bPassClaim"><span>Collect ' + wait + ' reward' + (wait === 1 ? '' : 's') + '</span></button>' : '') +
-      (P.plus ? '' : '<p class="lede pPitch"><b>Pass+</b> adds a free box at every tier, <b>Chrome</b> and <b>Neon</b> paint, and pass-only titles and icons. ' +
-        'Tiers you\'ve already reached pay out the moment you get it.</p>') +
+      (P.plus ? '' : '<p class="lede pPitch"><b>Pass+</b> adds a free box at every tier (3 at tiers 10, 20, 30 and 40), four paints you can\'t get anywhere else (<b>Neon</b>, <b>Chrome</b>, <b>Frost</b> and <b>Aurora</b>), ' +
+        'and pass-only titles and icons. Tiers you\'ve already reached pay out the moment you get it.</p>') +
       '<div class="pHead"><span>Tier</span><span>Free</span><span>Pass+</span></div><div class="pTrack">' + rows + '</div>' +
       '<p class="lede">Every counted finish on any map moves you along: one tier every ' + P.perTier + ' runs. The pass starts again each season.</p>';
     const buy = $('bPassBuy'), claim = $('bPassClaim');
     if (buy) buy.addEventListener('click', () => this.buyPass());
     if (claim) claim.addEventListener('click', () => this.claimPass());
+    const s1 = $('bSkip1'), s5 = $('bSkip5');
+    if (s1) s1.addEventListener('click', () => this.skipTiers(1));
+    if (s5) s5.addEventListener('click', () => this.skipTiers(5));
     const next = pane.querySelector('.pRow.next');
     if (next) next.scrollIntoView({ block: 'nearest' });
   },
@@ -13618,11 +13891,15 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
   // everyone who saw an earlier list sees it again
-  SEASON: 3, EDITION: 3.4, KEY: 'whatsNew',
+  SEASON: 3, EDITION: 3.5, KEY: 'whatsNew',
   ITEMS: [
-    ['crown', 'Race Pass', '30 tiers of rewards just for finishing runs this season. Pass+ adds a box at every tier, Chrome and Neon paint, and pass-only titles and icons.'],
+    ['flag', 'New ways to race', 'The Race tile: Quick race against drivers at your level, Knockout (last place goes out every map), Escape (outrun a storm on an endless road) and the daily Pot map.'],
+    ['gem', 'The Pot map', 'Put credits in to race the day\'s Pot map. After midnight the fastest share the whole pot.'],
+    ['crown', 'Driver levels', 'Everything you do earns XP. Every level pays out on the Driver Road, with exclusive titles, icons and Gold paint.'],
+    ['coach', 'Rival alerts', 'Coach tells you the moment someone beats your time, with a button to race them.'],
+    ['crown', 'Race Pass', '50 tiers of rewards for finishing runs this season. Pass+ adds a box at every tier, four exclusive paints and pass-only titles and icons.'],
     ['gem', 'The daily shop', 'Six items a day in the garage at a fixed price: get exactly the car or paint you want.'],
-    ['photo', 'Paint finishes', 'Matte, Satin, Metallic, Pearl, Neon and Chrome. Everyone you race sees them.'],
+    ['photo', 'Paint finishes', 'From Matte and Pearl to animated Holo and Aurora. Everyone you race sees them.'],
     ['fire', 'Daily streaks', 'Finish a run every day: 25 credits a day of streak (up to 175 a day), and a free box every 7th day in a row.'],
     ['friend', 'Invite friends, get boxes', 'Send your link from the top of the menu. When a friend finishes 10 runs, you both get a free box.'],
     ['flag', 'Challenge a friend', 'After a run, copy a link that drops your friend straight onto that map against your ghost.'],
@@ -13632,7 +13909,6 @@ const WhatsNew = {
     ['map', 'Sixteen new maps', 'Most were built by players in the track builder (three by Julian Svoboda), from a 280 m sprint to Black Diamond\'s three ski jumps down a mountain.'],
     ['build', 'Track builder', 'Build up to 3 tracks of your own, make them public, and race everyone else\'s. Each track has its own leaderboard.'],
     ['target', 'Practise any part of a map', 'Pick a moment of your best run and start right there, at the same speed, after a 3-2-1. Practice times never count.'],
-    ['eye', 'Hide your run', 'Keep your racing line to yourself: 50 credits a school day hides a run from everyone else (weekends are free).'],
     ['clock', 'Opening hours', 'Open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), Pacific time. When it\'s closed, Coach has ideas for what to do instead.'],
     ['crown', 'Season 2 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
     ['card', 'Always the latest version', 'When aiPolytrack is updated, it reloads itself the next time you\'re on the menu. No more old tabs.']
@@ -13808,6 +14084,10 @@ const Profiles = {
     draw(null);
     $('bPcTrophies').textContent = Cloud.user && uid === Cloud.user.uid ? 'Your trophy room' : 'View ' + n + '\'s trophy room';
     $('pcBox').hidden = false;
+    $('pcLv').hidden = true;
+    if (uid && Cloud.on) Cloud.rpc('levels_of', { p_uids: [uid] }).then((lv) => {
+      if (this.cur && this.cur.uid === uid && lv && lv[uid]) { $('pcLv').textContent = 'Driver level ' + lv[uid]; $('pcLv').hidden = false; }
+    }).catch(() => {});
     if (!this.preview) this.preview = makePlayerCarPreview('pcCanvas');
     this.preview.start();
     if (uid) {
@@ -13862,6 +14142,431 @@ const DayChallenge = {
   }
 };
 
+/**
+ * Rival alerts: whenever someone's new best passes yours, on any map, the
+ * server notes it (submit_best); the menu asks every minute or so and Coach
+ * shows a card (the newest per map) with a button to race them. The first
+ * look on a computer starts from now, so nobody gets a flood of old news.
+ */
+const Rivals = {
+  at: 0,
+  async check(force) {
+    if (!Cloud.on || !Cloud.user || !CoachAlerts.on()) return;
+    if (!force && Date.now() - this.at < 45000) return;
+    this.at = Date.now();
+    const key = 'rivalsSince.' + Cloud.user.uid;
+    const since = Prefs.get(key, null);
+    let r;
+    try { r = await Cloud.rpc('my_rivals', { p_since: since }); } catch (e) { return; }
+    Prefs.set(key, r.last);
+    if (since === null) return;
+    const today = Daily.today ? Daily.today() : '';
+    const seen = new Set();
+    for (const e of (r.events || []).slice().reverse()) {
+      if (seen.has(e.course)) continue;
+      seen.add(e.course);
+      const i = courseIndexOf(e.course);
+      const pot = /^p\d{8}$/.test(e.course), daily = Daily.isId(e.course);
+      if (pot ? e.course !== 'p' + today : daily ? e.course !== 'd' + today : !COURSE_IDS.includes(e.course)) continue;
+      const shown = CoachAlerts.sent.get(e.course + '|' + e.by);
+      if (shown && Date.now() - shown < 3600000) continue;
+      if (CoachAlerts.queue.some((a) => a.id === e.course && a.uid === e.by)) continue;
+      CoachAlerts.queue.push({ rival: true, pot, daily, id: e.course, i, uid: e.by, n: e.name, t: e.by_ms / 1000, mine: e.their_ms / 1000 });
+    }
+    if (CoachAlerts.queue.length && Game.state === 'menu') CoachAlerts.flush();
+  }
+};
+
+/**
+ * Escape's road: an endless-feeling run (6.5 km, more than anyone outruns
+ * the storm for) made from the same pieces as the daily maps, with the
+ * heading kept within 60 degrees of the start's, so it never comes back on
+ * itself, and a straight before every turn.
+ */
+const EscapeGen = {
+  plan(seed) {
+    const R = DailyGen.rng(seed);
+    const rr = (a, b) => a + R() * (b - a);
+    const r1 = (v) => Math.round(v * 10) / 10;
+    const W = 14;
+    const ops = [['pad', 22, W + 4], ['straight', 70]];
+    let len = 92, heading = 0, height = 0, sinceTurn = Infinity, sinceJump = 0, after = '';
+    const straight = (L) => { ops.push(['straight', r1(L)]); len += L; sinceTurn += L; sinceJump += L; };
+    while (len < 6500) {
+      if (after) { straight(after === 'rollers' ? rr(32, 42) : rr(26, 34)); after = ''; continue; }
+      const u = R();
+      if (u < 0.4) {
+        straight(rr(50, 70));
+        let dir = R() < 0.5 ? -1 : 1;
+        const arc = Math.round(rr(30, 80));
+        if (Math.abs(heading + arc * dir) > 60) dir = -dir;
+        if (Math.abs(heading + arc * dir) > 60) continue;
+        const radius = r1(rr(55, 95));
+        ops.push(['curve', radius, arc * dir, { bank: Math.round(Math.min(22, 6 + arc * 0.16)), chev: 1 }]);
+        len += radius * deg(arc); heading += arc * dir; sinceTurn = 0; sinceJump += radius * deg(arc);
+      } else if (u < 0.52) {
+        straight(rr(40, 110));
+      } else if (u < 0.6) {
+        ops.push(['strip', r1(rr(16, 22))]); len += 19; sinceTurn += 19; sinceJump += 19;
+        straight(rr(24, 34));
+      } else if (u < 0.7) {
+        if (sinceTurn < 18) straight(20 - sinceTurn);
+        const up = height < 4 ? 1 : height > 16 ? -1 : (R() < 0.5 ? 1 : -1);
+        const run = rr(30, 44), rise = up * rr(3, 6);
+        ops.push(['slope', r1(run), r1(rise)]); len += run; sinceTurn += run; sinceJump += run; height += rise;
+      } else if (u < 0.8) {
+        if (sinceTurn < 20) straight(22 - sinceTurn);
+        ops.push(['crest', r1(rr(22, 28)), r1(rr(4.5, 6.5))]); len += 25; sinceTurn += 25; sinceJump += 25; after = 'lip';
+      } else if (u < 0.87) {
+        straight(sinceTurn < 30 ? 32 - sinceTurn : 18);
+        ops.push(['rollers', 2, 24, r1(rr(0.55, 0.75))]); len += 48; sinceTurn += 48; sinceJump += 48; after = 'rollers';
+      } else if (sinceJump > 450) {
+        straight(35);
+        ops.push(['slope', 30, 5], ['ramp', 16, r1(rr(7, 8.5))], ['gap', r1(rr(17, 21)), -2], ['table', 44, W + 3], ['slope', 40, -5]);
+        len += 149; sinceTurn += 149; sinceJump = 0; after = 'lip';
+      } else {
+        straight(60);
+      }
+    }
+    ops.push(['straight', 40], ['gate', 'finish'], ['straight', 34, { w: W + 4 }]);
+    return { W, ops };
+  }
+};
+
+/**
+ * Escape: an endless road with a storm wall chasing the car along it. The
+ * storm starts 140 m behind and speeds up (26 m/s, +0.62 m/s every second, up
+ * to 85: a strong driver lasts about 90 s and 5 km, past anyone's average); it catching you, leaving the road or getting stuck ends the run.
+ * The score is the distance along the road. The car and its physics are
+ * exactly the game's own: only the road and the storm are new.
+ */
+const Escape = {
+  on: false, live: false, done: false, storm: -140, t: 0, mesh: null, ticket: null, plan: null,
+  start() {
+    if (Cloud.user && !Hours.guard()) return;
+    let data = null;
+    for (let k = 0; k < 8 && !data; k++) {
+      const seed = (Math.random() * 1e9) | 0;
+      try {
+        this.plan = EscapeGen.plan(seed);
+        data = validateCourse(DailyGen.run(this.plan));
+        if (!data.valid) data = null;
+      } catch (e) { data = null; }
+    }
+    if (!data) { UI.toast('The road couldn\'t be built: try again.'); return; }
+    const plan = this.plan;
+    Tracks.level = { id: 'uescape', escape: true, draft: true, user: true, section: -1, name: 'Escape', author: '', blurb: '', rev: 'escape', build: () => DailyGen.run(plan) };
+    Game.data[UTRACK_I] = data; Game.playable[UTRACK_I] = true;
+    Game.ghostOverride = null; Game.ghostOverrideName = null; Game.extraGhosts = [];
+    Modes.mode = 'escape'; Modes.ko = null;
+    this.on = true; this.live = false; this.done = false; this.storm = -140; this.t = 0; this.ticket = null;
+    Game.startLevel(UTRACK_I);
+    if (Game.state !== 'play') { this.stop(); return; }
+    this.ensureMesh();
+    this.mesh.visible = true;
+    this.place();
+    $('hEscape').hidden = false;
+    $('hEscM').textContent = '0 m';
+    $('hEscGap').textContent = 'The storm is coming: go!';
+    $('hEscape').classList.remove('near');
+    UI.toast('Escape: outrun the storm for as long as you can.');
+  },
+  stop() {
+    this.on = false; this.live = false;
+    if (this.mesh) this.mesh.visible = false;
+    const h = $('hEscape'); if (h) h.hidden = true;
+    const fx = $('stormFx'); if (fx) fx.style.opacity = 0;
+  },
+  /** the car launches: the storm starts, and the server gets a ticket */
+  begin() {
+    this.live = true; this.t = 0; this.storm = -140;
+    this.ticket = Cloud.on && Cloud.user ? Cloud.rpc('start_escape').catch(() => null) : null;
+  },
+  speed() { return Math.min(85, 26 + this.t * 0.62); },
+  step(dt) {
+    if (!this.live || this.done) return;
+    this.t += dt;
+    this.storm += this.speed() * dt;
+    const me = Game.course.cum[Game.pathIdx];
+    this.place();
+    const gap = me - this.storm;
+    $('hEscM').textContent = fmtCredits(Math.max(0, Math.round(me))) + ' m';
+    $('hEscGap').textContent = gap > 0 ? 'Storm ' + Math.round(gap) + ' m behind' : 'Caught!';
+    $('hEscape').classList.toggle('near', gap < 40);
+    // the storm is behind the camera: the screen's edges glow as it closes in
+    $('stormFx').style.opacity = Math.max(0, Math.min(1, 1 - gap / 90)).toFixed(2);
+    if (gap <= 0) this.over('caught');
+  },
+  ensureMesh() {
+    if (this.mesh) { if (!this.mesh.parent) App.scene.add(this.mesh); return; }
+    const cv = document.createElement('canvas');
+    cv.width = 64; cv.height = 256;
+    const c = cv.getContext('2d');
+    const g = c.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, 'rgba(120,40,255,0)'); g.addColorStop(0.35, 'rgba(170,60,255,0.55)'); g.addColorStop(0.8, 'rgba(255,60,120,0.85)'); g.addColorStop(1, 'rgba(255,90,90,0.95)');
+    c.fillStyle = g; c.fillRect(0, 0, 64, 256);
+    for (let k = 0; k < 40; k++) { c.fillStyle = 'rgba(255,255,255,' + (0.05 + Math.random() * 0.12) + ')'; c.fillRect(Math.random() * 64, Math.random() * 256, 1 + Math.random() * 2, 20 + Math.random() * 60); }
+    const tex = new THREE.CanvasTexture(cv);
+    const grp = new THREE.Group();
+    this.walls = [];
+    for (let k = 0; k < 4; k++) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(90, 46), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.75 - k * 0.15,
+        depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, color: 0xffffff, fog: false }));
+      m.position.set(0, 21, -k * 7);
+      grp.add(m); this.walls.push(m);
+    }
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(90, 40), new THREE.MeshBasicMaterial({ color: 0xff3d6e, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+    glow.rotation.x = -Math.PI / 2; glow.position.set(0, 0.4, -14);
+    grp.add(glow);
+    this.mesh = grp;
+    App.scene.add(grp);
+  },
+  /** the storm at its distance along the road (before the start: back along the first stretch) */
+  place() {
+    const C = Game.course;
+    if (!this.mesh || !C) return;
+    const cum = C.cum, path = C.path, s = this.storm;
+    let i = 0;
+    if (s > 0) { let lo = 0, hi = cum.length - 1; while (lo < hi - 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; } i = lo; }
+    const a = path[i], b = path[Math.min(i + 1, path.length - 1)];
+    const seg = Math.max(cum[Math.min(i + 1, cum.length - 1)] - cum[i], 1e-6);
+    const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1;
+    const u = s > 0 ? Math.min(1, (s - cum[i]) / seg) : s / L;
+    this.mesh.position.set(a.x + dx * u, (a.y + (b.y - a.y) * Math.max(0, u)) - 2, a.z + dz * u);
+    this.mesh.rotation.y = Math.atan2(dx, dz);
+    const pulse = 0.85 + 0.15 * Math.sin(performance.now() / 180);
+    this.walls.forEach((w, k) => { w.material.opacity = (0.75 - k * 0.15) * pulse; w.scale.y = 0.95 + 0.08 * Math.sin(performance.now() / 260 + k); });
+  },
+  /** the run is over: caught, off the road, or (nobody yet) the end of the road */
+  async over(why) {
+    if (!this.on || this.done) return;
+    this.done = true; this.live = false;
+    const meters = Math.max(0, Math.round(Game.course.cum[Game.pathIdx]));
+    Game.running = false; Game.state = 'result';
+    Sound.stopEngine(); Sound.finish(why === 'escaped');
+    $('hEscape').hidden = true;
+    $('stormFx').style.opacity = 0;
+    $('rKick').textContent = 'Escape';
+    $('rName').textContent = why === 'escaped' ? 'You escaped the storm!' : why === 'caught' ? 'Caught by the storm' : why === 'restart' ? 'Run ended' : 'Off the road';
+    $('rTime').textContent = fmtCredits(meters) + ' m';
+    $('rSub').textContent = Cloud.user ? 'Saving your distance…' : 'Sign in to keep your best distance.';
+    $('rRaceResult').hidden = true;
+    $('rShare').hidden = true;
+    $('rBoardHd').textContent = 'Escape: the farthest';
+    $('rBoard').innerHTML = '';
+    $('bNext').hidden = true;
+    $('bResCourses').textContent = 'Race';
+    $('bRetry').hidden = false;
+    $('bRetry').textContent = 'Run again';
+    $('rCampaignRow').hidden = false;
+    UI.show('result');
+    UI.clock(Game.time, true);
+    const t = this.ticket && await this.ticket;
+    if (!t || !t.ok) { if (Cloud.user) $('rSub').textContent = (t && t.message) || 'This run wasn\'t saved.'; return; }
+    try {
+      const f = await Cloud.rpc('finish_escape', { p_run: t.run, p_meters: meters });
+      if (!f.ok) { $('rSub').textContent = f.message || 'This run wasn\'t saved.'; return; }
+      Garage.addXp(f.xp || 0, false);
+      $('rSub').textContent = (f.improved ? 'A new best! ' : 'Your best: ' + fmtCredits(f.best) + ' m. ') + '+' + (f.xp || 0) + ' XP';
+      Modes.escBoard($('rBoard'), 5);
+    } catch (e) { $('rSub').textContent = Cloud.errText(e); }
+  }
+};
+
+/**
+ * The Race hub: Quick race (ghosts of drivers at your level on a random
+ * map), Knockout (7 rivals; after each map the slowest goes out), Escape,
+ * the Pot map and live races with friends.
+ */
+const Modes = {
+  mode: null, ko: null, pot: null, potAt: 0,
+  open() {
+    Escape.stop();
+    this.mode = null; this.ko = null;
+    Game.state = 'modes'; Game.running = false;
+    Sound.stopEngine();
+    Game.ghostOverride = null; Game.ghostOverrideName = null; Game.ghostOverrideCourse = null; Game.extraGhosts = [];
+    Game.hideAllTags();
+    UI.show('modes');
+    this.renderPot();
+    this.loadPot(true);
+    this.escBoard($('escBoard'), 10);
+  },
+  /** a map, and the drivers on it nearest my time (or, with no time of mine, a bit slower than the middle) */
+  pick(n, avoid) {
+    const me = Cloud.user && Cloud.user.uid;
+    const all = COURSE_IDS.filter((id) => Game.playable[courseIndexOf(id)] && !(avoid || []).includes(id)).map((id) => ({
+      id, b: (Records.board(id) || []).filter((e) => e.uid !== me && !RunHides.closed(e.uid, id))
+    }));
+    let cands = all.filter((c) => c.b.length >= n);
+    if (!cands.length) cands = all.filter((c) => c.b.length >= 2);
+    if (!cands.length) return null;
+    const c = cands[Math.floor(Math.random() * cands.length)];
+    let ref = Records.best(c.id);
+    if (!ref) { const ts = c.b.map((e) => e.t).sort((a, b) => a - b); ref = ts[Math.floor(ts.length * 0.6)]; }
+    const near = c.b.slice().sort((a, b) => Math.abs(a.t - ref) - Math.abs(b.t - ref)).slice(0, n);
+    return { id: c.id, uids: near.map((e) => e.uid) };
+  },
+  quick() {
+    Escape.stop();
+    const p = this.pick(5);
+    if (!p) { UI.toast('Not enough times on the boards for a quick race yet.'); return; }
+    this.mode = 'quick'; this.ko = null;
+    Game.raceGhostOfMany(p.id, p.uids);
+  },
+  knockout() {
+    Escape.stop();
+    this.mode = 'ko';
+    this.ko = { round: 1, field: 7, used: [], beaten: 0 };
+    this.koRound();
+  },
+  koRound() {
+    const K = this.ko;
+    const p = this.pick(K.field, K.used) || this.pick(K.field);
+    if (!p) { UI.toast('Not enough times on the boards for a Knockout yet.'); this.ko = null; this.mode = null; return; }
+    K.used.push(p.id);
+    UI.toast('Knockout round ' + K.round + ': ' + p.uids.length + ' rival' + (p.uids.length === 1 ? '' : 's') + '. Don\'t finish last!');
+    this.mode = 'ko';
+    Game.raceGhostOfMany(p.id, p.uids);
+  },
+  /** the finish screen, for a quick race or a Knockout round */
+  afterResult(raceResult) {
+    if (!raceResult || (this.mode !== 'quick' && this.mode !== 'ko')) return;
+    const n = raceResult.length, me = raceResult.find((e) => e.isMe);
+    const sub = $('rSub').innerHTML;
+    $('bResCourses').textContent = 'Race';
+    $('bNext').hidden = false;
+    if (this.mode === 'quick') {
+      $('rKick').textContent = 'Quick race · ' + Insight.ord(me.place) + ' of ' + n;
+      $('bNext').textContent = 'New quick race';
+      return;
+    }
+    const K = this.ko;
+    $('bRetry').hidden = true;
+    if (me.place === n) {
+      K.dead = true;
+      $('rKick').textContent = 'Knocked out';
+      $('rSub').innerHTML = 'Last on this map, so you\'re out in round ' + K.round + (K.beaten ? ', after knocking out ' + K.beaten + ' rival' + (K.beaten === 1 ? '' : 's') : '') + '. ' + sub;
+      $('bNext').textContent = 'New Knockout';
+      return;
+    }
+    const out = raceResult[n - 1];
+    K.beaten++;
+    K.field = n - 2;
+    if (K.field <= 0) {
+      K.won = true;
+      Sound.creditWin();
+      $('rKick').textContent = 'Knockout winner!';
+      $('rSub').innerHTML = 'You outlasted all ' + K.beaten + ' rivals. ' + sub;
+      $('bNext').textContent = 'New Knockout';
+      return;
+    }
+    $('rKick').textContent = 'Round ' + K.round + ' cleared';
+    $('rSub').innerHTML = '<b>' + escapeHtml(out.name) + '</b> is knocked out. ' + K.field + ' rival' + (K.field === 1 ? '' : 's') + ' left. ' + sub;
+    K.round++;
+    $('bNext').textContent = 'Next round';
+  },
+  /** the finish screen's Next button, in a mode */
+  onNext() {
+    if (this.mode === 'quick') { this.quick(); return true; }
+    if (this.mode === 'ko' && this.ko) { if (this.ko.dead || this.ko.won) this.knockout(); else this.koRound(); return true; }
+    return false;
+  },
+  onRetry() {
+    if (Escape.on) { Escape.start(); return true; }
+    return false;
+  },
+  /** the Escape board into a list */
+  async escBoard(el, n) {
+    if (!el || !Cloud.on || !Cloud.user) { if (el) el.innerHTML = ''; return; }
+    try {
+      const b = await Cloud.rpc('escape_board');
+      $('mEscBest').textContent = b.mine ? 'Your best ' + fmtCredits(b.mine) + ' m' : '';
+      const me = Cloud.user.uid;
+      const rows = b.top.slice(0, n).map((r, k) => '<li class="' + (r.uid === me ? 'me' : '') + '"><span>' + (k + 1) + '. ' + escapeHtml(r.name) + '</span><span>' + fmtCredits(r.m) + ' m</span></li>').join('');
+      if (el.id === 'escBoard') el.innerHTML = '<div class="potList"><h4>Escape: the farthest anyone has got</h4><ol class="potList">' + (rows || '<li>Nobody yet. Be the first!</li>') + '</ol></div>';
+      else el.innerHTML = rows + (b.mine && b.rank > n ? '<li class="me"><span>' + b.rank + '. you</span><span>' + fmtCredits(b.mine) + ' m</span></li>' : '');
+    } catch (e) { if (el.id === 'escBoard') el.innerHTML = ''; }
+  },
+  /* ------------------------------------------------------- the Pot map */
+  async loadPot(force) {
+    if (!Cloud.on || !Cloud.user) { this.renderPot(); return; }
+    if (!force && this.pot && Date.now() - this.potAt < 30000) { this.renderPot(); return; }
+    try { this.pot = await Cloud.rpc('pot_today'); this.potAt = Date.now(); } catch (e) { this.pot = null; }
+    this.renderPot();
+    if (this.pot && this.pot.entered) {
+      try {
+        const rows = (await Tracks.rows('p' + this.pot.day)).filter((r) => !r.banned).slice(0, 8);
+        const me = Cloud.user.uid, el = $('potTop');
+        if (el) el.innerHTML = rows.map((r, k) => '<li class="' + (r.uid === me ? 'me' : '') + '"><span>' + (k + 1) + '. ' + escapeHtml(r.display_name) + '</span><span>' + formatTime(r.time_ms / 1000) + '</span></li>').join('') ||
+          '<li><span>No times yet: be the first.</span></li>';
+      } catch (e) { /* the board is a nicety */ }
+    }
+  },
+  renderPot() {
+    const el = $('potCard');
+    if (!el) return;
+    const P = this.pot, E = escapeHtml;
+    if (!Cloud.on || !Cloud.user) { el.innerHTML = '<p class="potNote">Sign in to race the Pot map.</p>'; return; }
+    if (!P) { el.innerHTML = '<p class="potNote">Loading the Pot map…</p>'; return; }
+    const left = Math.max(0, P.ends - Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60;
+    let h = '<div class="potHead"><div><div class="potKick">THE POT MAP · TODAY ONLY</div><h3>' + E(P.name) + '</h3><small class="dim">Closes in ' + hh + 'h ' + mm + 'm (midnight Pacific)</small></div>' +
+      '<div class="potBig"><b>◆ ' + fmtCredits(P.pot) + '</b><small>in the pot · ' + P.entrants + ' driver' + (P.entrants === 1 ? '' : 's') + '</small></div></div>';
+    if (P.entered) {
+      h += '<div class="potRow"><span>Your stake: <b>◆ ' + fmtCredits(P.stake) + '</b></span><span style="flex:1"></span><button class="primary" id="bPotRace">Race the Pot map</button></div>';
+    } else {
+      h += '<div class="potRow"><span>Put in</span><input type="number" id="potStake" min="100" max="5000" step="100" value="500"><span>credits</span>' +
+        [100, 500, 1000, 5000].map((v) => '<button class="small ghost" data-stake="' + v + '">' + fmtCredits(v) + '</button>').join('') +
+        '<span style="flex:1"></span><button class="primary" id="bPotIn">Put it in and race</button></div>';
+    }
+    h += '<p class="potNote">Race it as often as you like today: your best time counts. After midnight the fastest 40% share the whole pot. ' +
+      'First place gets the biggest share, and the more you put in, the bigger your share. If nobody finishes, everyone gets their credits back.</p>';
+    const Y = P.yesterday;
+    h += '<div class="potCols"><div><h4 class="potList" style="margin:0">Today\'s fastest</h4><ol class="potList" id="potTop">' + (P.entered ? '<li><span>Loading…</span></li>' : '<li><span>Put credits in to see the times.</span></li>') + '</ol></div>' +
+      '<div><h4 class="potList" style="margin:0">Yesterday' + (Y ? ' · ◆ ' + fmtCredits(Y.pot) : '') + '</h4><ol class="potList">' +
+      (!Y ? '<li><span>No pot yesterday.</span></li>' : Y.refunded ? '<li><span>Nobody finished: stakes went back.</span></li>' :
+        Y.winners.map((w) => '<li class="' + (w.me ? 'me' : '') + '"><span>' + w.place + '. ' + E(w.name) + '</span><span>+◆ ' + fmtCredits(w.won) + '</span></li>').join('')) + '</ol></div></div>';
+    el.innerHTML = h;
+    el.querySelectorAll('[data-stake]').forEach((b) => b.addEventListener('click', () => { $('potStake').value = b.dataset.stake; }));
+    const go = $('bPotIn'), race = $('bPotRace');
+    if (go) go.addEventListener('click', () => this.enterPot(Math.floor(+$('potStake').value || 0)));
+    if (race) race.addEventListener('click', () => this.playPot());
+  },
+  async enterPot(stake) {
+    if (stake < 100 || stake > 5000) { UI.toast('Put in 100 to 5 000 credits.'); return; }
+    if ((Records.credits || 0) < stake) {
+      UI.toast('You have ' + fmtCredits(Records.credits || 0) + ' credits.');
+      if (Shop.link || Shop.link5) Shop.open();
+      return;
+    }
+    if (!confirm('Put ' + fmtCredits(stake) + ' credits in today\'s pot? You can\'t take them back out.')) return;
+    try {
+      const r = await Cloud.rpc('enter_pot', { p_stake: stake });
+      Records.credits = r.balance; UI.who(Cloud.name(), Records.credits);
+      Sound.creditWin();
+      await this.loadPot(true);
+      this.playPot();
+    } catch (e) { UI.toast(Cloud.errText(e)); }
+  },
+  async playPot() {
+    if (!this.pot || Date.now() - this.potAt > 60000) await this.loadPot(true);
+    const P = this.pot;
+    if (!P) { UI.toast('The Pot map couldn\'t be loaded.'); return; }
+    if (!P.entered) { Modes.open(); UI.toast('Put credits in the pot to race it.'); return; }
+    const t = { w: P.w, pieces: P.pieces, name: P.name };
+    const c = TrackKit.check(t);
+    if (!c.ok) { UI.toast('The Pot map can\'t be driven: ' + c.error); return; }
+    const id = 'p' + P.day;
+    Escape.stop();
+    this.mode = null; this.ko = null;
+    Tracks.level = { id, pot: true, user: true, draft: false, section: -1, name: P.name, author: '', blurb: '', rev: JSON.stringify([P.w, P.pieces]), build: () => TrackKit.build(t) };
+    Game.data[UTRACK_I] = c.data; Game.playable[UTRACK_I] = true;
+    Tracks.seen.add(id);
+    try { if (Cloud.boardRows) Cloud.boardRows(id, await Tracks.rows(id)); } catch (e) { /* its times arrive with the live feed */ }
+    Game.startLevel(UTRACK_I);
+  }
+};
+
 /** how many drivers are on right now (started a run in the last 5 minutes) */
 const Online = {
   n: 0, at: 0, timer: 0,
@@ -13871,7 +14576,7 @@ const Online = {
     this.at = Date.now();
     try { this.n = Number(await Cloud.rpc('online_now')) || 0; } catch (e) { /* a nicety */ }
     this.render();
-    if (!this.timer) this.timer = setInterval(() => { if (Game.state === 'menu' && !document.hidden) this.load(); }, 60000);
+    if (!this.timer) this.timer = setInterval(() => { if (Game.state === 'menu' && !document.hidden) { this.load(); Rivals.check(); } }, 60000);
   },
   render() {
     const el = $('onlineNow');
@@ -14434,6 +15139,7 @@ const CoachAlerts = {
     this.queue = [];
     document.querySelectorAll('#alertStack .alertCard').forEach((el) => el.remove());
   },
+  sent: new Map(),                      // course|uid -> when a card about it was shown
   flush() {
     if (!this.on()) { this.clear(); return; }
     const stack = $('alertStack');
@@ -14478,6 +15184,26 @@ const CoachAlerts = {
         el.querySelector('.ah button').addEventListener('click', closeW);
         stack.appendChild(el);
         setTimeout(closeW, 20000);
+        continue;
+      }
+      this.sent.set(a.id + '|' + a.uid, Date.now());
+      if (a.rival) {
+        const where = a.pot ? 'the Pot map' : a.daily ? 'today\'s daily' : courseTag(a.i) + ' ' + escapeHtml(LEVELS[a.i].name);
+        el.classList.add('rival');
+        el.innerHTML = '<div class="ah"><span class="aiOrb"></span><b>Rival alert</b><button title="Dismiss">×</button></div>' +
+          '<p><b>' + escapeHtml(a.n) + '</b> just beat your ' + formatTime(a.mine) + ' on ' + where + ' with ' + formatTime(a.t) +
+          ' (' + (a.mine - a.t).toFixed(3) + ' s faster).</p>' +
+          '<div class="ab"><button class="primary small">' + (a.pot || a.daily ? 'Take it back' : 'Race ' + escapeHtml(a.n)) + '</button><button class="ghost small">Later</button></div>';
+        const closeR = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+        el.querySelector('.ah button').addEventListener('click', closeR);
+        const [go, later] = el.querySelectorAll('.ab button');
+        go.addEventListener('click', () => {
+          closeR();
+          if (a.pot) Modes.playPot(); else if (a.daily) Daily.open(); else Game.raceGhostOf(a.id, a.uid, a.n);
+        });
+        later.addEventListener('click', closeR);
+        stack.appendChild(el);
+        setTimeout(closeR, 30000);
         continue;
       }
       const tag = courseTag(a.i) + ' ' + escapeHtml(LEVELS[a.i].name);
@@ -14927,6 +15653,7 @@ const Coach = {
       '\nGARAGE: boxes cost 100 credits, or one is free every 50 finished runs. A box holds a car (1%), an animated decal (2%), a decal (3%), a finish celebration (4%), a boost (5%), wheels (5%), a title (10%), a profile icon (10%), or 1-25 credits or a hue pack (50%); 10% of boxes split into two more (up to 8). Items sell for credits in the Collection; hues can\'t be sold or bought.' +
       '\nSTREAKS: finishing at least one run every day (Pacific time) builds a streak: 25 credits a day of streak, up to 175 a day, and a free box every 7th day in a row. Missing a day starts it again. The streak shows on the daily challenge tile.' +
       '\nSHOP AND PASS: the garage has a daily Shop (six items a day, the same for everyone, at a fixed price: cars 12 000 credits, paint finishes 6 000, animated decals 5 000, decals, wheels and celebrations 2 500, boosts 1 500, titles and icons 1 000) and the Race Pass (30 tiers, one per 25 counted finishes this season; the free track pays 100 credits a tier and a box every 5th; Pass+ costs 30 000 credits once a season and adds a box every tier plus Chrome and Neon paint and pass-only titles and icons). Paint finishes (Matte, Satin, Metallic, Pearl, Neon, Chrome) change how the paint shines and never come out of boxes. Credits can be bought too: 30 000 credits and 3 free boxes for $1, or 180 000 credits and 18 free boxes for $5, from the + Buy button.' +
+      '\nLEVELS AND MODES: every player has a driver level (XP: 10 a finished run, 25 a personal best, 20 a streak day, 100 the daily challenge, up to 50 an Escape run); the Driver Road in the garage pays a reward every level, with exclusive titles, icons and Gold and Obsidian paint at levels 5 to 50. The Race tile on the menu has Quick race (you against ghosts of drivers at your level on a random map), Knockout (7 ghosts, the slowest goes out after each map until one is left), Escape (an endless road with a storm chasing you; score is distance) and the Pot map (a new map each day: put in 100 to 5 000 credits to race it, and after midnight the fastest 40% share the pot, weighted by place and stake). Rival alerts: Coach tells the player when someone beats their time on any map. The Race Pass has 50 tiers and tiers can be skipped for 2 500 credits each. Exclusives only buyable with real money: the Founder\'s Pack ($3), Holo paint ($2), Gold Rush paint ($2) and the Pass+ Bundle ($3).' +
       '\nINVITES: "Invite friends" at the top of the menu gives a link; a friend who makes an account with it needs no invite code, and when they finish 10 runs both of you get a free box. After a run, "Challenge a friend" on the finish screen copies a link that puts a friend on that map against your ghost.';
   },
   async ensureSession(I, onProgress) {
@@ -16509,9 +17236,62 @@ const TrophyRoom = {
       gems: GEM_DENOMS.map((d) => std(d.color, { metalness: 0.15, roughness: 0.18, emissive: d.glow, emissiveIntensity: d.v === 1000000 ? 1.1 : 0.7 })),
       floor: std(0x03050a, { metalness: 0.05, roughness: 0.9 })
     };
-    this.floor = new THREE.Mesh(new THREE.CircleGeometry(1, 64), this.mats.floor);
+    // the floor: polished, dark, with faint rings and a pool of light in the middle
+    const fc = document.createElement('canvas');
+    fc.width = fc.height = 512;
+    const fx = fc.getContext('2d');
+    const fg = fx.createRadialGradient(256, 256, 0, 256, 256, 256);
+    fg.addColorStop(0, '#1a2a4a'); fg.addColorStop(0.35, '#0c1426'); fg.addColorStop(1, '#03050a');
+    fx.fillStyle = fg; fx.fillRect(0, 0, 512, 512);
+    fx.strokeStyle = 'rgba(120,200,255,0.10)'; fx.lineWidth = 1.5;
+    for (let r = 40; r < 256; r += 26) { fx.beginPath(); fx.arc(256, 256, r, 0, Math.PI * 2); fx.stroke(); }
+    fx.strokeStyle = 'rgba(120,200,255,0.05)';
+    for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; fx.beginPath(); fx.moveTo(256 + Math.cos(a) * 40, 256 + Math.sin(a) * 40); fx.lineTo(256 + Math.cos(a) * 256, 256 + Math.sin(a) * 256); fx.stroke(); }
+    const ftex = new THREE.CanvasTexture(fc);
+    ftex.encoding = THREE.sRGBEncoding;
+    this.mats.floor = std(0xffffff, { map: ftex, metalness: 0.35, roughness: 0.32, envMap: env, envMapIntensity: 0.35 });
+    this.floor = new THREE.Mesh(new THREE.CircleGeometry(1, 96), this.mats.floor);
     this.floor.rotation.x = -Math.PI / 2;
     this.scene.add(this.floor);
+    // the car's dais: a glowing ring on the floor (flat, so the gems still land on the floor)
+    const ring = new THREE.Mesh(new THREE.RingGeometry(2.45, 2.6, 96), new THREE.MeshBasicMaterial({ color: 0x3ddbb8, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.004;
+    this.scene.add(ring);
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(2.45, 64), new THREE.MeshBasicMaterial({ color: 0x2a6cff, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false }));
+    pool.rotation.x = -Math.PI / 2; pool.position.y = 0.003;
+    this.scene.add(pool);
+    this.daisRing = ring;
+    // the wall: a ring of tall light strips, far out (scaled to the room in build)
+    const wc = document.createElement('canvas');
+    wc.width = 1024; wc.height = 128;
+    const wx = wc.getContext('2d');
+    const wg = wx.createLinearGradient(0, 0, 0, 128);
+    wg.addColorStop(0, '#02040a'); wg.addColorStop(0.6, '#08112a'); wg.addColorStop(1, '#0d1a3a');
+    wx.fillStyle = wg; wx.fillRect(0, 0, 1024, 128);
+    for (let k = 0; k < 32; k++) {
+      const x = k * 32 + 14, sg = wx.createLinearGradient(0, 0, 0, 128);
+      sg.addColorStop(0, 'rgba(90,170,255,0)'); sg.addColorStop(0.55, k % 4 === 0 ? 'rgba(242,115,63,0.55)' : 'rgba(90,170,255,0.35)'); sg.addColorStop(1, 'rgba(90,170,255,0.05)');
+      wx.fillStyle = sg; wx.fillRect(x, 0, 3, 128);
+    }
+    const wtex = new THREE.CanvasTexture(wc);
+    wtex.encoding = THREE.sRGBEncoding;
+    this.wall = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 96, 1, true), new THREE.MeshBasicMaterial({ map: wtex, side: THREE.BackSide, fog: false }));
+    this.wall.position.y = 0.5;
+    this.scene.add(this.wall);
+    // a spotlight on the car, and two coloured lights circling the room
+    const spot = new THREE.SpotLight(0xfff2dc, 1.3, 30, 0.55, 0.6, 1.2);
+    spot.position.set(0, 9, 0.5);
+    spot.target.position.set(0, 0, 0);
+    this.scene.add(spot, spot.target);
+    this.orbs = [new THREE.PointLight(0xf2733f, 0.9, 14, 2), new THREE.PointLight(0x3ddbb8, 0.9, 14, 2)];
+    this.orbs.forEach((l) => this.scene.add(l));
+    // dust, drifting in the light
+    const dn = 260, dp = new Float32Array(dn * 3);
+    for (let k = 0; k < dn; k++) { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 9; dp[k * 3] = Math.cos(a) * r; dp[k * 3 + 1] = Math.random() * 6; dp[k * 3 + 2] = Math.sin(a) * r; }
+    const dg = new THREE.BufferGeometry();
+    dg.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+    this.dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: 0xbfe0ff, size: 0.045, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+    this.scene.add(this.dust);
     this.root = new THREE.Group();
     this.scene.add(this.root);
     // the owner's car: their own colours (your own, or whoever's room this is)
@@ -16683,6 +17463,17 @@ const TrophyRoom = {
         cup.scale.setScalar(scale);
         cup.position.y = plinthH + 0.06;
         holder.add(cup);
+        // its colour: a glowing edge round the pedestal top, and a beam of light from above
+        const tierCol = [0xffc84a, 0xdfe6ee, 0xcd7f45][t.tier] || 0xffffff;
+        const edge = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.025, w + 0.1), new THREE.MeshBasicMaterial({ color: tierCol, transparent: true, opacity: 0.9 }));
+        edge.position.y = plinthH + 0.005;
+        holder.add(edge);
+        const beamH = 7;
+        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * scale, 0.75 * scale, beamH, 24, 1, true),
+          new THREE.MeshBasicMaterial({ color: tierCol, transparent: true, opacity: t.size === 3 ? 0.13 : 0.08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+        beam.position.y = plinthH + beamH / 2;
+        beam.userData.beam = true;
+        holder.add(beam);
         this.root.add(holder);
         this.boxes.push({ cx: holder.position.x, cy: (plinthH + 0.06) / 2, cz: holder.position.z,
           hx: (w + 0.08) / 2, hy: (plinthH + 0.06) / 2, hz: (w + 0.08) / 2, c: Math.cos(a), s: Math.sin(a) });
@@ -16690,6 +17481,7 @@ const TrophyRoom = {
       });
     });
     this.floor.scale.setScalar(this.outerR + 6);
+    this.wall.scale.set(this.outerR + 6, 9, this.outerR + 6);
 
     // the credits, dropped fresh every visit: every gem carries its
     // value, and together they are exactly the balance
@@ -16955,6 +17747,15 @@ const TrophyRoom = {
       for (let k = 0; k < steps; k++) this.stepGems(H);
       this.syncGems();
       if (!this.dragging && this.idle > 2.5) this.yawTarget += dt * 0.12;
+      // the room's lights circle, the dais ring breathes, the dust drifts
+      const oc = this.clock * 0.35, OR = Math.max(4, this.outerR * 0.7);
+      this.orbs[0].position.set(Math.sin(oc) * OR, 3.2, Math.cos(oc) * OR);
+      this.orbs[1].position.set(Math.sin(oc + Math.PI) * OR, 3.2, Math.cos(oc + Math.PI) * OR);
+      this.daisRing.material.opacity = 0.6 + 0.3 * Math.sin(this.clock * 2);
+      const dp = this.dust.geometry.attributes.position;
+      for (let k = 0; k < dp.count; k++) { let y = dp.getY(k) + dt * 0.12; if (y > 6) y = 0; dp.setY(k, y); }
+      dp.needsUpdate = true;
+      this.dust.rotation.y += dt * 0.02;
       this.yaw += (this.yawTarget - this.yaw) * Math.min(1, dt * 6);
       const R = Math.max(9, this.outerR * 1.55 + 3);
       this.camera.position.set(Math.sin(this.yaw) * R, R * 0.42, Math.cos(this.yaw) * R);
@@ -17536,7 +18337,7 @@ const UI = {
   show(id) {
     const from = Morph.current();
     ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'preview', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'garage', 'trophies', 'multi', 'closed', 'tracks', 'builder', 'practice']
+     'garage', 'trophies', 'multi', 'closed', 'tracks', 'builder', 'practice', 'modes']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
     if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
@@ -17607,7 +18408,7 @@ const UI = {
   course(i, name) {
     const lv = levelAt(i);
     if (Game.practice) { $('hNum').textContent = 'PRACTICE · FROM ' + formatTime(Game.practice.t) + ' · NOT SAVED'; $('hName').textContent = name; return; }
-    $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : i === UTRACK_I ? (lv.draft ? 'TEST DRIVE · NOT SAVED' : 'PLAYER TRACK' + (lv.author ? ' · BY ' + lv.author.toUpperCase() : '')) : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
+    $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : i === UTRACK_I ? (lv.escape ? 'ESCAPE · OUTRUN THE STORM' : lv.pot ? 'POT MAP · TODAY ONLY' : lv.draft ? 'TEST DRIVE · NOT SAVED' : 'PLAYER TRACK' + (lv.author ? ' · BY ' + lv.author.toUpperCase() : '')) : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
       : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase() + ' · ' + Looks.LIST[Looks.of(i)].name.toUpperCase() +
         (LEVELS[i].by ? ' · MADE BY ' + LEVELS[i].by.toUpperCase() : '');
     $('hName').textContent = name;
@@ -18181,6 +18982,7 @@ const UI = {
     PhotoFinish.update();
     DayChallenge.load();
     Online.load();
+    Rivals.check();
     Shop.load();
     Champion.render();
     Champion.load();
@@ -20216,10 +21018,15 @@ const Game = {
     scrub.addEventListener('change', endScrub);
     scrub.addEventListener('mouseup', endScrub);
     scrub.addEventListener('touchend', endScrub);
-    $('bRetry').addEventListener('click', () => { if (this.practice) Practice.start(); else if (this.levelIndex === DAILY_I) Daily.play(); else this.startLevel(this.levelIndex); });
-    $('bResCourses').addEventListener('click', () => { if (this.practice) Practice.open(this.levelIndex); else if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toSelect(); });
+    $('bRetry').addEventListener('click', () => { if (Modes.onRetry()) return; if (this.practice) Practice.start(); else if (this.levelIndex === DAILY_I) Daily.play(); else this.startLevel(this.levelIndex); });
+    $('bResCourses').addEventListener('click', () => { if (Modes.mode) { Modes.open(); return; } if (this.practice) Practice.open(this.levelIndex); else if (isPreview(this.levelIndex)) Preview.open(); else if (this.levelIndex === DAILY_I) Daily.open(); else if (this.levelIndex === UTRACK_I) Tracks.back(); else this.toSelect(); });
     $('bPreview').addEventListener('click', () => Preview.open());
-    $('bMulti').addEventListener('click', () => Multi.open());
+    $('bMulti').addEventListener('click', () => Modes.open());
+    $('bModesBack').addEventListener('click', () => this.toMenu());
+    $('mQuick').addEventListener('click', () => Modes.quick());
+    $('mKo').addEventListener('click', () => Modes.knockout());
+    $('mEsc').addEventListener('click', () => Escape.start());
+    $('mFriends').addEventListener('click', () => Multi.open());
     $('bMpBack').addEventListener('click', () => this.goBack());
     $('bMpCreate').addEventListener('click', () => Multi.create());
     $('bMpJoin').addEventListener('click', () => Multi.join($('mpJoinCode').value));
@@ -20246,6 +21053,7 @@ const Game = {
       else if (this.state === 'daily') Daily.render();
     }, 1000);
     $('bNext').addEventListener('click', () => {
+      if (Modes.onNext()) return;
       if (isPreview(this.levelIndex)) { Preview.drive(this.levelIndex - PREVIEW_BASE + 1, false); return; }
       const n = this.nextPlayable(this.levelIndex);
       if (n < 0) this.toSelect(); else this.startLevel(n);
@@ -20427,6 +21235,7 @@ const Game = {
   },
   restartRun(msg, reason) {
     if (Multi.racing) { Multi.respawn(msg); return; }
+    if (Escape.on && Escape.live) { Escape.over(reason === 'restart' ? 'restart' : 'off'); return; }
     if (this.practice) { if (msg) UI.toast(msg + ' at your practice point'); Practice.place(); return; }
     this.logAttempt('restarted', reason || 'restart');
     this.ticket = null;
@@ -20959,6 +21768,7 @@ const Game = {
     // Leaving to the menu ends any "racing so-and-so" session — otherwise
     // it would silently resume next time any course is started.
     this.ghostOverride = null; this.ghostOverrideName = null; this.ghostOverrideCourse = null; this.extraGhosts = [];
+    Modes.mode = null; Modes.ko = null; Escape.stop();
     this.hideAllTags(); // a race's own name tags are DOM elements, not part of the 3D scene — they don't clear on their own
     if (!this.course) this.loadLevel(this.data.findIndex(Boolean), true);
     GaragePreview.stop();
@@ -21004,6 +21814,7 @@ const Game = {
   selView: 'list', selSection: 0, courseDetailIndex: -1,
   toSelect(view) {
     this.state = 'select'; this.running = false;
+    Modes.mode = null; Modes.ko = null; Escape.stop();
     Sound.stopEngine();
     // Same reasoning as toMenu(): going back to the courses is a deliberate
     // exit from "racing so-and-so" mode, not a restart of it.
@@ -21299,6 +22110,10 @@ const Game = {
     $('bResCourses').textContent = this.levelIndex === DAILY_I ? 'Daily' : this.levelIndex === UTRACK_I ? 'Tracks' : 'Maps';
     $('bRetry').textContent = this.levelIndex === DAILY_I ? 'Again · 1 credit' : 'Drive it again';
     $('rCampaignRow').hidden = false;
+    $('bRetry').hidden = false;
+    $('bNext').textContent = 'Next course';
+    if (Tracks.level && Tracks.level.pot && this.levelIndex === UTRACK_I) $('bResCourses').textContent = 'Race';
+    Modes.afterResult(raceResult);
     UI.show('result');
     UI.clock(this.time, true);
     this.awardCompletion();
@@ -21306,6 +22121,7 @@ const Game = {
   },
   /** a track builder test drive's finish: shown, kept as the next test's ghost, saved nowhere */
   finishTest() {
+    if (Escape.on) { Escape.over('escaped'); return; }
     this.running = false;
     this.state = 'result';
     const lv = levelAt(this.levelIndex), prev = Tracks.testBest;
@@ -21843,6 +22659,7 @@ const Game = {
       this.recPrevQuat.copy(this.car.quat);
       UI.prompt('');
       this.ticket = Cloud.on && Cloud.user && !noSave(this.levelIndex) && !Autopilot.on ? Cloud.startRun(this.id()) : null;
+      if (Escape.on) Escape.begin();
       this.runT = 0; this.focusT = 0;
     }
     if (this.started) {
@@ -21948,6 +22765,7 @@ const Game = {
       }
     }
     if (this.state === 'play') { this.updateProgress(); this.updateCheckpoints(); }
+    if (Escape.on && this.state === 'play') Escape.step(dt);
   },
   /** the next checkpoint(s) along the road; one missed is forgiven, two in a row are not */
   updateCheckpoints() {
@@ -22005,6 +22823,9 @@ const Game = {
         break;
       case 'multi':
         Multi.leave().then(() => this.toMenu());
+        break;
+      case 'modes':
+        this.toMenu();
         break;
       case 'info':
         this.toSettings();
