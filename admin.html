@@ -834,7 +834,8 @@ async function useToken(token) {
   try { who = localStorage.getItem('aipolytrack-admin-user') || ''; } catch (e) { /* this visit only */ }
   $('whoami').textContent = who || 'admin';
   $('btnOut').classList.remove('hide');
-  // the next season's preview link shows only while there is one (none between seasons)
+  // the next season's preview (the game shows its button only while there is one)
+  $('lnkPreview').classList.remove('hide');
   $('cardAuth').classList.add('hide');
   $('panel').classList.remove('hide');
   say('authMsg', '');

@@ -15508,7 +15508,8 @@ const Hours = {
   /** this player may drive now */
   canPlay() {
     const n = this.now();
-    return !this.on || this.openAt(n) || this.granted > n;
+    // (the admin, signed in to admin.html in this browser, can always get in: to try next season's preview)
+    return !this.on || this.openAt(n) || this.granted > n || (typeof Preview !== 'undefined' && Preview.on);
   },
   /** the server's view: its clock, the next opening and any access code grant */
   async refresh() {
@@ -15536,6 +15537,8 @@ const Hours = {
     if (!$('clLog').children.length) ClosedCoach.greet();
     clearInterval(this.timer);
     this.timer = setInterval(() => this.tick(), 1000);
+    // the admin's browser: let them in (tick() sees it and goes to the menu)
+    if (!Preview.checked) { Preview.checked = Date.now(); Preview.check(); }
   },
   tick() {
     if (Game.state !== 'closed') { clearInterval(this.timer); return; }
