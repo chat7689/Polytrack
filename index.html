@@ -9245,12 +9245,17 @@ function buildCourse(data, scene, world) {
       // and a car that came up short on a jump could drive into it and end
       // up inside the track.
       if ((i === 0 || i === F.length - 2) && !s.noBank) {
+        // (carried on 2 m below the ground: a corner that digs into the turf
+        // as the car lands short slipped under the wall's foot into the ramp)
+        const DN = V().set(0, -2, 0), inn = V().lerpVectors(p0, p1, 0.5).addScaledVector(u0, -1.5);
         if (i === 0) {
           M.side.quad(l0, fl0, fr0, r0);
           world.addQuad(l0, fl0, fr0, r0, 1, 1.00);
+          solidFace(world, fl0, V().addVectors(fl0, DN), V().addVectors(fr0, DN), fr0, inn, 1, 1.0, false);
         } else {
           M.side.quad(l1, r1, fr1, fl1);
           world.addQuad(l1, r1, fr1, fl1, 1, 1.00);
+          solidFace(world, fl1, V().addVectors(fl1, DN), V().addVectors(fr1, DN), fr1, inn, 1, 1.0, false);
         }
       }
       if (s.chev) {
