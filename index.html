@@ -145,6 +145,29 @@ body[data-screen=info] .creditBadge,body[data-screen=stats] .creditBadge,body[da
 .setRow b{display:block;font-size:14px;font-weight:600}
 .setRow small{display:block;font-size:12px;color:var(--dim);margin-top:2px}
 .setRow button{min-width:64px}
+/* the Season 4 trailer, over the 3D */
+#trailer{display:block;pointer-events:none;z-index:30;overflow:hidden}
+#trailer[hidden]{display:none}
+.trBar{position:absolute;left:0;right:0;height:8vh;background:#000;z-index:2}
+.trTop{top:0}.trBot{bottom:0}
+.trFade{position:absolute;inset:0;background:#000;opacity:1;z-index:1}
+.trCard{position:absolute;left:7vw;bottom:calc(8vh + 9vh);color:#fff;text-shadow:0 2px 26px rgba(0,0,0,.55);max-width:84vw;z-index:3}
+.trKick{font:700 13px/1 var(--sans);letter-spacing:.42em;color:#ffc628;margin-bottom:12px;text-transform:uppercase}
+.trBig{font:800 clamp(54px,11vw,170px)/.9 var(--display);letter-spacing:.015em;text-transform:uppercase}
+.trSub{font:500 clamp(15px,1.7vw,23px)/1.35 var(--sans);margin-top:14px;opacity:.94}
+.trCard.trLogo{left:0;right:0;top:31vh;bottom:auto;text-align:center;max-width:none}
+.trCard.trLogo .trKick{color:#fff;letter-spacing:.55em}
+.trCard.trLine .trBig{font-size:clamp(40px,7vw,104px)}
+.trTag{position:absolute;right:5vw;bottom:calc(8vh + 20px);display:flex;gap:10px;align-items:center;color:#fff;font:600 15px/1 var(--sans);text-shadow:0 1px 10px rgba(0,0,0,.6);z-index:3}
+.trTag span{font:700 12px/1 var(--mono);background:#ffc628;color:#111;padding:4px 7px;border-radius:4px;letter-spacing:.08em;text-shadow:none}
+.trTag span:empty{display:none}
+.trSkip{position:absolute;top:max(8px,calc(4vh - 16px));right:22px;pointer-events:auto;z-index:4;background:rgba(255,255,255,.12)!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)!important}
+.trProg{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.14);z-index:4}
+.trProg i{display:block;height:100%;width:0;background:#ffc628}
+#trEnd{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;pointer-events:auto;z-index:3;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,.2),rgba(0,0,0,.62));text-shadow:0 2px 26px rgba(0,0,0,.5)}
+#trEnd[hidden]{display:none}
+.trBtns{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap;justify-content:center}
 .setRow select{flex:0 0 auto;max-width:52%}
 .setBtns{display:flex;gap:8px;align-items:center;flex:0 0 auto}
 #fpsBox{position:fixed;top:8px;left:8px;z-index:60;pointer-events:none;font:600 12px/1 var(--mono,ui-monospace,monospace);
@@ -3061,17 +3084,32 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   </div>
 
   <!-- the private preview of next season's maps -->
+  <div class="layer" id="trailer" hidden>
+    <div class="trBar trTop"></div><div class="trBar trBot"></div>
+    <div class="trFade" id="trFade"></div>
+    <div class="trCard" id="trCard"><div class="trKick" id="trKick"></div><div class="trBig" id="trBig"></div><div class="trSub" id="trSub"></div></div>
+    <div class="trTag" id="trTag"><span id="trTagNo"></span><b id="trTagName"></b></div>
+    <button class="small trSkip" id="trSkip">Skip &rsaquo;</button>
+    <div class="trProg"><i id="trProg"></i></div>
+    <div id="trEnd" hidden>
+      <div class="trKick">aiPolytrack</div>
+      <div class="trBig">Season 4</div>
+      <div class="trSub">New York &middot; Paris &middot; London &middot; Tokyo</div>
+      <div class="trBtns"><button class="primary" id="trGo">Drive Season 4</button><button class="ghost" id="trAgain">Watch again</button></div>
+    </div>
+  </div>
+
   <div class="layer" id="preview" hidden>
     <div class="scrim"></div>
     <div class="panel previewPanel">
       <div class="row" style="justify-content:space-between;align-items:flex-start">
         <div>
           <div class="kick">PRIVATE PREVIEW · NOT RELEASED</div>
-          <h2 class="big">Season 3 maps</h2>
+          <h2 class="big" id="pvTitle">Next season's maps</h2>
           <p class="lede" style="margin-bottom:0">Only you can see these (you're signed in to the admin page in this browser).
             Drive them, or watch the test driver. Times here aren't saved anywhere and nothing on them can reach the leaderboards.</p>
         </div>
-        <button class="ghost" id="bPreviewBack">&larr; Menu</button>
+        <div class="row" style="gap:8px"><button class="small" id="bPvTrailer">&#9654; Watch the trailer</button><button class="ghost" id="bPreviewBack">&larr; Menu</button></div>
       </div>
       <div id="pvList"></div>
     </div>
@@ -3327,7 +3365,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
         <p>Sixteen new maps stripped back to the essentials, and a track builder. Here's what changed.</p>
       </div>
       <div class="wnGrid" id="wnGrid"></div>
-      <div class="row wnFoot"><span class="wnNote" id="wnNote"></span><button class="primary" id="bWnGo">Let's race</button></div>
+      <div class="row wnFoot"><span class="wnNote" id="wnNote"></span><button class="ghost" id="bWnTrailer" hidden>&#9654; The trailer</button><button class="primary" id="bWnGo">Let's race</button></div>
     </div>
   </div>
 
@@ -6234,6 +6272,8 @@ function buildMaterials() {
   MAT.chev = std(0xffc628, { roughness: 0.7 });
   MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
   MAT.finish = std(0xffc628, { emissive: 0xc9930d, emissiveIntensity: 0.45 });
+  MAT.finishFrame = std(0x24282f, { roughness: 0.45, metalness: 0.5 });
+  MAT.finishLight = std(0xffffff, { emissive: 0xffffff, emissiveIntensity: 1.3 });
   // Default red at "normal" saturation/lightness — CarColor.apply() recolors
   // these two live from the player's saved choice once one exists, but the
   // very first paint (before any save has loaded) has to be something, and
@@ -8898,7 +8938,77 @@ class MeshBuilder {
   get count() { return this.pos.length / 9; }
 }
 
+/**
+ * The finish: two dark towers with a lit strip up each inner face, a beam
+ * across with a light bar under it, a chequered FINISH banner on both faces,
+ * chequered flags on top, and a chequered line painted across the road.
+ * (The pictures are canvas textures, made once; under Node, where there is
+ * no canvas, the banner is plain.)
+ */
+const FinishLook = {
+  tex: null,
+  make() {
+    if (this.tex !== null) return this.tex;
+    if (typeof document === 'undefined') return (this.tex = false);
+    const cv = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+    const chequers = (g, x, y, w, h, sq) => { for (let i = 0; i * sq < w; i++) for (let j = 0; j * sq < h; j++) { g.fillStyle = (i + j) % 2 ? '#111317' : '#f4f5f7'; g.fillRect(x + i * sq, y + j * sq, Math.min(sq, w - i * sq), Math.min(sq, h - j * sq)); } };
+    // the banner
+    const b = cv(1536, 128), g = b.getContext('2d');
+    g.fillStyle = '#121418'; g.fillRect(0, 0, 1536, 128);
+    chequers(g, 0, 0, 224, 128, 32); chequers(g, 1312, 0, 224, 128, 32);
+    g.fillStyle = '#ffc628'; g.fillRect(224, 0, 1088, 7); g.fillRect(224, 121, 1088, 7);
+    g.fillStyle = '#ffffff'; g.font = 'italic 800 86px system-ui, -apple-system, "Segoe UI", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('F I N I S H', 768, 67);
+    // what of it glows: the white of the type and chequers, softly
+    const e = cv(1536, 128), ge = e.getContext('2d');
+    ge.fillStyle = '#000'; ge.fillRect(0, 0, 1536, 128); ge.globalAlpha = 0.55; ge.drawImage(b, 0, 0);
+    // chequers for the flags and the line on the road
+    const c = cv(64, 64), gc = c.getContext('2d');
+    chequers(gc, 0, 0, 64, 64, 32);
+    const T = (canvas, rep) => { const t = new THREE.CanvasTexture(canvas); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; } return t; };
+    const banner = new THREE.MeshStandardMaterial({ map: T(b), emissiveMap: T(e), emissive: 0xffffff, emissiveIntensity: 0.6, roughness: 0.6 });
+    const flag = new THREE.MeshStandardMaterial({ map: T(c, true), roughness: 0.7, side: THREE.DoubleSide });
+    const road = new THREE.MeshStandardMaterial({ map: T(c, true), roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+    return (this.tex = { banner, flag, road });
+  }
+};
+function makeFinishMesh(width) {
+  const g = new THREE.Group(), half = Math.max(3.2, width / 2) + 1.2, P = new PartSet(), L = FinishLook.make();
+  for (const sx of [-1, 1]) {
+    P.add(MAT.finishFrame, [1.0, 6.6, 1.0], [sx * half, 3.3, 0]);
+    P.add(MAT.finishFrame, [1.6, 0.5, 1.6], [sx * half, 0.25, 0]);
+    P.add(MAT.finish, [0.14, 5.4, 0.46], [sx * (half - 0.57), 3.1, 0]);
+    P.add(MAT.finish, [1.15, 0.24, 1.15], [sx * half, 6.72, 0]);
+    // flag poles
+    P.add(MAT.finishFrame, [0.12, 2.2, 0.12], [sx * (half + 0.2), 7.9, 0]);
+  }
+  P.add(MAT.finishFrame, [half * 2 + 1.0, 0.34, 0.7], [0, 4.5, 0]);
+  P.add(MAT.finishLight, [half * 2 - 1.3, 0.12, 0.34], [0, 4.29, 0]);
+  if (!L) P.add(MAT.finish, [half * 2 + 1.0, 1.6, 0.5], [0, 5.5, 0]);
+  P.build(g, [MAT.finishFrame]);
+  if (L) {
+    // the banner: FINISH on both faces, the frame's colour round its edges
+    const ban = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), [MAT.finishFrame, MAT.finishFrame, MAT.finishFrame, MAT.finishFrame, L.banner, L.banner]);
+    ban.scale.set(half * 2 + 1.0, 1.6, 0.5); ban.position.set(0, 5.47, 0); ban.castShadow = true;
+    g.add(ban);
+    for (const sx of [-1, 1]) {
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.95), L.flag);
+      f.position.set(sx * (half + 0.2 + 0.78), 8.5, 0);
+      g.add(f);
+    }
+    // the line across the road, inside the kerbs: two rows of 0.8 m chequers
+    const w = Math.max(2, width - 1.3), geo = new THREE.PlaneGeometry(w, 1.6), uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 1.6, uv.getY(i));
+    geo.rotateX(-Math.PI / 2);
+    const line = new THREE.Mesh(geo, L.road);
+    line.position.y = 0.035; line.receiveShadow = true;
+    g.add(line);
+  }
+  return g;
+}
+
 function makeGateMesh(kind, width) {
+  if (kind === 'finish') return makeFinishMesh(width);
   const g = new THREE.Group();
   const mat = kind === 'finish' ? MAT.finish : MAT.gate;
   const half = Math.max(3.2, width / 2) + 1.0;
@@ -12111,8 +12221,17 @@ const Landmarks = {
       },
       center: courseCenterAndExtent(R.pts)
     };
+    this.where = {};
     for (const it of D.set || []) {
+      const n0 = foot.all.length;
       try { this.place(ctx, it); } catch (e) { console.warn('aiPolytrack: landmark', it[0], e); }
+      // where it stands and how tall it is (the trailer's camera circles it)
+      const got = foot.all.slice(n0).filter((o) => !o.round);
+      if (got.length && !this.where[it[0]]) {
+        let x = 0, z = 0, top = 0;
+        for (const o of got) { x += o.x; z += o.z; top = Math.max(top, (o.y1 || 0) - GROUND_Y); }
+        this.where[it[0]] = { x: x / got.length, z: z / got.length, top };
+      }
     }
     try { this.themes[D.theme].call(this, ctx); } catch (e) { console.warn('aiPolytrack: city', e); }
     B.build(g);
@@ -14800,6 +14919,8 @@ const Preview = {
   render() {
     const E = escapeHtml;
     let h = '';
+    $('pvTitle').textContent = 'Season ' + NEXT_SEASON + ' maps';
+    $('bPvTrailer').hidden = !Trailer.ready();
     for (let sec = 0; sec < 4; sec++) {
       h += '<div class="pvSec">Section ' + 'ABCD'.charAt(sec) + '</div><div class="pvGrid">';
       NEXT_LEVELS.forEach((lv, k) => {
@@ -14824,6 +14945,199 @@ const Preview = {
       Autopilot.prepare(Game.data[i]);
       UI.prompt('Test driver');
     }
+  }
+};
+
+/**
+ * The Season 4 trailer: about a minute of the new maps, filmed live in the
+ * game's own 3D (so it's sharp at any size and costs no download). The
+ * player's own car drives each road on rails while the camera chases it,
+ * sweeps past it, follows it over Tower Bridge's open bascules or circles a
+ * landmark; cards name each city and map, a few lines sell the season, and
+ * a simple beat plays under it. It plays once, the first time someone
+ * reaches the menu after the season goes live (then What's New), and again
+ * from What's New or the admin preview. Esc, Enter or Skip ends it.
+ */
+const Trailer = {
+  SEASON: 4, KEY: 'trailerSeen',
+  on: false, list: [], k: -1, t: 0, total: 0, done: 0, cur: null, back: null, beatAt: 0, beatN: 0,
+  SHOTS: [
+    { id: 's5c1', len: 4.6, cam: 'rise', at: 0.06, logo: true },
+    { id: 's5c1', len: 3.2, cam: 'chase', at: 0.28, city: ['SECTION A', 'NEW YORK'] },
+    { id: 's5c2', len: 3.2, cam: 'side', at: 'bridge' },
+    { id: 's5c4', len: 2.9, cam: 'orbit', mark: 'liberty', at: 0.2 },
+    { id: 's5c5', len: 3.2, cam: 'chase', at: 0.1, city: ['SECTION B', 'PARIS'] },
+    { id: 's5c6', len: 3.1, cam: 'orbit', mark: 'eiffel', at: 0.35 },
+    { id: 's5c7', len: 2.8, cam: 'high', at: 0.42 },
+    { id: 's5c9', len: 3.2, cam: 'side', at: 0.12, city: ['SECTION C', 'LONDON'] },
+    { id: 's5c10', len: 3.6, cam: 'jump' },
+    { id: 's5c12', len: 2.9, cam: 'orbit', mark: 'piccadilly', at: 0.1 },
+    { id: 's5c13', len: 3.2, cam: 'chase', at: 0.14, city: ['SECTION D', 'TOKYO'] },
+    { id: 's5c14', len: 3.1, cam: 'side', at: 'bridge' },
+    { id: 's5c16', len: 3.0, cam: 'chase', at: 'boost' },
+    { id: 's5c15', len: 3.1, cam: 'orbit', mark: 'temple', at: 0.3 },
+    { id: 's5c11', len: 3.2, cam: 'high', at: 0.3, line: ['16 new maps', 'Four real cities, their landmarks, their streets'] },
+    { id: 's5c8', len: 3.2, cam: 'orbit', mark: 'louvre', at: 0.4, line: ['Podium Pass', 'A credit a minute for every podium you hold'] },
+    { id: 's5c3', len: 3.4, cam: 'chase', at: 'finish', line: ['A new finish line', 'Be the first across it'] },
+    { id: 's5c14', len: 6, cam: 'pull', at: 'bridge', end: true }
+  ],
+  /** a map's index in the game: this season's, or (before release) the preview's */
+  index(id) {
+    const i = LEVELS.findIndex((l) => l.id === id);
+    if (i >= 0) return i;
+    const k = NEXT_LEVELS.findIndex((l) => l.id === id);
+    return k >= 0 && Preview.ensure(k) ? Preview.index(k) : -1;
+  },
+  /** can it play? all its maps are this season's, or the admin is previewing them */
+  ready() { return this.SHOTS.every((s) => this.index(s.id) >= 0); },
+  /** from the menu: once, the first time after the season goes live (true if it started) */
+  maybe() {
+    if (SEASON < this.SEASON || !Cloud.user || /whatsnew/.test(location.hash)) return false;
+    if (Prefs.get(this.KEY, 0) >= this.SEASON) return false;
+    if (!LEVELS.some((l) => l.id === this.SHOTS[0].id)) return false;
+    Prefs.set(this.KEY, this.SEASON);
+    return this.play('menu');
+  },
+  play(back) {
+    if (this.on || !this.ready()) return false;
+    this.on = true; this.back = back || 'menu';
+    this.list = this.SHOTS.slice(); this.k = -1; this.t = 0; this.done = 0;
+    this.total = this.list.reduce((a, s) => a + s.len, 0);
+    this.beatAt = 0; this.beatN = 0;
+    Autopilot.on = false;
+    Game.state = 'trailer'; Game.running = false;
+    Sound.init(); Sound.resume(); Sound.stopEngine();
+    UI.show('trailer');
+    $('trEnd').hidden = true;
+    $('trFade').style.opacity = 1;
+    $('trGo').textContent = this.back === 'preview' ? 'Back to the preview' : 'Drive Season ' + this.SEASON;
+    this.fov = App.camera.fov;
+    this.next();
+    return true;
+  },
+  /** on to the next shot: its map loaded (behind black), the car and camera set */
+  next() {
+    for (;;) {
+      this.k++;
+      if (this.k >= this.list.length) { this.k = this.list.length - 1; return; }
+      const s = this.list[this.k], i = this.index(s.id);
+      if (i < 0 || !Game.loadLevel(i, true)) continue;
+      this.cur = this.prepare(s, i);
+      if (this.cur) break;
+    }
+    this.t = 0;
+    const s = this.cur.shot;
+    this.text(s);
+    if (s.city) { Sound.tone(55, 0, 1.4, 0.16, 'sine', 32); Sound.noiseHit(0, 0.9, 0.08, 900, 120, 'lowpass'); }
+    else Sound.noiseHit(0, 0.42, 0.05, 280, 2600, 'bandpass');
+  },
+  /** the road as distances: points, the jump gaps (the car flies an arc over them), where to start */
+  prepare(s, i) {
+    const R = Landmarks.read(Game.data[i]), P = R.pts;
+    if (P.length < 4) return null;
+    const gaps = [];
+    for (let a = 0; a < P.length; a++) if (P[a].air) { let b = a; while (b + 1 < P.length && P[b + 1].air) b++; const c0 = P[Math.max(0, a - 1)].cum, c1 = P[Math.min(P.length - 1, b + 1)].cum; gaps.push([c0, c1, (c1 - c0) * 0.16]); a = b; }
+    const marks = (typeof S4 !== 'undefined' && S4.marks[s.id]) || [];
+    let at = 0, v = 42;
+    if (typeof s.at === 'number') at = s.at * R.len;
+    else if (s.at === 'bridge') { const r = R.runs.filter((x) => x.bridge).sort((x, y) => y.len - x.len)[0]; at = r ? P[r.a].cum + r.len * 0.1 : R.len * 0.3; }
+    else if (s.at === 'boost') at = (marks[4] || R.len * 0.3) - 40;
+    else if (s.at === 'finish') { const f = (Game.data[i].gates || []).find((g) => g.kind === 'finish'); let fc = R.len - 34; if (f) { let bd = Infinity; for (const q of P) { const dd = (q.x - f.pos[0]) ** 2 + (q.z - f.pos[2]) ** 2; if (dd < bd) { bd = dd; fc = q.cum; } } } at = fc - v * s.len * 0.75; }
+    if (s.cam === 'jump') { const g = gaps[0]; at = g ? g[0] - 75 : R.len * 0.4; v = 46; }
+    if (s.cam === 'orbit' || s.cam === 'pull') v = 34;
+    const mark = s.mark && Landmarks.where && Landmarks.where[s.mark];
+    return { shot: s, i, R, P, gaps, at: Math.max(0, Math.min(at, R.len - v * s.len - 5)), v, mark, gap: gaps[0] };
+  },
+  /** where the road is d metres along: position on the deck, its turn, and the frame */
+  pose(c, d) {
+    const P = c.P;
+    let lo = 0, hi = P.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (P[m].cum < d) lo = m; else hi = m; }
+    const a = P[lo], b = P[hi], f = Math.max(0, Math.min(1, (d - a.cum) / Math.max(1e-6, b.cum - a.cum)));
+    const p = new THREE.Vector3(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f, a.z + (b.z - a.z) * f);
+    for (const [c0, c1, h] of c.gaps) if (d > c0 && d < c1) { const s = (d - c0) / (c1 - c0); p.y += 4 * h * s * (1 - s); }
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(a.air ? 0 : a.t || 0, a.yaw, a.air ? 0 : a.roll || 0, 'YXZ'));
+    const q2 = new THREE.Quaternion().setFromEuler(new THREE.Euler(b.air ? 0 : b.t || 0, b.yaw, b.air ? 0 : b.roll || 0, 'YXZ'));
+    q.slerp(q2, f);
+    return { p, q, fwd: new THREE.Vector3(0, 0, 1).applyQuaternion(q), up: new THREE.Vector3(0, 1, 0).applyQuaternion(q), side: new THREE.Vector3(1, 0, 0).applyQuaternion(q) };
+  },
+  step(dt) {
+    if (!this.on) return;
+    if (Input.tapped('Escape') || Input.tapped('Enter')) { this.close(); return; }
+    const c = this.cur;
+    if (!c) { this.close(); return; }
+    const s = c.shot;
+    this.t += dt;
+    if (!s.end) this.done += dt;
+    if (this.t >= s.len && !s.end) { this.next(); return; }
+    // the beat: a kick every half second, a tick between
+    this.beatAt += dt;
+    if (this.beatAt >= 0.25) { this.beatAt -= 0.25; this.beatN++; if (this.beatN % 2 === 0) Sound.tone(62, 0, 0.22, 0.12, 'sine', 38); else Sound.noiseHit(0, 0.05, 0.025, 6000, 9000, 'highpass'); }
+    const tt = Math.min(this.t, s.len), u = tt / s.len;
+    // the car, on rails along the road
+    const d = c.at + c.v * tt, car = this.pose(c, d);
+    const pos = car.p.clone().addScaledVector(car.up, 0.47);
+    Game.car.mesh.visible = true;
+    Game.car.mesh.position.copy(pos); Game.car.mesh.quaternion.copy(car.q);
+    Game.car.pos.copy(pos);
+    // the camera
+    const cam = App.camera, look = new THREE.Vector3(), eye = new THREE.Vector3();
+    const flat = new THREE.Vector3(car.fwd.x, 0, car.fwd.z).normalize(), side = new THREE.Vector3(flat.z, 0, -flat.x);
+    const ease = u * u * (3 - 2 * u);
+    let fov = 58;
+    if (s.cam === 'chase') { eye.copy(pos).addScaledVector(flat, -9 + 2.5 * ease).add(new THREE.Vector3(0, 3.1, 0)); look.copy(pos).addScaledVector(flat, 12).add(new THREE.Vector3(0, 1.2, 0)); fov = 62; }
+    else if (s.cam === 'side') { eye.copy(pos).addScaledVector(side, 15).addScaledVector(flat, 10 - 22 * ease).add(new THREE.Vector3(0, 3.5, 0)); look.copy(pos).add(new THREE.Vector3(0, 1, 0)); fov = 50; }
+    else if (s.cam === 'high') { eye.copy(pos).addScaledVector(flat, -34).add(new THREE.Vector3(0, 46 + 10 * ease, 0)); look.copy(pos).addScaledVector(flat, 26); }
+    else if (s.cam === 'rise') { eye.copy(pos).addScaledVector(flat, -6 - 40 * ease).add(new THREE.Vector3(0, 1.4 + 85 * ease, 0)); look.copy(pos).addScaledVector(flat, 18 + 60 * ease).add(new THREE.Vector3(0, 2 + 20 * ease, 0)); fov = 60; }
+    else if (s.cam === 'jump') {
+      const g = c.gap ? this.pose(c, (c.gap[0] + c.gap[1]) / 2) : car, gf = new THREE.Vector3(g.fwd.x, 0, g.fwd.z).normalize(), gs = new THREE.Vector3(gf.z, 0, -gf.x);
+      eye.copy(g.p).addScaledVector(gs, 58).addScaledVector(gf, -10).add(new THREE.Vector3(0, 9, 0)); look.copy(pos).lerp(g.p, 0.5).add(new THREE.Vector3(0, 6, 0)); fov = 52;
+    } else if (s.cam === 'orbit' || s.cam === 'pull') {
+      const m = c.mark || { x: pos.x, z: pos.z, top: 40 }, top = Math.max(25, Math.min(m.top || 60, 330));
+      const near = this.pose(c, c.at), a0 = Math.atan2(near.p.x - m.x, near.p.z - m.z) - 0.5;
+      const r = s.cam === 'pull' ? 60 + 160 * ease : Math.max(80, top * 1.05), a = a0 + (s.cam === 'pull' ? 0.25 : 0.7) * u;
+      const cx = s.cam === 'pull' ? pos.x : m.x, cz = s.cam === 'pull' ? pos.z : m.z;
+      eye.set(cx + Math.sin(a) * r, GROUND_Y + (s.cam === 'pull' ? 12 + 70 * ease : top * 0.45 + 12), cz + Math.cos(a) * r);
+      look.set(cx, GROUND_Y + (s.cam === 'pull' ? 8 : top * 0.4), cz);
+      fov = 55;
+    }
+    cam.position.copy(eye); cam.lookAt(look);
+    if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); }
+    // in and out of black at the cuts; the words come and go with the shot
+    const fade = s.end ? Math.max(0, 1 - this.t / 0.4) : Math.max(0, 1 - this.t / 0.35, (this.t - (s.len - 0.3)) / 0.3);
+    $('trFade').style.opacity = Math.min(1, fade).toFixed(3);
+    const show = (el, a, b) => { const e = $(el); const o = Math.max(0, Math.min(1, (this.t - a) / 0.35, (b - this.t) / 0.35)); e.style.opacity = o.toFixed(3); e.style.transform = 'translateY(' + ((1 - o) * 14).toFixed(1) + 'px)'; };
+    show('trCard', 0.3, s.end ? 99 : s.len - 0.4);
+    show('trTag', 0.5, s.len - 0.3);
+    $('trProg').style.width = (100 * Math.min(1, this.done / this.total)).toFixed(1) + '%';
+    if (s.end && this.t > 1.2) $('trEnd').hidden = false;
+  },
+  /** the words for a shot */
+  text(s) {
+    const lv = levelAt(this.cur.i);
+    $('trKick').textContent = s.logo ? 'aiPolytrack' : s.city ? s.city[0] : s.line ? 'SEASON 4' : '';
+    $('trBig').textContent = s.logo ? 'Season 4' : s.city ? s.city[1] : s.line ? s.line[0] : '';
+    $('trSub').textContent = s.logo ? 'Four cities. Sixteen maps.' : s.line ? s.line[1] : '';
+    $('trCard').className = 'trCard' + (s.logo ? ' trLogo' : s.city ? ' trCity' : s.line ? ' trLine' : ' trNone');
+    $('trTagNo').textContent = s.logo || s.end ? '' : courseTag(this.cur.i);
+    $('trTagName').textContent = s.logo || s.end ? '' : lv.name;
+    if (s.end) { $('trKick').textContent = ''; $('trBig').textContent = ''; $('trSub').textContent = ''; }
+  },
+  close() {
+    if (!this.on) return;
+    this.on = false;
+    App.camera.fov = this.fov || CAM.fovBase; App.camera.updateProjectionMatrix();
+    $('trEnd').hidden = true;
+    // the car back on the start line, for the menu's slow orbit
+    Game.car.place(Game.startPose.pos, Game.startPose.heading); Game.car.syncMesh(0); Game.chase.snap(Game.car);
+    if (this.back === 'preview' && Preview.on) Preview.open();
+    else Game.toMenu();
+  },
+  wire() {
+    $('trSkip').addEventListener('click', () => this.close());
+    $('trGo').addEventListener('click', () => this.close());
+    $('trAgain').addEventListener('click', () => { const b = this.back; this.on = false; this.play(b); });
+    $('trEnd').addEventListener('click', (e) => { if (e.target.id === 'trEnd') this.close(); });
   }
 };
 
@@ -18311,6 +18625,7 @@ const WhatsNew = {
     $('wnGrid').innerHTML = this.ITEMS.map(([ic, t, d], k) => '<div class="wnItem" style="--d:' + (k * 0.06).toFixed(2) + 's"><span class="wnIc"><svg viewBox="0 0 24 24" aria-hidden="true">' +
       this.ICON[ic] + '</svg></span><div><b>' + t + '</b><p>' + d + '</p></div></div>').join('');
     this.note();
+    $('bWnTrailer').hidden = !(SEASON >= Trailer.SEASON && Trailer.ready());
     $('wnBox').hidden = false;
   },
   /** last season's champion gets a line (again once the podium has loaded) */
@@ -23342,7 +23657,7 @@ const UI = {
   show(id) {
     const from = Morph.current();
     ['menu', 'select', 'secview', 'info', 'stats', 'daily', 'preview', 'result', 'gate', 'banned', 'spectate', 'settings',
-     'garage', 'trophies', 'multi', 'closed', 'tracks', 'builder', 'practice', 'modes']
+     'garage', 'trophies', 'multi', 'closed', 'tracks', 'builder', 'practice', 'modes', 'trailer']
       .forEach((k) => { $(k).hidden = k !== id; });
     $('hud').hidden = !(id === 'hud' || id === 'result');
     if (id !== 'menu') { overallLeaderPreview.stop(); SectionCars.stop(); }   // turning cars only while seen
@@ -25894,6 +26209,9 @@ const Game = {
     $('pfBox').addEventListener('click', (e) => { if (e.target.id === 'pfBox') $('pfBox').hidden = true; });
     $('champCard').addEventListener('click', () => { const d = Champion.data, a = d && d.podium[0]; if (a) Profiles.open(a.uid, a.n); });
     $('bWnGo').addEventListener('click', () => WhatsNew.close());
+    $('bWnTrailer').addEventListener('click', () => { WhatsNew.close(); Trailer.play('menu'); });
+    $('bPvTrailer').addEventListener('click', () => Trailer.play('preview'));
+    Trailer.wire();
     $('wnBox').addEventListener('click', (e) => { if (e.target.id === 'wnBox') WhatsNew.close(); });
     $('pcBox').addEventListener('click', (e) => { if (e.target.id === 'pcBox') Profiles.close(); });
     $('bPcTrophies').addEventListener('click', () => { const w = Profiles.cur; Profiles.close(); if (w) this.toTrophies(w); });
@@ -26872,7 +27190,8 @@ const Game = {
     CoachAlerts.flush();                   // podium news waits for the menu (or a finished run)
     Garage.intro();
     Garage.badge();
-    WhatsNew.maybe();
+    // a new season: its trailer first (once), then what's new
+    if (!Trailer.maybe()) WhatsNew.maybe();
   },
   /** called whenever the live leaderboard changes: redraw whatever shows it */
   onBoardsChanged() {
@@ -27994,6 +28313,8 @@ const Game = {
       this.stepSpectate(dt);
     } else if (this.state === 'section') {
       SectionView.step(dt);
+    } else if (this.state === 'trailer') {
+      Trailer.step(dt);
     } else {
       this.clock += dt;
       if (this.car && this.course) this.chase.orbit(this.car.pos, this.clock);
