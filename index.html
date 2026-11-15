@@ -15337,7 +15337,7 @@ function ordinal(n) {
  * this is the same rule on the server's clock, for the screen.
  */
 const Hours = {
-  open: true, closes: 0, opens: 0, granted: 0, offset: 0, at: 0, timer: 0, checked: false,
+  open: true, closes: 0, opens: 0, granted: 0, offset: 0, at: 0, timer: 0, checked: false, on: true,   // on: the school-hours rule (the admin can switch it off)
   PT: new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hourCycle: 'h23', weekday: 'short', hour: '2-digit', minute: '2-digit' }),
   now() { return Date.now() + this.offset; },
   /** the rule, for any moment (ms) */
@@ -15359,7 +15359,7 @@ const Hours = {
   /** this player may drive now */
   canPlay() {
     const n = this.now();
-    return this.openAt(n) || this.granted > n;
+    return !this.on || this.openAt(n) || this.granted > n;
   },
   /** the server's view: its clock, the next opening and any access code grant */
   async refresh() {
@@ -15368,6 +15368,7 @@ const Hours = {
       const t0 = Date.now(), j = await Cloud.rpc('play_status'), t1 = Date.now();
       this.offset = j.now - (t0 + t1) / 2;
       this.granted = j.granted || 0;
+      this.on = j.hours !== false;
       this.checked = true;
     } catch (e) { /* the browser's own clock, until the server answers */ }
   },
@@ -15401,6 +15402,8 @@ const Hours = {
   /** while driving or on the menu, closing time sends players to the closed screen at their next stop */
   watch() {
     setInterval(() => {
+      // (the admin can switch the rule on or off: the server's word every few minutes)
+      if (Cloud.user && Date.now() - this.at > 180000) { this.at = Date.now(); this.refresh(); }
       if (!Cloud.user || this.canPlay()) return;
       if (['menu', 'select', 'multi', 'daily', 'tracks', 'builder'].includes(Game.state)) this.show();
     }, 15000);

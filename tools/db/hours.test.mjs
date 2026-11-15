@@ -52,4 +52,14 @@ ok(Array.isArray(list) && list.length === 0, 'and leaves the list');
 for (let k = 0; k < 8; k++) await t.one('Kid2', "select public.redeem_access('ZZZZZZZZ') as j");
 ok(/Too many/.test((await t.one('Kid2', "select public.redeem_access('ZZZZZZZZ') as j")).j.error), 'eight wrong codes in ten minutes locks guessing');
 ok((await t.as('Kid1', 'select * from public.access_codes')).rows.length === 0, 'players cannot read the codes');
+// the admin's switch: open all the time, and back to school hours
+ok((await t.admin('select public.admin_hours() as j')).rows[0].j === true, 'school hours only, to start with');
+await t.admin('select public.admin_set_hours(false)');
+ok((await t.admin('select public.admin_hours() as j')).rows[0].j === false, 'the admin switches it off');
+const ps = (await t.one('Kid2', 'select public.play_status() as j')).j;
+ok(ps.open === true && ps.hours === false, 'play_status says open, hours off ' + JSON.stringify({ open: ps.open, hours: ps.hours }));
+const r3 = await run('Kid2'); ok(r3.ok || r3.error !== 'closed', 'and nobody is turned away for the hour (this computer is busy with another run) ' + JSON.stringify(r3));
+await t.admin('select public.admin_set_hours(true)');
+if (!nowOpen) ok((await run('Kid2')).error === 'closed', 'switched back on: closed outside school hours again');
+ok(/admin/i.test(await t.err('Kid2', 'select public.admin_set_hours(false)') || ''), 'only the admin can switch it');
 done();

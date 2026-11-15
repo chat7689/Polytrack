@@ -434,6 +434,14 @@ button.primary{background:var(--ink);color:#121417}
         <button id="btnAccReload">Reload</button>
       </div>
       <div class="msg" id="accMsg"></div>
+      <div class="card">
+        <div class="row" style="align-items:center">
+          <span class="note" id="hoursState" style="margin:0;flex:1">School hours only: …</span>
+          <button id="btnHours">…</button>
+        </div>
+        <small class="hint">Off: anyone can drive at any time, day or night, weekends too (no access code needed). On: only
+          during the school hours above, unless a player has a code. It switches for everyone within a minute.</small>
+      </div>
       <h2>Make a code</h2>
       <div class="card">
         <p class="note">A code works for anyone who types it, until the time you pick. Deleting a code stops it at once,
@@ -1833,7 +1841,23 @@ function renderDevices() {
 /* --------------------------------------------------------- access codes */
 const dtLocal = (d) => { const z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); };
 const whenText = (ms) => new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+async function loadHours() {
+  try {
+    const on = await rpc('admin_hours');
+    $('hoursState').innerHTML = on ? 'School hours only: <b>on</b>. Outside school hours only players with a code can drive.'
+      : 'School hours only: <b>off</b>. aiPolytrack is open all the time.';
+    $('btnHours').textContent = on ? 'Open all the time' : 'School hours only';
+    $('btnHours').className = on ? '' : 'primary';
+    $('btnHours').dataset.on = on ? '1' : '';
+  } catch (e) { $('hoursState').textContent = 'Run supabase/schema.sql to get this switch.'; }
+}
+$('btnHours').addEventListener('click', async () => {
+  const on = !$('btnHours').dataset.on;
+  try { await rpc('admin_set_hours', { p_on: on }); await loadHours(); say('accMsg', on ? 'Open in school hours only (and with a code).' : 'Open all the time.', 'ok'); }
+  catch (e) { say('accMsg', e.message, 'err'); }
+});
 async function loadAccess() {
+  loadHours();
   say('accMsg', 'Loading…');
   try {
     const list = await rpc('admin_access_codes');

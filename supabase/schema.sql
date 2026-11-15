@@ -3481,10 +3481,29 @@ language sql stable set search_path = public, pg_temp as $$
     ((p_t at time zone 'America/Los_Angeles')::date + case when extract(isodow from p_t at time zone 'America/Los_Angeles')::int = 3 then time '14:30' else time '15:30' end)
       at time zone 'America/Los_Angeles' end
 $$;
--- may this player start a run now: open, or a grant from an access code
+-- the school-hours rule on or off (settings 'hours' {on}): on, unless the admin turned it off
+create or replace function public._hours_on() returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select (value ->> 'on')::boolean from public.settings where key = 'hours'), true)
+$$;
+create or replace function public.admin_set_hours(p_on boolean) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  insert into public.settings (key, value) values ('hours', jsonb_build_object('on', coalesce(p_on, true)))
+    on conflict (key) do update set value = excluded.value;
+  perform public._log(case when coalesce(p_on, true) then 'school hours only' else 'open all the time' end, '', '');
+end $$;
+create or replace function public.admin_hours() returns boolean
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public._require_admin();
+  return public._hours_on();
+end $$;
+-- may this player start a run now: open (or open all the time), or a grant from an access code
 create or replace function public._may_play(p_uid uuid) returns boolean
 language sql stable security definer set search_path = public, pg_temp as $$
-  select public._open_at(now()) or exists (
+  select not public._hours_on() or public._open_at(now()) or exists (
     select 1 from public.access_grants g join public.access_codes c on c.code = g.code
     where g.uid = p_uid and g.until > now() and c.expires_at > now())
 $$;
@@ -3495,7 +3514,8 @@ declare p public.profiles := public._player(); g timestamptz;
 begin
   select least(a.until, c.expires_at) into g from public.access_grants a join public.access_codes c on c.code = a.code
   where a.uid = p.id and a.until > now() and c.expires_at > now();
-  return jsonb_build_object('now', (extract(epoch from now()) * 1000)::bigint, 'open', public._open_at(now()),
+  return jsonb_build_object('now', (extract(epoch from now()) * 1000)::bigint, 'open', not public._hours_on() or public._open_at(now()),
+    'hours', public._hours_on(),
     'closes', (extract(epoch from public._closes_at(now())) * 1000)::bigint,
     'opens', (extract(epoch from public._next_open(now())) * 1000)::bigint,
     'granted', (extract(epoch from g) * 1000)::bigint);
@@ -4461,7 +4481,8 @@ grant execute on function public.name_check(text), public.device_status(text, te
   public.admin_box_stats(), public.admin_set_shop(text), public.admin_purchases(integer), public.shop_link(),
   public.admin_set_shop_links(text, text), public.shop_links(), public.admin_set_shop_limit(integer),
   public.admin_set_open_signups(boolean), public.admin_open_signups(), public.admin_invite_stats(), public.online_now(),
-  public._open_signups(), public.admin_shop_stats(), public.admin_set_money_link(text, text) to anon;
+  public._open_signups(), public.admin_shop_stats(), public.admin_set_money_link(text, text),
+  public.admin_set_hours(boolean), public.admin_hours() to anon;
 -- paying out and taking back purchases: only the Stripe webhook (the service role)
 revoke execute on function public.grant_purchase(text, text, integer, text, text) from public, anon, authenticated;
 revoke execute on function public.refund_purchase(text) from public, anon, authenticated;
