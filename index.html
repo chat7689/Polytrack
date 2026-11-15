@@ -145,6 +145,10 @@ body[data-screen=info] .creditBadge,body[data-screen=stats] .creditBadge,body[da
 .setRow b{display:block;font-size:14px;font-weight:600}
 .setRow small{display:block;font-size:12px;color:var(--dim);margin-top:2px}
 .setRow button{min-width:64px}
+.setRow select{flex:0 0 auto;max-width:52%}
+.setBtns{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+#fpsBox{position:fixed;top:8px;left:8px;z-index:60;pointer-events:none;font:600 12px/1 var(--mono,ui-monospace,monospace);
+  color:#fff;background:rgba(0,0,0,.5);padding:4px 7px;border-radius:5px;letter-spacing:.02em}
 select{font-family:inherit;font-size:13.5px;color:var(--ink);background:rgba(0,0,0,.3);border:1px solid var(--rule);
   border-radius:9px;padding:9px 11px;max-width:260px}
 select:focus{outline:none;border-color:var(--aqua)}
@@ -3655,6 +3659,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
     </div>
   </div>
 
+  <div id="fpsBox" hidden></div>
   <div class="layer" id="settings" hidden>
     <div class="scrim"></div>
     <div class="panel" style="width:min(760px,94vw)">
@@ -3685,6 +3690,58 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <div class="setRow">
         <div><b>Coach short answers</b><small>Coach keeps it to a sentence or two. Also in the Coach screen.</small></div>
         <button class="small" id="bCoachShortSet">Off</button>
+      </div>
+      <div class="rule"></div>
+
+      <h3 style="font-size:13px;font-weight:600;margin:4px 0 6px">GRAPHICS</h3>
+      <p class="lede" style="font-size:12.5px;margin-bottom:6px">If the game is choppy, pick a lower quality, or turn the parts below down one at a time.
+        Resolution and shadows make the biggest difference.</p>
+      <div class="setRow">
+        <div><b>Quality</b><small id="gfxNote">Auto lowers the graphics when the frame rate drops, and raises them again when there's room.</small></div>
+        <select id="gfxPreset">
+          <option value="auto">Auto</option>
+          <option value="minimal">Minimal (very old computers)</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="ultra">Ultra (powerful computers)</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="setRow">
+        <div><b>Resolution</b><small>How many pixels are drawn. The biggest saving on a slow computer. Over 100% only helps sharp (high-DPI) screens.</small></div>
+        <select id="gfxRes">
+          <option value="0.5">50% (fastest)</option><option value="0.65">65%</option><option value="0.8">80%</option>
+          <option value="1">100%</option><option value="1.5">150%</option><option value="1.75">175%</option><option value="2">200% (sharpest)</option>
+        </select>
+      </div>
+      <div class="setRow">
+        <div><b>Shadows</b><small>The car's shadow and the track's</small></div>
+        <select id="gfxShadows"><option value="0">Off</option><option value="1">On</option><option value="2">Sharp</option></select>
+      </div>
+      <div class="setRow">
+        <div><b>Scenery</b><small>How many trees, rocks, buildings and far mountains. Changes from the next map you load.</small></div>
+        <select id="gfxDetail"><option value="0">Light</option><option value="1">Medium</option><option value="2">Full</option></select>
+      </div>
+      <div class="setRow">
+        <div><b>View distance</b><small>How far you see before the haze. Nearer draws less.</small></div>
+        <select id="gfxDist"><option value="0">Near</option><option value="1">Medium</option><option value="2">Far</option></select>
+      </div>
+      <div class="setRow">
+        <div><b>Effects</b><small>Finish celebrations: sparks, confetti, fireworks</small></div>
+        <select id="gfxFx"><option value="0">Light</option><option value="1">Full</option></select>
+      </div>
+      <div class="setRow">
+        <div><b>Frame rate limit</b><small>A steady 30 can feel smoother than a jumpy 40, and it keeps a laptop cooler</small></div>
+        <select id="gfxCap"><option value="0">None (the screen's own)</option><option value="60">60 fps</option><option value="30">30 fps</option></select>
+      </div>
+      <div class="setRow">
+        <div><b>Smooth edges</b><small id="gfxAANote">Anti-aliasing. Off is faster on old computers. Changes when the game reloads.</small></div>
+        <span class="setBtns"><button class="small ghost" id="gfxReload" hidden>Reload now</button><button class="small" id="gfxAA">On</button></span>
+      </div>
+      <div class="setRow">
+        <div><b>Frame rate counter</b><small>Frames per second in the top corner, to see what each setting does</small></div>
+        <button class="small" id="gfxFps">Off</button>
       </div>
       <div class="rule"></div>
 
@@ -7211,7 +7268,7 @@ const Celebrate = {
   },
   play(id, pos, P, S, heading) {
     if (!CELEBRATIONS[id] || !App.scene) return;
-    const n = CELEBRATIONS[id].n, h = heading || 0;
+    const n = Gfx.get('effects') ? CELEBRATIONS[id].n : Math.max(24, Math.round(CELEBRATIONS[id].n * 0.4)), h = heading || 0;
     const rnd = (a, b) => a + Math.random() * (b - a);
     const geo = id === 'starburst' || id === 'fountain' || id === 'lightning' ? new THREE.BoxGeometry(0.04, 0.04, 0.36)
       : id === 'confetti' ? new THREE.BoxGeometry(0.16, 0.015, 0.1) : id === 'pixels' ? new THREE.BoxGeometry(0.14, 0.14, 0.14) : new THREE.BoxGeometry(0.09, 0.09, 0.09);
@@ -9256,7 +9313,9 @@ function buildCourse(data, scene, world) {
   if (dense.length > 1) {
     const pq = new THREE.Quaternion(), pp = new THREE.Vector3(), ps = new THREE.Vector3();
     // (a Season 4 map's decor can thin them out: a city has few trees)
-    const dec = data.decor || {}, maxProps = dec.props !== undefined ? dec.props : 420, treeShare = dec.trees !== undefined ? dec.trees : 0.72;
+    const dec = data.decor || {}, treeShare = dec.trees !== undefined ? dec.trees : 0.72;
+    let maxProps = dec.props !== undefined ? dec.props : 420;
+    if (typeof Gfx !== 'undefined' && typeof App !== 'undefined' && App.renderer) maxProps = Gfx.count(maxProps);   // the scenery setting
     for (let n = 0; n < 1600 && props.tree.length + props.rock.length < maxProps; n++) {
       const anchor = dense[Math.floor(rnd() * dense.length)];
       const ang = rnd() * Math.PI * 2;
@@ -11544,20 +11603,37 @@ const Landmarks = {
   gable() { return this.geo('gable', () => { const g = new THREE.CylinderGeometry(0.577, 0.577, 1, 3); g.rotateX(Math.PI / 2); g.rotateZ(Math.PI / 2); g.scale(1, 1.732, 1); g.translate(0, 0.21, 0); return g; }); },
 
   /** pieces by material, merged into one mesh each; a piece that would stand in the road is left out */
-  batch(guard) {
+  /**
+   * Collects pieces by material and merges each material into one mesh.
+   * Every piece is checked against the road (guard) and, once kept, its
+   * footprint goes on the map (foot), so whatever is placed later can keep
+   * out of it. group(fn) builds a whole model or none of it: a model with
+   * one piece in the road (or, tested, one piece standing in something
+   * already there) is left out entirely rather than built with a hole.
+   */
+  batch(guard, foot, g) {
     const by = new Map(), v = new THREE.Vector3(), q = new THREE.Quaternion(), e = new THREE.Euler(), sv = new THREE.Vector3();
     const box = () => Landmarks.geo('box', () => new THREE.BoxGeometry(1, 1, 1));
-    const put = (mat, geo, mtx) => {
-      if (guard && guard(geo, mtx)) { Landmarks.dropped++; return; }
+    let tx = null;
+    const keep = (it) => {
+      const [mat, geo, mtx, soft, noFoot] = it;
       let a = by.get(mat); if (!a) by.set(mat, (a = [])); a.push([geo, mtx]);
+      if (!noFoot && foot) { const o = foot.ofPiece(geo, mtx); o.soft = soft; foot.add(o); }
     };
+    const put = (mat, geo, mtx, free) => {
+      if (!free && guard && guard(geo, mtx)) { Landmarks.dropped++; if (tx) tx.bad = true; return; }
+      const it = [mat, geo, mtx, B.soft, free === 'paint' || B.noFoot];
+      if (tx) tx.items.push(it); else keep(it);
+    };
+    const meshesOf = (o, fn) => { o.updateMatrixWorld(true); o.traverse((m) => { if (m.isMesh) fn(m.geometry, m.matrixWorld); }); };
     const B = {
+      soft: false, noFoot: false,
       add(mat, geo, x, y, z, sx, sy, sz, ry, rx, rz) {
         put(mat, geo, new THREE.Matrix4().compose(v.set(x, y, z), q.setFromEuler(e.set(rx || 0, ry || 0, rz || 0, 'YXZ')), sv.set(sx, sy, sz)));
       },
       box(mat, x, y, z, sx, sy, sz, ry, rx, rz) { B.add(mat, box(), x, y, z, sx, sy, sz, ry, rx, rz); },
-      /** a beam from a to b: sx thick toward `hint` (up, unless given), sz the other way across */
-      beam(mat, a, b, sx, sz, hint) {
+      /** a beam from a to b: sx thick toward `hint` (up, unless given), sz the other way across (free: not road-checked) */
+      beam(mat, a, b, sx, sz, hint, free) {
         const d = new THREE.Vector3().subVectors(b, a), L = d.length();
         if (L < 1e-3) return;
         d.multiplyScalar(1 / L);
@@ -11567,23 +11643,52 @@ const Landmarks = {
         const mtx = new THREE.Matrix4().makeBasis(X, d, Z);
         mtx.scale(new THREE.Vector3(sx, L, sz || sx));
         mtx.setPosition(new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5));
-        put(mat, box(), mtx);
+        put(mat, box(), mtx, free);
       },
       /** a box whose faces' UVs are in metres (for the painted facades) */
       facade(mat, x, y, z, sx, sy, sz, ry) {
         const k = 'fac' + sx.toFixed(1) + ':' + sy.toFixed(1) + ':' + sz.toFixed(1);
-        const g = Landmarks.geo(k, () => {
+        const g2 = Landmarks.geo(k, () => {
           const b = new THREE.BoxGeometry(sx, sy, sz), uv = b.attributes.uv;
           const dims = [[sz, sy], [sz, sy], [0, 0], [0, 0], [sx, sy], [sx, sy]];
           for (let f = 0; f < 6; f++) for (let i = 0; i < 4; i++) { const j = f * 4 + i; uv.setXY(j, uv.getX(j) * dims[f][0] / 16, uv.getY(j) * dims[f][1] / 14.4); }
           return b;
         });
-        put(mat, g, new THREE.Matrix4().compose(v.set(x, y, z), q.setFromEuler(e.set(0, ry || 0, 0)), sv.set(1, 1, 1)));
+        put(mat, g2, new THREE.Matrix4().compose(v.set(x, y, z), q.setFromEuler(e.set(0, ry || 0, 0)), sv.set(1, 1, 1)));
       },
       /** any geometry already in world units, placed as is (custom shapes) */
       raw(mat, geo, mtx) { put(mat, geo, mtx || new THREE.Matrix4()); },
-      /** water and road markings: laid on the ground or the road on purpose, so not guarded */
-      free(mat, geo, mtx) { let a = by.get(mat); if (!a) by.set(mat, (a = [])); a.push([geo, mtx]); },
+      /** water, and anything built round the road's edge on purpose: not road-checked
+       *  (paint: road markings and pavements, which take up no room either) */
+      free(mat, geo, mtx, paint) { put(mat, geo, mtx || new THREE.Matrix4(), paint ? 'paint' : true); },
+      /** paint on the road or the ground: a flat box, not checked, taking no room */
+      paint(mat, x, y, z, sx, sy, sz, ry) { B.free(mat, box(), new THREE.Matrix4().compose(v.set(x, y, z), q.setFromEuler(e.set(0, ry || 0, 0)), sv.set(sx, sy, sz)), true); },
+      /** room kept clear round (x, z) */
+      take(x, z, r) { const o = { x, z, r, round: true, soft: B.soft }; if (tx) tx.takes.push(o); else if (foot) foot.add(o); },
+      /** a mesh or group of its own (it moves), added with the model it belongs to */
+      obj(o, fn) { if (tx) tx.objs.push([o, fn]); else B.keepObj(o, fn); },
+      keepObj(o, fn) { g.add(o); if (fn) Landmarks.anim.push(fn); if (foot) meshesOf(o, (geo, m) => foot.add(foot.ofPiece(geo, m))); },
+      /** the model being built can't go here */
+      fail() { if (tx) tx.bad = true; },
+      /**
+       * Builds fn's pieces all together or not at all. With `test`, every
+       * piece must also keep out of what's already there (and test.road,
+       * when given, out of the road's banks). True if it was built.
+       */
+      group(fn, test) {
+        const prev = tx, t = (tx = { items: [], takes: [], objs: [], bad: false });
+        try { fn(); } catch (err) { t.bad = true; console.warn('aiPolytrack: scenery', err); }
+        tx = prev;
+        if (!t.bad && test && foot) {
+          const ok = (o) => !foot.hits(o, test.gap === undefined ? 0.3 : test.gap) && (!test.road || test.road(o));
+          for (const it of t.items) { if (it[4]) continue; if (!ok(foot.ofPiece(it[1], it[2]))) { t.bad = true; break; } }
+          for (const [o] of t.objs) { if (t.bad) break; meshesOf(o, (geo, m) => { if (!t.bad && !ok(foot.ofPiece(geo, m))) t.bad = true; }); }
+        }
+        if (t.bad) { Landmarks.skipped++; return false; }
+        if (tx) { tx.items.push(...t.items); tx.takes.push(...t.takes); tx.objs.push(...t.objs); }
+        else { t.items.forEach(keep); if (foot) t.takes.forEach((o) => foot.add(o)); t.objs.forEach(([o, fn2]) => B.keepObj(o, fn2)); }
+        return true;
+      },
       build(parent) {
         for (const [mat, list] of by) {
           const mesh = new THREE.Mesh(Landmarks.merge(list), mat);
@@ -11634,18 +11739,28 @@ const Landmarks = {
         if (i === 0 && gap > 4) for (let k = 1; k < gap / 2.5; k++) {
           const t = k * 2.5 / gap;
           pts.push({ x: prev.x + (f.p[0] - prev.x) * t, y: prev.y + (f.p[1] - prev.y) * t, z: prev.z + (f.p[2] - prev.z) * t, hw: f.w / 2, yaw: f.y,
-            bridge: false, h: 0, reach: f.w / 2 + 6, cum: cum + gap * t, strip: -1, air: true });
+            t: Math.atan2(-(f.p[1] - prev.y), gap), bridge: false, h: 0, reach: f.w / 2 + 6, cum: cum + gap * t, strip: -1, air: true });
         }
         cum += Math.hypot(f.p[0] - prev.x, f.p[1] - prev.y, f.p[2] - prev.z);
       }
       const h = Math.max(f.p[1] - GROUND_Y, 0), hw = f.w / 2;
-      const p = { x: f.p[0], y: f.p[1], z: f.p[2], hw, yaw: f.y, roll: f.r, bridge: !!seg.noBank, h, cum, strip: si,
+      const p = { x: f.p[0], y: f.p[1], z: f.p[2], hw, yaw: f.y, roll: f.r, t: f.t || 0, bridge: !!seg.noBank, h, cum, strip: si,
         reach: seg.noBank ? hw + 2.5 : hw + Math.max(h * 2, 2.2) + 1 };
       pts.push(p); prev = p;
     }));
     // near a jump (or over a crest) the car flies: the air kept clear there is higher
     const air = pts.filter((p) => p.air).map((p) => p.cum);
-    for (const p of pts) p.clear = air.some((m) => Math.abs(m - p.cum) < 45) ? 13 : 6.5;
+    for (const p of pts) {
+      let d = Infinity;
+      for (const m of air) d = Math.min(d, Math.abs(m - p.cum));
+      p.clear = d < 4 ? 13 : d < 25 ? 9.5 : 6.5;
+    }
+    // how far along the road each point's stretch of road runs (half each way)
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], a = pts[i - 1], b = pts[i + 1];
+      const da = a ? Math.hypot(a.x - p.x, a.y - p.y, a.z - p.z) : 0, db = b ? Math.hypot(b.x - p.x, b.y - p.y, b.z - p.z) : 0;
+      p.hl = Math.min(4, Math.max(Math.min(da || db, db || da), 0.8) / 2 + 0.35);
+    }
     const runs = [];
     let a = 0;
     for (let i = 1; i <= pts.length; i++) {
@@ -11658,72 +11773,223 @@ const Landmarks = {
     }
     return { pts, runs, len: cum };
   },
-  /** a test for pieces: does geo placed by mtx reach into the road (the deck, its edges and the air over it)? */
+  /**
+   * The road as solid boxes: at every road point, a box the deck's width
+   * (plus 0.3 m each side) from just under its surface up through the air
+   * a car can fly in, turned with the road. A piece (its bounding box, as
+   * placed) that meets any of them reaches into the road: an exact
+   * box-against-box test, so a thin pole or cable can't slip between the
+   * spots tested.
+   */
   makeGuard(R) {
     const cell = 24, grid = new Map(), key = (i, j) => i * 100003 + j;
+    const E = new THREE.Euler(), Mx = new THREE.Matrix4();
     for (const p of R.pts) {
-      const i = Math.floor(p.x / cell), j = Math.floor(p.z / cell);
-      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const k = key(i + di, j + dj); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(p); }
+      Mx.makeRotationFromEuler(E.set(p.t || 0, p.yaw, p.air ? 0 : p.roll || 0, 'YXZ'));
+      const X = new THREE.Vector3(), Y = new THREE.Vector3(), Z = new THREE.Vector3();
+      Mx.extractBasis(X, Y, Z);
+      const y0 = -0.5, y1 = p.clear;
+      const c = new THREE.Vector3(p.x, p.y, p.z).addScaledVector(Y, (y0 + y1) / 2);
+      const H = [p.hw + 0.3, (y1 - y0) / 2, p.hl || 1.6], b = { c, A: [X, Y, Z], H, r: Math.hypot(H[0], H[1], H[2]) };
+      for (let i = Math.floor((c.x - b.r) / cell); i <= Math.floor((c.x + b.r) / cell); i++) for (let j = Math.floor((c.z - b.r) / cell); j <= Math.floor((c.z + b.r) / cell); j++) {
+        const k = key(i, j); let l = grid.get(k); if (!l) grid.set(k, (l = [])); l.push(b);
+      }
     }
-    const inv = new THREE.Matrix4(), w = new THREE.Vector3(), c = new THREE.Vector3(), bb = new THREE.Box3();
-    return (geo, mtx) => {
-      if (!geo.boundingBox) geo.computeBoundingBox();
-      bb.copy(geo.boundingBox).applyMatrix4(mtx);
-      const lo = bb.min, hi = bb.max;
-      const seen = new Set();
-      let inverted = false;
-      for (let i = Math.floor(lo.x / cell); i <= Math.floor(hi.x / cell); i++) for (let j = Math.floor(lo.z / cell); j <= Math.floor(hi.z / cell); j++) {
+    const t = [0, 0, 0], RM = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], AR = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    // two boxes (centre, unit axes, half sizes) overlap unless one of 15 axes separates them
+    const sat = (ca, A, HA, cb, Bv, HB) => {
+      const dx = cb.x - ca.x, dy = cb.y - ca.y, dz = cb.z - ca.z;
+      for (let i = 0; i < 3; i++) {
+        t[i] = dx * A[i].x + dy * A[i].y + dz * A[i].z;
+        for (let j = 0; j < 3; j++) { RM[i][j] = A[i].x * Bv[j].x + A[i].y * Bv[j].y + A[i].z * Bv[j].z; AR[i][j] = Math.abs(RM[i][j]) + 1e-6; }
+      }
+      for (let i = 0; i < 3; i++) if (Math.abs(t[i]) > HA[i] + HB[0] * AR[i][0] + HB[1] * AR[i][1] + HB[2] * AR[i][2]) return false;
+      for (let j = 0; j < 3; j++) if (Math.abs(t[0] * RM[0][j] + t[1] * RM[1][j] + t[2] * RM[2][j]) > HA[0] * AR[0][j] + HA[1] * AR[1][j] + HA[2] * AR[2][j] + HB[j]) return false;
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+        const i1 = (i + 1) % 3, i2 = (i + 2) % 3, j1 = (j + 1) % 3, j2 = (j + 2) % 3;
+        if (Math.abs(t[i2] * RM[i1][j] - t[i1] * RM[i2][j]) > HA[i1] * AR[i2][j] + HA[i2] * AR[i1][j] + HB[j1] * AR[i][j2] + HB[j2] * AR[i][j1]) return false;
+      }
+      return true;
+    };
+    const test = (c, A, H) => {
+      const r = Math.hypot(H[0], H[1], H[2]), seen = new Set();
+      for (let i = Math.floor((c.x - r) / cell); i <= Math.floor((c.x + r) / cell); i++) for (let j = Math.floor((c.z - r) / cell); j <= Math.floor((c.z + r) / cell); j++) {
         const list = grid.get(key(i, j));
         if (!list) continue;
-        for (const p of list) {
-          if (seen.has(p)) continue;
-          seen.add(p);
-          const r = p.hw + 0.6;
-          if (p.x + r < lo.x || p.x - r > hi.x || p.z + r < lo.z || p.z - r > hi.z) continue;
-          if (hi.y < p.y - 0.6 || lo.y > p.y + p.clear) continue;
-          // close: test points across the road and up through its air, in the piece's own space
-          if (!inverted) { inv.copy(mtx).invert(); inverted = true; }
-          const lb = geo.boundingBox, rx = Math.cos(p.yaw), rz = -Math.sin(p.yaw), fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
-          for (const a of [-1.6, 0, 1.6]) for (const s of [-1, -0.5, 0, 0.5, 1]) for (const hgt of [0.4, 2.2, p.clear * 0.5, p.clear - 0.3]) {
-            w.set(p.x + rx * s * r + fx * a, p.y + hgt + s * r * Math.sin(p.roll || 0), p.z + rz * s * r + fz * a);
-            c.copy(w).applyMatrix4(inv);
-            if (c.x > lb.min.x && c.x < lb.max.x && c.y > lb.min.y && c.y < lb.max.y && c.z > lb.min.z && c.z < lb.max.z) return true;
-          }
+        for (const b of list) {
+          if (seen.has(b)) continue;
+          seen.add(b);
+          const dx = b.c.x - c.x, dy = b.c.y - c.y, dz = b.c.z - c.z;
+          if (dx * dx + dy * dy + dz * dz > (b.r + r) * (b.r + r)) continue;
+          if (sat(b.c, b.A, b.H, c, A, H)) return true;
         }
       }
       return false;
     };
+    const cen = new THREE.Vector3(), ax = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    const UNIT = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)];
+    const guard = (geo, mtx) => {
+      if (!geo.boundingBox) geo.computeBoundingBox();
+      const bb = geo.boundingBox;
+      cen.addVectors(bb.min, bb.max).multiplyScalar(0.5).applyMatrix4(mtx);
+      mtx.extractBasis(ax[0], ax[1], ax[2]);
+      const ext = [(bb.max.x - bb.min.x) / 2, (bb.max.y - bb.min.y) / 2, (bb.max.z - bb.min.z) / 2], H = [0, 0, 0], U = [];
+      for (let k = 0; k < 3; k++) { const L = ax[k].length(); H[k] = ext[k] * L; U.push(L > 1e-9 ? ax[k].clone().multiplyScalar(1 / L) : UNIT[k]); }
+      return test(cen, U, H);
+    };
+    guard.test = test;
+    return guard;
+  },
+  /**
+   * Everything placed, as footprints on the ground (turned rectangles, or
+   * circles for room kept clear), in a grid. What's placed later asks
+   * hits() first, so no building stands in another, in a landmark, in a
+   * river or in a tree.
+   */
+  makeFoot() {
+    const cell = 16, grid = new Map(), key = (i, j) => i * 100003 + j, all = [];
+    const V = new THREE.Vector3();
+    const proj = (o, nx, nz) => (o.round ? o.r : o.hu * Math.abs(o.ux * nx + o.uz * nz) + o.hv * Math.abs(-o.uz * nx + o.ux * nz));
+    const meet = (a, b, m) => {
+      const dx = b.x - a.x, dz = b.z - a.z;
+      if (dx * dx + dz * dz > (a.r + b.r + m) * (a.r + b.r + m)) return false;
+      if (a.round && b.round) return true;
+      if (a.round || b.round) {
+        const C = a.round ? a : b, Q = a.round ? b : a;
+        const lx = (C.x - Q.x) * Q.ux + (C.z - Q.z) * Q.uz, lz = -(C.x - Q.x) * Q.uz + (C.z - Q.z) * Q.ux;
+        const ex = Math.max(Math.abs(lx) - Q.hu, 0), ez = Math.max(Math.abs(lz) - Q.hv, 0);
+        return ex * ex + ez * ez < (C.r + m) * (C.r + m);
+      }
+      const axes = [a.ux, a.uz, -a.uz, a.ux, b.ux, b.uz, -b.uz, b.ux];
+      for (let k = 0; k < 8; k += 2) { const nx = axes[k], nz = axes[k + 1]; if (Math.abs(dx * nx + dz * nz) > proj(a, nx, nz) + proj(b, nx, nz) + m) return false; }
+      return true;
+    };
+    const cells = (x, z, r, fn) => {
+      for (let i = Math.floor((x - r) / cell); i <= Math.floor((x + r) / cell); i++) for (let j = Math.floor((z - r) / cell); j <= Math.floor((z + r) / cell); j++) fn(key(i, j));
+    };
+    const F = {
+      all,
+      add(o) {
+        if (!o.round) o.r = Math.hypot(o.hu, o.hv);
+        if (!(o.r >= 0) || o.r > 5000) return o;
+        all.push(o);
+        cells(o.x, o.z, o.r, (k) => { let l = grid.get(k); if (!l) grid.set(k, (l = [])); l.push(o); });
+        return o;
+      },
+      /** a w x d rectangle (w along its own x, d along its z) at (x, z), turned ry */
+      rect(x, z, w, d, ry) { return { x, z, ux: Math.cos(ry), uz: -Math.sin(ry), hu: w / 2, hv: d / 2, r: Math.hypot(w, d) / 2 }; },
+      /** where a piece stands: its bounding box as placed, seen from above */
+      ofPiece(geo, mtx) {
+        if (!geo.boundingBox) geo.computeBoundingBox();
+        const bb = geo.boundingBox, el = mtx.elements;
+        let ux = el[0], uz = el[2];
+        if (ux * ux + uz * uz < 1e-8) { ux = el[8]; uz = el[10]; }
+        if (ux * ux + uz * uz < 1e-8) { ux = 1; uz = 0; }
+        const L = Math.hypot(ux, uz); ux /= L; uz /= L;
+        let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        for (let k = 0; k < 8; k++) {
+          V.set(k & 1 ? bb.max.x : bb.min.x, k & 2 ? bb.max.y : bb.min.y, k & 4 ? bb.max.z : bb.min.z).applyMatrix4(mtx);
+          const a = V.x * ux + V.z * uz, b = -V.x * uz + V.z * ux;
+          if (a < a0) a0 = a; if (a > a1) a1 = a; if (b < b0) b0 = b; if (b > b1) b1 = b; if (V.y < y0) y0 = V.y; if (V.y > y1) y1 = V.y;
+        }
+        const am = (a0 + a1) / 2, bm = (b0 + b1) / 2;
+        return { x: am * ux - bm * uz, z: am * uz + bm * ux, ux, uz, hu: (a1 - a0) / 2, hv: (b1 - b0) / 2, y0, y1, r: Math.hypot(a1 - a0, b1 - b0) / 2 };
+      },
+      /** does o touch anything placed, keeping a gap m? (hard: not counting trees, lamps and the like) */
+      hits(o, m, hard) {
+        m = m || 0;
+        if (!o.round && o.r === undefined) o.r = Math.hypot(o.hu, o.hv);
+        const seen = new Set();
+        let hit = false;
+        cells(o.x, o.z, o.r + m, (k) => {
+          if (hit) return;
+          const l = grid.get(k);
+          if (!l) return;
+          for (const p of l) {
+            if (seen.has(p)) continue;
+            seen.add(p);
+            if (hard && p.soft) continue;
+            if (hard === 'taken' && !p.round) continue;
+            if (meet(p, o, m)) { hit = true; return; }
+          }
+        });
+        return hit;
+      },
+      /** a coarse map of where anything stands: a fast test for big round things (the backdrop's peaks) */
+      coarse(size) {
+        const S = new Set(), ck = (i, j) => i * 100003 + j;
+        for (const o of all) {
+          const ext = o.round ? o.r : Math.abs(o.ux) * o.hu + Math.abs(o.uz) * o.hv, ezt = o.round ? o.r : Math.abs(o.uz) * o.hu + Math.abs(o.ux) * o.hv;
+          for (let i = Math.floor((o.x - ext) / size); i <= Math.floor((o.x + ext) / size); i++) for (let j = Math.floor((o.z - ezt) / size); j <= Math.floor((o.z + ezt) / size); j++) S.add(ck(i, j));
+        }
+        return (x, z, r) => {
+          for (let i = Math.floor((x - r) / size); i <= Math.floor((x + r) / size); i++) for (let j = Math.floor((z - r) / size); j <= Math.floor((z + r) / size); j++) {
+            if (!S.has(ck(i, j))) continue;
+            const cx = (i + 0.5) * size, cz = (j + 0.5) * size;
+            if ((cx - x) ** 2 + (cz - z) ** 2 < (r + size * 0.71) ** 2) return true;
+          }
+          return false;
+        };
+      }
+    };
+    return F;
   },
   /** dress a freshly built course */
   dress(lv, data, course) {
     this.anim = [];
-    this.dropped = 0;
+    this.dropped = 0; this.skipped = 0;
     const D = lv && lv.decor;
     if (!D || !course || !this.themes[D.theme]) return;
     this.M();
     const g = new THREE.Group();
     course.root.add(g);
-    const R = this.read(data), guard = this.makeGuard(R), B = this.batch(guard);
+    const R = this.read(data), guard = this.makeGuard(R), foot = this.makeFoot(), B = this.batch(guard, foot, g);
     let seed = 2166136261;
     for (const ch of String(lv.id)) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0;
     const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-    const placed = [], marks = (typeof S4 !== 'undefined' && S4.marks[lv.id]) || [];
+    const marks = (typeof S4 !== 'undefined' && S4.marks[lv.id]) || [];
     const ctx = {
-      R, B, g, rnd, D, M: this.mats, GY: GROUND_Y, course, lv, guard,
+      R, B, g, rnd, D, M: this.mats, GY: GROUND_Y, course, lv, guard, foot,
+      count: (n) => (typeof Gfx !== 'undefined' ? Gfx.count(n) : n),
       rr: (a, b) => a + rnd() * (b - a),
       pick: (arr) => arr[Math.floor(rnd() * arr.length)],
       /** '@i+d' (d metres after the map's i-th piece) or plain metres, to metres along the road */
       m(x) { if (typeof x !== 'string') return x; const r = /^@(\d+)([+-]\d+(?:\.\d+)?)?$/.exec(x); return r ? (marks[+r[1]] || 0) + (r[2] ? +r[2] : 0) : 0; },
       /** is (x, z) at least r clear of the road, its banks and everything else placed? */
-      clear(x, z, r) {
-        for (const q of R.pts) { const need = q.reach + r + 2.5; if ((q.x - x) ** 2 + (q.z - z) ** 2 < need * need) return false; }
-        for (const o of placed) { const need = o.r + r + 1.5; if ((o.x - x) ** 2 + (o.z - z) ** 2 < need * need) return false; }
+      clear(x, z, r) { return ctx.clearRoad(x, z, r + 1) && !foot.hits({ x, z, r, round: true }, 1.5); },
+      take(x, z, r) { B.take(x, z, r); },
+      clearRoad(x, z, r) { for (const q of R.pts) { const need = q.reach + r + 1.5; if ((q.x - x) ** 2 + (q.z - z) ** 2 < need * need) return false; } return true; },
+      /** is (x, z) at least gap beyond every road point's reach? */
+      offRoad(x, z, gap) { for (const q of R.pts) { const need = q.reach + gap; if ((q.x - x) ** 2 + (q.z - z) ** 2 < need * need) return false; } return true; },
+      /** does (x, z, r) touch anything placed (not the road)? */
+      hits(x, z, r) { return foot.hits({ x, z, r, round: true }, 0); },
+      rect: (x, z, w, d, ry) => foot.rect(x, z, w, d, ry),
+      /** is a rectangle clear of the road and its banks (by mr) and of everything placed (by mf)? */
+      spot(o, mr, mf) { return ctx.rectRoad(o, mr) && !foot.hits(o, mf); },
+      rectRoad(o, m) {
+        for (const q of R.pts) {
+          const dx = q.x - o.x, dz = q.z - o.z, lim = q.reach + m + o.r;
+          if (dx * dx + dz * dz > lim * lim) continue;
+          const lx = dx * o.ux + dz * o.uz, lz = -dx * o.uz + dz * o.ux;
+          const ex = Math.max(Math.abs(lx) - o.hu, 0), ez = Math.max(Math.abs(lz) - o.hv, 0);
+          if (ex * ex + ez * ez < (q.reach + m) * (q.reach + m)) return false;
+        }
         return true;
       },
-      take(x, z, r) { placed.push({ x, z, r }); },
-      clearRoad(x, z, r) { for (const q of R.pts) { const need = q.reach + r + 1.5; if ((q.x - x) ** 2 + (q.z - z) ** 2 < need * need) return false; } return true; },
-      /** does (x, z, r) touch anything placed (not the road)? */
-      hits(x, z, r) { return placed.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + r) ** 2); },
+      /** a piece's footprint against the road's banks: on the ground it keeps off them; by a bridge, off its deck's edges */
+      pieceRoad(o) {
+        for (const q of R.pts) {
+          if (q.air) continue;
+          const reach = q.bridge ? q.hw + 1 : q.reach, top = q.y + q.clear, bot = q.bridge ? q.y - DECK_T - GIRDER_D - 0.3 : GROUND_Y - 5;
+          if (o.y1 < bot || o.y0 > top) continue;
+          const dx = q.x - o.x, dz = q.z - o.z, lim = reach + 0.3 + o.r;
+          if (dx * dx + dz * dz > lim * lim) continue;
+          const lx = dx * o.ux + dz * o.uz, lz = -dx * o.uz + dz * o.ux;
+          const ex = Math.max(Math.abs(lx) - o.hu, 0), ez = Math.max(Math.abs(lz) - o.hv, 0);
+          if (ex * ex + ez * ez < (reach + 0.3) * (reach + 0.3)) return false;
+        }
+        return true;
+      },
       near(x, z) { let b = null, bd = Infinity; for (const q of R.pts) { const d = (q.x - x) ** 2 + (q.z - z) ** 2; if (d < bd) { bd = d; b = q; } } return { q: b, d: Math.sqrt(bd) }; },
       /** a point beside road point q: side +1 left, -1 right, d metres from its middle */
       off(q, side, d) { return { x: q.x + Math.cos(q.yaw) * d * side, z: q.z - Math.sin(q.yaw) * d * side }; },
@@ -11739,6 +12005,21 @@ const Landmarks = {
     }
     try { this.themes[D.theme].call(this, ctx); } catch (e) { console.warn('aiPolytrack: city', e); }
     B.build(g);
+    // the course's own trees and rocks: none left standing in anything built
+    const m4 = new THREE.Matrix4(), pv = new THREE.Vector3(), ps = new THREE.Vector3(), pq = new THREE.Quaternion(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
+    course.root.traverse((o) => {
+      if (!o.isInstancedMesh || (o.material !== MAT.tree && o.material !== MAT.rock)) return;
+      let n = 0;
+      for (let i = 0; i < o.count; i++) {
+        o.getMatrixAt(i, m4); m4.decompose(pv, pq, ps);
+        if (!ps.x) continue;
+        if (foot.hits({ x: pv.x, z: pv.z, r: Math.max(ps.x, ps.z) * 0.6 + 0.6, round: true }, 0)) { o.setMatrixAt(i, zero); n++; }
+      }
+      if (n) o.instanceMatrix.needsUpdate = true;
+    });
+    // for the backdrop: where the scenery stands, so no mountain is set down in it
+    course.sceneryHit = foot.coarse(20);
+    this.last = { foot, R, guard, B };
   },
   step(dt) { for (const a of this.anim) a(dt); },
   atCum(c, m) { let b = c.R.pts[0], bd = Infinity; for (const p of c.R.pts) { const d = Math.abs(p.cum - m); if (d < bd) { bd = d; b = p; } } return b; },
@@ -11750,22 +12031,30 @@ const Landmarks = {
     const uz = ((ax * ax + az * az) * (cx - bx) + (bx * bx + bz * bz) * (ax - cx) + (cx * cx + cz * cz) * (bx - ax)) / D;
     return { x: ux, z: uz };
   },
-  /** a clear spot dist metres ahead of road distance m (side: radians off to the left), nudged until it's clear */
-  ahead(c, m, dist, r, side) {
+  /**
+   * A clear spot dist metres ahead of road distance m (side: radians off to
+   * the left), nudged until it's clear. With build, the model is tried at
+   * each spot in turn and kept at the first where all of it fits.
+   */
+  ahead(c, m, dist, r, side, build) {
     const q = this.atCum(c, c.m(m));
     for (let k = 0; k < 40; k++) {
       const d = dist + k * 20, s = (side || 0) + (k % 2 ? 1 : -1) * Math.floor(k / 2) * 0.1;
       const a = q.yaw + s, x = q.x + Math.sin(a) * d, z = q.z + Math.cos(a) * d;
-      if (c.clear(x, z, r)) return { x, z, face: Math.atan2(q.x - x, q.z - z) };
+      if (!c.clear(x, z, r)) continue;
+      const p = { x, z, face: Math.atan2(q.x - x, q.z - z), q };
+      if (!build || c.B.group(() => build(p), { road: c.pieceRoad })) return p;
     }
     return null;
   },
-  /** a clear spot beside road distance m: side +1/-1, at least d beyond the road's reach */
-  beside(c, m, side, d, r) {
+  /** a clear spot beside road distance m: side +1/-1, at least d beyond the road's reach (build: as ahead) */
+  beside(c, m, side, d, r, build) {
     const q = this.atCum(c, c.m(m));
     for (let k = 0; k < 30; k++) {
       const o = c.off(q, side, q.reach + d + r + k * 4);
-      if (c.clear(o.x, o.z, r)) return { x: o.x, z: o.z, face: Math.atan2(q.x - o.x, q.z - o.z), q };
+      if (!c.clear(o.x, o.z, r)) continue;
+      const p = { x: o.x, z: o.z, face: Math.atan2(q.x - o.x, q.z - o.z), q };
+      if (!build || c.B.group(() => build(p), { road: c.pieceRoad })) return p;
     }
     return null;
   },
@@ -11853,7 +12142,69 @@ const Landmarks = {
     B.box(M.copper, tab.x, tab.y, tab.z, 0.8, 5.5, 3.2, face);
     c.take(x, z, 40);
   },
-  /** the Brooklyn Bridge on the longest straight raised road: two granite towers (pointed arches) and the web of cables */
+  /**
+   * What a suspension bridge's cables hang from: along each edge of the deck
+   * between road distances c0 and c1, a girder whose top sits just below the
+   * road and, above it, a low truss rail. Every hanger and stay ends on it.
+   * (Built round the road's edge on purpose, so not road-checked; nothing
+   * of it is over the deck itself.)
+   */
+  deckEdge(c, c0, c1, mat, out) {
+    const { B, R } = c, P = R.pts, W = out || 0.6;
+    for (const s of [-1, 1]) {
+      let prev = null;
+      for (const p of P) {
+        if (p.cum < c0 || p.cum > c1 || p.air || !p.bridge) { prev = null; continue; }
+        const e = c.off(p, s, p.hw + W / 2 + 0.02), cur = { x: e.x, z: e.z, y: this.edgeY(p, s, W), strip: p.strip };
+        if (prev && prev.strip === cur.strip) {
+          const a = new THREE.Vector3(prev.x, prev.y - 0.42, prev.z), b = new THREE.Vector3(cur.x, cur.y - 0.42, cur.z);
+          B.beam(mat, a, b, 0.95, W, null, true);
+          B.beam(mat, a.clone().setY(prev.y + 0.95), b.clone().setY(cur.y + 0.95), 0.14, 0.14, null, true);
+        }
+        prev = cur;
+      }
+    }
+  },
+  /** where the cable plane meets the deck's edge at road point q (the top of the edge girder) */
+  edgeAt(c, q, s, out) { const e = c.off(q, s, q.hw + (out || 0.6) / 2 + 0.02); return new THREE.Vector3(e.x, this.edgeY(q, s, out || 0.6) + 0.03, e.z); },
+  /** the height of a banked deck's edge (side s) at road point q */
+  edgeY(q, s, out) { return q.y + s * (q.hw + out / 2) * Math.sin(q.roll || 0); },
+  /** a cable from a to b sagging by sag at its middle, n pieces, with hangers every `every` metres down to the deck edge */
+  cable(c, mat, a, b, sag, n, thick, hang) {
+    const { B } = c;
+    let prev = null;
+    const pts = [];
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, p = new THREE.Vector3().lerpVectors(a, b, t);
+      p.y -= sag * 4 * t * (1 - t);
+      pts.push(p);
+      if (prev) B.beam(mat, prev, p, thick, thick, null, true);
+      prev = p;
+    }
+    if (hang) {
+      // the hangers: from the cable straight down to the edge girder below it
+      const L = a.distanceTo(b);
+      for (let d = hang.every; d < L - hang.every * 0.5; d += hang.every) {
+        const t = d / L, top = new THREE.Vector3().lerpVectors(a, b, t);
+        top.y -= sag * 4 * t * (1 - t);
+        const q = c.near(top.x, top.z).q;
+        if (!q || q.air) continue;
+        const foot = this.edgeAt(c, q, hang.side, hang.out);
+        if (top.y - foot.y < 0.8) continue;
+        B.beam(mat, new THREE.Vector3(foot.x, top.y, foot.z), foot, hang.thick || 0.12, hang.thick || 0.12, null, true);
+      }
+    }
+    return pts;
+  },
+  /** a cable down to an anchorage: a block of masonry beside the road, its top where the cable ends */
+  anchorage(c, q, s, top, mat, len, gap) {
+    const { B, GY } = c, o = c.off(q, s, q.hw + (gap || 1.2) + 3.5);
+    B.box(mat, o.x, (GY + top) / 2, o.z, 7, top - GY, len || 16, q.yaw);
+    B.box(mat, o.x, top + 0.4, o.z, 7.4, 0.8, (len || 16) + 0.6, q.yaw);
+    const e = c.off(q, s, q.hw + (gap || 1.2) + 0.8);
+    return new THREE.Vector3(e.x, top, e.z);
+  },
+  /** the Brooklyn Bridge: two granite towers with pointed arches, the cables and the web of stays */
   brooklyn(c, run) {
     const { B, M, GY, R } = c, P = R.pts, A = P[run.a], Z = P[run.b];
     const len = Z.cum - A.cum, ta = this.atCum(c, A.cum + len * 0.18), tb = this.atCum(c, Z.cum - len * 0.18);
@@ -11866,7 +12217,7 @@ const Landmarks = {
       // the pointed arch over the road, and the blind arches either side
       for (const s of [-1, 1]) {
         const a = c.off(q, s, half), b = c.off(q, s, 0.5);
-        B.beam(M.stoneDark, new THREE.Vector3(a.x, deck + 14, a.z), new THREE.Vector3(b.x, deck + 22, b.z), 1.6, 12.4, new THREE.Vector3(Math.sin(q.yaw), 0, Math.cos(q.yaw)));
+        B.beam(M.stoneDark, new THREE.Vector3(a.x, deck + 14, a.z), new THREE.Vector3(b.x, deck + 22, b.z), 1.6, 12.4);
         const o = c.off(q, s, half + 4);
         for (const fz of [-1, 1]) { const f = { x: o.x + Math.sin(q.yaw) * fz * 6.05, z: o.z + Math.cos(q.yaw) * fz * 6.05 }; B.box(M.stoneDark, f.x, deck + 20, f.z, 4, 16, 0.3, q.yaw); }
       }
@@ -11874,24 +12225,30 @@ const Landmarks = {
     };
     tower(ta); tower(tb);
     (c.skip = c.skip || []).push([ta.cum + 6, tb.cum - 6]);
+    // the back spans run down to anchorages past each end of the bridge
+    const back = (tw, dir) => this.atCum(c, tw.cum + dir * Math.max(45, Math.abs(tw.cum - (dir < 0 ? A.cum : Z.cum)) + 40));
+    const ea = back(ta, -1), eb = back(tb, 1);
+    this.deckEdge(c, Math.min(ea.cum, eb.cum) - 4, Math.max(ea.cum, eb.cum) + 4, M.stoneDark);
     for (const s of [-1, 1]) {
-      const a = c.off(ta, s, half + 1.5), b = c.off(tb, s, half + 1.5), L = tb.cum - ta.cum;
-      let prev = null;
-      for (let k = 0; k <= 20; k++) {
-        const t = k / 20, pt = new THREE.Vector3(a.x + (b.x - a.x) * t, top - 1 - 26 * 4 * t * (1 - t), a.z + (b.z - a.z) * t);
-        if (prev) B.beam(M.cable, prev, pt, 0.55, 0.55);
-        prev = pt;
+      // the main span: the cable sags from tower to tower, hangers every 4 m
+      const a = this.edgeAt(c, ta, s), b = this.edgeAt(c, tb, s);
+      a.y = b.y = top - 1;
+      this.cable(c, M.cable, a, b, 24, 24, 0.55, { every: 4, side: s });
+      // the back spans
+      for (const [tw, e] of [[ta, ea], [tb, eb]]) {
+        const t0 = this.edgeAt(c, tw, s); t0.y = top - 1;
+        for (const gap of [1.2, 3.5, 6]) if (B.group(() => {
+          const an = this.anchorage(c, e, s, e.y + 6, M.stone, 18, gap);
+          this.cable(c, M.cable, t0, an, 3, 10, 0.55, { every: 4, side: s });
+        })) break;
       }
-      for (let d = 4; d < L - 2; d += 4) {
-        const t = d / L, x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t;
-        B.beam(M.cable, new THREE.Vector3(x, top - 1 - 26 * 4 * t * (1 - t), z), new THREE.Vector3(x, deck + 0.2, z), 0.1, 0.1);
-      }
-      // the diagonal stays fanning down from each tower: the bridge's web
-      for (const [tw, dir] of [[ta, 1], [tb, -1]]) {
-        const o = c.off(tw, s, half + 1.5);
-        for (let k = 1; k <= 7; k++) {
-          const e = this.atCum(c, tw.cum + dir * k * 9), p2 = c.off(e, s, half + 1.5);
-          B.beam(M.cable, new THREE.Vector3(o.x, top - 3, o.z), new THREE.Vector3(p2.x, deck + 0.2, p2.z), 0.12, 0.12);
+      // the diagonal stays fanning down from each tower to the deck's edge: the bridge's web
+      for (const [tw, dir] of [[ta, 1], [tb, -1], [ta, -1], [tb, 1]]) {
+        const o = this.edgeAt(c, tw, s); o.y = top - 3;
+        for (let k = 1; k <= 6; k++) {
+          const e = this.atCum(c, tw.cum + dir * k * 9);
+          if (e.air) continue;
+          B.beam(M.cable, o, this.edgeAt(c, e, s), 0.12, 0.12, null, true);
         }
       }
     }
@@ -11909,13 +12266,13 @@ const Landmarks = {
     for (const s of [-1, 1]) {
       let m = m0;
       while (m < m1) {
-        const q = this.atCum(c, m), w = c.rr(16, 26), h = c.rr(40, 90), d = q.reach + 3 + 9, o = c.off(q, s, d);
-        if (c.clear(o.x, o.z, 8)) {
-          B.facade(c.pick([M.winA, M.winC, M.nyGrey]), o.x, GY + h / 2, o.z, w, h, 18, q.yaw);
-          const f = c.off(q, s, d - 9.3);
-          for (let k = 0; k < 3; k++) { const hh = c.rr(6, 14), y = 6 + k * 14 + c.rr(0, 4); B.facade(M.board, f.x, GY + y + hh / 2, f.z, w * c.rr(0.6, 0.95), hh, 0.6, q.yaw); }
-          c.take(o.x, o.z, 9);
-        }
+        const w = c.rr(16, 26), q = this.atCum(c, m + w / 2), h = c.rr(40, 90), d = q.reach + 3 + 9, o = c.off(q, s, d), ry = q.yaw + Math.PI / 2;
+        if (!q.air && c.spot(c.rect(o.x, o.z, w, 18, ry), 1.2, 0.4)) B.group(() => {
+          B.facade(c.pick([M.winA, M.winC, M.nyGrey]), o.x, GY + h / 2, o.z, w, h, 18, ry);
+          // the billboards, flat on its front
+          const f = c.off(q, s, d - 9.35);
+          for (let k = 0; k < 3; k++) { const hh = c.rr(6, 14), y = 6 + k * 14 + c.rr(0, 4); B.facade(M.board, f.x, GY + y + hh / 2, f.z, w * c.rr(0.6, 0.95), hh, 0.6, ry); }
+        });
         m += w + 1;
       }
     }
@@ -12085,15 +12442,15 @@ const Landmarks = {
     B.box(M.glowR, x + fx * 8.2, GY + 4.5, z + fz * 8.2, 18, 2.4, 0.4, ry);
     B.box(M.red, x, GY + 12 + 7, z, 8, 14, 8, ry);
     B.add(M.red, this.hip(0.1), x, GY + 26 + 2.5, z, 9, 5, 9, ry);
-    if (c.guard(this.geo('box', () => new THREE.BoxGeometry(1, 1, 1)), new THREE.Matrix4().compose(new THREE.Vector3(x + fx * 4.4, GY + 22, z + fz * 4.4), new THREE.Quaternion(), new THREE.Vector3(36, 36, 2)))) return;
+    if (c.guard(this.geo('box', () => new THREE.BoxGeometry(1, 1, 1)), new THREE.Matrix4().compose(new THREE.Vector3(x + fx * 4.4, GY + 22, z + fz * 4.4), new THREE.Quaternion(), new THREE.Vector3(36, 36, 2)))) { B.fail(); return; }
     const hub = new THREE.Group(); hub.position.set(x + fx * 4.4, GY + 22, z + fz * 4.4); hub.rotation.y = ry;
     const sails = new THREE.Mesh(this.geo('sails', () => {
       const parts = [];
       for (let k = 0; k < 4; k++) { const b = new THREE.BoxGeometry(2.4, 11, 0.3); b.translate(0, 6.5, 0); parts.push([b, new THREE.Matrix4().makeRotationZ(k * Math.PI / 2)]); }
       return Landmarks.merge(parts);
     }), M.glowR);
-    hub.add(sails); g.add(hub);
-    this.anim.push((dt) => { sails.rotation.z += dt * 0.6; });
+    hub.add(sails);
+    B.obj(hub, (dt) => { sails.rotation.z += dt * 0.6; });
     c.take(x, z, 18);
   },
   /** a plane tree on a boulevard: a pale trunk and a round crown */
@@ -12172,15 +12529,15 @@ const Landmarks = {
     for (let k = 0; k < 32; k++) parts.push([spoke, new THREE.Matrix4().makeRotationZ(k * Math.PI / 16)]);
     parts.push([new THREE.CylinderGeometry(3, 3, 6, 12).rotateX(Math.PI / 2), new THREE.Matrix4()]);
     const wg = this.geo('eyeWheel', () => Landmarks.merge(parts));
-    if (c.guard(wg, new THREE.Matrix4().compose(new THREE.Vector3(x, cy, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1.05, 1.05, 1.05)))) return;
+    if (c.guard(wg, new THREE.Matrix4().compose(new THREE.Vector3(x, cy, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1.05, 1.05, 1.05)))) { B.fail(); return; }
     const rim = new THREE.Mesh(wg, M.white);
     const cap = new THREE.Mesh(this.geo('eyeCaps', () => {
       const P = [], s = new THREE.SphereGeometry(1, 10, 6);
       for (let k = 0; k < 32; k++) { const a = k * Math.PI / 16; P.push([s, new THREE.Matrix4().compose(new THREE.Vector3(Math.cos(a) * (R + 2.2), Math.sin(a) * (R + 2.2), 0), new THREE.Quaternion(), new THREE.Vector3(2, 1.6, 3.6))]); }
       return Landmarks.merge(P);
     }), M.glass);
-    wheel.add(rim, cap); g.add(wheel);
-    this.anim.push((dt) => { rim.rotation.z += dt * 0.02; cap.rotation.z += dt * 0.02; });
+    wheel.add(rim, cap);
+    B.obj(wheel, (dt) => { rim.rotation.z += dt * 0.02; cap.rotation.z += dt * 0.02; });
     const back = { x: x - Math.cos(ry) * 0, z };
     for (const s of [-1, 1]) {
       const foot = new THREE.Vector3(x + Math.sin(ry) * s * 30 - Math.cos(ry) * 10, GY, z + Math.cos(ry) * s * 30 + Math.sin(ry) * 10);
@@ -12198,11 +12555,12 @@ const Landmarks = {
         B.facade(M.gothic, o.x, GY + (top - GY) / 2, o.z, 10, top - GY, 20, q.yaw);
         for (const fz of [-1, 1]) { const t = { x: o.x + Math.sin(q.yaw) * fz * 8.5, z: o.z + Math.cos(q.yaw) * fz * 8.5 }; B.add(M.portland, this.cyl(1.6, 1.6, 8), t.x, top + 4, t.z, 1, 8, 1); B.add(M.slate, this.cone(8), t.x, top + 11, t.z, 1.9, 6, 1.9); }
       }
-      B.facade(M.gothic, q.x, deck + 16 + (top - deck - 16) / 2, q.z, half * 2 + 0.2, top - deck - 16, 20, q.yaw);
+      const dk = q.y;
+      B.facade(M.gothic, q.x, dk + 16 + (top - dk - 16) / 2, q.z, half * 2 + 0.2, top - dk - 16, 20, q.yaw);
       B.add(M.slate, this.hip(0.2), q.x, top + 4, q.z, half * 2 + 20, 8, 20, q.yaw);
       B.add(M.gold, this.cone(4), q.x, top + 11, q.z, 0.8, 6, 0.8);
-      for (const s of [-1, 1]) { const a = c.off(q, s, half), b = c.off(q, s, 0.5); B.beam(M.stoneDark, new THREE.Vector3(a.x, deck + 11, a.z), new THREE.Vector3(b.x, deck + 16, b.z), 1.6, 20.4, new THREE.Vector3(Math.sin(q.yaw), 0, Math.cos(q.yaw))); }
-      B.box(M.stoneDark, q.x, GY + (deck - GY) / 2, q.z, half * 2 + 22, deck - GY - 1, 22, q.yaw);
+      for (const s of [-1, 1]) { const a = c.off(q, s, half), b = c.off(q, s, 0.5); B.beam(M.stoneDark, new THREE.Vector3(a.x, dk + 11, a.z), new THREE.Vector3(b.x, dk + 16, b.z), 1.6, 20.4); }
+      B.box(M.stoneDark, q.x, GY + (dk - DECK_T - GIRDER_D - 0.2 - GY) / 2, q.z, half * 2 + 22, dk - DECK_T - GIRDER_D - 0.2 - GY, 22, q.yaw);
     };
     tower(qa); tower(qb);
     // the two high walkways, blue latticework
@@ -12211,15 +12569,26 @@ const Landmarks = {
       B.beam(M.blue, new THREE.Vector3(a.x, y, a.z), new THREE.Vector3(b.x, y, b.z), 1, 1);
     }
     for (const y of [top - 8, top - 2]) { const a = { x: qa.x, z: qa.z }, b = { x: qb.x, z: qb.z }; B.beam(M.blue, new THREE.Vector3(a.x, y, a.z), new THREE.Vector3(b.x, y, b.z), 0.6, half * 2 - 2); }
-    // the chains, down from the towers to the banks
-    for (const s of [-1, 1]) for (const [q, dir] of [[qa, -1], [qb, 1]]) {
-      const o = c.off(q, s, half + 5), e = this.atCum(c, q.cum + dir * 70), p = c.off(e, s, half + 5);
-      let prev = null;
-      for (let k = 0; k <= 8; k++) {
-        const t = k / 8, pt = new THREE.Vector3(o.x + (p.x - o.x) * t, top - 14 - (top - 14 - (e.y + 3)) * Math.pow(t, 0.8), o.z + (p.z - o.z) * t);
-        if (prev) B.beam(M.blue, prev, pt, 1.2, 1.2);
-        prev = pt;
-      }
+    // the side spans: from each tower a chain dips almost to the deck and climbs to a
+    // shore tower, hangers down to the deck's edge all along it
+    const ends = [[qa, this.atCum(c, qa.cum - 70)], [qb, this.atCum(c, qb.cum + 70)]];
+    this.deckEdge(c, ends[0][1].cum - 4, ends[1][1].cum + 4, M.blue, 1.6);
+    for (const s of [-1, 1]) for (const [q, e] of ends) {
+      if (e.air) continue;
+      B.group(() => {
+        const o = c.off(e, s, e.hw + 0.7 + 4), h = e.y + 14 - GY;
+        B.facade(M.gothic, o.x, GY + h / 2, o.z, 8, h, 10, e.yaw);
+        B.add(M.slate, this.hip(0.3), o.x, GY + h + 2, o.z, 9, 4, 11, e.yaw);
+        const a = this.edgeAt(c, q, s, 1.6); a.y = top - 14;
+        const b = c.off(e, s, e.hw + 1.6), bv = new THREE.Vector3(b.x, e.y + 12, b.z);
+        // as deep a dip as keeps the chain 1.5 m over the road at its lowest
+        let sag = 40;
+        for (let k = 1; k < 24; k++) {
+          const t = k / 24, p = new THREE.Vector3().lerpVectors(a, bv, t), dq = c.near(p.x, p.z).q;
+          if (dq) sag = Math.min(sag, (p.y - dq.y - 1.5 - 0.45) / (4 * t * (1 - t)));
+        }
+        this.cable(c, M.blue, a, bv, Math.max(0, sag), 16, 0.9, { every: 5, side: s, out: 1.6, thick: 0.2 });
+      });
     }
     (c.skip = c.skip || []).push([qa.cum - 12, qb.cum + 12]);
   },
@@ -12354,7 +12723,7 @@ const Landmarks = {
   },
   /** Tokyo Tower standing free */
   tokyoTowerFree(c, x, z, ry) { this.eiffel(c, null, true, { x, z, ry, S: 62 }); },
-  /** the Rainbow Bridge on the longest straight raised road: white towers of stacked frames, white cables strung with lights */
+  /** the Rainbow Bridge: two white towers, the lit cables between them, anchored past each end */
   rainbow(c, run) {
     const { B, M, GY, R } = c, P = R.pts, A = P[run.a], Z = P[run.b];
     const len = Z.cum - A.cum, ta = this.atCum(c, A.cum + len * 0.16), tb = this.atCum(c, Z.cum - len * 0.16);
@@ -12366,21 +12735,20 @@ const Landmarks = {
       B.box(M.glowR, q.x, top + 1.5, q.z, 1, 1, 1);
     }
     (c.skip = c.skip || []).push([ta.cum + 6, tb.cum - 6]);
+    const ea = this.atCum(c, ta.cum - 30), eb = this.atCum(c, tb.cum + 30);
+    this.deckEdge(c, ea.cum - 4, eb.cum + 4, M.white);
+    const lights = [M.glowR, M.glowY, M.glowG, M.glowB, M.glowP];
     for (const s of [-1, 1]) {
-      const a = c.off(ta, s, legs), b = c.off(tb, s, legs), L = tb.cum - ta.cum;
-      let prev = null;
-      for (let k = 0; k <= 22; k++) {
-        const t = k / 22, pt = new THREE.Vector3(a.x + (b.x - a.x) * t, top - 1 - 30 * 4 * t * (1 - t), a.z + (b.z - a.z) * t);
-        if (prev) { B.beam(M.white, prev, pt, 0.6, 0.6); B.box(c.pick([M.glowR, M.glowY, M.glowG, M.glowB, M.glowP]), pt.x, pt.y - 0.7, pt.z, 0.7, 0.7, 0.7); }
-        prev = pt;
-      }
-      for (let d = 6; d < L - 3; d += 6) {
-        const t = d / L, x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t;
-        B.beam(M.white, new THREE.Vector3(x, top - 1 - 30 * 4 * t * (1 - t), z), new THREE.Vector3(x, deck + 0.2, z), 0.14, 0.14);
-      }
-      for (const [tw, dir] of [[ta, -1], [tb, 1]]) {
-        const o = c.off(tw, s, legs), e = this.atCum(c, tw.cum + dir * 60), p = c.off(e, s, legs);
-        B.beam(M.white, new THREE.Vector3(o.x, top - 1, o.z), new THREE.Vector3(p.x, e.y + 0.4, p.z), 0.6, 0.6);
+      // the main span, from the top beam of one tower to the other's, lit along its length
+      const a = this.edgeAt(c, ta, s), b = this.edgeAt(c, tb, s);
+      a.y = b.y = top - 2;
+      const pts = this.cable(c, M.white, a, b, 30, 22, 0.6, { every: 6, side: s, thick: 0.14 });
+      for (let k = 1; k < pts.length - 1; k++) B.box(c.pick(lights), pts[k].x, pts[k].y - 0.7, pts[k].z, 0.7, 0.7, 0.7);
+      // the side spans, down to an anchorage beside the road
+      for (const [tw, e] of [[ta, ea], [tb, eb]]) {
+        if (e.air) continue;
+        const t0 = this.edgeAt(c, tw, s); t0.y = top - 2;
+        for (const gap of [1.2, 3.5, 6]) if (B.group(() => { const an = this.anchorage(c, e, s, e.y + 5, M.white, 12, gap); this.cable(c, M.white, t0, an, 2, 8, 0.6, { every: 6, side: s, thick: 0.14 }); })) break;
       }
     }
   },
@@ -12465,7 +12833,7 @@ const Landmarks = {
         const a = q.yaw + ang, px = q.x + Math.cos(a) * k * 2, pz = q.z - Math.sin(a) * k * 2;
         const nq = c.near(px, pz).q;
         if (!nq || nq.bridge) continue;
-        B.box(M.white, px, nq.y + 0.04, pz, 0.9, 0.05, ang ? 9 : 4, a);
+        B.paint(M.white, px, nq.y + 0.04, pz, 0.9, 0.05, ang ? 9 : 4, a);
       }
     }
   },
@@ -12492,8 +12860,11 @@ const Landmarks = {
   /** Mount Fuji on the horizon */
   fuji(c, x, z) {
     const { B, M, GY } = c;
-    B.add(M.fujiRock, this.cone(10), x, GY + 160, z, 560, 330, 560);
-    B.add(M.snow, this.cone(10), x, GY + 160 + 130, z, 190, 115, 190);
+    const at = (y, r, h) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(r, h, r));
+    B.noFoot = true;
+    B.free(M.fujiRock, this.cone(10), at(GY + 160, 560, 330));
+    B.free(M.snow, this.cone(10), at(GY + 160 + 130, 190, 115));
+    B.noFoot = false;
     c.take(x, z, 560);
   },
   /** a Tokyo street: a concrete pole every 30 m, wires between */
@@ -12567,67 +12938,111 @@ const Landmarks = {
     if (c.rnd() < 0.35) B.facade(M.board, x, GY + h + 4, z, w * 0.8, 7, 0.6, ry);
     void fz;
   },
-  /** buildings along one or both sides of the road between two distances */
+  /**
+   * Buildings along one or both sides of the road between two distances.
+   * Each is w along the road and d deep, its front a pavement's width back
+   * from the road's reach; where it won't fit (the inside of a bend, a tree,
+   * something already there) it steps back, then narrows, then gives up.
+   */
   street(c, kind, m0, m1, side, back, tallFrom) {
-    const { B, M, GY } = c;
+    const { B, M, GY } = c, FRONT = 2.7;
+    const tall = tallFrom !== undefined && (back || 0) >= tallFrom;
     for (const s of side ? [side] : [-1, 1]) {
-      let m = c.m(m0), lampAt = -1e9;
+      let m = Math.max(0, c.m(m0)), lampAt = -1e9;
       const end = Math.min(c.m(m1), c.R.len);
       while (m < end) {
-        const q = this.atCum(c, m);
-        const w = kind === 'paris' ? c.rr(18, 30) : kind === 'london' ? c.rr(10, 16) : kind === 'tokyo' ? c.rr(10, 18) : c.rr(14, 26);
+        const w = kind === 'paris' ? c.rr(18, 30) : kind === 'london' ? c.rr(10, 16) : kind === 'tokyo' ? c.rr(10, 18) : kind === 'city' ? c.rr(16, 28) : c.rr(14, 26);
         const d = kind === 'paris' ? c.rr(16, 22) : kind === 'tokyo' ? c.rr(12, 18) : c.rr(15, 24);
-        // far enough out that the building's corners keep off the road and its banks, however it's turned
-        const rr = Math.hypot(w, d) * 0.5, set = (back || 0) + 1.6, dist = q.reach + set + Math.max(d / 2, rr - 1);
-        const p = c.off(q, s, dist);
-        if (c.clearRoad(p.x, p.z, rr - 1) && !c.hits(p.x, p.z, Math.min(w, d) * 0.45)) {
-          this.building(c, kind, p.x, p.z, w, d, q.yaw, tallFrom !== undefined && (back || 0) >= tallFrom);
-          c.take(p.x, p.z, Math.min(w, d) * 0.5);
-          // the pavement in front, and a street lamp now and then
-          if (!q.bridge && q.h < 2) {
-            const pw = dist - d / 2 - q.reach - 0.4, pc = c.off(q, s, q.reach + 0.4 + pw / 2);
-            if (pw > 0.8) B.box(kind === 'tokyo' ? M.concreteDark : M.concrete, pc.x, GY + 0.12, pc.z, pw, 0.24, w + 1, q.yaw);
-            if (m - lampAt > 28) {
-              lampAt = m;
-              const l = c.off(q, s, q.reach + 1.0);
+        const q = this.atCum(c, Math.min(m + w / 2, end));
+        let made = 0;
+        if (!q.air) for (let t = 0; t < 4 && !made; t++) {
+          const ww = t >= 2 ? w * 0.6 : w, dist = q.reach + FRONT + (back || 0) + (t % 2) * 6 + d / 2;
+          const p = c.off(q, s, dist), ry = q.yaw + Math.PI / 2;
+          if (!c.spot(c.rect(p.x, p.z, ww, d, ry), 1.2, 0.5)) continue;
+          if (B.group(() => this.building(c, kind, p.x, p.z, ww, d, ry, tall))) made = ww;
+        }
+        // a street lamp now and then, at the pavement's edge
+        if (!q.bridge && q.h < 2 && !q.air && m - lampAt > 28) {
+          const l = c.off(q, s, q.reach + 1.0);
+          if (c.offRoad(l.x, l.z, 0.7) && !c.hits(l.x, l.z, 0.5)) {
+            lampAt = m;
+            B.soft = true;
+            B.group(() => {
               if (kind === 'london' || kind === 'paris') this.lamp(c, l.x, l.z);
-              else { B.add(M.steel, this.cyl(0.12, 0.18, 6), l.x, GY + 4.5, l.z, 1, 9, 1); const h = c.off(q, s, q.reach + 0.2); B.box(M.warm, h.x, GY + 8.8, h.z, 1.6, 0.25, 0.5, q.yaw); }
-            }
+              else { B.add(M.steel, this.cyl(0.12, 0.18, 6), l.x, GY + 4.5, l.z, 1, 9, 1); const h = c.off(q, s, q.reach + 0.3); B.box(M.warm, h.x, GY + 8.8, h.z, 1.4, 0.25, 0.5, q.yaw); }
+            });
+            B.soft = false;
           }
         }
-        m += (kind === 'london' ? w : w * 0.92) + c.rr(0.3, 1.6);
+        m += (made || w * 0.5) + c.rr(0.4, 1.6);
       }
+      this.pavement(c, m0, m1, s, kind === 'tokyo' ? M.concreteDark : M.concrete);
     }
+  },
+  /** the pavement along a street: one strip, its top and its two edges, wherever the road is on the ground */
+  pavement(c, m0, m1, s, mat) {
+    const { R, B, GY } = c, P = R.pts, a = c.m(m0), b = Math.min(c.m(m1), R.len), Y = GY + 0.16, IN = 0.25, OUT = 2.55;
+    const pos = [], nrm = [], uv = [];
+    const A = new THREE.Vector3(), Bv = new THREE.Vector3(), C = new THREE.Vector3(), N = new THREE.Vector3();
+    const tri = (p0, p1, p2, want) => {
+      A.subVectors(p1, p0); Bv.subVectors(p2, p0); N.crossVectors(A, Bv).normalize();
+      if (N.dot(want) < 0) { const t = p1; p1 = p2; p2 = t; N.negate(); }
+      for (const p of [p0, p1, p2]) { pos.push(p.x, p.y, p.z); nrm.push(N.x, N.y, N.z); uv.push(p.x / 8, p.z / 8); }
+    };
+    const UPV = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < P.length - 1; i++) {
+      const p = P[i], q = P[i + 1];
+      if (p.cum < a || q.cum > b || p.air || q.air || p.strip !== q.strip || p.bridge || q.bridge || p.h >= 2 || q.h >= 2) continue;
+      const i0 = c.off(p, s, p.reach + IN), o0 = c.off(p, s, p.reach + OUT), i1 = c.off(q, s, q.reach + IN), o1 = c.off(q, s, q.reach + OUT);
+      const mx = (i0.x + o0.x + i1.x + o1.x) / 4, mz = (i0.z + o0.z + i1.z + o1.z) / 4;
+      if (!c.offRoad(mx, mz, 0.6) || c.foot.hits({ x: mx, z: mz, r: 0.8, round: true }, 0, true)) continue;
+      const v = (o, y) => new THREE.Vector3(o.x, y, o.z);
+      const I0 = v(i0, Y), I1 = v(i1, Y), O0 = v(o0, Y), O1 = v(o1, Y);
+      tri(I0, I1, O1, UPV); tri(I0, O1, O0, UPV);
+      const toRoad = new THREE.Vector3(-Math.cos(p.yaw) * s, 0, Math.sin(p.yaw) * s);
+      const i0b = v(i0, GY), i1b = v(i1, GY), o0b = v(o0, GY), o1b = v(o1, GY);
+      tri(i0b, I0, I1, toRoad); tri(i0b, I1, i1b, toRoad);
+      const away = toRoad.clone().negate();
+      tri(o0b, O0, O1, away); tri(o0b, O1, o1b, away);
+    }
+    if (!pos.length) return;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    B.free(mat, geo, new THREE.Matrix4(), true);
   },
   /** taller buildings further out, all round (the skyline) */
   skyline(c, kind, n, d0, d1) {
+    n = c.count(n);
     for (let k = 0, made = 0; k < n * 8 && made < n; k++) {
       const p = c.around(d0, d1), w = c.rr(16, 30), d = c.rr(16, 30);
-      if (!c.clear(p.x, p.z, Math.hypot(w, d) * 0.45)) continue;
-      const nq = c.near(p.x, p.z);
-      this.building(c, kind, p.x, p.z, w, d, nq.q ? nq.q.yaw : 0, kind !== 'paris' && kind !== 'london');
-      c.take(p.x, p.z, Math.hypot(w, d) * 0.5);
-      made++;
+      const nq = c.near(p.x, p.z), ry = nq.q ? nq.q.yaw + Math.PI / 2 : 0;
+      if (!c.spot(c.rect(p.x, p.z, w, d, ry), 2.5, 1.5)) continue;
+      if (c.B.group(() => this.building(c, kind, p.x, p.z, w, d, ry, kind !== 'paris' && kind !== 'london'))) made++;
     }
   },
   /** a park: round-crowned trees scattered off the road */
   park(c, n, d0, d1) {
+    n = c.count(n);
     for (let k = 0, made = 0; k < n * 6 && made < n; k++) {
-      const p = c.around(d0, d1);
-      if (!c.clearRoad(p.x, p.z, 3) || c.hits(p.x, p.z, 2.6)) continue;
-      this.planeTree(c, p.x, p.z, c.rr(8, 14));
-      c.take(p.x, p.z, 2.8); made++;
+      const p = c.around(d0, d1), h = c.rr(8, 14), cr = h * 0.34;
+      if (!c.clearRoad(p.x, p.z, cr) || c.hits(p.x, p.z, cr)) continue;
+      c.B.soft = true;
+      if (c.B.group(() => this.planeTree(c, p.x, p.z, h))) made++;
+      c.B.soft = false;
     }
   },
   /** a row of trees each side of a boulevard (plane trees) */
   avenue(c, m0, m1, gapM) {
     for (const s of [-1, 1]) for (let m = c.m(m0); m < c.m(m1); m += gapM || 11) {
       const q = this.atCum(c, m);
-      if (q.bridge || q.h > 2) continue;
-      const o = c.off(q, s, q.reach + 2.4);
-      if (!c.clearRoad(o.x, o.z, 0.6) || c.hits(o.x, o.z, 0.6)) continue;
-      this.planeTree(c, o.x, o.z, c.rr(10, 13));
-      c.take(o.x, o.z, 0.8);
+      if (q.bridge || q.h > 2 || q.air) continue;
+      const o = c.off(q, s, q.reach + 2.4), h = c.rr(10, 13);
+      if (!c.offRoad(o.x, o.z, 2.0) || c.hits(o.x, o.z, h * 0.34)) continue;
+      c.B.soft = true;
+      c.B.group(() => this.planeTree(c, o.x, o.z, h));
+      c.B.soft = false;
     }
   },
   /** water: a river or harbour ('across' the road at distance m, or 'along' one side of it), kept clear of the road */
@@ -12637,10 +13052,10 @@ const Landmarks = {
     if (mode === 'along') { const o = c.off(q, side || 1, q.reach + 4 + W / 2 + (offset || 0)); cx = o.x; cz = o.z; }
     const inside = (x, z, Wd, Ld, pad) => { const u = (x - cx) * Math.cos(ang) - (z - cz) * Math.sin(ang), v = (x - cx) * Math.sin(ang) + (z - cz) * Math.cos(ang); return Math.abs(u) < Wd / 2 + pad && Math.abs(v) < Ld / 2 + pad; };
     for (let k = 0; k < 30; k++) {
-      let bad = R.pts.some((p) => (p.y - GY < 2.2 || !p.bridge) && inside(p.x, p.z, W, L, p.bridge ? 1 : p.reach));
-      if (!bad && !open) for (let v2 = -L / 2; v2 <= L / 2 && !bad; v2 += 10) for (let u2 = -W / 2; u2 <= W / 2 && !bad; u2 += 10) bad = c.hits(cx + Math.cos(ang) * u2 + Math.sin(ang) * v2, cz - Math.sin(ang) * u2 + Math.cos(ang) * v2, 2);
+      let bad = R.pts.some((p) => (p.y - GY < 2.2 || (!p.bridge && !p.air)) && inside(p.x, p.z, W, L, p.bridge || p.air ? 1 : p.reach));
+      if (!bad && !open) for (let v2 = -L / 2; v2 <= L / 2 && !bad; v2 += 10) for (let u2 = -W / 2; u2 <= W / 2 && !bad; u2 += 10) bad = c.foot.hits({ x: cx + Math.cos(ang) * u2 + Math.sin(ang) * v2, z: cz - Math.sin(ang) * u2 + Math.cos(ang) * v2, r: 2, round: true }, 0, 'taken');
       if (!bad) break;
-      if (mode === 'across') W *= 0.9; else L *= 0.9;
+      if (mode === 'across') { if (k % 2) W *= 0.92; else L *= 0.85; } else L *= 0.9;
       if (k === 29) return;
     }
     const mtx = new THREE.Matrix4().compose(new THREE.Vector3(cx, GY + 0.3, cz), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ang, 0)), new THREE.Vector3(W, 0.4, L));
@@ -12650,13 +13065,7 @@ const Landmarks = {
       const qx = cx + Math.cos(ang) * s * (W / 2 + 1), qz = cz - Math.sin(ang) * s * (W / 2 + 1);
       c.B.box(M.stoneDark, qx, GY + 0.8, qz, 2, 1.6, L, ang);
     }
-    // no trees or rocks standing in the water, nothing built on it
-    const m4 = new THREE.Matrix4(), v = new THREE.Vector3(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
-    c.course.root.traverse((o) => {
-      if (!o.isInstancedMesh || (o.material !== MAT.tree && o.material !== MAT.rock)) return;
-      for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); v.setFromMatrixPosition(m4); if (inside(v.x, v.z, W, L, 4)) o.setMatrixAt(i, zero); }
-      o.instanceMatrix.needsUpdate = true;
-    });
+    // (no trees or rocks are left standing in it: Landmarks.dress clears them from everything built)
     for (let v2 = -L / 2; v2 <= L / 2; v2 += W * 0.8) c.take(cx + Math.sin(ang) * v2, cz + Math.cos(ang) * v2, W * 0.55);
     return { x: cx, z: cz, ang, W, L };
   },
@@ -12672,27 +13081,35 @@ const Landmarks = {
       const deckB = q.y - DECK_T - GIRDER_D, h = deckB - GY;
       if (h < 2.5) { prevPier = null; continue; }
       last = q.cum;
-      const fw = q.hw * 2 * 0.85;
+      const fw = q.hw * 2 * 0.85, roll = q.roll || 0, sink = Math.abs(Math.sin(roll)) * fw / 2;
       if (style === 'columns') {
-        B.add(M.concrete, this.cyl(1.3, 1.5, 12), q.x, GY + h / 2, q.z, 1, h, 1);
-        B.box(M.concrete, q.x, deckB - 0.6, q.z, fw, 1.2, 3, q.yaw);
+        B.group(() => {
+          B.add(M.concrete, this.cyl(1.3, 1.5, 12), q.x, GY + h / 2, q.z, 1, h, 1);
+          B.box(M.concrete, q.x, deckB - 0.6, q.z, fw, 1.2, 3, q.yaw, 0, roll);
+        });
       } else if (style === 'expressway') {
-        B.box(M.concrete, q.x, GY + h / 2, q.z, 3.2, h, 3.2, q.yaw);
-        B.box(M.concrete, q.x, deckB - 1, q.z, q.hw * 2 + 2, 2, 3.6, q.yaw);
+        B.group(() => {
+          B.box(M.concrete, q.x, GY + (h - 1) / 2, q.z, 3.2, h - 1, 3.2, q.yaw);
+          B.box(M.concrete, q.x, deckB - 1, q.z, q.hw * 2 + 2, 2, 3.6, q.yaw, 0, roll);
+        });
       } else {
-        B.box(M.stone, q.x, GY + h / 2, q.z, fw, h, 3.2, q.yaw);
-        B.box(M.stoneDark, q.x, GY + 0.8, q.z, fw + 1.2, 1.6, 4.4, q.yaw);
-        if (prevPier) {
+        const hh = h - sink;
+        if (hh < 2) { prevPier = null; continue; }
+        if (!B.group(() => {
+          B.box(M.stone, q.x, GY + hh / 2, q.z, fw, hh, 3.2, q.yaw);
+          B.box(M.stoneDark, q.x, GY + 0.8, q.z, fw + 1.2, 1.6, 4.4, q.yaw);
+        })) { prevPier = null; continue; }
+        if (prevPier && !sink && !prevPier.roll) B.group(() => {
           const span = Math.hypot(q.x - prevPier.x, q.z - prevPier.z), rad = span / 2;
           const ax = (prevPier.x + q.x) / 2, az = (prevPier.z + q.z) / 2, dx = (q.x - prevPier.x) / span, dz = (q.z - prevPier.z) / span;
-          const springY = deckB - rad * 0.9;
+          const springY = Math.min(deckB, prevPier.y - DECK_T - GIRDER_D) - rad * 0.9;
           for (let k = 1; k <= 8; k++) {
             const a0 = Math.PI * (k - 1) / 8, a1 = Math.PI * k / 8;
             const P0 = new THREE.Vector3(ax - dx * Math.cos(a0) * rad, springY + Math.sin(a0) * rad * 0.9, az - dz * Math.cos(a0) * rad);
             const P1 = new THREE.Vector3(ax - dx * Math.cos(a1) * rad, springY + Math.sin(a1) * rad * 0.9, az - dz * Math.cos(a1) * rad);
             B.beam(M.stoneDark, P0, P1, fw * 0.96, 1.1, new THREE.Vector3(dz, 0, -dx));
           }
-        }
+        });
         prevPier = q;
       }
     }
@@ -12702,8 +13119,8 @@ const Landmarks = {
   place(c, it) {
     const [k, a1, a2, a3, a4, a5] = it;
     const side = (s) => (s === undefined ? 1 : s);
-    const by = (r, fn) => { const p = this.beside(c, a1, side(a2), a3 || 0, r); if (p) fn(p); };
-    const ah = (r, fn) => { const p = this.ahead(c, a1, a2 || 200, r, a3 || 0); if (p) fn(p); };
+    const by = (r, fn) => this.beside(c, a1, side(a2), a3 || 0, r, fn);
+    const ah = (r, fn) => this.ahead(c, a1, a2 || 200, r, a3 || 0, fn);
     const longest = () => c.R.runs.filter((x) => x.bridge && x.len >= 60).sort((x, y) => y.len - x.len)[0];
     switch (k) {
       // New York
@@ -12717,7 +13134,7 @@ const Landmarks = {
       case 'onetimes': return ah(12, (p) => this.oneTimesSquare(c, p.x, p.z, p.face));
       case 'slender': return by(12, (p) => this.slender(c, p.x, p.z, a4 || 300));
       // Paris
-      case 'arc': { const t = this.turnCentre(c, c.m(a1)); c.take(t.x, t.z, 52); return this.arc(c, t.x, t.z, c.rnd() * 3); }
+      case 'arc': { const t = this.turnCentre(c, c.m(a1)); c.take(t.x, t.z, 52); return c.B.group(() => this.arc(c, t.x, t.z, c.rnd() * 3)); }
       case 'eiffel': return this.eiffel(c, c.at(a1), false);
       case 'eiffelFar': return ah(90, (p) => this.eiffel(c, null, false, { x: p.x, z: p.z, ry: p.face, S: 70 }));
       case 'louvre': return by(80, (p) => this.louvre(c, p.x, p.z, p.face));
@@ -12738,8 +13155,8 @@ const Landmarks = {
       case 'trafalgar': return ah(60, (p) => this.trafalgar(c, p.x, p.z, p.face));
       case 'piccadilly': return by(24, (p) => this.piccadilly(c, p.x, p.z, p.face));
       case 'eros': return by(6, (p) => this.eros(c, p.x, p.z));
-      case 'buses': for (let m = c.m(a1); m < c.m(a2); m += 26) { const q = this.atCum(c, m), o = c.off(q, side(a3), q.reach + 3); if (c.clearRoad(o.x, o.z, 1.4) && !c.hits(o.x, o.z, 2)) { this.bus(c, o.x, o.z, q.yaw); c.take(o.x, o.z, 4); } } return;
-      case 'phones': for (let m = c.m(a1); m < c.m(a2); m += 45) { const q = this.atCum(c, m), o = c.off(q, m % 90 < 45 ? 1 : -1, q.reach + 2); if (c.clearRoad(o.x, o.z, 0.6) && !c.hits(o.x, o.z, 0.6)) { this.phoneBox(c, o.x, o.z, q.yaw); c.take(o.x, o.z, 0.8); } } return;
+      case 'buses': for (let m = c.m(a1); m < c.m(a2); m += 26) { const q = this.atCum(c, m), o = c.off(q, side(a3), q.reach + 3); if (!q.air && c.spot(c.rect(o.x, o.z, 2.6, 11, q.yaw), 0.6, 0.6)) c.B.group(() => this.bus(c, o.x, o.z, q.yaw)); } return;
+      case 'phones': for (let m = c.m(a1); m < c.m(a2); m += 45) { const q = this.atCum(c, m), o = c.off(q, m % 90 < 45 ? 1 : -1, q.reach + 2); if (!q.air && c.offRoad(o.x, o.z, 1.2) && !c.hits(o.x, o.z, 0.8)) { c.B.soft = true; c.B.group(() => this.phoneBox(c, o.x, o.z, q.yaw)); c.B.soft = false; } } return;
       // Tokyo
       case 'skytree': return ah(30, (p) => this.skytree(c, p.x, p.z));
       case 'tokyotower': return ah(45, (p) => this.tokyoTowerFree(c, p.x, p.z, p.face));
@@ -12862,13 +13279,126 @@ const Looks = {
   }
 };
 
+/**
+ * Graphics settings, for every kind of computer. A preset sets all the parts
+ * at once; changing one part on its own makes the settings 'custom'. Auto
+ * (the default) steps between Low, Medium and High with the measured frame
+ * rate, as the game always has. Parts:
+ *   res      the most device pixels per CSS pixel drawn (below 1 draws fewer
+ *            pixels than the screen has, and the browser scales it up)
+ *   shadows  0 off, 1 on, 2 sharp (a bigger shadow map)
+ *   detail   scenery: 0 light, 1 medium, 2 full (from the next map loaded)
+ *   dist     how far the haze starts: 0 near, 1 medium, 2 far
+ *   effects  celebration particles: 0 light, 1 full
+ * Kept apart from the presets: a frame-rate cap, anti-aliasing (needs a
+ * reload, as a WebGL context can't change it) and an FPS counter.
+ */
+const Gfx = {
+  PRESETS: {
+    minimal: { res: 0.5, shadows: 0, detail: 0, dist: 0, effects: 0 },
+    low: { res: 0.65, shadows: 0, detail: 0, dist: 0, effects: 0 },
+    medium: { res: 1, shadows: 1, detail: 1, dist: 1, effects: 1 },
+    high: { res: 1.75, shadows: 1, detail: 2, dist: 2, effects: 1 },
+    ultra: { res: 2, shadows: 2, detail: 2, dist: 2, effects: 1 }
+  },
+  TIERS: ['low', 'medium', 'high'],      // Auto's steps (App.quality 0..2)
+  PARTS: { res: 'gfxRes', shadows: 'gfxShadows', detail: 'gfxDetail', dist: 'gfxDist', effects: 'gfxFx' },
+  preset() { const p = Prefs.get('gfx', 'auto'); return p === 'auto' || p === 'custom' || this.PRESETS[p] ? p : 'auto'; },
+  /** the parts in force now */
+  now() {
+    const p = this.preset();
+    if (p === 'auto') return Object.assign({}, this.PRESETS[this.TIERS[Math.max(0, Math.min(2, App.quality))]]);
+    if (p === 'custom') {
+      const c = Object.assign({}, this.PRESETS.high, Prefs.get('gfxCustom', {}));
+      for (const k in this.PRESETS.high) c[k] = Number(c[k]);
+      return c;
+    }
+    return Object.assign({}, this.PRESETS[p]);
+  },
+  get(k) { return this.now()[k]; },
+  auto() { return this.preset() === 'auto'; },
+  cap() { return Number(Prefs.get('gfxCap', 0)) || 0; },
+  aa() { return Prefs.get('gfxAA', true) !== false; },
+  fpsOn() { return !!Prefs.get('gfxFps', false); },
+  /** how many of a scenery thing to make, by the scenery setting */
+  count(full) { const d = this.get('detail'); return d >= 2 ? full : Math.round(full * (d === 1 ? 0.6 : 0.3)); },
+  setPreset(p) {
+    Prefs.set('gfx', p);
+    if (p === 'auto') { App.quality = 2; Game.qGood = 0; Game.qAcc = 0; }
+    App.applyGfx();
+    this.sync();
+  },
+  setPart(k, v) {
+    const c = this.now();
+    c[k] = Number(v);
+    Prefs.set('gfxCustom', c);
+    // a part set to what a preset has is still that preset
+    let same = null;
+    for (const name in this.PRESETS) {
+      const P = this.PRESETS[name];
+      if (Object.keys(P).every((x) => P[x] === c[x])) { same = name; break; }
+    }
+    Prefs.set('gfx', same || 'custom');
+    App.applyGfx();
+    this.sync();
+  },
+  /** the settings screen's rows, from what's in force */
+  sync() {
+    if (!$('gfxPreset')) return;
+    const p = this.preset(), g = this.now();
+    $('gfxPreset').value = p;
+    const autoOpt = $('gfxPreset').querySelector('option[value="auto"]');
+    if (autoOpt) autoOpt.textContent = 'Auto (now ' + this.TIERS[Math.max(0, Math.min(2, App.quality))].replace(/^./, (x) => x.toUpperCase()) + ')';
+    const cust = $('gfxPreset').querySelector('option[value="custom"]');
+    if (cust) cust.hidden = p !== 'custom';
+    for (const k in this.PARTS) {
+      const el = $(this.PARTS[k]);
+      if (!el) continue;
+      const v = String(g[k]);
+      if (![].some.call(el.options, (o) => o.value === v)) {
+        // a value between the listed ones (an older setting): the nearest
+        let best = el.options[0];
+        for (const o of el.options) if (Math.abs(Number(o.value) - g[k]) < Math.abs(Number(best.value) - g[k])) best = o;
+        el.value = best.value;
+      } else el.value = v;
+    }
+    $('gfxCap').value = String(this.cap());
+    $('gfxAA').textContent = this.aa() ? 'On' : 'Off';
+    $('gfxReload').hidden = this.aa() === App.aaBuilt;
+    $('gfxFps').textContent = this.fpsOn() ? 'On' : 'Off';
+    $('gfxNote').textContent = p === 'auto' ? 'Auto lowers the graphics when the frame rate drops, and raises them again when there\'s room.'
+      : p === 'custom' ? 'Your own mix of the settings below.'
+      : p === 'minimal' ? 'Everything turned down, for the oldest and slowest computers.'
+      : p === 'low' ? 'For older laptops and Chromebooks.'
+      : p === 'medium' ? 'A balance of looks and speed.'
+      : p === 'high' ? 'The full game, for most computers.'
+      : 'Everything up, for powerful computers.';
+  },
+  wire() {
+    if (!$('gfxPreset')) return;
+    $('gfxPreset').addEventListener('change', (e) => { if (e.target.value !== 'custom') this.setPreset(e.target.value); });
+    for (const k in this.PARTS) $(this.PARTS[k]).addEventListener('change', (e) => this.setPart(k, e.target.value));
+    $('gfxCap').addEventListener('change', (e) => { Prefs.set('gfxCap', Number(e.target.value) || 0); Game.qGood = 0; this.sync(); });
+    $('gfxAA').addEventListener('click', () => { Prefs.set('gfxAA', !this.aa()); this.sync(); });
+    $('gfxReload').addEventListener('click', () => location.reload());
+    $('gfxFps').addEventListener('click', () => {
+      Prefs.set('gfxFps', !this.fpsOn());
+      $('fpsBox').hidden = !this.fpsOn();
+      this.sync();
+    });
+    $('fpsBox').hidden = !this.fpsOn();
+  }
+};
+
 const App = {
   renderer: null, scene: null, camera: null, light: null, lightTarget: null,
   init() {
     const canvas = $('view');
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    this.aaBuilt = Gfx.aa();
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: this.aaBuilt, powerPreference: 'high-performance' });
     // Render at most 1.75x device pixels: beyond that the cost climbs faster
-    // than the image improves on flat-shaded geometry like this.
+    // than the image improves on flat-shaded geometry like this (the
+    // graphics settings can lower it, or raise it to 2x: applyGfx)
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;   // soft PCF costs ~4x for little gain here
@@ -12951,8 +13481,33 @@ const App = {
     this.peaksFar = ring(18, MAT.sceneryFar);
     this.layoutBackdrop(0, 0, 600);
 
-    this.resize();
+    this.applyGfx();
     addEventListener('resize', () => this.resize());
+  },
+  /** puts the graphics settings (Gfx.now) into effect */
+  applyGfx() {
+    if (!this.renderer) return;
+    const g = Gfx.now(), dpr = devicePixelRatio || 1;
+    this.renderer.setPixelRatio(g.res < 1 ? g.res : Math.min(dpr, g.res));
+    const sh = g.shadows > 0;
+    if (this.renderer.shadowMap.enabled !== sh) {
+      // the shader permutation changes, so every material recompiles
+      this.renderer.shadowMap.enabled = sh;
+      for (const k in MAT) if (MAT[k] && MAT[k].isMaterial) MAT[k].needsUpdate = true;
+      this.scene.traverse((o) => { if (o.material) [].concat(o.material).forEach((m) => { if (m) m.needsUpdate = true; }); });
+    }
+    const ms = g.shadows >= 2 ? 2048 : 1024;
+    if (this.light.shadow.mapSize.x !== ms) {
+      this.light.shadow.mapSize.set(ms, ms);
+      if (this.light.shadow.map) { this.light.shadow.map.dispose(); this.light.shadow.map = null; }
+    }
+    // the haze, and nothing drawn past it (the sky shrinks to stay inside the far plane)
+    const D = [[180, 650, 900], [230, 1000, 1350], [260, 1400, 2600]][g.dist] || [260, 1400, 2600];
+    this.scene.fog.near = D[0]; this.scene.fog.far = D[1];
+    this.camera.far = D[2];
+    if (this.sky) this.sky.scale.setScalar(Math.min(1, (D[2] * 0.9) / 1500));
+    if (this.peaksFar) this.peaksFar.visible = g.detail > 0 && g.dist > 0;
+    this.resize();
   },
   /**
    * Three quality tiers, stepped automatically from measured frame rate so a
@@ -12962,12 +13517,7 @@ const App = {
   setQuality(q) {
     if (q === this.quality) return;
     this.quality = q;
-    const dpr = devicePixelRatio || 1;
-    this.renderer.setPixelRatio(q >= 2 ? Math.min(dpr, 1.75) : (q === 1 ? Math.min(dpr, 1.1) : 0.85));
-    this.renderer.shadowMap.enabled = q >= 1;
-    this.scene.fog.far = q >= 2 ? 1400 : 800;
-    for (const k in MAT) if (MAT[k] && MAT[k].isMaterial) MAT[k].needsUpdate = true;
-    this.resize();
+    if (Gfx.auto()) this.applyGfx();
   },
   quality: 2,
 
@@ -12989,7 +13539,7 @@ const App = {
    * embankment) — each peak is pushed out by its own footprint, since the
    * tallest ones are also the widest.
    */
-  layoutBackdrop(cx, cz, extent) {
+  layoutBackdrop(cx, cz, extent, hit) {
     const m = new THREE.Matrix4(), q = new THREE.Quaternion();
     const p = new THREE.Vector3(), s = new THREE.Vector3();
     const place = (im, gap, spread, hMin, hSpread) => {
@@ -12998,7 +13548,9 @@ const App = {
         const ang = (i / count) * Math.PI * 2 + (i % 3) * 0.19;
         const hgt = hMin + ((i * 71) % hSpread);
         const sx = hgt * (0.75 + (i % 4) * 0.09), sz = hgt * 0.82;
-        const rad = extent + gap + Math.max(sx, sz) + ((i * 137) % spread);
+        let rad = extent + gap + Math.max(sx, sz) + ((i * 137) % spread);
+        // never set down in the scenery (a city's streets, a landmark): out along its own bearing until clear
+        if (hit) for (let k = 0; k < 80 && hit(cx + Math.cos(ang) * rad, cz + Math.sin(ang) * rad, Math.max(sx, sz) + 8); k++) rad += 25;
         p.set(cx + Math.cos(ang) * rad, GROUND_Y + hgt / 2, cz + Math.sin(ang) * rad);
         q.setFromAxisAngle(UP, ang * 1.7);
         s.set(sx, hgt, sz);
@@ -25384,6 +25936,7 @@ const Game = {
       $('bSound').textContent = Sound.on ? 'On' : 'Off';
     });
     $('setPlayCourse').addEventListener('change', () => Prefs.set('playCourse', $('setPlayCourse').value));
+    Gfx.wire();
     $('bInfo').addEventListener('click', () => this.toInfo());
     $('bInfoBack').addEventListener('click', () => this.toSettings());
     // the guide's contents jump within its own scrolling panel
@@ -25474,7 +26027,7 @@ const Game = {
     if (this.ghostOverride && this.ghostOverrideCourse !== i) {
       this.ghostOverride = null; this.ghostOverrideName = null; this.extraGhosts = [];
     }
-    App.layoutBackdrop(this.course.center.x, this.course.center.z, this.course.extent);
+    App.layoutBackdrop(this.course.center.x, this.course.center.z, this.course.extent, this.course.sceneryHit);
     this.levelIndex = i;
     Looks.apply(Looks.of(i));
     this.rec = [];
@@ -26224,6 +26777,7 @@ const Game = {
     $('bCoachAlerts').textContent = CoachAlerts.on() ? 'On' : 'Off';
     $('bCoachMenu').textContent = Prefs.get('coachMenu', true) ? 'On' : 'Off';
     $('bCoachShortSet').textContent = Coach.short() ? 'On' : 'Off';
+    Gfx.sync();
     const pick = $('setPlayCourse');
     pick.innerHTML = '<option value="auto">Next map for me (automatic)</option>' +
       LEVELS.map((lv, i) => '<option value="' + lv.id + '"' + (this.playable[i] ? '' : ' disabled') + '>' +
@@ -27127,14 +27681,21 @@ const Game = {
 
   /** step the quality tier down when frames are slow, back up when they are not */
   autoQuality(dt) {
+    // the frame-rate counter
+    if (Gfx.fpsOn()) {
+      this.fpsT = (this.fpsT || 0) + dt;
+      if (this.fpsT >= 0.5) { this.fpsT = 0; $('fpsBox').textContent = Math.round(this.fps) + ' fps'; }
+    }
+    if (!Gfx.auto()) return;
+    const top = Gfx.cap() || 60;
     this.qAcc += dt;
-    if (this.fps > 57) this.qGood += dt; else this.qGood = 0;
+    if (this.fps > top * 0.95) this.qGood += dt; else this.qGood = 0;
     if (this.qAcc < 2) return;
     this.qAcc = 0;
-    if (this.fps < 42 && App.quality > 0) {
+    if (this.fps < top * 0.7 && App.quality > 0) {
       App.setQuality(App.quality - 1);
       this.qGood = 0;
-      UI.toast('Graphics eased to keep the frame rate up');
+      UI.toast('Graphics eased to keep the frame rate up (Settings has more options)');
     } else if (this.qGood > 8 && App.quality < 2) {
       App.setQuality(App.quality + 1);
       this.qGood = 0;
@@ -27246,9 +27807,16 @@ const Game = {
 };
 
 /* ------------------------------------------------------------- main loop */
-let last = performance.now();
+let last = performance.now(), capT = 0;
 function loop(now) {
   requestAnimationFrame(loop);
+  // a frame-rate limit: skip screen refreshes until the next frame is due
+  const cap = Gfx.cap();
+  if (cap) {
+    const iv = 1000 / cap;
+    if (now - capT < iv - 1) return;
+    capT = Math.max(capT + iv, now - iv);
+  }
   let dt = (now - last) / 1000;
   last = now;
   if (!isFinite(dt) || dt < 0) dt = 0;
