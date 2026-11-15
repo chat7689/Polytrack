@@ -26,3 +26,15 @@ track builder and maps straight out of `../../index.html`.
   `node crossings.js` — any road passing over or under another (the user
   doesn't want any).
 - `node live_sum.js` — the live season's test-driver total, for comparison.
+- `node jumpwall.js [s5c10]` — falls short of every jump on purpose (coasting
+  off each takeoff at speeds from far too slow to just enough, middle and both
+  sides) and checks the car never travels inside the landing deck or its beam.
+  Maps with `legacyHull` (the live season, until it closes) are skipped unless
+  named.
+- `VARIANT=... node variant.js s4m1,s4m12` with `SRC=` pointing at a copy of
+  index.html — the test driver on chosen maps against a changed copy, to find
+  which change moves a time.
+- `zfight.js` — paste into a test copy of the game in the browser (it needs
+  `window.T`): `ZF.scan(k)` lists faces in preview map k's scenery that would
+  flicker (two surfaces facing the same way in the same place), pieces built
+  inside out, and faces lying on the ground plane.

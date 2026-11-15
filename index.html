@@ -6223,12 +6223,14 @@ function buildMaterials() {
   MAT.bank = std(0x7fb968, { roughness: 1, flatShading: false });   // grass embankment
   MAT.side = std(0x4a4f57, { roughness: 0.92 });
   MAT.pad = std(0x5a616a, { roughness: 0.92, flatShading: false });
-  MAT.dash = std(0xffffff, { roughness: 0.7 });
+  // paint on the road: drawn over the deck, never flickering into it
+  const decal = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 };
+  MAT.dash = std(0xffffff, Object.assign({ roughness: 0.7 }, decal));
   MAT.strip = std(0x0f4a5c, { roughness: 0.5, emissive: 0x0a7fa0, emissiveIntensity: 0.55, flatShading: false });
-  MAT.stripArrow = std(0xbff4ff, { roughness: 0.4, emissive: 0x5fe0ff, emissiveIntensity: 0.9 });
+  MAT.stripArrow = std(0xbff4ff, Object.assign({ roughness: 0.4, emissive: 0x5fe0ff, emissiveIntensity: 0.9 }, decal));
   // the super strip: a darker blue
   MAT.strip2 = std(0x071548, { roughness: 0.5, emissive: 0x0b2a8c, emissiveIntensity: 0.45, flatShading: false });
-  MAT.stripArrow2 = std(0x7d98ff, { roughness: 0.4, emissive: 0x2747d8, emissiveIntensity: 0.9 });
+  MAT.stripArrow2 = std(0x7d98ff, Object.assign({ roughness: 0.4, emissive: 0x2747d8, emissiveIntensity: 0.9 }, decal));
   MAT.chev = std(0xffc628, { roughness: 0.7 });
   MAT.gate = std(0x35c2f0, { emissive: 0x1e86ab, emissiveIntensity: 0.42 });
   MAT.finish = std(0xffc628, { emissive: 0xc9930d, emissiveIntensity: 0.45 });
@@ -7790,12 +7792,17 @@ class Vehicle {
     this.brakeLight = 0;
     this.drift = 0; this.slipAngle = 0; this.onStrip = false;
 
-    // hull contact points: 8 corners of the collision box
+    // hull contact points: 8 corners of the collision box, and points along
+    // its underside and across its nose and tail. With the corners alone, an
+    // edge (the lip of a jump's landing deck) could pass between them into
+    // the car's belly, and the car sank onto it.
     this.corners = [];
     const h = CAR.hull;
     for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
       this.corners.push(new THREE.Vector3(sx * h.hw, h.cy + sy * h.hh, sz * h.hl));
     }
+    for (const fz of [-0.5, 0, 0.5]) for (const fx of [-1, 0, 1]) this.corners.push(new THREE.Vector3(fx * h.hw, h.cy - h.hh, fz * h.hl));
+    for (const sz of [-1, 1]) { this.corners.push(new THREE.Vector3(0, h.cy - h.hh, sz * h.hl)); for (const fx of [-1, 0, 1]) this.corners.push(new THREE.Vector3(fx * h.hw, h.cy, sz * h.hl)); }
 
     this._hit = { t: 0, point: new THREE.Vector3(), normal: new THREE.Vector3(), grip: 1, track: true };
     this._sweep = { t: 0, point: new THREE.Vector3(), normal: new THREE.Vector3(), grip: 1, track: true };
@@ -8347,7 +8354,10 @@ class Vehicle {
     this.hullDepth = 0;
     const jMax = CAR.hullMaxG * 9.81 * this.mass * dt;
 
-    for (let ci = 0; ci < this.corners.length; ci++) {
+    // (a course built for the old hull - the live season's maps, whose times
+    // were all set with it - is tested at the 8 corners only)
+    const nc = world.fullHull === false ? 8 : this.corners.length;
+    for (let ci = 0; ci < nc; ci++) {
       const c = this.corners[ci];
       const prev = this._prevCorners[ci];
       // recomputed each iteration: an earlier corner may have moved the body
@@ -8848,7 +8858,7 @@ function validateCourse(data) {
   const path = (data.path || []).filter((q) => okArr(q, 3));
   const finish = gates.filter((g) => g.kind === 'finish').length;
   return {
-    strips, gates, path, start: data.start, fine: !!data.fine,
+    strips, gates, path, start: data.start, fine: !!data.fine, legacyHull: !!data.legacyHull,
     oldSurface: Array.isArray(data.oldSurface) ? data.oldSurface : null,
     flatSurface: Array.isArray(data.flatSurface) ? data.flatSurface : null,
     valid: strips.length > 0 && finish === 1 && path.length > 1
@@ -9082,6 +9092,17 @@ function outFace(mb, a, b, c, d, inside) {
   const n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
   if (n.dot(new THREE.Vector3().subVectors(a, inside)) >= 0) mb.quad(a, b, c, d); else mb.quad(a, d, c, b);
 }
+/**
+ * The same for the physics: a collision quad whose front faces away from
+ * `inside`. Collision faces are one-sided (a point just behind one is pushed
+ * out along its normal), so one wound the wrong way pulls a car INTO the
+ * solid instead of keeping it out.
+ */
+function solidFace(world, a, b, c, d, inside, grip, depth, track) {
+  const n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+  if (n.dot(new THREE.Vector3().subVectors(a, inside)) >= 0) world.addQuad(a, b, c, d, grip, depth, false, null, track);
+  else world.addQuad(a, d, c, b, grip, depth, false, null, track);
+}
 
 function buildCourse(data, scene, world) {
   const root = new THREE.Group();
@@ -9167,9 +9188,13 @@ function buildCourse(data, scene, world) {
         // a bridge: the deck's own sides, and under it a tapered beam
         // (narrower at the bottom; looks only: a car that goes over the
         // edge drops past it rather than hanging off it), nothing to the ground
-        M.side.quad(l0, l0d, l1d, l1);
-        M.side.quad(r0, r1, r1d, r0d);
-        world.addQuad(l0, l0d, l1d, l1, 1, 0.3); world.addQuad(r0, r1, r1d, r0d, 1, 0.3);
+        // (the sides face OUT: wound the other way they were invisible from
+        // outside, the deck reading as two flat panels with nothing between,
+        // and as collision they pulled a car that touched them into the deck)
+        const deckMid = V().lerpVectors(p0, p1, 0.5).addScaledVector(u0, -DECK_T / 2);
+        outFace(M.side, l0, l0d, l1d, l1, deckMid);
+        outFace(M.side, r0, r1, r1d, r0d, deckMid);
+        solidFace(world, l0, l0d, l1d, l1, deckMid, 1, 0.3); solidFace(world, r0, r1, r1d, r0d, deckMid, 1, 0.3);
         const gIn0 = hw0 * 0.62, gIn1 = hw1 * 0.62;
         const gl0 = edge(p0, x0, u0, gIn0, -DECK_T - GIRDER_D), gr0 = edge(p0, x0, u0, -gIn0, -DECK_T - GIRDER_D);
         const gl1 = edge(p1, x1, u1, gIn1, -DECK_T - GIRDER_D), gr1 = edge(p1, x1, u1, -gIn1, -DECK_T - GIRDER_D);
@@ -9177,16 +9202,25 @@ function buildCourse(data, scene, world) {
         outFace(M.girder, l0d, gl0, gl1, l1d, mid);
         outFace(M.girder, r0d, r1d, gr1, gr0, mid);
         outFace(M.girder, gl0, gr0, gr1, gl1, mid);
+        // the beam under the deck is solid too: it tapers inward, so a car that
+        // goes over the edge still drops past it, but nothing passes into it
+        solidFace(world, l0d, gl0, gl1, l1d, mid, 0.4, 0.4, false);
+        solidFace(world, r0d, r1d, gr1, gr0, mid, 0.4, 0.4, false);
+        solidFace(world, gl0, gr0, gr1, gl1, mid, 0.4, 0.4, false);
         // the beam's open ends, where the bridge starts or stops
         const prevBridge = i > 0 && (strip.segs[i - 1] || {}).noBank;
         const nextBridge = i < F.length - 2 && (strip.segs[i + 1] || {}).noBank;
         if (!prevBridge) {
           const c = V().copy(mid).addScaledVector(V().subVectors(p1, p0), 0.5);
           outFace(M.girder, l0, r0, r0d, l0d, c); outFace(M.girder, l0d, r0d, gr0, gl0, c);
+          // where the deck starts after a jump's gap: a solid wall. Open, a car
+          // that came up short flew into the slab and was popped up on top
+          if (i === 0) { solidFace(world, l0, r0, r0d, l0d, c, 1, 1.0); solidFace(world, l0d, r0d, gr0, gl0, c, 1, 1.0, false); }
         }
         if (!nextBridge) {
           const c = V().copy(mid).addScaledVector(V().subVectors(p0, p1), 0.5);
           outFace(M.girder, l1, r1, r1d, l1d, c); outFace(M.girder, l1d, r1d, gr1, gl1, c);
+          if (i === F.length - 2) { solidFace(world, l1, r1, r1d, l1d, c, 1, 1.0); solidFace(world, l1d, r1d, gr1, gl1, c, 1, 1.0, false); }
         }
         if (i % 4 === 0) pillarAt.push({ p: p0.clone(), u: u0.clone(), w: a.w });
       } else {
@@ -9199,16 +9233,8 @@ function buildCourse(data, scene, world) {
       }
       M.side.quad(l0d, l1d, r1d, r0d);
 
-      if (s.boost && i % 2 === 0) {
-        // a forward-pointing arrow painted on the strip every other quad
-        const lift = 0.025, aw = Math.min(hw0 * 0.55, 3), t0 = 0.1, t1 = 0.9;
-        const at = (t, off) => V().lerpVectors(edge(p0, x0, u0, off, lift), edge(p1, x1, u1, off, lift), t);
-        const am = s.boost > 1 ? M.arrow2 : M.arrow;
-        am.quad(at(t0, aw), at(t0, aw - 0.9), at(t1, 0.45), at(t1, 1.35));
-        am.quad(at(t0, -aw + 0.9), at(t0, -aw), at(t1, -1.35), at(t1, -0.45));
-      }
       if (s.dash && i % 2 === 0) {
-        const lift = 0.02;
+        const lift = 0.03;
         M.dash.quad(
           edge(p0, x0, u0, 0.18, lift), edge(p0, x0, u0, -0.18, lift),
           edge(p1, x1, u1, -0.18, lift), edge(p1, x1, u1, 0.18, lift));
@@ -9234,6 +9260,47 @@ function buildCourse(data, scene, world) {
         chevs.push(new THREE.Matrix4().compose(cp, cq, new THREE.Vector3(0.18, 1.0, 1.7)));
       }
 
+    }
+    // The arrows on a speed strip: a chevron every 7.5 m along the strip, 3.4 m
+    // long, laid over the deck in short steps so it follows a banked or
+    // twisting deck. (One per deck piece, as they were, broke into slivers on
+    // the finely cut decks: each piece is only 2-5 m long.)
+    if (strip.segs.some((g) => g && g.boost)) {
+      const FP = [], FX = [], FU = [], cum = [0];
+      for (let k = 0; k < F.length; k++) {
+        const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(F[k].t, F[k].y, F[k].r, 'YXZ'));
+        FP.push(V().fromArray(F[k].p)); FX.push(XA.clone().applyQuaternion(q)); FU.push(YA.clone().applyQuaternion(q));
+        if (k) cum.push(cum[k - 1] + FP[k].distanceTo(FP[k - 1]));
+      }
+      const at = (d, off, lift) => {
+        let k = 0;
+        while (k < F.length - 2 && cum[k + 1] < d) k++;
+        const t = Math.max(0, Math.min(1, (d - cum[k]) / Math.max(1e-6, cum[k + 1] - cum[k])));
+        return V().lerpVectors(edge(FP[k], FX[k], FU[k], off, lift), edge(FP[k + 1], FX[k + 1], FU[k + 1], off, lift), t);
+      };
+      const upAt = (d) => { let k = 0; while (k < F.length - 2 && cum[k + 1] < d) k++; return FU[k]; };
+      const face = (mb, a, b, c, d, up) => { const n = V().subVectors(b, a).cross(V().subVectors(c, a)); if (n.dot(up) >= 0) mb.quad(a, b, c, d); else mb.quad(a, d, c, b); };
+      for (let i = 0; i < F.length - 1;) {
+        const lvl = (strip.segs[i] || {}).boost;
+        if (!lvl) { i++; continue; }
+        let j = i;
+        while (j < F.length - 1 && (strip.segs[j] || {}).boost === lvl) j++;
+        const d0 = cum[i], d1 = cum[j], L = 3.4, gapA = 7.5, am = lvl > 1 ? M.arrow2 : M.arrow, lift = 0.05;
+        const n = Math.max(1, Math.floor((d1 - d0 - 1) / gapA));
+        const first = d0 + (d1 - d0 - (n - 1) * gapA - L) / 2;
+        for (let k = 0; k < n; k++) {
+          const b = first + k * gapA;
+          if (b < d0 || b + L > d1) continue;
+          const hw = Math.min(F[i].w, F[j].w) / 2, aw = Math.min(hw * 0.55, 3);
+          for (const sd of [1, -1]) for (let st = 0; st < 3; st++) {
+            const f0 = st / 3, f1 = (st + 1) / 3;
+            const o0 = aw + (1.35 - aw) * f0, o1 = aw + (1.35 - aw) * f1, n0 = aw - 0.9 + (0.45 - aw + 0.9) * f0, n1 = aw - 0.9 + (0.45 - aw + 0.9) * f1;
+            const da = b + L * f0, db = b + L * f1;
+            face(am, at(da, sd * o0, lift), at(da, sd * n0, lift), at(db, sd * n1, lift), at(db, sd * o1, lift), upAt(da));
+          }
+        }
+        i = j;
+      }
     }
   }
 
@@ -9358,6 +9425,7 @@ function buildCourse(data, scene, world) {
   const cps = courseCheckpoints(data);
 
   world.index();
+  world.fullHull = !data.legacyHull;
   scene.add(root);
   const ext = courseCenterAndExtent(dense);
   // The road as it was before the reshaping, collision only, so a ghost
@@ -9624,6 +9692,9 @@ const LEVELS = [
   }
 ];
 const COURSE_IDS = LEVELS.map((l) => l.id);
+// Season 3's maps keep the car's old 8-corner hull until the season closes:
+// every time on their boards was set with it. (Season 4 on gets the full one.)
+if (SEASON === 3) for (const lv of LEVELS) { const b = lv.build; lv.build = function () { return Object.assign(b.call(this), { legacyHull: true }); }; }
 /* Next season: built and testable from the private preview (signed in to
    the admin page in the same browser), but not released: they aren't in
    LEVELS, the server has no rules for them (so no time on them can be
@@ -11455,7 +11526,7 @@ const Landmarks = {
       winD: this.win('#8a8f96', '#28323e', '#ffdca0', 4), nyGrey: this.win('#c9c6bd', '#3a4450', '#ffe7b0', 5),
       lime: P('lime', { roughness: 0.9 }), brownstone: P('brownstone', { roughness: 0.95 }), haussmann: P('haussmann', { roughness: 0.9 }),
       brick: P('brick', { roughness: 0.95 }), stucco: P('stucco', { roughness: 0.9 }), gothic: P('gothic', { roughness: 0.9 }),
-      neon: P('neon', { roughness: 0.6 }), board: P('board', { roughness: 0.5, emissiveIntensity: 1.25 }), grid: P('grid', { roughness: 0.4, metalness: 0.3 }),
+      neon: P('neon', { roughness: 0.6 }), board: P('board', { roughness: 0.5, emissiveIntensity: 1.25 }), lights: P('lights', { roughness: 0.45, emissiveIntensity: 0.85 }), grid: P('grid', { roughness: 0.4, metalness: 0.3 }),
       curtain: P('curtain', { roughness: 0.15, metalness: 0.55 }), lattice: P('lattice', { roughness: 0.5 }), gherkin: P('gherkin', { roughness: 0.2, metalness: 0.5 }),
       clock: P('clock', { roughness: 0.6, emissiveIntensity: 0.5 }), louvreStone: P('louvre', { roughness: 0.9 })
     };
@@ -11550,6 +11621,22 @@ const Landmarks = {
         ge.drawImage(c, 0, 0);
         break;
       }
+      case 'lights': {       // Piccadilly Lights: five adverts side by side on one screen
+        c.width = 512; c.height = 256; glow(); e.width = 512; e.height = 256;
+        const ads = [[0, 112, '#c8102e'], [112, 214, '#11161c'], [214, 318, '#0b3d91'], [318, 412, '#f1f1ee'], [412, 512, '#00704a']];
+        for (const [a, b, col] of ads) R(col, a, 0, b - a, 256);
+        g.strokeStyle = '#ffffff'; g.lineWidth = 16; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(14, 170); g.bezierCurveTo(40, 120, 70, 210, 100, 120); g.stroke();
+        R('#ffffff', 18, 60, 74, 22); R('#ffffff', 18, 92, 48, 10);
+        g.fillStyle = '#ffffff'; g.beginPath(); g.arc(163, 104, 30, 0, 6.29); g.fill();
+        R('#11161c', 152, 92, 22, 24); R('#d4a017', 128, 160, 70, 8); R('#ffffff', 128, 180, 54, 6);
+        R('#ffffff', 228, 70, 76, 18); R('#ffffff', 228, 100, 56, 10); R('#ffffff', 228, 120, 64, 10); R('#9fc3ff', 228, 170, 40, 26);
+        R('#1a1a1a', 330, 64, 70, 20); R('#1a1a1a', 330, 96, 46, 10); g.fillStyle = '#d0021b'; g.beginPath(); g.arc(380, 170, 22, 0, 6.29); g.fill();
+        R('#ffffff', 426, 80, 72, 16); R('#ffffff', 426, 108, 50, 10); R('#ffffff', 426, 170, 30, 30);
+        for (const [a] of ads) if (a) R('#000000', a - 2, 0, 4, 256);
+        ge.fillStyle = '#000'; ge.fillRect(0, 0, 512, 256); ge.globalAlpha = 0.75; ge.drawImage(c, 0, 0); ge.globalAlpha = 1;
+        break;
+      }
       case 'grid':           // a white grid of square windows (432 Park, Fuji TV)
         R('#eceae4', 0, 0, 128, 128);
         for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) R('#2f3b48', x * 32 + 5, y * 32 + 5, 22, 22);
@@ -11599,8 +11686,27 @@ const Landmarks = {
   torus() { return this.geo('torus', () => new THREE.TorusGeometry(1, 0.03, 6, 64)); },
   /** a hipped (mansard-like) roof: a frustum with a square base 1 x 1 */
   hip(top) { return this.geo('hip' + top, () => new THREE.CylinderGeometry(top * 0.7071, 0.7071, 1, 4).rotateY(Math.PI / 4)); },
-  /** a gable roof: a triangular prism 1 x 1 x 1 (ridge along z) */
-  gable() { return this.geo('gable', () => { const g = new THREE.CylinderGeometry(0.577, 0.577, 1, 3); g.rotateX(Math.PI / 2); g.rotateZ(Math.PI / 2); g.scale(1, 1.732, 1); g.translate(0, 0.21, 0); return g; }); },
+  /** a round wall (radius r, height h, centred), its UVs in metres like a facade's */
+  round(r, h) {
+    return this.geo('round' + r + ':' + h, () => {
+      const g = new THREE.CylinderGeometry(r, r, h, 32), uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2 * Math.PI * r / 16, uv.getY(i) * h / 14.4);
+      return g;
+    });
+  },
+  /** an open arc of wall facing out (radius r, height h, centred), `ang` radians wide about +z: the image across it once */
+  arcScreen(r, h, ang) { return this.geo('arc' + r + ':' + h + ':' + ang, () => new THREE.CylinderGeometry(r, r, h, 28, 1, true, -ang / 2, ang)); },
+  /** a gable roof: a triangular prism standing on y = 0, base 1 x 1 (x from -0.5 to 0.5), ridge along z at y = 1 */
+  gable() {
+    return this.geo('gable2', () => {
+      const v = [[-0.5, 0, -0.5], [0.5, 0, -0.5], [0, 1, -0.5], [-0.5, 0, 0.5], [0.5, 0, 0.5], [0, 1, 0.5]], P = [];
+      for (const t of [[0, 2, 1], [3, 4, 5], [0, 3, 5], [0, 5, 2], [1, 2, 5], [1, 5, 4], [0, 1, 4], [0, 4, 3]]) for (const k of t) P.push(...v[k]);
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+      g.computeVertexNormals();
+      return g;
+    });
+  },
 
   /** pieces by material, merged into one mesh each; a piece that would stand in the road is left out */
   /**
@@ -12152,21 +12258,23 @@ const Landmarks = {
   deckEdge(c, c0, c1, mat, out) {
     const { B, R } = c, P = R.pts, W = out || 0.6;
     for (const s of [-1, 1]) {
-      let prev = null;
+      let prev = null, run = 0;
       for (const p of P) {
         if (p.cum < c0 || p.cum > c1 || p.air || !p.bridge) { prev = null; continue; }
         const e = c.off(p, s, p.hw + W / 2 + 0.02), cur = { x: e.x, z: e.z, y: this.edgeY(p, s, W), strip: p.strip };
         if (prev && prev.strip === cur.strip) {
           const a = new THREE.Vector3(prev.x, prev.y - 0.42, prev.z), b = new THREE.Vector3(cur.x, cur.y - 0.42, cur.z);
           B.beam(mat, a, b, 0.95, W, null, true);
-          B.beam(mat, a.clone().setY(prev.y + 0.95), b.clone().setY(cur.y + 0.95), 0.14, 0.14, null, true);
+          B.beam(mat, a.clone().setY(prev.y + 1.0), b.clone().setY(cur.y + 1.0), 0.2, 0.2, null, true);
+          run += Math.hypot(cur.x - prev.x, cur.z - prev.z);
+          if (run >= 3) { run = 0; B.beam(mat, new THREE.Vector3(cur.x, cur.y + 0.05, cur.z), new THREE.Vector3(cur.x, cur.y + 0.9, cur.z), 0.16, 0.16, null, true); }
         }
         prev = cur;
       }
     }
   },
   /** where the cable plane meets the deck's edge at road point q (the top of the edge girder) */
-  edgeAt(c, q, s, out) { const e = c.off(q, s, q.hw + (out || 0.6) / 2 + 0.02); return new THREE.Vector3(e.x, this.edgeY(q, s, out || 0.6) + 0.03, e.z); },
+  edgeAt(c, q, s, out) { const e = c.off(q, s, q.hw + (out || 0.6) / 2 + 0.02); return new THREE.Vector3(e.x, this.edgeY(q, s, out || 0.6) + 1.1, e.z); },
   /** the height of a banked deck's edge (side s) at road point q */
   edgeY(q, s, out) { return q.y + s * (q.hw + out / 2) * Math.sin(q.roll || 0); },
   /** a cable from a to b sagging by sag at its middle, n pieces, with hangers every `every` metres down to the deck edge */
@@ -12190,7 +12298,7 @@ const Landmarks = {
         const q = c.near(top.x, top.z).q;
         if (!q || q.air) continue;
         const foot = this.edgeAt(c, q, hang.side, hang.out);
-        if (top.y - foot.y < 0.8) continue;
+        if (top.y - foot.y < 0.5) continue;
         B.beam(mat, new THREE.Vector3(foot.x, top.y, foot.z), foot, hang.thick || 0.12, hang.thick || 0.12, null, true);
       }
     }
@@ -12271,7 +12379,7 @@ const Landmarks = {
           B.facade(c.pick([M.winA, M.winC, M.nyGrey]), o.x, GY + h / 2, o.z, w, h, 18, ry);
           // the billboards, flat on its front
           const f = c.off(q, s, d - 9.35);
-          for (let k = 0; k < 3; k++) { const hh = c.rr(6, 14), y = 6 + k * 14 + c.rr(0, 4); B.facade(M.board, f.x, GY + y + hh / 2, f.z, w * c.rr(0.6, 0.95), hh, 0.6, ry); }
+          for (let k = 0, y = 5 + c.rr(0, 2); k < 3 && y < h - 8; k++) { const hh = c.rr(6, 12); B.facade(M.board, f.x, GY + y + hh / 2, f.z, w * c.rr(0.6, 0.95), hh, 0.6, ry); y += hh + c.rr(1, 3); }
         });
         m += w + 1;
       }
@@ -12332,18 +12440,20 @@ const Landmarks = {
     const fw = { x: Math.sin(yaw), z: Math.cos(yaw) }, rt = { x: Math.cos(yaw), z: -Math.sin(yaw) };
     const P = (u, v, y) => new THREE.Vector3(cx + rt.x * u + fw.x * v, GY + y, cz + rt.z * u + fw.z * v);
     const mat = (y) => (tokyo ? (Math.floor(y / (H / 12)) % 2 ? M.white : M.vermilion) : M.bronze);
+    const th = (m, t) => (m === M.white ? t * 1.1 : t);
     const h1 = H * 0.175, h2 = H * 0.35, h3 = H * 0.93, c1 = S * 0.33, c2 = S * 0.17, c3 = S * 0.035;
     for (const su of [-1, 1]) for (const sv of [-1, 1]) {
       for (let k = 0; k < 5; k++) {
         const t0 = k / 5, t1 = (k + 1) / 5, e = (t) => S / 2 - (S / 2 - c1) * Math.pow(t, 1.4);
-        B.beam(mat(h1 * t0), P(su * e(t0), sv * e(t0), h1 * t0), P(su * e(t1), sv * e(t1), h1 * t1), S * 0.075, S * 0.075);
+        B.beam(mat(h1 * t0), P(su * e(t0), sv * e(t0), h1 * t0), P(su * e(t1), sv * e(t1), h1 * t1), th(mat(h1 * t0), S * 0.075), th(mat(h1 * t0), S * 0.075));
         // the lattice: a second member and its cross-bracing
         if (k < 4) B.beam(M.cable, P(su * (e(t0) - S * 0.05), sv * e(t0), h1 * t0 + 1), P(su * e(t1), sv * (e(t1) - S * 0.05), h1 * t1), 0.4, 0.4);
       }
       B.beam(mat(h1), P(su * c1, sv * c1, h1), P(su * c2, sv * c2, h2), S * 0.05, S * 0.05);
       for (let k = 0; k < 7; k++) {
         const t0 = k / 7, t1 = (k + 1) / 7, e = (t) => c2 - (c2 - c3) * Math.pow(t, 0.8);
-        B.beam(mat(h2 + (h3 - h2) * t0), P(su * e(t0), sv * e(t0), h2 + (h3 - h2) * t0), P(su * e(t1), sv * e(t1), h2 + (h3 - h2) * t1), S * 0.034, S * 0.034);
+        const m2 = mat(h2 + (h3 - h2) * t0);
+        B.beam(m2, P(su * e(t0), sv * e(t0), h2 + (h3 - h2) * t0), P(su * e(t1), sv * e(t1), h2 + (h3 - h2) * t1), th(m2, S * 0.034), th(m2, S * 0.034));
       }
     }
     for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -12351,7 +12461,7 @@ const Landmarks = {
       for (let k = 0; k <= 12; k++) {
         const t = k / 6 - 1, w = t * (S / 2 - S * 0.07), y = h1 * 0.3 + h1 * 0.52 * (1 - t * t), e = S / 2 - S * 0.07 * (1 - Math.abs(t));
         const pt = du ? P(du * e, w, y) : P(w, dv * e, y);
-        if (prev) B.beam(mat(y), prev, pt, 1.2, 1.2);
+        if (prev) B.beam(mat(y), prev, pt, th(mat(y), 1.2), th(mat(y), 1.2));
         prev = pt;
       }
     }
@@ -12366,7 +12476,7 @@ const Landmarks = {
       const y = h2 + (h3 - h2) * k / 9, e = c2 - (c2 - c3) * Math.pow(k / 9, 0.8);
       for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const a = du ? P(du * e, -e, y) : P(-e, dv * e, y), b = du ? P(du * e, e, y) : P(e, dv * e, y);
-        B.beam(mat(y), a, b, 0.7, 0.7);
+        B.beam(mat(y), a, b, th(mat(y), 0.7), th(mat(y), 0.7));
       }
     }
     const top = P(0, 0, h3 + (H - h3) / 2 + 2);
@@ -12380,9 +12490,19 @@ const Landmarks = {
     const { B, M, GY } = c, fx = Math.sin(ry), fz = Math.cos(ry), rx = Math.cos(ry), rz = -Math.sin(ry);
     const at = (u, v) => ({ x: x + rx * u + fx * v, z: z + rz * u + fz * v });
     B.add(M.glass, this.cone(4), x, GY + 10.8, z, 25, 21.6, 25, ry + Math.PI / 4);
-    B.add(M.steel, this.cone(4), x, GY + 10.85, z, 25.15, 21.7, 25.15, ry + Math.PI / 4);
+    for (const [su, sv] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const b = at(su * 17.68 * 0.999, sv * 17.68 * 0.999); B.beam(M.steel, new THREE.Vector3(b.x, GY, b.z), new THREE.Vector3(x, GY + 21.6, z), 0.35, 0.35); }
     for (const [u, v] of [[0, 34], [30, -16], [-30, -16]]) { const p = at(u, v); B.add(M.glass, this.cone(4), p.x, GY + 2.6, p.z, 7, 5.2, 7, ry + Math.PI / 4); }
-    for (const [u, v] of [[-8, 10], [8, 10]]) { const p = at(u, v); B.box(M.water, p.x, GY + 0.35, p.z, 12, 0.3, 16, ry); }
+    // the fountains: water in dark granite basins, the rim standing above it all round
+    // (out in front of the pyramid, either side of the small one: under it they barely showed)
+    for (const [u, v] of [[-14, 27], [14, 27]]) {
+      const p = at(u, v);
+      B.box(M.water, p.x, GY + 0.45, p.z, 14, 0.3, 12, ry);
+      for (const s of [-1, 1]) {
+        const a = at(u + s * 7.3, v), b = at(u, v + s * 6.3);
+        B.box(M.stoneDark, a.x, GY + 0.4, a.z, 0.6, 0.8, 13.2, ry);
+        B.box(M.stoneDark, b.x, GY + 0.4, b.z, 14, 0.8, 0.6, ry);
+      }
+    }
     // the wings: behind the pyramid and down both sides
     const wing = (u, v, len, ang) => { const p = at(u, v); B.facade(M.louvreStone, p.x, GY + 11, p.z, len, 22, 22, ry + ang); B.add(M.zinc, this.hip(0.55), p.x, GY + 22 + 3.5, p.z, len, 7, 22, ry + ang); };
     wing(0, -60, 150, 0); wing(-75, 10, 140, Math.PI / 2); wing(75, 10, 140, Math.PI / 2);
@@ -12502,7 +12622,7 @@ const Landmarks = {
   parliament(c, x, z, ry, len) {
     const { B, M, GY } = c, fx = Math.sin(ry), fz = Math.cos(ry);
     B.facade(M.gothic, x, GY + 12, z, 30, 24, len, ry);
-    B.add(M.slate, this.gable(), x, GY + 24, z, 26, 6, len - 2, ry);
+    B.add(M.slate, this.gable(), x, GY + 24, z, 26, 6, len - 4, ry);
     for (let v = -len / 2 + 4; v < len / 2; v += 8) for (const s of [-1, 1]) {
       const px = x + Math.cos(ry) * s * 15 + fx * v, pz = z - Math.sin(ry) * s * 15 + fz * v;
       B.add(M.stone, this.cone(4), px, GY + 27, pz, 0.8, 6, 0.8);
@@ -12556,7 +12676,7 @@ const Landmarks = {
         for (const fz of [-1, 1]) { const t = { x: o.x + Math.sin(q.yaw) * fz * 8.5, z: o.z + Math.cos(q.yaw) * fz * 8.5 }; B.add(M.portland, this.cyl(1.6, 1.6, 8), t.x, top + 4, t.z, 1, 8, 1); B.add(M.slate, this.cone(8), t.x, top + 11, t.z, 1.9, 6, 1.9); }
       }
       const dk = q.y;
-      B.facade(M.gothic, q.x, dk + 16 + (top - dk - 16) / 2, q.z, half * 2 + 0.2, top - dk - 16, 20, q.yaw);
+      B.facade(M.gothic, q.x, dk + 16 + (top - dk - 16) / 2, q.z, half * 2 + 0.2, top - dk - 16, 19.4, q.yaw);
       B.add(M.slate, this.hip(0.2), q.x, top + 4, q.z, half * 2 + 20, 8, 20, q.yaw);
       B.add(M.gold, this.cone(4), q.x, top + 11, q.z, 0.8, 6, 0.8);
       for (const s of [-1, 1]) { const a = c.off(q, s, half), b = c.off(q, s, 0.5); B.beam(M.stoneDark, new THREE.Vector3(a.x, dk + 11, a.z), new THREE.Vector3(b.x, dk + 16, b.z), 1.6, 20.4); }
@@ -12682,7 +12802,7 @@ const Landmarks = {
   bus(c, x, z, ry) {
     const { B, M, GY } = c;
     B.box(M.busRed, x, GY + 2.3, z, 2.5, 4.2, 11, ry);
-    for (const y of [1.9, 3.9]) B.box(M.glassDark, x, GY + y, z, 2.56, 0.9, 10.4, ry);
+    for (const y of [1.9, 3.9]) B.box(M.glassDark, x, GY + y, z, 2.66, 0.9, 10.4, ry);
     B.box(M.black, x, GY + 0.5, z, 2.4, 1, 10.6, ry);
   },
   /** a red telephone box */
@@ -12690,14 +12810,26 @@ const Landmarks = {
     const { B, M, GY } = c;
     B.box(M.busRed, x, GY + 1.3, z, 1, 2.6, 1, ry);
     B.add(M.busRed, this.cyl(0.55, 0.55, 8, 1), x, GY + 2.7, z, 1, 0.3, 1);
-    B.box(M.glowW, x, GY + 2.35, z, 1.04, 0.22, 0.6, ry);
+    B.box(M.glowW, x, GY + 2.35, z, 1.12, 0.22, 0.6, ry);
   },
   /** Piccadilly Circus: the curved wall of screens on its corner, Eros on his fountain */
   piccadilly(c, x, z, ry) {
-    const { B, M, GY } = c;
-    B.facade(M.stucco, x, GY + 14, z, 40, 28, 24, ry);
-    for (let k = 0; k < 5; k++) { const a = ry - 0.5 + k * 0.25, px = x + Math.sin(a) * 13, pz = z + Math.cos(a) * 13; B.facade(M.board, px, GY + 13, pz, 9.4, 16, 0.6, a); }
-    c.take(x, z, 24);
+    const { B, M, GY } = c, fx = Math.sin(ry), fz = Math.cos(ry), rx = Math.cos(ry), rz = -Math.sin(ry);
+    const at = (u, v) => ({ x: x + rx * u + fx * v, z: z + rz * u + fz * v });
+    const R = 16, H = 26;
+    // the round corner and the two wings going back from it
+    B.add(M.stucco, this.round(R, H), x, GY + H / 2, z, 1, 1, 1, ry);
+    for (const s of [-1, 1]) { const p = at(s * 20, -9); B.facade(M.stucco, p.x, GY + H / 2, p.z, 24, H, 18, ry); }
+    // cornice and the roof behind it
+    B.add(M.portland, this.cyl(R + 0.7, R + 0.7, 32), x, GY + H + 0.5, z, 1, 1, 1);
+    B.add(M.slate, this.cyl(R - 3, R, 32), x, GY + H + 2.5, z, 1, 3, 1);
+    for (const s of [-1, 1]) { const p = at(s * 20, -9); B.box(M.portland, p.x, GY + H + 0.5, p.z, 25, 1, 19, ry); B.add(M.slate, this.hip(0.5), p.x, GY + H + 2.5, p.z, 24, 3, 18, ry); }
+    // the Lights: one screen wrapped round the corner, framed in black, adverts side by side
+    B.add(M.lights, this.arcScreen(R + 0.35, 14, 1.75), x, GY + 9.5 + 7, z, 1, 1, 1, ry);
+    for (const y of [GY + 9.2, GY + 23.8]) B.add(M.black, this.arcScreen(R + 0.45, 0.6, 1.8), x, y, z, 1, 1, 1, ry);
+    // shopfronts along the bottom
+    B.add(M.black, this.arcScreen(R + 0.1, 3.6, 2.2), x, GY + 2.2, z, 1, 1, 1, ry);
+    c.take(x, z, 26);
   },
   eros(c, x, z) {
     const { B, M, GY } = c;
@@ -12743,7 +12875,7 @@ const Landmarks = {
       const a = this.edgeAt(c, ta, s), b = this.edgeAt(c, tb, s);
       a.y = b.y = top - 2;
       const pts = this.cable(c, M.white, a, b, 30, 22, 0.6, { every: 6, side: s, thick: 0.14 });
-      for (let k = 1; k < pts.length - 1; k++) B.box(c.pick(lights), pts[k].x, pts[k].y - 0.7, pts[k].z, 0.7, 0.7, 0.7);
+      for (let k = 1; k < pts.length - 1; k++) B.box(c.pick(lights), pts[k].x, pts[k].y - 0.5, pts[k].z, 0.48, 0.6, 0.48);
       // the side spans, down to an anchorage beside the road
       for (const [tw, e] of [[ta, ea], [tb, eb]]) {
         if (e.air) continue;
@@ -12768,11 +12900,10 @@ const Landmarks = {
     B.add(M.tile, this.hip(0.25), x, GY + 13.5, z, 26, 4.6, 14, ry);
     B.add(M.red, this.sphere(14, 10), x, GY + 6.2, z, 2.2, 2.8, 2.2);
     for (const y of [3.6, 8.8]) B.add(M.black, this.cyl(1.8, 1.8, 14), x, GY + y, z, 1, 0.5, 1);
-    B.box(M.glowW, x + fx * 2.15, GY + 6.2, z + fz * 2.15, 1.4, 2.6, 0.1, ry);
     for (let v = -12; v > -80; v -= 7) for (const u of [-8, 8]) {
       const px = x + rx * u + fx * v, pz = z + rz * u + fz * v;
       B.box(M.stucco, px, GY + 2, pz, 5, 4, 6.4, ry);
-      B.add(M.terracotta, this.gable(), px, GY + 4, pz, 6, 1.8, 7, ry + Math.PI / 2);
+      B.add(M.terracotta, this.gable(), px, GY + 4, pz, 6.9, 1.8, 5.6, ry + Math.PI / 2);
       B.box(c.pick([M.glowR, M.glowY, M.warm]), px - rx * u * 0.31, GY + 3, pz - rz * u * 0.31, 0.3, 0.6, 5, ry);
     }
     c.take(x, z, 14);
@@ -12794,20 +12925,79 @@ const Landmarks = {
     for (let j = 0; j < 7; j++) B.add(M.gold, this.cyl(1, 1, 10, 1), x, y + 1.5 * k + j * 0.9 * k, z, (0.9 - j * 0.06) * k, 0.2, (0.9 - j * 0.06) * k);
     c.take(x, z, 11 * k);
   },
-  /** Senso-ji's main hall: a great hip-and-gable roof over red walls */
+  /**
+   * Senso-ji's main hall (the Hondo), its front toward the road: a stone
+   * podium and stair, vermilion pillars round a veranda, white-banded walls
+   * with dark doors, a band of brackets, and the great roof - a hipped skirt
+   * with thick upturned eaves and a tall gable on top, its ridge tipped with
+   * gold. Under the eaves the huge red lantern; out front the incense burner
+   * and stone lanterns on a paved court, trees either side.
+   */
   temple(c, x, z, ry) {
-    const { B, M, GY } = c;
-    B.box(M.stoneDark, x, GY + 1.5, z, 40, 3, 30, ry);
-    B.box(M.vermilion, x, GY + 9, z, 32, 12, 22, ry);
-    B.add(M.tile, this.hip(0.3), x, GY + 15 + 6, z, 46, 12, 34, ry);
-    B.add(M.tile, this.gable(), x, GY + 27 + 2, z, 18, 5, 26, ry);
-    for (const u of [-12, -4, 4, 12]) B.add(M.warm, this.sphere(8, 6), x + Math.cos(ry) * u + Math.sin(ry) * 11.6, GY + 11, z - Math.sin(ry) * u + Math.cos(ry) * 11.6, 0.9, 1.2, 0.9);
-    c.take(x, z, 26);
+    const { B, M, GY } = c, fx = Math.sin(ry), fz = Math.cos(ry), rx = Math.cos(ry), rz = -Math.sin(ry);
+    const at = (u, v) => ({ x: x + rx * u + fx * v, z: z + rz * u + fz * v });
+    const box = (mat, u, v, y, sx, sy, sz, a) => { const p = at(u, v); B.box(mat, p.x, y, p.z, sx, sy, sz, ry + (a || 0)); };
+    const add = (mat, geo, u, v, y, sx, sy, sz, a) => { const p = at(u, v); B.add(mat, geo, p.x, y, p.z, sx, sy, sz, ry + (a || 0)); };
+    const W = 34, D = 26, top = GY + 2;
+    // the court and the podium, the stair down to the court
+    box(M.stone, 0, 6, GY + 0.04, 58, 0.08, 66);
+    box(M.stoneDark, 0, 0, GY + 1, W + 8, 2, D + 8);
+    for (let k = 0; k < 3; k++) { const h = 2 - 0.5 * (k + 1); box(M.stoneDark, 0, D / 2 + 4 + 0.35 + 0.7 * k, GY + h / 2, 14, h, 0.7); }
+    // the hall: vermilion walls, a white band under the eaves, three dark doors in front
+    box(M.vermilion, 0, 0, top + 5, W - 4, 10, D - 4);
+    box(M.white, 0, 0, top + 8.7, W - 3.8, 2.5, D - 3.8);
+    for (const u of [-8, 0, 8]) box(M.black, u, (D - 4) / 2 + 0.1, top + 3.2, 4.4, 6.4, 0.2);
+    // the veranda's pillars, 7 bays wide and 5 deep, and the beams on them
+    const PU = W / 2, PV = D / 2 + 1;
+    for (let k = 0; k <= 7; k++) for (const s of [-1, 1]) add(M.vermilion, this.cyl(0.45, 0.5, 8), -PU + k * W / 7, s * PV, top + 5.3, 1, 10.6, 1);
+    for (let k = 1; k < 5; k++) for (const s of [-1, 1]) add(M.vermilion, this.cyl(0.45, 0.5, 8), s * PU, -PV + k * 2 * PV / 5, top + 5.3, 1, 10.6, 1);
+    for (const s of [-1, 1]) { box(M.vermilion, 0, s * PV, top + 10.3, W + 1, 0.8, 0.6); box(M.vermilion, s * PU, 0, top + 10.3, 0.6, 0.8, 2 * PV + 1); }
+    // the brackets under the eaves (green and gold), then the eaves themselves
+    box(M.copper, 0, 0, top + 11.25, W + 2.4, 1.1, 2 * PV + 2.4);
+    for (let k = 0; k <= 14; k++) for (const s of [-1, 1]) box(M.gold, -PU - 1.2 + k * (W + 2.4) / 14, s * (PV + 1.25), top + 11.25, 0.4, 0.5, 0.12);
+    const E = top + 11.9, EW = W + 15, ED = 2 * PV + 15;
+    box(M.slate, 0, 0, E - 0.35, EW + 0.6, 0.7, ED + 0.6);
+    add(M.tile, this.hip(0.6), 0, 0, E + 3.9, EW, 7.8, ED);
+    // the corners of the eaves turn up
+    for (const su of [-1, 1]) for (const sv of [-1, 1]) {
+      const a = at(su * (EW / 2 - 0.6), sv * (ED / 2 - 0.6)), b = at(su * (EW / 2 + 1.2), sv * (ED / 2 + 1.2));
+      B.beam(M.slate, new THREE.Vector3(a.x, E - 0.1, a.z), new THREE.Vector3(b.x, E + 1.5, b.z), 0.7, 1.3);
+    }
+    // the gable on top: its ridge along the front, set in from the hip's ends
+    const G = E + 7.8, GW = EW * 0.6, GD = ED * 0.6;
+    add(M.tile, this.gable(), 0, 0, G, GD + 0.6, 9, GW - 6, Math.PI / 2);
+    for (const s of [-1, 1]) {
+      // the gable's end: a pale board framing it and a gold ornament under the ridge
+      add(M.white, this.gable(), s * ((GW - 6) / 2 + 0.12), 0, G + 0.3, GD - 2.4, 7.2, 0.24, Math.PI / 2);
+      add(M.gold, this.gable(), s * ((GW - 6) / 2 + 0.3), 0, G + 4.6, 3.4, 2.2, 0.2, Math.PI / 2);
+    }
+    box(M.slate, 0, 0, G + 9 - 0.1, GW - 4.6, 1.2, 1.1);
+    for (const s of [-1, 1]) add(M.gold, this.cone(4), s * ((GW - 4.6) / 2 - 0.3), 0, G + 9.9, 0.7, 2.6, 0.7);
+    // the great lantern, hung from the beam at the middle of the front
+    const LV = PV + 1.6;
+    add(M.red, this.sphere(14, 10), 0, LV, top + 6.6, 2, 3, 2);
+    for (const y of [top + 3.75, top + 9.45]) add(M.black, this.cyl(1.5, 1.5, 14), 0, LV, y, 1, 0.5, 1);
+    box(M.black, 0, LV, top + 10.45, 0.2, 1.5, 0.2);
+    // in the court: the incense burner, stone lanterns, trees
+    const ib = D / 2 + 13;
+    add(M.bronze, this.cyl(1.3, 1.7, 8), 0, ib, GY + 0.5, 1, 1, 1);
+    add(M.bronze, this.cyl(2, 1.3, 8), 0, ib, GY + 1.7, 1, 1.4, 1);
+    for (const [du, dv] of [[-1.2, -1.2], [1.2, -1.2], [-1.2, 1.2], [1.2, 1.2]]) add(M.bronze, this.cyl(0.12, 0.12, 6), du, ib + dv, GY + 3.1, 1, 1.4, 1);
+    add(M.bronze, this.hip(0.2), 0, ib, GY + 4.4, 3.8, 1.2, 3.8);
+    add(M.gold, this.sphere(8, 6), 0, ib, GY + 5.25, 0.4, 0.4, 0.4);
+    for (const v of [D / 2 + 9, D / 2 + 19]) for (const s of [-1, 1]) {
+      const u = s * 9;
+      box(M.stone, u, v, GY + 0.25, 1.4, 0.5, 1.4);
+      add(M.stone, this.cyl(0.28, 0.34, 6), u, v, GY + 1.3, 1, 1.6, 1);
+      box(M.warm, u, v, GY + 2.45, 0.8, 0.7, 0.8);
+      add(M.stone, this.hip(0.15), u, v, GY + 3.05, 1.8, 0.5, 1.8);
+    }
+    for (const [u, v] of [[-24, 18], [24, 18], [-24, -6], [24, -6]]) this.planeTree(c, at(u, v).x, at(u, v).z, c.rr(11, 14));
+    c.take(x, z, 30);
   },
   /** Asahi's golden beer-glass tower with its foam top, and the black hall with the golden flame */
   asahi(c, x, z, ry) {
     const { B, M, GY } = c, fx = Math.sin(ry), fz = Math.cos(ry);
-    B.facade(M.curtain, x, GY + 45, z, 26, 90, 20, ry);
     B.box(M.gold, x, GY + 45, z, 26.2, 90, 20.2, ry);
     B.box(M.white, x, GY + 93, z, 26.4, 6, 20.4, ry);
     const hx = x + Math.cos(ry) * 30, hz = z - Math.sin(ry) * 30;
@@ -12911,8 +13101,8 @@ const Landmarks = {
     if (kind === 'london') {
       const h = c.rr(12, 18), mat = r < 0.55 ? M.brick : M.stucco;
       B.facade(mat, x, GY + h / 2, z, w, h, d, ry);
-      B.add(M.slate, this.gable(), x, GY + h, z, d, 4.4, w, ry + Math.PI / 2);
-      for (const u of [-w / 2 + 1, w / 2 - 1]) B.box(M.brick, x + rx * u, GY + h + 3.4, z + rz * u, 1.2, 3, 2.4, ry);
+      B.add(M.slate, this.gable(), x, GY + h, z, d + 0.6, 4.2, w, ry + Math.PI / 2);
+      for (const u of [-w / 2 + 0.9, w / 2 - 0.9]) B.box(M.brick, x + rx * u, GY + h + 3.5, z + rz * u, 1.2, 4.2, 2.4, ry);
       if (c.rnd() < 0.4) B.box(M.black, x, GY + 1.8, z, w + 0.2, 3.6, d + 0.2, ry);
       return;
     }
@@ -13060,10 +13250,12 @@ const Landmarks = {
     }
     const mtx = new THREE.Matrix4().compose(new THREE.Vector3(cx, GY + 0.3, cz), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ang, 0)), new THREE.Vector3(W, 0.4, L));
     c.B.free(M.water, this.geo('box', () => new THREE.BoxGeometry(1, 1, 1)), mtx);
-    // stone quays along both long sides
+    // stone quays on all four sides (open ends would let it run out)
     for (const s of [-1, 1]) {
       const qx = cx + Math.cos(ang) * s * (W / 2 + 1), qz = cz - Math.sin(ang) * s * (W / 2 + 1);
-      c.B.box(M.stoneDark, qx, GY + 0.8, qz, 2, 1.6, L, ang);
+      c.B.box(M.stoneDark, qx, GY + 0.8, qz, 2, 1.6, L + 4, ang);
+      const ex = cx + Math.sin(ang) * s * (L / 2 + 1), ez = cz + Math.cos(ang) * s * (L / 2 + 1);
+      c.B.box(M.stoneDark, ex, GY + 0.8, ez, W, 1.6, 2, ang);
     }
     // (no trees or rocks are left standing in it: Landmarks.dress clears them from everything built)
     for (let v2 = -L / 2; v2 <= L / 2; v2 += W * 0.8) c.take(cx + Math.sin(ang) * v2, cz + Math.cos(ang) * v2, W * 0.55);
@@ -13165,7 +13357,7 @@ const Landmarks = {
       case 'fujitv': return ah(50, (p) => this.fujiTV(c, p.x, p.z, p.face));
       case 'kaminarimon': return by(14, (p) => this.kaminarimon(c, p.x, p.z, p.face));
       case 'pagoda': return by(11 * (a4 || 1), (p) => this.pagoda(c, p.x, p.z, p.q.yaw, a4 || 1));
-      case 'temple': return by(26, (p) => this.temple(c, p.x, p.z, p.face));
+      case 'temple': return by(30, (p) => this.temple(c, p.x, p.z, p.face));
       case 'asahi': return by(30, (p) => this.asahi(c, p.x, p.z, p.q.yaw));
       case 's109': return by(12, (p) => this.s109(c, p.x, p.z));
       case 'scramble': return this.scramble(c, a1, a2);
@@ -13176,7 +13368,14 @@ const Landmarks = {
       // the land
       case 'river': return this.water(c, a1, a2, a3, a4, a5);
       case 'harbour': return this.water(c, a1, 'along', a3, a4, side(a2), a5, true);
-      case 'reservoir': return by(a4 || 60, (p) => { c.B.free(c.M.water, this.cyl(1, 1, 32), new THREE.Matrix4().compose(new THREE.Vector3(p.x, c.GY + 0.3, p.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, p.q.yaw, 0)), new THREE.Vector3(a4 || 60, 0.4, a5 || 90))); c.take(p.x, p.z, a4 || 60); });
+      case 'reservoir': return by(Math.max(a4 || 60, a5 || 90), (p) => {
+        const A = a4 || 60, Bz = a5 || 90, yaw = p.q.yaw;
+        c.B.free(c.M.water, this.cyl(1, 1, 32), new THREE.Matrix4().compose(new THREE.Vector3(p.x, c.GY + 0.3, p.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)), new THREE.Vector3(A, 0.4, Bz)));
+        // its stone rim, all the way round
+        const pt = (t) => new THREE.Vector3(Math.sin(t) * (A + 0.4), 0, Math.cos(t) * (Bz + 0.4)).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(new THREE.Vector3(p.x, c.GY + 0.45, p.z));
+        for (let k = 0; k < 48; k++) c.B.beam(c.M.stoneDark, pt(k / 48 * Math.PI * 2), pt((k + 1) / 48 * Math.PI * 2), 0.9, 0.8);
+        c.take(p.x, p.z, Math.max(A, Bz));
+      });
       case 'street': return this.street(c, a2 || c.D.theme, a1, a3, a4, a5);
     }
   },
