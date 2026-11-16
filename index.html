@@ -24,7 +24,7 @@
   }, true);
 })();
 </script>
-<title>aiPolytrack — Season 3</title>
+<title>aiPolytrack — Season 4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2972,7 +2972,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
             <circle cx="10" cy="24" r="1.8" fill="#f4f1ea"/><circle cx="15.5" cy="24" r="1.8" fill="#f4f1ea"/>
           </svg>
           <h1>ai<span>Polytrack</span></h1>
-          <span class="seasonTag">Season 3</span>
+          <span class="seasonTag">Season 4</span>
           <span class="onlineNow" id="onlineNow" hidden title="Drivers who started a run in the last 5 minutes"><i></i><b id="onlineN">0</b> playing now</span>
         </div>
         <div class="who" id="who" hidden>
@@ -3034,7 +3034,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
 
         <div class="w wInfo wLead">
           <div class="leaderCard" id="overallLeaderCard" hidden>
-            <div class="lcHead"><span class="lcKick" id="overallLeaderKick">Season 3 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
+            <div class="lcHead"><span class="lcKick" id="overallLeaderKick">Season 4 leader</span><span class="leaderTime" id="overallLeaderTime"></span></div>
             <div class="lcBody">
               <div class="garagePreviewWrap lcCar"><canvas id="overallLeaderCanvas"></canvas></div>
               <div class="lcName"><span class="crown">♛</span> <b id="overallLeaderName">—</b></div>
@@ -3362,7 +3362,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <div class="wnHero">
         <div class="kick" id="wnKick">WHAT'S NEW</div>
         <h2 id="wnTitle">Season 3 is here</h2>
-        <p>Sixteen new maps stripped back to the essentials, and a track builder. Here's what changed.</p>
+        <p>Four real cities, sixteen new maps and a new finish line. Here's what's new.</p>
       </div>
       <div class="wnGrid" id="wnGrid"></div>
       <div class="row wnFoot"><span class="wnNote" id="wnNote"></span><button class="ghost" id="bWnTrailer" hidden>&#9654; The trailer</button><button class="primary" id="bWnGo">Let's race</button></div>
@@ -3974,7 +3974,7 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       </div>
       <div id="topTenHome" hidden>
       <section class="topTen" id="topTen" hidden>
-        <div class="ttHead"><span class="ttKick">TOP 10 · SEASON 2</span><span class="ttSub">every map's best added up</span></div>
+        <div class="ttHead"><span class="ttKick">TOP 10 · SEASON 4</span><span class="ttSub">every map's best added up</span></div>
         <div class="ttStage"><canvas id="topTenCanvas"></canvas></div>
         <div class="ttLabels" id="topTenLabels"></div>
         <ol class="ttList" id="topTenList"></ol>
@@ -9638,228 +9638,16 @@ function disposeCourse(course, scene) {
 }
 
 /* --------------------------------------------------------- 8. course data
-   This season (Season 3): sixteen courses in four sections of four. Since
-   2026-10-26 most are tracks players made in the track builder (built
-   with TrackKit, in random order); a map whose maker is credited has `by`.
-   Straight Shot (s4c1) is the season's straight line with a jump, kept
-   from the first sixteen; the other first maps (s4c2..s4c16) are retired
-   and their times stay in the database. Sections exist so each has its own
-   smaller overall winner; they share no theme. No road crosses another,
-   and every course is built { fine: true } (see fineDeck). Earlier
-   seasons' maps (s2c*, s3c*) are retired too, and close_season() kept
-   their podiums.                                                        */
-const SEASON = 3;
+   This season (Season 4, live since 2026-11-16): sixteen maps in four
+   cities, a section each (A New York, B Paris, C London, D Tokyo), built
+   from a list of pieces by S4.build and dressed with real landmarks by
+   Landmarks (each map's `decor`, its `look`). No road crosses another, and
+   every course is built { fine: true } (see fineDeck). Earlier seasons'
+   maps (s2c*, s3c*, s4c* and s4m*) are retired; their times stay in the
+   database and close_season() kept their podiums.                        */
+const SEASON = 4;
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
 const LEVELS = [
-  // ---------------------------------------------------------- Section A
-  {
-    id: 's4m1', section: 0, name: 'Afterburner',
-    blurb: 'The long one: two super strips on a narrow road, a crest, two big jumps and a tabletop to finish.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['T', 60, 75, 5, 0, 15], ['S', 20, 15], ['T', 75, 75, 20, 0, 15], ['H', 10, 60, 15], ['B', 30, 12], ['X', 60, 8], ['X', 60, 8], ['B', 30, 12], ['C', 9, 15], ['S', 20, 15], ['H', -10, 100, 15], ['S', 100, 15], ['J', 3, 15], ['S', 100, 15], ['T', 50, 75, 15, 0, 15], ['T', 50, 45, 15, 0, 15], ['J', 4, 8]] });
-    }
-  },
-  {
-    id: 's4m2', section: 0, name: 'Ledgerunner',
-    blurb: 'Up onto a narrow ledge and through tight, narrow corners, with speed strips between them.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['S', 80, 15], ['H', 12, 40, 10], ['T', 24, 60, 10, 0, 10], ['S', 50, 10], ['T', 24, -90, 10, 0, 10], ['S', 10, 10], ['B', 30, 10], ['T', 60, -105, 10, 0, 10], ['H', -4, 60, 10], ['B', 30, 10], ['T', 40, -30, 0, 0, 20]] });
-    }
-  },
-  {
-    id: 's4m3', section: 0, name: 'Off Kilter',
-    blurb: 'An off-camber right that holds you less than you think, a crest, a steep banked left and a jump.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['S', 60, 15], ['T', 75, -60, -10, 0, 15], ['S', 50, 15], ['C', 7, 15], ['S', 40, 15], ['T', 60, 90, 40, 0, 16], ['S', 50, 16], ['J', 2, 16], ['S', 60, 15]] });
-    }
-  },
-  {
-    id: 's4m4', section: 0, name: 'Guacamole', by: 'Julian Svoboda',
-    blurb: 'A super strip, a big jump, two steep banked rights and a hop off a hill onto a wide landing.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['X', 30, 15], ['H', 12, 40, 15], ['B', 30, 15], ['J', 3, 15], ['S', 40, 15], ['T', 75, 120, 45, 0, 15], ['S', 10, 15], ['B', 30, 15], ['S', 10, 15], ['T', 75, -90, 55, 0, 15], ['B', 50, 15], ['T', 75, -90, 55, 0, 15], ['H', 6, 20, 15], ['H', 12, 40, 15], ['J', 1, 25], ['H', -20, 100, 30], ['S', 20, 30], ['T', 60, -120, 25, 0, 8]] });
-    }
-  },
-  // ---------------------------------------------------------- Section B
-  {
-    id: 's4m5', section: 1, name: 'Velodrome',
-    blurb: 'A hop, a super strip and one enormous U-turn banked at 70 degrees. Flat out.',
-    build() {
-      return TrackKit.build({ w: 20, pieces: [['J', 1, 20], ['X', 60, 20], ['T', 150, -180, 70, 0, 20]] });
-    }
-  },
-  {
-    id: 's4m16', section: 1, name: 'Hourglass',
-    blurb: 'Minimal: a wide bowl that pinches to 8 m and opens out again, one long sweeping left, then flat out to the line.',
-    build() {
-      return TrackKit.build({ w: 16, pieces: [['S', 50, 16], ['W', 60, 30], ['N', 30, 8], ['W', 60, 30], ['S', 40, 16], ['T', 120, 45, 10, 0, 16], ['S', 120, 16]] });
-    }
-  },
-  {
-    id: 's4c1', section: 1, name: 'Straight Shot',
-    blurb: 'A straight line and one jump. Nothing else: flat out, and land it clean.',
-    build() {
-      const b = new TrackBuilder({ width: 15, fine: true });
-      b.pad(24, 19);
-      b.straight(110);
-      b.slope(24, 2.5);
-      b.ramp(14, 9);
-      b.gap(22, -2);
-      b.landing(18, -8, { w: 18 });
-      b.straight(90);
-      b.gate('finish');
-      b.straight(34, { w: 19 });
-      return b.build();
-    }
-  },  {
-    id: 's4m7', section: 1, name: 'Snapback',
-    blurb: 'A speed strip, a banked left, then a sharp right that snaps you back the other way.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['S', 20, 15], ['B', 20, 15], ['T', 60, 60, 20, 0, 15], ['S', 50, 15], ['T', 20, -60, 20, 0, 15]] });
-    }
-  },
-  // ---------------------------------------------------------- Section C
-  {
-    id: 's4m8', section: 2, name: 'Pinball',
-    blurb: 'Hops and jumps between banked turns, with two speed strips in a row.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['J', 1, 15], ['T', 60, -75, 40, 0, 15], ['J', 2, 15], ['B', 50, 15], ['B', 50, 15], ['T', 60, 75, 40, 0, 15], ['T', 60, 75, 40, 0, 15]] });
-    }
-  },
-  {
-    id: 's4m9', section: 2, name: 'Ridgeback',
-    blurb: 'An off-camber left, a long climb, then a big banked S along the top of the ridge.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['S', 20, 15], ['T', 50, 60, -10, 0, 10], ['B', 30, 10], ['H', 10, 100, 10], ['T', 50, 120, 40, 0, 10], ['S', 50, 10], ['T', 50, -120, 40, 0, 10], ['T', 50, -45, 40, 0, 10]] });
-    }
-  },
-  {
-    id: 's4m10', section: 2, name: 'Big Dipper',
-    blurb: 'Up, down and up again: hills, super strips, two jumps and a fast banked turn at the end.',
-    build() {
-      return TrackKit.build({ w: 10, pieces: [['H', 20, 60, 10], ['B', 30, 10], ['T', 75, -15, 5, 0, 10], ['H', -10, 60, 10], ['H', 20, 60, 10], ['T', 75, 15, 20, 0, 10], ['X', 60, 12], ['T', 75, -15, 5, 0, 12], ['J', 2, 12], ['S', 50, 12], ['X', 60, 12], ['H', -20, 60, 14], ['H', -10, 60, 16], ['J', 4, 16], ['T', 90, 60, 30, 0, 16], ['S', 50, 8]] });
-    }
-  },
-  {
-    id: 's4m11', section: 2, name: 'Long Table',
-    blurb: 'Two lefts in a row, a tabletop jump and a tight right on the far side.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['T', 20, 75, 10, 0, 15], ['T', 75, 75, 10, 0, 15], ['S', 80, 15], ['J', 4, 20], ['S', 20, 20], ['T', 20, -45, 10, 0, 20]] });
-    }
-  },
-  // ---------------------------------------------------------- Section D
-  {
-    id: 's4m12', section: 3, name: 'Coil', by: 'Julian Svoboda',
-    blurb: 'Banked turns that get steeper as the road gets narrower, with a speed strip after each one.',
-    build() {
-      return TrackKit.build({ w: 20, pieces: [['R', 2, 0.6, 20], ['B', 30, 17], ['H', 12, 40, 15], ['T', 60, -120, 55, 0, 13], ['B', 50, 12], ['T', 50, 90, 60, 0, 10], ['B', 50, 8], ['T', 40, 75, 65, 0, 8], ['B', 50, 8], ['T', 50, -60, 60, 0, 8], ['S', 10, 8]] });
-    }
-  },
-  {
-    id: 's4m13', section: 3, name: 'Kicker',
-    blurb: 'Down a hill, off a big jump, round a banked hairpin and onto a super strip.',
-    build() {
-      return TrackKit.build({ w: 15, pieces: [['H', -15, 60, 15], ['B', 30, 15], ['J', 3, 15], ['S', 60, 15], ['T', 40, 180, 25, 0, 15], ['S', 80, 15], ['X', 30, 15], ['S', 60, 15]] });
-    }
-  },
-  {
-    id: 's4m14', section: 3, name: 'Cornfield', by: 'Julian Svoboda',
-    blurb: 'Climbs, jumps and super strips on a road that narrows to 8 m, then a 60 degree banked left to finish.',
-    build() {
-      return TrackKit.build({ w: 20, pieces: [['X', 20, 20], ['H', 20, 60, 20], ['J', 4, 18], ['X', 30, 16], ['S', 20, 14], ['T', 75, -90, 30, 0, 10], ['H', 20, 60, 8], ['J', 1, 8], ['H', -12, 60, 18], ['H', -12, 60, 18], ['B', 50, 18], ['X', 20, 18], ['H', 15, 50, 18], ['H', 6, 40, 18], ['X', 20, 18], ['T', 75, 120, 60, 0, 10]] });
-    }
-  },
-  {
-    id: 's4m17', section: 3, name: 'Black Diamond',
-    blurb: 'Straight down the mountain: three ski jumps, each bigger than the last, a banked right and an icy left between them, and a hairpin at the bottom.',
-    build() {
-      const b = new TrackBuilder({ width: 15, y: 120, fine: true });
-      b.pad(22, 19);
-      b.slope(40, -6);
-      b.straight(14);
-      b.ramp(14, 4);
-      b.skiJump(14, 4, 40, 18, 26, { w: 18 });
-      b.landing(34, -18, { w: 18 });
-      b.slope(24, -3);
-      b.curve(85, -55, { bank: 22, rise: -5, chev: 1 });
-      b.straight(24);
-      b.strip(20);
-      b.straight(12);
-      b.ramp(26, 4);
-      b.skiJump(20, 7, 56, 22, 40, { w: 22 });
-      b.landing(44, -22, { w: 22 });
-      b.slope(30, -5);
-      b.curve(75, 60, { bank: 20, grip: 0.8, rise: -4, chev: 1 });
-      b.straight(20);
-      b.strip(20);
-      b.straight(14);
-      b.ramp(28, 5);
-      b.skiJump(24, 9, 58, 25, 46, { w: 24 });
-      b.landing(50, -25, { w: 24 });
-      b.slope(36, -7);
-      b.straight(14);
-      b.curve(24, 150, { bank: 10, w: 18, chev: 1 });
-      b.straight(30);
-      b.gate('finish');
-      b.straight(34, { w: 20 });
-      return b.build();
-    }
-  }
-];
-const COURSE_IDS = LEVELS.map((l) => l.id);
-// Season 3's maps keep the car's old 8-corner hull until the season closes:
-// every time on their boards was set with it. (Season 4 on gets the full one.)
-if (SEASON === 3) for (const lv of LEVELS) { const b = lv.build; lv.build = function () { return Object.assign(b.call(this), { legacyHull: true }); }; }
-/* Next season: built and testable from the private preview (signed in to
-   the admin page in the same browser), but not released: they aren't in
-   LEVELS, the server has no rules for them (so no time on them can be
-   saved), and players never see them. Releasing = moving them into LEVELS.
-   Empty between seasons. */
-const NEXT_SEASON = 4;
-/* Season 4's maps are built from a list of pieces: TrackKit's own on the
-   ground ('S' straight, 'T' turn [radius, angle (+ left), bank, icy], 'B'
-   speed strip, 'X' super strip, 'H' hill [rise, run], 'C' crest, 'R'
-   rollers [n, height], 'J' jump [kind 1-4], 'N' bottleneck [length,
-   width], 'W' wide area [length, width]) and road on stilts ('b' bridge,
-   'bh' a bridge rising [rise, run], 'bt' a bridge turning, 'bx' a strip on a
-   bridge [length, push], 'bramp'/'gap'/'bland' a jump from one bridge to the
-   next, 'w' a new width). S4.marks[id][i] remembers how far along the road
-   each piece starts, so a map's landmarks can be placed by piece ('@i+d'). */
-const S4 = {
-  marks: {},
-  build(id, w, steps) {
-    const b = new TrackBuilder({ width: w, fine: true });
-    let cw = w, len = 0, pi = 0;
-    const marks = [];
-    const tally = () => { const P = b.path; for (; pi < P.length - 1; pi++) len += Math.hypot(P[pi + 1][0] - P[pi][0], P[pi + 1][1] - P[pi][1], P[pi + 1][2] - P[pi][2]); };
-    b.pad(24, w + 4); b.straight(20, { w }); tally();
-    for (const s of steps) {
-      marks.push(len);
-      const k = s[0];
-      if (k === 'w') cw = s[1];
-      else if (k === 'b') b.bridge(s[1], { w: cw });
-      else if (k === 'bh') b.slope(s[2], s[1], { bridge: true, w: cw });
-      else if (k === 'bt') b.curve(s[1], s[2], { bank: s[3] || 0, grip: s[4] ? 0.7 : undefined, bridge: true, chev: 1, w: Math.min(cw, 2 * (s[1] - 8)) });
-      else if (k === 'bx') b.strip(s[1], { bridge: true, boost: s[2] || 1, w: cw });
-      else if (k === 'bramp') b.ramp(s[1], s[2], { bridge: true, w: cw });
-      else if (k === 'gap') b.gap(s[1], s[2]);
-      else if (k === 'bland') b.landing(s[1], s[2], { bridge: true, w: cw + 3 });
-      else {
-        const p = k === 'S' || k === 'B' || k === 'X' || k === 'C' || k === 'J' ? [k, s[1], cw]
-          : k === 'T' ? ['T', s[1], s[2], s[3] || 0, s[4] || 0, Math.min(cw, 2 * (s[1] - 8))]
-            : k === 'H' ? ['H', s[1], s[2], cw] : k === 'R' ? ['R', s[1], s[2], cw] : s.slice();
-        TrackKit.add(b, p);
-      }
-      tally();
-    }
-    marks.push(len);
-    b.straight(30, { w: cw }); b.gate('finish', { w: cw }); b.straight(34, { w: cw + 4 });
-    this.marks[id] = marks;
-    TrackKit.blendWidths(b.strips);
-    return b.build();
-  }
-};
-const NEXT_LEVELS = [
   // ============================================================ Section A: New York
   {
     id: 's5c1', section: 0, name: 'Fifth Avenue', look: 4,
@@ -9976,7 +9764,59 @@ const NEXT_LEVELS = [
       set: [['tmg', '@2', 260, -0.3], ['cocoon', '@5', 1, 12], ['tokyotower', '@11', 260, 0.35], ['skytree', '@0', 900, 2.4]] },
     blurb: 'The long one: the elevated expressway between the towers of Shinjuku, a super strip, bends of every size, a dip, and down past Tokyo Tower to a big jump.',
     build() { return S4.build('s5c16', 15, [['S', 30], ['bh', 12, 80], ['b', 30], ['bt', 90, -30, 10], ['bx', 20, 3], ['b', 20], ['bt', 70, 105, 25], ['b', 25], ['bh', -5, 35], ['bh', 5, 35], ['bt', 120, -15, 4], ['b', 25], ['bt', 80, -75, 18], ['b', 20], ['bh', -12, 80], ['S', 30], ['J', 3], ['S', 30]]); }
-  },
+  }
+];
+const COURSE_IDS = LEVELS.map((l) => l.id);
+/* Next season: built and testable from the private preview (signed in to
+   the admin page in the same browser), but not released: they aren't in
+   LEVELS, the server has no rules for them (so no time on them can be
+   saved), and players never see them. Releasing = moving them into LEVELS.
+   Empty between seasons. */
+const NEXT_SEASON = 5;
+/* Season 4's maps are built from a list of pieces: TrackKit's own on the
+   ground ('S' straight, 'T' turn [radius, angle (+ left), bank, icy], 'B'
+   speed strip, 'X' super strip, 'H' hill [rise, run], 'C' crest, 'R'
+   rollers [n, height], 'J' jump [kind 1-4], 'N' bottleneck [length,
+   width], 'W' wide area [length, width]) and road on stilts ('b' bridge,
+   'bh' a bridge rising [rise, run], 'bt' a bridge turning, 'bx' a strip on a
+   bridge [length, push], 'bramp'/'gap'/'bland' a jump from one bridge to the
+   next, 'w' a new width). S4.marks[id][i] remembers how far along the road
+   each piece starts, so a map's landmarks can be placed by piece ('@i+d'). */
+const S4 = {
+  marks: {},
+  build(id, w, steps) {
+    const b = new TrackBuilder({ width: w, fine: true });
+    let cw = w, len = 0, pi = 0;
+    const marks = [];
+    const tally = () => { const P = b.path; for (; pi < P.length - 1; pi++) len += Math.hypot(P[pi + 1][0] - P[pi][0], P[pi + 1][1] - P[pi][1], P[pi + 1][2] - P[pi][2]); };
+    b.pad(24, w + 4); b.straight(20, { w }); tally();
+    for (const s of steps) {
+      marks.push(len);
+      const k = s[0];
+      if (k === 'w') cw = s[1];
+      else if (k === 'b') b.bridge(s[1], { w: cw });
+      else if (k === 'bh') b.slope(s[2], s[1], { bridge: true, w: cw });
+      else if (k === 'bt') b.curve(s[1], s[2], { bank: s[3] || 0, grip: s[4] ? 0.7 : undefined, bridge: true, chev: 1, w: Math.min(cw, 2 * (s[1] - 8)) });
+      else if (k === 'bx') b.strip(s[1], { bridge: true, boost: s[2] || 1, w: cw });
+      else if (k === 'bramp') b.ramp(s[1], s[2], { bridge: true, w: cw });
+      else if (k === 'gap') b.gap(s[1], s[2]);
+      else if (k === 'bland') b.landing(s[1], s[2], { bridge: true, w: cw + 3 });
+      else {
+        const p = k === 'S' || k === 'B' || k === 'X' || k === 'C' || k === 'J' ? [k, s[1], cw]
+          : k === 'T' ? ['T', s[1], s[2], s[3] || 0, s[4] || 0, Math.min(cw, 2 * (s[1] - 8))]
+            : k === 'H' ? ['H', s[1], s[2], cw] : k === 'R' ? ['R', s[1], s[2], cw] : s.slice();
+        TrackKit.add(b, p);
+      }
+      tally();
+    }
+    marks.push(len);
+    b.straight(30, { w: cw }); b.gate('finish', { w: cw }); b.straight(34, { w: cw + 4 });
+    this.marks[id] = marks;
+    TrackKit.blendWidths(b.strips);
+    return b.build();
+  }
+};
+const NEXT_LEVELS = [
 /*NEXT_LEVELS*/
 
 
@@ -18571,30 +18411,25 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
   // everyone who saw an earlier list sees it again
-  SEASON: 3, EDITION: 3.7, KEY: 'whatsNew',
+  SEASON: 4, EDITION: 4, KEY: 'whatsNew',
   ITEMS: [
-    ['build', 'Design a track with AI', 'In the track builder, describe the track you want ("a long icy road with big jumps") and AI builds it. Then chat with it to change things: "add a dip after the second turn", "make the last jump bigger".'],
-    ['crown', 'Podium Pass', 'In the garage shop: for 14 days, 1 credit every minute for each season map you\'re top 3 on.'],
-    ['gem', 'Only 100 of each', 'Every box and shop item now exists in at most 100 copies. When it\'s gone, it\'s gone.'],
+    ['map', 'Four cities, sixteen maps', 'Section A is New York, B Paris, C London, D Tokyo. Up Fifth Avenue, over the Brooklyn Bridge, round the Arc de Triomphe, under the Eiffel Tower, over Tower Bridge\'s open bascules, along the Shuto Expressway.'],
+    ['photo', 'Real landmarks', 'The Empire State, Liberty, the Louvre, Sacré-Cœur, Big Ben, the London Eye, Piccadilly Circus, the Shibuya crossing, Senso-ji, Tokyo Tower and Mount Fuji, with whole streets round them.'],
+    ['flag', 'A new finish line', 'Every map now ends under a chequered arch.'],
+    ['target', 'Graphics settings', 'Choppy on your computer? Settings, Graphics: pick Low or Minimal, or turn down resolution, shadows, scenery or view distance one at a time. Auto adjusts by itself.'],
+    ['fire', 'Cleaner crashes', 'Come up short at a jump and the car bounces off the landing instead of getting caught inside it. Bridges look solid from every side.'],
+    ['crown', 'Season 3 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
+    ['crown', 'A new Race Pass', '50 tiers of rewards for finishing runs this season, from tier 1 again. Pass+ adds a box at every tier.'],
+    ['crown', 'Podium Pass', 'Now pays on the Season 4 maps: for 14 days, 1 credit every minute for each one you\'re top 3 on.'],
+    ['build', 'Design a track with AI', 'In the track builder, describe the track you want and AI builds it. Then chat with it to change things: "add a dip after the second turn".'],
     ['card', 'Auctions', 'Sell what you have and bid on what you want, in the garage. Your bid is held until someone beats it.'],
+    ['gem', 'Only 100 of each', 'Every box and shop item exists in at most 100 copies. When it\'s gone, it\'s gone.'],
     ['flag', 'New ways to race', 'The Race tile: Escape (outrun a storm on a 25 km road), Knockout (last place goes out every map) and the daily Pot map.'],
-    ['gem', 'The Pot map', 'Put credits in to race the day\'s Pot map. After midnight the fastest share the whole pot.'],
     ['crown', 'Driver levels', 'Everything you do earns XP. Every level pays out on the Driver Road, with exclusive titles, icons and Gold paint.'],
-    ['crown', 'Race Pass', '50 tiers of rewards for finishing runs this season. Pass+ adds a box at every tier, four exclusive paints and pass-only titles and icons.'],
-    ['gem', 'The daily shop', 'Six items a day in the garage at a fixed price: get exactly the car or paint you want.'],
-    ['photo', 'Paint finishes', 'From Matte and Pearl to animated Holo and Aurora. Everyone you race sees them.'],
     ['fire', 'Daily streaks', 'Finish a run every day: 25 credits a day of streak (up to 175 a day), and a free box every 7th day in a row.'],
     ['friend', 'Invite friends, get boxes', 'Send your link from the top of the menu. When a friend finishes 10 runs, you both get a free box.'],
-    ['flag', 'Challenge a friend', 'After a run, copy a link that drops your friend straight onto that map against your ghost.'],
-    ['gem', 'Boxes in the garage', '100 credits a box, or a free one every 50 runs: cars, decals, boosts, wheels, finish celebrations, titles and icons. One box in ten splits in two.'],
-    ['photo', 'Eight cars, sixteen decals', 'From a razor-sharp wedge to an open-wheel racer, and decals from flames to living lava and starfields, all in your colours. Sell what you don\'t want.'],
-    ['crown', 'Titles and profile icons', 'Show them off on your profile card. Edit your profile in the garage.'],
-    ['map', 'Sixteen new maps', 'Most were built by players in the track builder (three by Julian Svoboda), from a 280 m sprint to Black Diamond\'s three ski jumps down a mountain.'],
-    ['build', 'Track builder', 'Build up to 3 tracks of your own, make them public, and race everyone else\'s. Each track has its own leaderboard.'],
     ['target', 'Practise any part of a map', 'Pick a moment of your best run and start right there, at the same speed, after a 3-2-1. Practice times never count.'],
-    ['clock', 'Opening hours', 'Open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), Pacific time. When it\'s closed, Coach has ideas for what to do instead.'],
-    ['crown', 'Season 2 champions', 'Last season\'s podium, every map\'s top three and each section\'s winners keep their trophies, titles and icons for good.'],
-    ['card', 'Always the latest version', 'When aiPolytrack is updated, it reloads itself the next time you\'re on the menu. No more old tabs.']
+    ['clock', 'Opening hours', 'Open on school days, 8:30 AM to 3:30 PM (2:30 PM on Wednesdays), Pacific time.']
   ],
   ICON: {
     map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/>',

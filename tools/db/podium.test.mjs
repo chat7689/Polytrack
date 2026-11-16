@@ -18,15 +18,15 @@ const back = (n, mins) => t.owner("update public.podium_passes set paid_to = now
 const mine = async (n) => (await t.one(n, 'select public.my_podium_pass() as j')).j;
 
 for (const n of ['Pia', 'Q1', 'Q2', 'Q3', 'Q4']) await player(n);
-// Pia: 1st on s4m1, 2nd on s4m2, 3rd on s4m3, 4th on s4m4, 1st on a player track and an old season's map
-await best('Pia', 's4m1', 20000); await best('Q1', 's4m1', 21000);
-await best('Q1', 's4m2', 19000); await best('Pia', 's4m2', 20000); await best('Q2', 's4m2', 21000);
-await best('Q1', 's4m3', 18000); await best('Q2', 's4m3', 19000); await best('Pia', 's4m3', 20000, 5); await best('Q3', 's4m3', 20000, 9);
-await best('Q1', 's4m4', 17000); await best('Q2', 's4m4', 18000); await best('Q3', 's4m4', 19000); await best('Pia', 's4m4', 20000);
+// Pia: 1st on s5c1, 2nd on s5c2, 3rd on s5c3, 4th on s5c4, 1st on a player track and an old season's map
+await best('Pia', 's5c1', 20000); await best('Q1', 's5c1', 21000);
+await best('Q1', 's5c2', 19000); await best('Pia', 's5c2', 20000); await best('Q2', 's5c2', 21000);
+await best('Q1', 's5c3', 18000); await best('Q2', 's5c3', 19000); await best('Pia', 's5c3', 20000, 5); await best('Q3', 's5c3', 20000, 9);
+await best('Q1', 's5c4', 17000); await best('Q2', 's5c4', 18000); await best('Q3', 's5c4', 19000); await best('Pia', 's5c4', 20000);
 await best('Pia', 'u77', 10000); await best('Pia', 's3c1', 10000);
 
 let m = await mine('Pia');
-ok(!m.active && m.rate === 3 && m.maps.join() === 's4m1,s4m2,s4m3', 'without a pass: 3 podiums (a tie goes to whoever set it first) ' + JSON.stringify(m));
+ok(!m.active && m.rate === 3 && m.maps.join() === 's5c1,s5c2,s5c3', 'without a pass: 3 podiums (a tie goes to whoever set it first) ' + JSON.stringify(m));
 
 // --- buying it
 const g1 = await grant('cs_p1', t.users.Pia + '--podium', 300, 'pi_p1');
@@ -54,17 +54,17 @@ ok(Number(p.earned) === 33 && left > 25 && left < 40, 'a minute and a half: one 
 // --- a podium lost stops paying
 await back('Pia', 5);
 await t.owner('select public._podium_pay(null)');                  // as submit_best does before a best changes
-await best('Q2', 's4m1', 15000); await best('Q3', 's4m1', 16000); await best('Q4', 's4m1', 17000);
+await best('Q2', 's5c1', 15000); await best('Q3', 's5c1', 16000); await best('Q4', 's5c1', 17000);
 await back('Pia', 5);
 m = await mine('Pia');
 ok(m.rate === 2 && Number(m.earned) === 33 + 15 + 10, 'pushed off one podium: 5 min x 3, then 5 min x 2 ' + m.earned);
 const src = (await t.owner("select pg_get_functiondef('public.submit_best(text,integer,text,smallint,uuid)'::regprocedure) d")).rows[0].d;
 ok(/_podium_pay\(null\)[\s\S]*insert into public\.bests/.test(src), 'submit_best pays the passes before a season best changes');
 // a banned driver ahead doesn't count
-await best('Q4', 's4m2', 1000, 1, true);
+await best('Q4', 's5c2', 1000, 1, true);
 ok((await mine('Pia')).rate === 2, 'a banned driver doesn\'t take a podium');
 // only this season's maps (settings 'season_maps' once a new season is out)
-await t.owner("insert into public.settings (key, value) values ('season_maps', '[\"s4m2\"]'::jsonb) on conflict (key) do update set value = excluded.value");
+await t.owner("insert into public.settings (key, value) values ('season_maps', '[\"s5c2\"]'::jsonb) on conflict (key) do update set value = excluded.value");
 ok((await mine('Pia')).rate === 1, 'the season\'s maps come from settings when set');
 await t.owner("delete from public.settings where key = 'season_maps'");
 
