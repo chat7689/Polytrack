@@ -1,3 +1,6 @@
 node_modules/
 tools/db/recs.json
 tools/db/tracks.json
+# notes for Claude (local only: private details of the setup), and render checks
+CLAUDE.md
+tools/shots/
