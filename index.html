@@ -888,6 +888,11 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .potList li.me{color:var(--aqua)}
 .potList h4{margin:0 0 4px;font-size:11px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
 .escBoard{margin-top:14px}
+.hStreet{position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:15px;font-weight:600;letter-spacing:.01em;padding:5px 13px;border-radius:5px;background:#2f6f4a;color:#fff;border:1px solid rgba(255,255,255,.55);pointer-events:none}
+.cityMapBox{position:absolute;right:20px;bottom:20px;width:180px;pointer-events:none}
+.cityMapBox canvas{display:block;width:180px;height:180px;border-radius:8px;border:1px solid var(--rule-2);background:rgba(18,20,24,.72)}
+.cityMapBox small{display:block;margin-top:4px;font-size:9.5px;line-height:1.25;color:rgba(255,255,255,.62);text-align:right}
+.hud.free .hud-tc,.hud.free .hud-br,.hud.free .bar{display:none}
 .hEscape{position:absolute;top:84px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:3}
 .hEscape[hidden]{display:none}
 .heDist{display:flex;align-items:baseline;gap:6px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.6)}
@@ -2829,6 +2834,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       </div>
       <canvas class="escMap" id="escMap" width="460" height="1200" hidden></canvas>
       <canvas class="stormInk" id="stormInk" width="640" height="360" hidden></canvas>
+      <div class="hStreet" id="hStreet" hidden></div>
+      <div class="cityMapBox" id="cityMapBox" hidden><canvas id="cityMap" width="360" height="360"></canvas><small id="cityCredit"></small></div>
       <div class="boostFlash" id="boostFlash"></div>
       <div class="hud-tc"><div class="clock" id="hClock">0:00.000</div><div class="split" id="hSplit"></div>
         <div class="hudTimes"><span class="pb" id="hPB">PB —</span><span class="wr" id="hWR"></span></div></div>
@@ -6174,8 +6181,48 @@ class PhysicsWorld {
     this.stamp = 0;
     this.groundY = GROUND_Y;
     this.groundGrip = 0.5;       // grass: low grip, and see CAR.rollGrass
+    // A city's ground (maps/city.js): heights on a square lattice,
+    // { x0, z0, inv (1 / step), nx, nz, h, grip }, each square cut into two
+    // triangles along the same diagonal, just as it is drawn. It stands in
+    // for the flat ground plane; no course map has one.
+    this.field = null;
   }
-  clear() { this.tris.length = 0; this.grid.clear(); }
+  clear() { this.tris.length = 0; this.grid.clear(); this.field = null; }
+  /** the field's height at (x, z) */
+  fieldY(x, z) {
+    const f = this.field, mx = f.nx - 1.0001, mz = f.nz - 1.0001;
+    let u = (x - f.x0) * f.inv, v = (z - f.z0) * f.inv;
+    u = u < 0 ? 0 : u > mx ? mx : u; v = v < 0 ? 0 : v > mz ? mz : v;
+    const i = u | 0, j = v | 0, k = j * f.nx + i, fx = u - i, fz = v - j, h = f.h;
+    const h00 = h[k], h11 = h[k + f.nx + 1];
+    return fx >= fz ? h00 + (h[k + 1] - h00) * fx + (h11 - h[k + 1]) * fz
+      : h00 + (h11 - h[k + f.nx]) * fx + (h[k + f.nx] - h00) * fz;
+  }
+  /** its normal, taken across 4 m so the suspension feels a slope, not each facet */
+  fieldNormal(x, z, out) {
+    return out.set((this.fieldY(x - 2, z) - this.fieldY(x + 2, z)) * 0.25, 1,
+      (this.fieldY(x, z - 2) - this.fieldY(x, z + 2)) * 0.25).normalize();
+  }
+  /** how far along a ray the field is met (within maxT), or -1; a ray that starts under it meets nothing, as with the plane */
+  fieldRay(o, d, maxT) {
+    let d0 = o.y - this.fieldY(o.x, o.z);
+    if (d0 < 0) return -1;
+    const n = Math.max(1, Math.ceil(maxT / 2));
+    let t0 = 0;
+    for (let s = 1; s <= n; s++) {
+      const t1 = maxT * s / n, d1 = o.y + d.y * t1 - this.fieldY(o.x + d.x * t1, o.z + d.z * t1);
+      if (d1 < 0) {
+        let a = t0, b = t1, da = d0, db = d1;
+        for (let k = 0; k < 4; k++) {
+          const m = a + (b - a) * da / (da - db), dm = o.y + d.y * m - this.fieldY(o.x + d.x * m, o.z + d.z * m);
+          if (dm < 0) { b = m; db = dm; } else { a = m; da = dm; }
+        }
+        return a + (b - a) * da / (da - db);
+      }
+      t0 = t1; d0 = d1;
+    }
+    return -1;
+  }
 
   addTri(a, b, c, grip, depth, na, nb, nc, track, boost) {
     const t = new Tri(a, b, c, grip, depth, na, nb, nc, track, boost);
@@ -6274,6 +6321,19 @@ class PhysicsWorld {
         bestT = d; best = t; bestU = u; bestV = v;
       }
     });
+    // a city's ground, in place of the plane
+    if (this.field) {
+      const tf = this.fieldRay(origin, dir, bestT);
+      if (tf >= 0) {
+        hit.t = tf;
+        hit.grip = this.field.grip;
+        hit.track = false;
+        hit.boost = 0;
+        hit.point.copy(origin).addScaledVector(dir, tf);
+        this.fieldNormal(hit.point.x, hit.point.z, hit.normal);
+        return true;
+      }
+    } else
     // the ground plane, tested analytically so it needs no grid cells
     if (this.groundY !== null && dir.y < -1e-6) {
       const tg = (this.groundY - origin.y) / dir.y;
@@ -6334,6 +6394,19 @@ class PhysicsWorld {
         bestDepth = depth; best = t; bestS = s; bestW = w;
       }
     });
+    if (this.field) {
+      const fy = this.fieldY(p.x, p.z);
+      if (p.y < fy) {
+        this.fieldNormal(p.x, p.z, _w3);
+        const fd = Math.min((fy - p.y) * _w3.y, 0.8);
+        if (fd < bestDepth) {
+          out.depth = fd;
+          out.grip = this.field.grip;
+          out.normal.copy(_w3);
+          return true;
+        }
+      }
+    } else
     if (this.groundY !== null && p.y < this.groundY) {
       const gd = Math.min(this.groundY - p.y, 0.8);
       if (gd < bestDepth) {
@@ -11165,7 +11238,9 @@ const PREVIEW_BASE = DAILY_I + 1;
 // a player track (or the builder's test drive) is played as level UTRACK_I
 const UTRACK_I = PREVIEW_BASE + 100;
 const isPreview = (i) => i >= PREVIEW_BASE && i !== UTRACK_I;
-function levelAt(i) { return i === DAILY_I ? Daily.level : i === UTRACK_I ? Tracks.level : isPreview(i) ? NEXT_LEVELS[i - PREVIEW_BASE] : LEVELS[i]; }
+// the open world (a private preview too: nothing driven there is saved)
+const FREE_I = PREVIEW_BASE + 90;
+function levelAt(i) { return i === FREE_I ? City.level : i === DAILY_I ? Daily.level : i === UTRACK_I ? Tracks.level : isPreview(i) ? NEXT_LEVELS[i - PREVIEW_BASE] : LEVELS[i]; }
 function courseIndexOf(id) {
   if (/^d\d{8}$/.test(id || '')) return DAILY_I;
   if (/^u(\d+|draft)$/.test(id || '')) return UTRACK_I;
@@ -13530,7 +13605,11 @@ const Looks = {
       peaks: 0x7d8794, peaksFar: 0xa2aab4, tree: 0x47663a, rock: 0x85878a, exposure: 1.02 },
     { name: 'Tokyo', zenith: 0x1f2a5a, band: 0xf2a07a, nadir: 0x4f4668, glow: 0xffa070, sun: [-60, 14, -30], sunCol: 0xffb58a, sunI: 1.45,
       hemiSky: 0xa2a8dc, hemiGround: 0x3a3550, hemiI: 0.95, fog: 0xb99aa6, floor: 0x34363f, bank: 0x4c5a48,
-      peaks: 0x4f4a72, peaksFar: 0x7a6f98, tree: 0xe39ab8, rock: 0x7a7488, exposure: 1.05 }
+      peaks: 0x4f4a72, peaksFar: 0x7a6f98, tree: 0xe39ab8, rock: 0x7a7488, exposure: 1.05 },
+    // the open world: the south Willamette Valley on a clear afternoon in late autumn
+    { name: 'Eugene', zenith: 0x3f7cc4, band: 0xdfe9ee, nadir: 0xb7c9b4, glow: 0xfff1d6, sun: [-46, 58, -42], sunCol: 0xfff3df, sunI: 1.95,
+      hemiSky: 0xdbe6ee, hemiGround: 0x5f7a52, hemiI: 0.95, fog: 0xcfdde4, floor: 0x4a7a3a, bank: 0x4d7a3a,
+      peaks: 0x3f6a45, peaksFar: 0x7a9a8a, tree: 0x35603a, rock: 0x8a8f8a, exposure: 1.0 }
   ],
   /** the look for level i: its section's, or the first */
   of(i) { const lv = levelAt(i); return lv && lv.look !== undefined ? lv.look : lv && lv.section >= 0 ? lv.section % 4 : 0; },
@@ -13787,6 +13866,7 @@ const App = {
     this.camera.far = D[2];
     if (this.sky) this.sky.scale.setScalar(Math.min(1, (D[2] * 0.9) / 1500));
     if (this.peaksFar) this.peaksFar.visible = g.detail > 0 && g.dist > 0;
+    if (typeof City !== 'undefined' && City.cur) City.cur.shadows(sh);
     this.resize();
   },
   /**
@@ -14853,8 +14933,8 @@ const Preview = {
         headers: { apikey: SUPABASE.key, 'Content-Type': 'application/json', 'x-admin-token': token } });
       this.on = r.ok && (await r.json()) === true;
     } catch (e) { this.on = false; }
-    $('bPreview').hidden = !this.on || !NEXT_LEVELS.length;
-    if (this.on && NEXT_LEVELS.length && /preview/.test(location.hash) && Game.state === 'menu') this.open();
+    $('bPreview').hidden = !this.on;
+    if (this.on && /preview/.test(location.hash) && Game.state === 'menu') this.open();
     return this.on;
   },
   index(k) { return PREVIEW_BASE + k; },
@@ -14877,9 +14957,11 @@ const Preview = {
   render() {
     const E = escapeHtml;
     let h = '';
-    $('pvTitle').textContent = 'Season ' + NEXT_SEASON + ' maps';
+    $('pvTitle').textContent = 'Season ' + NEXT_SEASON + ' preview';
     $('bPvTrailer').hidden = !Trailer.ready();
-    for (let sec = 0; sec < 4; sec++) {
+    h += '<div class="pvSec">Open world</div><div class="pvGrid"><div class="pvCard" style="grid-column:1/-1"><div class="pvTop"><span class="pvTag">FREE</span><b>' + E(City.level.name) + '</b></div>' +
+      '<p>' + E(City.level.blurb) + '</p><div class="pvBtns"><button class="primary small" data-free="1">Drive</button></div></div></div>';
+    for (let sec = 0; sec < 4 && NEXT_LEVELS.length; sec++) {
       h += '<div class="pvSec">Section ' + 'ABCD'.charAt(sec) + '</div><div class="pvGrid">';
       NEXT_LEVELS.forEach((lv, k) => {
         if (lv.section !== sec) return;
@@ -14903,6 +14985,132 @@ const Preview = {
       Autopilot.prepare(Game.data[i]);
       UI.prompt('Test driver');
     }
+  }
+};
+
+/**
+ * The open world: a real part of Eugene, Oregon, round South Eugene High
+ * School, to drive about in freely. For now it is a private preview with no
+ * goal, clock or board, and nothing driven in it is saved (it is played as a
+ * preview level, FREE_I). The streets, building outlines and ground heights
+ * are real (OpenStreetMap and the U.S. Geological Survey, turned into
+ * maps/eugene.js by tools/city/osm2city.js); maps/city.js builds the world
+ * from them. Both files are fetched from this site only when the map is
+ * opened, so the game loads no slower for anyone else.
+ *
+ * What a later purpose can build on: City.cur keeps the street network
+ * (nodes, edges with names), the named places, every spot a car can be put
+ * down (spots) and what stands where (occAt); Game runs it with
+ * course.free, which is where a clock, checkpoints or other cars would go.
+ */
+const City = {
+  VERSION: 1,
+  level: { id: 'free-eugene', free: true, city: 'eugene', section: -1, name: 'South Eugene', look: 8,
+    blurb: 'A real part of Eugene to drive around freely: South Eugene High School and the streets round it, from Lincoln Street to Hilyard and from 18th Avenue to 27th, College Hill, Amazon Parkway and the creek, Amazon Park and the pool, Civic Park, the shops on Willamette. No clock and no finish.' },
+  kit: null, cur: null, loading: null, t: 0, street: null,
+  /** the builder and the map's data: two files of this site, fetched once */
+  load() {
+    if (this.loading) return this.loading;
+    const one = (src) => new Promise((ok, no) => {
+      const el = document.createElement('script');
+      el.src = src + '?v=' + this.VERSION;
+      el.onload = ok; el.onerror = () => no(new Error('could not load ' + src));
+      document.head.appendChild(el);
+    });
+    this.loading = Promise.all([one('maps/city.js'), one('maps/eugene.js')]).then(() => { this.kit = CityKit({ THREE, GROUND_Y }); });
+    this.loading.catch(() => { this.loading = null; });
+    return this.loading;
+  },
+  async drive(btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Building the map…'; }
+    try {
+      await this.load();
+      await new Promise((r) => setTimeout(r, 30));            // (the button's new text is on screen before the half second of building)
+      Autopilot.on = false;
+      Game.data[FREE_I] = { free: true, valid: true, strips: [], gates: [], path: [], start: { pos: [0, 0, 0], heading: 0 } };
+      Game.playable[FREE_I] = true;
+      Game.startLevel(FREE_I);
+    } catch (e) {
+      console.warn('aiPolytrack: open world', e);
+      UI.toast('The map could not be loaded.');
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Drive'; }
+  },
+  /** builds the city into the scene and the physics world; returns it as a course */
+  build(scene, world) {
+    const c = this.kit.build(CityData[this.level.city], { detail: Gfx.get('detail') });
+    c.intoWorld(world);
+    c.shadows(Gfx.get('shadows') > 0);
+    scene.add(c.root);
+    this.cur = c;
+    const s = c.spawn, B = c.box, V = (x, y, z) => new THREE.Vector3(x, y, z);
+    Game.data[FREE_I].start = { pos: [s.x, s.y, s.z], heading: s.heading };
+    return {
+      free: true, city: c, root: c.root, gates: [], cps: [], roadShift: () => 0,
+      path: [V(s.x, s.y, s.z), V(s.x + Math.sin(s.heading) * 10, s.y, s.z + Math.cos(s.heading) * 10)], cum: [0, 10], length: 10,
+      minY: s.y, segments: 0, tris: world.tris.length, props: 0,
+      center: V((B.x0 + B.x1) / 2, 0, (B.z0 + B.z1) / 2), extent: Math.hypot(B.x1 - B.x0, B.z1 - B.z0) / 2 + 260
+    };
+  },
+  /** another course is about to load (or the same one again): let go of the city's materials */
+  leave() {
+    if (!this.cur) return;
+    for (const k in this.cur.mats) this.cur.mats[k].dispose();
+    this.cur = null;
+    this.hud(false);
+  },
+  hud(on) {
+    $('hStreet').hidden = true; this.street = null;
+    $('cityMapBox').hidden = !on;
+    const hud = document.querySelector('#hud .hud'); if (hud) hud.classList.toggle('free', !!on);
+    if (on && this.cur) $('cityCredit').textContent = this.cur.credit;
+  },
+  /** hides what the haze hides anyway, and draws in full only what is near (how near goes with the view-distance setting) */
+  cull() { this.cur.cull(App.camera.position, App.scene.fog.far, [180, 300, 440][Gfx.get('dist')] || 300); },
+  /** back onto the nearest street (R, a car that is stuck, or one that has left the map) */
+  respawn(reason) {
+    const g = Game, c = this.cur, s = c.nearestStreet(g.car.pos.x, g.car.pos.z);
+    const y = c.Hs(s.x, s.z) + 0.14 + CAR.comHeight + 0.05;
+    g.car.place(new THREE.Vector3(s.x, y, s.z), s.heading);
+    g.chase.snap(g.car);
+    g.offTrack = 0; g.hungTime = 0; g.accum = 0;
+    if (g.marks) g.marks.reset();
+    UI.flash(); Sound.respawn();
+    UI.toast(reason === 'edge' ? 'That is the edge of the map: back on ' + (s.name || 'the street') : reason === 'stuck' ? 'Stuck: back on ' + (s.name || 'the street') : 'Back on ' + (s.name || 'the street'));
+  },
+  /** each physics frame of free driving */
+  step(dt) {
+    const c = this.cur, p = Game.car.pos, B = c.box;
+    if (Math.max(B.x0 - p.x, p.x - B.x1, B.z0 - p.z, p.z - B.z1) > 60) { this.respawn('edge'); return; }
+    this.t += dt;
+    if (this.t < 0.12) return;
+    this.t = 0;
+    const name = c.streetName(p.x, p.z);
+    if (name !== this.street) { this.street = name; const el = $('hStreet'); el.hidden = !name; el.textContent = name.replace(/^East /, 'E ').replace(/^West /, 'W ').replace(/ Avenue$/, ' Ave').replace(/ Street$/, ' St').replace(/ Parkway$/, ' Pkwy').replace(/ Drive$/, ' Dr').replace(/ Place$/, ' Pl'); }
+    this.drawMap();
+  },
+  /** the small map: north up, the car in the middle */
+  drawMap() {
+    const cv = $('cityMap'), g = cv.getContext('2d'), c = this.cur, p = Game.car.pos, W = cv.width, R = 260, k = W / (2 * R);
+    // (+X is west, so it runs to the left; +Z is north, up)
+    const X = (x) => W / 2 - (x - p.x) * k, Y = (z) => W / 2 - (z - p.z) * k;
+    g.clearRect(0, 0, W, W);
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const pass of [0, 1]) for (const E of c.edges) {
+      const P = E.pts;
+      if (Math.min(Math.abs(P[0].x - p.x), Math.abs(P[P.length - 1].x - p.x)) > R + E.len || Math.min(Math.abs(P[0].z - p.z), Math.abs(P[P.length - 1].z - p.z)) > R + E.len) continue;
+      g.strokeStyle = pass ? (E.k === 'p' || E.k === 's' ? '#f2f3f5' : '#aab0b8') : '#15171b';
+      g.lineWidth = Math.max(2, E.w * k) + (pass ? 0 : 3);
+      g.beginPath(); g.moveTo(X(P[0].x), Y(P[0].z));
+      for (let i = 1; i < P.length; i++) g.lineTo(X(P[i].x), Y(P[i].z));
+      g.stroke();
+    }
+    // the car: an arrow along its heading
+    const h = Game.car.heading;
+    g.save(); g.translate(W / 2, W / 2); g.rotate(Math.atan2(-Math.sin(h), -Math.cos(h)) + Math.PI / 2);
+    g.fillStyle = '#ff6a3a'; g.strokeStyle = '#15171b'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(14, 0); g.lineTo(-9, 8); g.lineTo(-4, 0); g.lineTo(-9, -8); g.closePath(); g.fill(); g.stroke();
+    g.restore();
   }
 };
 
@@ -23804,7 +24012,7 @@ const UI = {
   course(i, name) {
     const lv = levelAt(i);
     if (Game.practice) { $('hNum').textContent = 'PRACTICE · FROM ' + formatTime(Game.practice.t) + ' · NOT SAVED'; $('hName').textContent = name; return; }
-    $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : i === UTRACK_I ? (lv.escape ? 'ESCAPE · OUTRUN THE STORM' : lv.pot ? 'POT MAP · TODAY ONLY' : lv.draft ? 'TEST DRIVE · NOT SAVED' : 'PLAYER TRACK' + (lv.author ? ' · BY ' + lv.author.toUpperCase() : '')) : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
+    $('hNum').textContent = i === DAILY_I ? 'DAILY · TODAY ONLY' : i === UTRACK_I ? (lv.escape ? 'ESCAPE · OUTRUN THE STORM' : lv.pot ? 'POT MAP · TODAY ONLY' : lv.draft ? 'TEST DRIVE · NOT SAVED' : 'PLAYER TRACK' + (lv.author ? ' · BY ' + lv.author.toUpperCase() : '')) : i === FREE_I ? 'FREE ROAM · PREVIEW · NOTHING IS SAVED' : isPreview(i) ? 'PREVIEW · SEASON ' + NEXT_SEASON + ' ' + courseTag(i)
       : courseTag(i) + ' · ' + SECTIONS[LEVELS[i].section].toUpperCase() + ' · ' + Looks.LIST[Looks.of(i)].name.toUpperCase() +
         (LEVELS[i].by ? ' · MADE BY ' + LEVELS[i].by.toUpperCase() : '');
     $('hName').textContent = name;
@@ -26523,9 +26731,10 @@ const Game = {
     });
     $('bPreviewBack').addEventListener('click', () => this.toMenu());
     $('pvList').addEventListener('click', (ev) => {
-      const b = ev.target.closest('button[data-drive],button[data-watch]');
+      const b = ev.target.closest('button[data-drive],button[data-watch],button[data-free]');
       if (!b) return;
-      if (b.dataset.drive !== undefined) Preview.drive(+b.dataset.drive, false); else Preview.drive(+b.dataset.watch, true);
+      if (b.dataset.free !== undefined) City.drive(b);
+      else if (b.dataset.drive !== undefined) Preview.drive(+b.dataset.drive, false); else Preview.drive(+b.dataset.watch, true);
     });
     $('bDaily').addEventListener('click', () => Daily.open());
     $('bDailyBack').addEventListener('click', () => this.toMenu());
@@ -26612,9 +26821,13 @@ const Game = {
     this.world.clear();
     const lvd = levelAt(i);
     if (lvd && lvd.decor) this.data[i].decor = lvd.decor;
+    City.leave();
     try {
-      this.course = buildCourse(this.data[i], App.scene, this.world);
-      try { Landmarks.dress(lvd, this.data[i], this.course); } catch (e) { console.warn('aiPolytrack: landmarks', e); }
+      if (this.data[i].free) this.course = City.build(App.scene, this.world);
+      else {
+        this.course = buildCourse(this.data[i], App.scene, this.world);
+        try { Landmarks.dress(lvd, this.data[i], this.course); } catch (e) { console.warn('aiPolytrack: landmarks', e); }
+      }
     } catch (err) {
       console.error('aiPolytrack: failed to build course', i + 1, err);
       this.playable[i] = false;
@@ -26721,6 +26934,7 @@ const Game = {
     Cloud.logRun(entry);
   },
   restartRun(msg, reason) {
+    if (this.course && this.course.free) { City.respawn(reason); return; }
     if (Multi.racing) { Multi.respawn(msg); return; }
     if (Escape.on && Escape.death) return;
     if (Escape.on && Escape.live) { if (reason === 'restart') Escape.finish('restart'); else Escape.respawn(msg); return; }
@@ -26774,7 +26988,8 @@ const Game = {
     UI.clock(0, false);
     UI.delta(null);
     UI.progress(0);
-    UI.prompt('Hold W to launch');
+    UI.prompt(this.course.free ? 'Hold W to drive · R puts you back on the street · Esc to leave' : 'Hold W to launch');
+    City.hud(!!this.course.free);
     if (this.ghostData && !Multi.racing) {
       UI.toast(this.ghostOverrideName
         ? 'Chasing ' + this.ghostOverrideName + ' — ' + formatTime(this.ghostData.t)
@@ -28264,8 +28479,9 @@ const Game = {
 
     if (this.car.pos.y < GROUND_Y - 8) this.restartRun('Restarted', 'fell');
     else if (this.car.stuckTime > 0.9 || this.hungTime > 1.5) { this.hungTime = 0; this.restartRun('Stuck — restarted', 'stuck'); }
-    else if (this.offTrack > 4) this.restartRun('Off the track — restarted', 'offtrack');
+    else if (this.offTrack > 4 && !this.course.free) this.restartRun('Off the track — restarted', 'offtrack');
 
+    if (this.course.free) { City.step(dt); return; }
     if (this.started && !this.practice) {
       this.recordGhost(Math.max(stepDt, 1e-6));
       const rs = this.runStats;
@@ -28418,6 +28634,7 @@ const Game = {
     UI.tick(dt);
     Look.tick(dt);
     Input.endFrame();
+    if (City.cur) City.cull();
     if (this.state !== 'section') App.render();    // the section replay draws its own four views
   }
 };

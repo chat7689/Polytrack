@@ -34,6 +34,19 @@ track builder and maps straight out of `../../index.html`.
 - `VARIANT=... node variant.js s4m1,s4m12` with `SRC=` pointing at a copy of
   index.html — the test driver on chosen maps against a changed copy, to find
   which change moves a time.
+- `node city_check.js [quick]` — the open-world city (`maps/city.js` with
+  `maps/eugene.js`), without a browser: builds it; checks every flat layer
+  stands clear of the ground, every street can be reached from the start, the
+  real car drives every street both ways at two speeds without falling
+  through, getting stuck or ending up inside a building, head-on hits on walls
+  stay outside them, and no two differently coloured faces share a plane
+  (flicker). `quick` drives one street in six.
+- `city_view.js` — load it into a test copy of the game in the browser (it
+  needs `window.T` with `City`, `Game`, `App`, `Gfx`, `CAR`, `Input`, `THREE`):
+  `await CV.open()`, then `CV.at(x, z, heading, 'name.jpg')`, `CV.over(...)`,
+  `CV.top('name.jpg')` save pictures to `tools/shots/` with the frame's draw
+  calls and triangles; `CV.breakdown()` splits those by kind; `CV.drive(sec,
+  input)` steps the real game.
 - `zfight.js` — paste into a test copy of the game in the browser (it needs
   `window.T`): `ZF.scan(k)` lists faces in preview map k's scenery that would
   flicker (two surfaces facing the same way in the same place), pieces built
