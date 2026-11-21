@@ -185,4 +185,38 @@ ok((await own("select count(*)::int n from public.admin_log where action = 'admi
 // ---- settle_daily: no rows for made-up days
 await t.one('Logger', "select public.settle_daily('19990101') as j");
 ok((await own("select count(*)::int n from public.daily_results where day = '19990101'")).rows[0].n === 0, 'a made-up day is not settled');
+
+// ---- a streak carries over the weekend (2026-11-20 is a Friday)
+const alive = async (a, b) => (await own('select public._streak_alive($1, $2) as v', [a, b])).rows[0].v;
+ok(await alive('20261119', '20261120'), 'Thursday to Friday: the streak goes on');
+ok(await alive('20261120', '20261123'), 'Friday to Monday: the weekend was closed, so it goes on');
+ok(!(await alive('20261119', '20261123')), 'Thursday to Monday: Friday was missed, so it starts again');
+ok(!(await alive('20261120', '20261124')), 'Friday to Tuesday: Monday was missed');
+await own(`insert into public.settings (key, value) values ('hours', '{"on": false}') on conflict (key) do update set value = excluded.value`);
+ok(!(await alive('20261120', '20261123')), 'with the game open every day, the weekend counts as missed');
+await own("delete from public.settings where key = 'hours'");
+
+// ---- friends-race rooms: the server says who opened the room
+await t.signIn('Buyer'); await t.signIn('Seller');
+ok((await t.one('Buyer', "select public.room_host('ABCD', 'aaaaaaaa1111') as k")).k === 'aaaaaaaa1111', 'the player who opens a room is its host');
+ok((await t.one('Seller', "select public.room_host('ABCD', 'bbbbbbbb2222') as k")).k === 'aaaaaaaa1111', 'someone else opening the same code does not take it over');
+ok((await t.one('Seller', "select public.room_host('ABCD', null) as k")).k === 'aaaaaaaa1111', 'joiners are told the same host');
+await t.as('Seller', "select public.room_close('ABCD')");
+ok((await t.one('Seller', "select public.room_host('ABCD', null) as k")).k === 'aaaaaaaa1111', 'only the host can close the room');
+await t.as('Buyer', "select public.room_close('ABCD')");
+ok((await t.one('Seller', "select public.room_host('ABCD', null) as k")).k === '', 'closed by its host, the room has none');
+
+// ---- a refund takes back what the Driver Road paid for the gift levels
+await t.mkUser('Payer');
+await own("select public.grant_purchase('cs_test_road', $1, 2000, 'usd', 'pi_test_road')", [t.users.Payer]);
+const lvlBefore = (await own('select public._level(xp) as l, xp from public.garage where uid = $1', [t.users.Payer])).rows[0];
+await t.one('Payer', 'select public.claim_road() as j');
+const afterClaim = (await own('select road_upto, free_boxes from public.garage where uid = $1', [t.users.Payer])).rows[0];
+const hadGold = (await own("select count(*)::int n from public.inventory where uid = $1 and item = 'finish:gold'", [t.users.Payer])).rows[0].n;
+await own("select public.refund_purchase('pi_test_road')");
+const afterRefund = (await own('select road_upto, free_boxes, public._level(xp) as l from public.garage where uid = $1', [t.users.Payer])).rows[0];
+ok(lvlBefore.l >= 20 && afterClaim.road_upto >= 20 && hadGold === 1, '(setup) $20 gave 20 levels and the Driver Road paid them out (level ' + lvlBefore.l + ')');
+ok(afterRefund.l === 1 && afterRefund.road_upto === 1, 'after the refund the levels and the Driver Road are back where they were');
+ok((await own("select count(*)::int n from public.inventory where uid = $1 and item in ('finish:gold', 'title:road-rookie', 'icon:lvl-shield', 'title:road-warrior')", [t.users.Payer])).rows[0].n === 0, 'the level items are gone');
+ok(afterRefund.free_boxes <= Math.max(0, afterClaim.free_boxes - 8), 'and the level boxes (' + afterClaim.free_boxes + ' -> ' + afterRefund.free_boxes + ')');
 done();

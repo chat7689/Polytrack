@@ -6,7 +6,7 @@
 <!-- Only the hosts the game really uses may run scripts or be sent data: if
      a bad script ever got into the page, it could not send a player's
      sign-in anywhere else. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' data: blob: https://tkjiivodmmjeruhxspcz.supabase.co wss://tkjiivodmmjeruhxspcz.supabase.co https://cdn.jsdelivr.net; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' data: blob: https://tkjiivodmmjeruhxspcz.supabase.co wss://tkjiivodmmjeruhxspcz.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="same-origin">
 <script>
 /* Keeps the browser's inspect tools out of casual reach: no right-click
@@ -4141,9 +4141,11 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   <div class="alertStack" id="alertStack"></div>
   <div class="captchaBox" id="captchaBox" hidden></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
-  integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ=="
-  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Both libraries are served from this site (vendor/), so no other site can
+     change the code the game runs: three.js r128 (the same bytes cdnjs
+     publishes) and supabase-js 2.117.2 (dist/umd/supabase.js from npm). -->
+<script src="vendor/three.min.js"></script>
+<script src="vendor/supabase.js"></script>
 <script>
 /* ==========================================================================
    AIPOLYTRACK — elevated stunt driving
@@ -5171,7 +5173,6 @@ const Sound = {
    call sites never change.                                                  */
 const SUPABASE = {
   enabled: true,
-  sdk: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm',
   url: 'https://tkjiivodmmjeruhxspcz.supabase.co',
   // The project's public key. It is meant to be in the page: what anyone
   // holding it may do is decided by the database's own rules and server
@@ -5380,7 +5381,12 @@ const AuthStore = {
  * be replaced at the next sign-in. (Nov 2026: a quarter of all accounts
  * used one of five passwords.)
  */
-const COMMON_PASSWORDS = new Set(('password password1 password12 password123 passw0rd p@ssw0rd 12345678 123456789 1234567890 0123456789 ' +
+const COMMON_PASSWORDS = new Set(('123456 1234567 654321 7654321 111111 000000 666666 777777 888888 999999 121212 123123 123321 112233 ' +
+  '101010 696969 qwerty qwerty1 qwertyu qazwsx asdfgh asdfghj zxcvbn zxcvbnm abc123 abcabc abcd123 a1b2c3 aaa111 iloveu iloveyou2 ' +
+  'letmein monkey dragon soccer hockey killer master shadow daniel jordan tigger hunter batman robert thomas harley ranger buster ' +
+  'pepper ginger summer winter spring cheese cookie banana orange purple yellow secret passwd pass123 pass1234 roblox pokemon ' +
+  'gaming gamer1 gamer123 player player1 racing racer1 racer123 school student teacher welcome admin1 test123 hello1 ' +
+  'password password1 password12 password123 passw0rd p@ssw0rd 12345678 123456789 1234567890 0123456789 ' +
   '87654321 987654321 11111111 00000000 99999999 88888888 77777777 12341234 123123123 11223344 12344321 1234abcd abcd1234 abc12345 ' +
   'a1b2c3d4 1234567a 123456789a qwertyui qwerty123 qwertyuiop 1q2w3e4r q1w2e3r4 1qaz2wsx zaq12wsx qazwsxedc asdfghjk asdfasdf ' +
   'asdfghjkl zxcvbnm1 zxcvbnm123 iloveyou iloveyou1 letmein1 letmein123 welcome1 welcome123 changeme admin123 test1234 testtest ' +
@@ -5390,7 +5396,7 @@ const COMMON_PASSWORDS = new Set(('password password1 password12 password123 pas
 function weakPassword(username, pw) {
   pw = String(pw || '');
   const low = pw.toLowerCase(), name = String(username || '').toLowerCase();
-  if (pw.length < 8) return 'Use a password of at least 8 characters.';
+  if (pw.length < 6) return 'Use a password of at least 6 characters.';
   if (COMMON_PASSWORDS.has(low)) return 'That password is one of the first anyone would guess. Pick another.';
   if (name.length >= 3 && low.includes(name)) return 'Your password can\'t contain your username.';
   if (new Set(low).size < 4) return 'Use more different characters in your password.';
@@ -5425,7 +5431,8 @@ const Cloud = {
   async init() {
     if (!SUPABASE.enabled || !SUPABASE.url) return false;
     try {
-      const mod = await import(SUPABASE.sdk);
+      const mod = window.supabase;             // vendor/supabase.js
+      if (!mod || !mod.createClient) throw new Error('vendor/supabase.js did not load');
       AuthStore.sweep();
       this.sb = mod.createClient(SUPABASE.url, SUPABASE.key, {
         auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storage: AuthStore },
@@ -16072,11 +16079,60 @@ const Tracks = {
  * car back at the last safe piece of road passed, with the clock running.
  * Once the first car finishes, the others have MP_GRACE seconds.
  */
-const MP_HZ = 5, MP_MAX = 8, MP_GRACE = 30, MP_COUNT = 3.2, MP_DELAY = 0.3;
+const MP_HZ = 5, MP_MAX = 8, MP_GRACE = 30, MP_COUNT = 3.2, MP_DELAY = 0.3, MP_CHAIN = 200;
+/** SHA-256 of a string, as hex (small and synchronous: the room's messages are checked as they arrive) */
+function sha256hex(str) {
+  const K = sha256hex.K || (sha256hex.K = (() => {
+    const k = [], isP = (n) => { for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+    for (let n = 2; k.length < 64; n++) if (isP(n)) k.push((Math.cbrt(n) % 1) * 4294967296 | 0);
+    return k;
+  })());
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const bytes = Array.from(new TextEncoder().encode(String(str)));
+  const bits = bytes.length * 8;
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  for (let i = 7; i >= 0; i--) bytes.push(i >= 4 ? 0 : (bits >>> (i * 8)) & 255);
+  const w = new Array(64), rr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let o = 0; o < bytes.length; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = (bytes[o + i * 4] << 24) | (bytes[o + i * 4 + 1] << 16) | (bytes[o + i * 4 + 2] << 8) | bytes[o + i * 4 + 3];
+    for (let i = 16; i < 64; i++) {
+      const s0 = rr(w[i - 15], 7) ^ rr(w[i - 15], 18) ^ (w[i - 15] >>> 3), s1 = rr(w[i - 2], 17) ^ rr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) {
+      const t1 = (h + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0;
+      const t2 = ((rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  return H.map((x) => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
 const MP_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const Multi = {
   ch: null, code: '', key: '', me: null, players: {}, creating: false, joinedAt: 0,
   status: '', race: null, last: null, racing: false, finished: false, sendAcc: 0, viewing: false,
+  // Who sent a message: the room's channel doesn't say, so each game makes
+  // a chain of codes (each the SHA-256 of the one before), shows the last
+  // in its room entry, and sends the one before with every start, finish or
+  // quit. Anyone can check a code against the last one seen from that
+  // player; nobody else can produce the next. (Before Nov 2026 any member
+  // could send a finish, a quit or a start in someone else's name.)
+  chain: null, ci: 0, pins: {}, hostKey: '', inRoom: false,
+  proof() { return this.chain && this.ci > 0 ? this.chain[--this.ci] : ''; },
+  proven(k, x) {
+    const pin = this.pins[k];
+    if (!pin || typeof x !== 'string' || !/^[0-9a-f]{64}$/.test(x)) return false;
+    let h = x;
+    for (let i = 0; i < MP_CHAIN; i++) {
+      h = sha256hex(h);
+      if (h === pin) { this.pins[k] = x; return true; }
+    }
+    return false;
+  },
 
   /* ---------------------------------------------------------- room */
   open() {
@@ -16089,7 +16145,8 @@ const Multi = {
   },
   async create() {
     let c = '';
-    for (let k = 0; k < 4; k++) c += MP_LETTERS.charAt(Math.floor(Math.random() * MP_LETTERS.length));
+    const rnd = crypto.getRandomValues(new Uint32Array(4));
+    for (let k = 0; k < 4; k++) c += MP_LETTERS.charAt(rnd[k] % MP_LETTERS.length);
     await this.join(c, true);
   },
   async join(code, creating) {
@@ -16097,11 +16154,16 @@ const Multi = {
     if (!/^[A-Z]{4}$/.test(code)) { this.say('Room codes are four letters.'); return; }
     await this.leave(true);
     this.code = code; this.creating = !!creating; this.players = {}; this.race = null; this.last = null;
-    this.key = Cloud.user.uid.slice(0, 8) + Math.random().toString(36).slice(2, 6);
+    const r4 = crypto.getRandomValues(new Uint32Array(1))[0].toString(36).padStart(4, '0').slice(-4);
+    this.key = (Cloud.user.uid.slice(0, 8) + r4).toLowerCase().replace(/[^a-z0-9]/g, '0');
     const c1 = CarColor.primary, c2 = CarColor.secondary;
     this.joinedAt = Date.now();
+    // this visit's chain of proofs (see proof/proven above)
+    this.chain = [Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, '0')).join('')];
+    for (let i = 0; i < MP_CHAIN; i++) this.chain.push(sha256hex(this.chain[i]));
+    this.ci = MP_CHAIN; this.pins = {}; this.hostKey = ''; this.inRoom = false;
     this.me = { k: this.key, n: String(Cloud.name()).slice(0, 16), c1: hslToHex(c1.h, c1.s, c1.l), c2: hslToHex(c2.h, c2.s, c2.l),
-      j: this.joinedAt, st: 'lobby', m: 0, mid: LEVELS[0].id };
+      j: this.joinedAt, st: 'lobby', m: 0, mid: LEVELS[0].id, c: this.chain[MP_CHAIN] };
     this.status = 'Connecting…'; this.render();
     // everyone in the room must be on the same topic, so (unlike the other
     // channels) this name is reused; leave() removes the old one first
@@ -16118,6 +16180,10 @@ const Multi = {
       if (st === 'SUBSCRIBED') {
         this.status = '';
         await ch.track(this.me);
+        // who opened the room, as the server has it (an older server: the first to join, as before)
+        Cloud.rpc('room_host', { p_code: code, p_key: creating ? this.key : null })
+          .then((k) => { if (this.ch === ch) { this.hostKey = typeof k === 'string' ? k : ''; this.render(); } })
+          .catch(() => { /* the room works without it */ });
         // an empty room you didn't create: there is no such room
         setTimeout(() => {
           if (this.ch !== ch || this.creating) return;
@@ -16132,7 +16198,9 @@ const Multi = {
   async leave(quiet) {
     if (this.racing) this.forfeit(true);
     const ch = this.ch;
+    if (ch && this.code && this.hostKey && this.hostKey === this.key) Cloud.rpc('room_close', { p_code: this.code }).catch(() => { /* it lapses by itself */ });
     this.ch = null; this.code = ''; this.players = {}; this.race = null; this.last = null; this.status = '';
+    this.chain = null; this.ci = 0; this.pins = {}; this.hostKey = ''; this.inRoom = false;
     if (ch) { try { await ch.untrack(); } catch (e) { /* gone already */ } await Cloud.sb.removeChannel(ch); }
     if (!quiet) this.render();
   },
@@ -16141,22 +16209,30 @@ const Multi = {
   list() {
     return Object.values(this.players).sort((a, b) => (a.j - b.j) || (a.k < b.k ? -1 : 1));
   },
-  host() { const l = this.list(); return l.length ? l[0] : null; },
+  host() {
+    const l = this.list();
+    // the player who opened the room while they are in it; after that, the earliest to join
+    return (this.hostKey && l.find((p) => p.k === this.hostKey)) || (l.length ? l[0] : null);
+  },
   isHost() { const h = this.host(); return !!h && h.k === this.key; },
   onSync() {
     const st = this.ch.presenceState(), players = {};
     for (const key in st) {
       const m = st[key] && st[key][0];
       if (!m || typeof m.k !== 'string') continue;
+      if (!/^[a-z0-9]{8,16}$/.test(m.k)) continue;
       players[m.k] = {
         k: m.k, n: String(m.n || 'Driver').slice(0, 16), c1: m.c1 | 0, c2: m.c2 | 0, j: +m.j || 0,
         st: m.st === 'race' ? 'race' : 'lobby', m: m.m | 0, mid: String(m.mid || '')
       };
+      // the first proof code seen for a player is the one their messages are checked against
+      if (!this.pins[m.k] && typeof m.c === 'string' && /^[0-9a-f]{64}$/.test(m.c)) this.pins[m.k] = m.c;
     }
     this.players = players;
-    // a full room: the latest arrivals step back out
+    // a full room: the latest arrivals step back out (someone already in is never pushed out by later arrivals)
     const l = this.list();
-    if (l.length > MP_MAX && l.findIndex((p) => p.k === this.key) >= MP_MAX) { this.leave(); this.say('That room is full (' + MP_MAX + ' drivers).'); return; }
+    if (!this.inRoom && l.length > MP_MAX && l.findIndex((p) => p.k === this.key) >= MP_MAX) { this.leave(); this.say('That room is full (' + MP_MAX + ' drivers).'); return; }
+    if (players[this.key]) this.inRoom = true;
     // anyone who left mid-race is out of it
     if (this.race) for (const k in this.race.racers) if (!players[k] && k !== this.key) this.race.racers[k].gone = true;
     if (this.race) this.checkEnd();
@@ -16173,22 +16249,28 @@ const Multi = {
     const i = this.me.m;
     if (!Game.playable[i]) { UI.toast('That map could not be loaded — pick another.'); return; }
     const ks = this.list().filter((p) => p.st === 'lobby').map((p) => p.k).slice(0, MP_MAX);
-    const msg = { r: Math.random().toString(36).slice(2, 10), i, id: LEVELS[i].id, ks };
+    const msg = { r: Math.random().toString(36).slice(2, 10), i, id: LEVELS[i].id, ks, k: this.key, x: this.proof() };
     this.ch.send({ type: 'broadcast', event: 'start', payload: msg });
-    this.onMsg('start', msg);
+    this.onMsg('start', msg, true);
   },
-  onMsg(ev, p) {
+  onMsg(ev, p, own) {
     if (!p || typeof p !== 'object') return;
     if (ev === 'start') {
       if (this.race && !this.race.done) return;
       if (!Array.isArray(p.ks) || typeof p.r !== 'string') return;
+      // only the host starts a race, and only with their proof
+      if (!own) {
+        const h = this.host();
+        if (!h || p.k !== h.k || !this.proven(p.k, p.x)) return;
+      }
       const ks = p.ks.filter((k) => typeof k === 'string').slice(0, MP_MAX);
       const racers = {};
       for (const k of ks) {
         const pl = this.players[k] || (k === this.key ? this.me : null);
         racers[k] = { k, n: pl ? pl.n : 'Driver', c1: pl ? pl.c1 : 0xcccccc, c2: pl ? pl.c2 : 0x777777, buf: [], d: 0, fin: null, quit: false, gone: false };
       }
-      this.race = { r: p.r, i: p.i | 0, racers, firstFin: 0, done: false, mine: ks.includes(this.key) };
+      // (go: about when everyone's clock starts, to check finish times against)
+      this.race = { r: p.r, i: p.i | 0, racers, firstFin: 0, done: false, mine: ks.includes(this.key), go: performance.now() + MP_COUNT * 1000 };
       if (this.race.mine) {
         if (!LEVELS[p.i] || LEVELS[p.i].id !== p.id) {
           racers[this.key].quit = true;
@@ -16201,21 +16283,25 @@ const Multi = {
     }
     const R = this.race;
     if (!R || R.r !== p.r || R.done) return;
-    const rc = R.racers[p.k];
+    const rc = typeof p.k === 'string' && Object.prototype.hasOwnProperty.call(R.racers, p.k) ? R.racers[p.k] : null;
     if (!rc || p.k === this.key) return;
     if (ev === 'pos') {
-      const ok = (a, n) => Array.isArray(a) && a.length === n && a.every((v) => Number.isFinite(v));
-      if (!Number.isFinite(p.t) || !ok(p.p, 3) || !ok(p.q, 4) || !ok(p.v, 3)) return;
+      const ok = (a, n) => Array.isArray(a) && a.length === n && a.every((v) => Number.isFinite(v) && Math.abs(v) < 1e6);
+      if (!Number.isFinite(p.t) || p.t < -60 || p.t > 3600 || !ok(p.p, 3) || !ok(p.q, 4) || !ok(p.v, 3)) return;
       rc.buf.push({ t: p.t, p: p.p, q: p.q, v: p.v, b: !!p.b });
       rc.buf.sort((a, b) => a.t - b.t);
       if (rc.buf.length > 16) rc.buf.splice(0, rc.buf.length - 16);
-      if (Number.isFinite(p.d)) rc.d = p.d;
+      if (Number.isFinite(p.d) && Math.abs(p.d) < 1e6) rc.d = p.d;
     } else if (ev === 'fin') {
-      if (!Number.isFinite(p.t) || p.t <= 0 || rc.fin) return;
-      rc.fin = p.t;
+      if (!Number.isFinite(p.t) || p.t <= 0 || rc.fin || rc.quit) return;
+      if (!this.proven(p.k, p.x)) return;        // only that player's own game can say they finished
+      // a time far from the real time since GO is not believed: it becomes the time it arrived
+      const wall = (performance.now() - R.go) / 1000;
+      rc.fin = p.t < wall - Math.max(5, wall * 0.15) || p.t > wall + 5 ? Math.max(wall, 0.001) : p.t;
       if (!R.firstFin) R.firstFin = performance.now();
       this.checkEnd();
     } else if (ev === 'quit') {
+      if (rc.fin || rc.quit || !this.proven(p.k, p.x)) return;
       rc.quit = true;
       this.checkEnd();
     }
@@ -16324,7 +16410,7 @@ const Multi = {
     const R = this.race;
     if (R && !R.done && R.racers[this.key] && !R.racers[this.key].fin) {
       R.racers[this.key].quit = true;
-      if (this.ch) this.ch.send({ type: 'broadcast', event: 'quit', payload: { r: R.r, k: this.key } });
+      if (this.ch) this.ch.send({ type: 'broadcast', event: 'quit', payload: { r: R.r, k: this.key, x: this.proof() } });
     }
     this.racing = false;
     if (R) this.checkEnd();
@@ -16390,7 +16476,7 @@ const Multi = {
     R.racers[this.key].fin = t;
     if (!R.firstFin) R.firstFin = performance.now();
     this.send();
-    this.ch.send({ type: 'broadcast', event: 'fin', payload: { r: R.r, k: this.key, t } });
+    this.ch.send({ type: 'broadcast', event: 'fin', payload: { r: R.r, k: this.key, t, x: this.proof() } });
     const place = this.standings().findIndex((r) => r.k === this.key) + 1;
     UI.prompt(ordinal(place) + ' · ' + formatTime(t));
     Sound.finish(false);
@@ -23687,7 +23773,7 @@ const UI = {
       $('gNewFields').hidden = true;
       $('gateTitle').textContent = 'Choose a new password';
       $('gateNote').textContent = 'Your password is too easy to guess, and accounts with easy passwords have been broken into. ' +
-        'Pick a new one of at least 8 characters before you play.';
+        'Pick a new one of at least 6 characters before you play.';
       $('gGo').textContent = 'Save and play';
       this.gateError('');
       $('gPass').value = '';

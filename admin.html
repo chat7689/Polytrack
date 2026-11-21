@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' data: blob: https://tkjiivodmmjeruhxspcz.supabase.co wss://tkjiivodmmjeruhxspcz.supabase.co https://cdn.jsdelivr.net; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' data: blob: https://tkjiivodmmjeruhxspcz.supabase.co wss://tkjiivodmmjeruhxspcz.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="same-origin">
 <script>
 /* Keeps the browser's inspect tools out of casual reach: no right-click
@@ -694,9 +694,10 @@ button.primary{background:var(--ink);color:#121417}
   </div>
 </div>
 
+<!-- supabase-js 2.117.2, served from this site (see index.html) -->
+<script src="vendor/supabase.js"></script>
 <script type="module">
 const SUPABASE = {
-  sdk: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm',
   url: 'https://tkjiivodmmjeruhxspcz.supabase.co',
   // the project's public key (what it may do is decided by supabase/schema.sql)
   key: 'sb_publishable_ZdsFehUaa1KE1jzlRxbLIA_QgiOju7q'
@@ -755,7 +756,7 @@ PREV2.forEach((c) => { COURSE_NAME[c.id] = c.name + ' (Season 1)'; });
   ['s4m6', 'Hourglass (first)'], ['s4m15', 'Needle Drop']]
   .forEach(([id, name]) => { COURSE_NAME[id] = name + ' (retired)'; });
 
-const { createClient } = await import(SUPABASE.sdk);
+const { createClient } = window.supabase;
 
 const $ = (id) => document.getElementById(id);
 // The panel never signs in to Supabase as a player (so it can't disturb the

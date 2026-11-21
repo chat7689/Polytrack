@@ -882,6 +882,18 @@ insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floo
 on conflict (course_id) do update set sx = excluded.sx, sy = excluded.sy, sz = excluded.sz, fx = excluded.fx, fy = excluded.fy, fz = excluded.fz,
   gate_r = excluded.gate_r, floor_ms = excluded.floor_ms, ref_ms = excluded.ref_ms, len_m = excluded.len_m, cps = excluded.cps;
 
+-- ------------------------------------------------------- friends-race rooms
+-- A room is a Realtime channel between the players' games; nothing in it
+-- is saved. The one thing the server keeps is who opened it, so every game
+-- in the room agrees on the host (the only one who can start a race), and
+-- nobody can make themselves host by lying about when they joined.
+create table if not exists public.race_rooms (
+  code text primary key,
+  host_key text not null,
+  uid uuid not null,
+  at timestamptz not null default now()
+);
+
 -- ------------------------------------------------------- sign-in sessions
 -- What the game knows about each sign-in (a row of Supabase's
 -- auth.sessions): the computer it is on, and whether the player asked to
@@ -1086,6 +1098,30 @@ begin
     raise exception 'Auctions open once your account is % days old and has % finished runs.', d, n using errcode = 'P0001';
   end if;
 end $$;
+/** the host of a friends-race room; p_key (the caller's key in the room) opens it when it isn't open */
+create or replace function public.room_host(p_code text, p_key text) returns text
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player(); k text;
+begin
+  if coalesce(p_code, '') !~ '^[A-Z]{4}$' then raise exception 'bad code' using errcode = '22023'; end if;
+  delete from public.race_rooms where at < now() - interval '12 hours';
+  if p_key is not null then
+    if p_key !~ '^[a-z0-9]{8,16}$' then raise exception 'bad key' using errcode = '22023'; end if;
+    if (select count(*) from public.race_rooms where uid = p.id) < 20 then
+      insert into public.race_rooms (code, host_key, uid) values (p_code, p_key, p.id) on conflict (code) do nothing;
+    end if;
+  end if;
+  select host_key into k from public.race_rooms where code = p_code;
+  return coalesce(k, '');
+end $$;
+/** the host hands the room on (or closes it) when leaving */
+create or replace function public.room_close(p_code text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  delete from public.race_rooms where code = coalesce(p_code, '') and uid = auth.uid();
+end $$;
+
 /** "keep me signed in on this computer": only in the ten minutes after the password was typed */
 create or replace function public.keep_session(p_keep boolean) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
@@ -1421,6 +1457,26 @@ begin
   return jsonb_build_object('ok', true, 'run', rid);
 end $$;
 
+-- Is a streak last kept on p_last still alive on p_today (both YYYYMMDD)?
+-- Yes the same day, the day after, or when every day in between was a day
+-- the game is closed (a weekend): with school-day opening hours a streak
+-- could otherwise never pass Friday.
+create or replace function public._streak_alive(p_last text, p_today text) returns boolean
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare a date; b date; dd date;
+begin
+  if p_last is null or p_today is null then return false; end if;
+  begin a := to_date(p_last, 'YYYYMMDD'); b := to_date(p_today, 'YYYYMMDD'); exception when others then return false; end;
+  if b - a in (0, 1) then return true; end if;
+  if b < a or b - a > 6 or not public._hours_on() then return false; end if;
+  dd := a + 1;
+  while dd < b loop
+    if public._open_at((dd + time '12:00') at time zone 'America/Los_Angeles') then return false; end if;
+    dd := dd + 1;
+  end loop;
+  return true;
+end $$;
+
 -- The finish: the time has to fit the real time since the ticket, be no
 -- faster than the map allows, and come from a game window that was in
 -- focus. A season run then pays its +1 credit (at most one every 10 s),
@@ -1489,7 +1545,7 @@ begin
   -- going (or starts it again after a missed day) and pays 25 credits a day
   -- of streak, up to 175; every 7th day in a row is a free box too
   if g_day is distinct from d then
-    v_streak := case when g_day = yday then coalesce(v_streak, 0) + 1 else 1 end;
+    v_streak := case when public._streak_alive(g_day, d) then coalesce(v_streak, 0) + 1 else 1 end;
     update public.garage set streak = v_streak, streak_day = d, best_streak = greatest(best_streak, v_streak) where uid = p.id;
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
     if not exists (select 1 from public.credit_events where uid = p.id and kind = 'streak' and note = 'day ' || d) then
@@ -1853,8 +1909,7 @@ declare p public.profiles := public._player(); d text := to_char(now() at time z
 begin
   return jsonb_build_object('runs', public._day_runs(p.id),
     'paid', exists (select 1 from public.credit_events where uid = p.id and kind = 'daily_runs' and note = 'day ' || d),
-    'streak', coalesce((select case when g.streak_day = d or g.streak_day = to_char((now() at time zone 'America/Los_Angeles')::date - 1, 'YYYYMMDD')
-                                    then g.streak else 0 end from public.garage g where g.uid = p.id), 0),
+    'streak', coalesce((select case when public._streak_alive(g.streak_day, d) then g.streak else 0 end from public.garage g where g.uid = p.id), 0),
     'today', coalesce((select g.streak_day = d from public.garage g where g.uid = p.id), false),
     'best', coalesce((select g.best_streak from public.garage g where g.uid = p.id), 0));
 end $$;
@@ -2589,7 +2644,7 @@ end $$;
 /** a refunded payment: its credits come back off (the webhook only) */
 create or replace function public.refund_purchase(p_intent text) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare r public.purchases;
+declare r public.purchases; v_xp integer; v_lv integer; v_upto integer; v_got integer[]; l integer; rw jsonb;
 begin
   select * into r from public.purchases where payment_intent = p_intent and not refunded for update;
   if not found then return jsonb_build_object('ok', true, 'found', false); end if;
@@ -2599,7 +2654,33 @@ begin
   end if;
   -- the thank-you levels go too
   if r.uid is not null and coalesce(r.xp, 0) > 0 then
-    update public.garage set xp = greatest(xp - r.xp, 0) where uid = r.uid;
+    update public.garage set xp = greatest(xp - r.xp, 0) where uid = r.uid
+      returning xp, road_upto, road_got into v_xp, v_upto, v_got;
+    -- and what the Driver Road paid for levels that are no longer reached
+    if found then
+      v_lv := public._level(v_xp);
+      perform set_config('app.garage', 'on', true);
+      for l in v_lv + 1 .. greatest(v_upto, coalesce((select max(x) from unnest(v_got) x), 0)) loop
+        if not (l <= v_upto or l = any(v_got)) then continue; end if;
+        rw := public._road_reward(l);
+        if rw ? 'credits' then
+          insert into public.credit_events (uid, delta, kind, note) values (r.uid, -(rw ->> 'credits')::integer, 'refund', 'level ' || l || ' taken back');
+        end if;
+        if rw ? 'boxes' then
+          update public.garage set free_boxes = greatest(free_boxes - (rw ->> 'boxes')::integer, 0) where uid = r.uid;
+        end if;
+        if rw ? 'item' then
+          update public.inventory set count = count - 1 where uid = r.uid and item = rw ->> 'item' and count > 0;
+          delete from public.inventory where uid = r.uid and count <= 0;
+          update public.car_customization c set loadout = c.loadout - public._loadout_slot(i.kind)
+            from public.items i
+            where c.uid = r.uid and i.id = rw ->> 'item' and c.loadout ->> public._loadout_slot(i.kind) = i.id
+              and not exists (select 1 from public.inventory v where v.uid = r.uid and v.item = i.id);
+        end if;
+      end loop;
+      update public.garage set road_upto = least(road_upto, v_lv), road_got = array(select x from unnest(road_got) x where x <= v_lv)
+        where uid = r.uid;
+    end if;
   end if;
   -- the boxes too, as many as are still unopened
   if r.uid is not null and r.boxes > 0 then
@@ -4673,7 +4754,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims', 'rival_events', 'pot_entries', 'pot_results', 'escape_runs', 'escape_best', 'auctions', 'session_info',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims', 'rival_events', 'pot_entries', 'pot_results', 'escape_runs', 'escape_best', 'auctions', 'session_info', 'race_rooms',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
