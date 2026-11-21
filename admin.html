@@ -1442,10 +1442,12 @@ function renderRuns() {
       '<td class="mono r">' + fmt(r.timeMs) + '</td>' +
       '<td>' + (prog === null ? '<span class="mono">—</span>' : '<div class="bar" title="' + Math.round(prog * 100) + '%"><i style="width:' +
         Math.round(prog * 100) + '%"></i></div>') + '</td>' +
-      '<td class="mono r">' + (kmhOf(r) != null ? kmhOf(r) : '—') + '</td>' +
-      '<td class="mono r">' + (r.boostUsed != null ? r.boostUsed + 's' : '—') + '</td>' +
-      '<td class="mono r">' + (r.grassSec != null ? r.grassSec + 's' : '—') + '</td>' +
-      '<td class="mono r">' + (r.attempt || '—') + '</td>';
+      // these come from the player's own run_log row (any player can write
+      // anything there), so every one is escaped
+      '<td class="mono r">' + (kmhOf(r) != null ? esc(kmhOf(r)) : '—') + '</td>' +
+      '<td class="mono r">' + (r.boostUsed != null ? esc(r.boostUsed) + 's' : '—') + '</td>' +
+      '<td class="mono r">' + (r.grassSec != null ? esc(r.grassSec) + 's' : '—') + '</td>' +
+      '<td class="mono r">' + (r.attempt ? esc(r.attempt) : '—') + '</td>';
     tr.addEventListener('click', () => showRun(r));
     tb.appendChild(tr);
   });

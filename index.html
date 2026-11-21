@@ -5438,6 +5438,8 @@ const Cloud = {
     // this device only: the player stays signed in anywhere else
     try { await this.sb.auth.signOut({ scope: 'local' }); } catch (e) { /* already signed out */ }
     this.user = null; this.profile = null;
+    // and nothing of theirs is left in the sign-in form for the next person
+    try { document.getElementById('gPass').value = ''; } catch (e) { /* no form */ }
     // A player clicking "Sign out" is deliberate: it takes effect at once
     // from any screen, unlike a passive auth report, which waits for the
     // player to get back to a safe screen.
@@ -25979,6 +25981,9 @@ const Game = {
         if (UI.creating) await Cloud.signUp(user, pw, Referral.from && !$('gCode').value.trim() ? 'ref:' + Referral.from : $('gCode').value);
         else await Cloud.signIn(user, pw);
         UI.gateError('');
+        // signed in: the password leaves the form, so the next person at a
+        // shared computer can't sign in with it after this player signs out
+        $('gPass').value = '';
         // The auth-state listener sits out while Cloud.busy is set, so this
         // flow reports its own outcome once sign-up/sign-in has actually
         // finished writing (or loading) the profile.

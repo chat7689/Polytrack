@@ -1033,10 +1033,16 @@ $$;
 -- ---------------------------------------------------------- account setup
 
 -- Moves everything held under a legacy placeholder id to a real login.
+-- Only claim_profile calls it (players can't: see the revoke at the end),
+-- and even then only a legacy profile moves, only to the caller's own login.
 create or replace function public._adopt(p_from uuid, p_to uuid, p_name text) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
 begin
   if p_from = p_to then return; end if;
+  if p_to is distinct from auth.uid() then raise exception 'not yours' using errcode = '42501'; end if;
+  if not exists (select 1 from public.profiles where id = p_from and legacy) then
+    raise exception 'not a legacy profile' using errcode = '42501';
+  end if;
   delete from public.profiles where id = p_to and legacy;           -- never happens, but never collide
   update public.profiles set id = p_to, legacy = false, display_name = p_name where id = p_from;
   update public.bests set uid = p_to, display_name = p_name where uid = p_from;
@@ -2076,8 +2082,10 @@ $$;
 -- The colour list and the loadout are the server's to change: a player's
 -- own save keeps them as they were, and a colour only goes on the car if
 -- its hue is owned. (A new account starts with its two starter hues.)
+-- (security definer: it runs on a player's own write, and the helpers it
+-- calls are closed to players like every public._* function)
 create or replace function public._garage_guard() returns trigger
-language plpgsql set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public, pg_temp as $$
 declare cells integer[];
 begin
   if coalesce(current_setting('app.garage', true), '') = 'on' then return new; end if;
@@ -4527,6 +4535,18 @@ revoke execute on function public._auction_give(uuid, text) from public, anon, a
 revoke execute on function public._auction_settle(bigint) from public, anon, authenticated;
 revoke execute on function public._podium_pay(uuid), public._podium_start(uuid, integer), public._podium_end(uuid) from public, anon, authenticated;
 revoke execute on function public._see_device(text, text), public._blocked(text, text, text) from public, anon, authenticated;
+-- Internal helpers (public._*) are only ever called from inside the
+-- functions above, which run as the owner, so no player or anon caller
+-- needs them. Nov 2026: _adopt was left callable and let a signed-in
+-- player take over another player's profile. Close them all, every run.
+do $$
+declare f regprocedure;
+begin
+  for f in select p.oid::regprocedure from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.proname like '\_%' loop
+    execute format('revoke execute on function %s from public, anon, authenticated', f);
+  end loop;
+end $$;
 
 -- ------------------------------------------------------------- season 1, closed
 -- Season 2 went live on 2026-10-10. The first run of this file after that
