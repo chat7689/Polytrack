@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Only the hosts the game really uses may run scripts or be sent data: if
+     a bad script ever got into the page, it could not send a player's
+     sign-in anywhere else. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' data: blob: https://tkjiivodmmjeruhxspcz.supabase.co wss://tkjiivodmmjeruhxspcz.supabase.co https://cdn.jsdelivr.net; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="same-origin">
 <script>
 /* Keeps the browser's inspect tools out of casual reach: no right-click
    menu (except in text boxes, for paste), and the developer-tools,
@@ -544,6 +549,9 @@ input.selBox{width:15px;height:15px;accent-color:var(--aqua);cursor:pointer}
 .gate label.fld{margin-top:14px}
 .gate input[type=text],.gate input[type=password],.gate input[type=email]{width:100%}
 .gate .err{font-size:12.5px;color:var(--ember);min-height:1.4em;margin-top:12px;line-height:1.45}
+.gate .keepRow{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:12.5px;color:var(--dim);cursor:pointer;line-height:1.35}
+.gate .keepRow input{width:15px;height:15px;flex:none;margin:0;accent-color:var(--ember)}
+.gate .keepRow[hidden]{display:none}
 .gate .row{margin-top:20px}
 .gate .switch{font-size:12.5px;color:var(--dim);margin-top:16px}
 .gate .coachHint{font-size:12.5px;color:var(--ember);margin-top:7px;line-height:1.45}
@@ -2938,6 +2946,8 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
       <div class="coachHint" id="gCoach" hidden></div>
       <label class="fld" for="gPass">Password</label>
       <input type="password" id="gPass" autocomplete="current-password">
+      <label class="keepRow" id="gKeepRow" for="gKeep"><input type="checkbox" id="gKeep">
+        <span>Keep me signed in here for 30 days. Only on your own computer: otherwise you are signed out when the tab closes.</span></label>
       <div id="gNewFields" hidden>
         <label class="fld" for="gCode">Invite code</label>
         <input type="text" id="gCode" autocomplete="off">
@@ -4131,7 +4141,9 @@ body[data-screen=hud] .creditBadge:not([hidden]),body[data-screen=result] .credi
   <div class="alertStack" id="alertStack"></div>
   <div class="captchaBox" id="captchaBox" hidden></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 /* ==========================================================================
    AIPOLYTRACK — elevated stunt driving
@@ -5327,6 +5339,76 @@ function cloudError(e, fallback) {
   return out;
 }
 
+/**
+ * Where a sign-in is kept in the browser. On a shared computer it must not
+ * outlive the tab, so it lives in sessionStorage unless the player ticked
+ * "keep me signed in" (then localStorage; the server allows 30 days, and 12
+ * hours otherwise). Nov 2026: an account was emptied from a school computer
+ * that had stayed signed in for five weeks.
+ */
+const AuthStore = {
+  KEEP: 'aipolytrack.keep', WEAK: 'aipolytrack.newpass',
+  kept() { try { return localStorage.getItem(this.KEEP) === '1'; } catch (e) { return false; } },
+  setKeep(on) { try { if (on) localStorage.setItem(this.KEEP, '1'); else localStorage.removeItem(this.KEEP); } catch (e) { /* storage blocked */ } },
+  box() { try { return this.kept() ? localStorage : sessionStorage; } catch (e) { return null; } },
+  getItem(k) { try { const b = this.box(); return b ? b.getItem(k) : null; } catch (e) { return null; } },
+  setItem(k, v) { try { const b = this.box(); if (b) b.setItem(k, v); } catch (e) { /* this visit only */ } },
+  removeItem(k) {
+    try { localStorage.removeItem(k); } catch (e) { /* storage blocked */ }
+    try { sessionStorage.removeItem(k); } catch (e) { /* storage blocked */ }
+  },
+  /** this project's sign-in key, as supabase-js names it */
+  key() { try { return 'sb-' + new URL(SUPABASE.url).hostname.split('.')[0] + '-auth-token'; } catch (e) { return ''; } },
+  /**
+   * Before the game starts: a sign-in left in localStorage by an older
+   * version (those never ended) is removed unless it was asked to be kept,
+   * and so is one that still owes a new password.
+   */
+  sweep() {
+    const k = this.key();
+    if (!k) return;
+    let owes = false;
+    try { owes = sessionStorage.getItem(this.WEAK) === '1'; sessionStorage.removeItem(this.WEAK); } catch (e) { /* storage blocked */ }
+    try { if (!this.kept() || owes) { localStorage.removeItem(k); localStorage.removeItem(k + '-code-verifier'); } } catch (e) { /* storage blocked */ }
+    if (owes) { this.removeItem(k); this.setKeep(false); }
+  }
+};
+
+/**
+ * Why a password is too easy to guess ('' when it is fine). Checked when an
+ * account is made or a password changed; an old password that fails has to
+ * be replaced at the next sign-in. (Nov 2026: a quarter of all accounts
+ * used one of five passwords.)
+ */
+const COMMON_PASSWORDS = new Set(('password password1 password12 password123 passw0rd p@ssw0rd 12345678 123456789 1234567890 0123456789 ' +
+  '87654321 987654321 11111111 00000000 99999999 88888888 77777777 12341234 123123123 11223344 12344321 1234abcd abcd1234 abc12345 ' +
+  'a1b2c3d4 1234567a 123456789a qwertyui qwerty123 qwertyuiop 1q2w3e4r q1w2e3r4 1qaz2wsx zaq12wsx qazwsxedc asdfghjk asdfasdf ' +
+  'asdfghjkl zxcvbnm1 zxcvbnm123 iloveyou iloveyou1 letmein1 letmein123 welcome1 welcome123 changeme admin123 test1234 testtest ' +
+  'hello123 football baseball basketball superman starwars trustno1 sunshine princess dragon123 monkey123 minecraft roblox123 ' +
+  'fortnite polytrack aipolytrack computer internet whatever michael1 jordan23 pokemon1 school123 student1 killer123 soccer123 ' +
+  'hockey123 chicken1 cookie123 shadow123 master123 freedom1 summer2026 winter2026 spring2026 fall2026 racecar1 racing123').split(' '));
+function weakPassword(username, pw) {
+  pw = String(pw || '');
+  const low = pw.toLowerCase(), name = String(username || '').toLowerCase();
+  if (pw.length < 8) return 'Use a password of at least 8 characters.';
+  if (COMMON_PASSWORDS.has(low)) return 'That password is one of the first anyone would guess. Pick another.';
+  if (name.length >= 3 && low.includes(name)) return 'Your password can\'t contain your username.';
+  if (new Set(low).size < 4) return 'Use more different characters in your password.';
+  // 12345678, abcdefgh, 87654321...
+  let up = true, down = true;
+  for (let i = 1; i < low.length; i++) {
+    const d = low.charCodeAt(i) - low.charCodeAt(i - 1);
+    if (d !== 1) up = false;
+    if (d !== -1) down = false;
+  }
+  if (up || down) return 'A run of letters or numbers is too easy to guess. Pick another password.';
+  // abcabcabc, 12121212...
+  for (let n = 1; n <= low.length / 2; n++) {
+    if (low.length % n === 0 && low.slice(0, n).repeat(low.length / n) === low) return 'A repeated pattern is too easy to guess. Pick another password.';
+  }
+  return '';
+}
+
 const Cloud = {
   ready: false, on: false, user: null, profile: null, credits: 0,
   sb: null, error: '',
@@ -5344,8 +5426,9 @@ const Cloud = {
     if (!SUPABASE.enabled || !SUPABASE.url) return false;
     try {
       const mod = await import(SUPABASE.sdk);
+      AuthStore.sweep();
       this.sb = mod.createClient(SUPABASE.url, SUPABASE.key, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storage: AuthStore },
         realtime: { params: { eventsPerSecond: 10 } }
       });
       this.on = true;
@@ -5361,8 +5444,27 @@ const Cloud = {
   /** runs a server function; throws a cloudError */
   async rpc(name, args) {
     const { data, error } = await this.sb.rpc(name, args || {});
-    if (error) throw cloudError(error);
+    if (error) {
+      if (/session expired/i.test(String(error.message || '')) && this.user) this.expired();
+      throw cloudError(error);
+    }
     return data;
+  },
+  /** the server ended this sign-in (12 hours, or 30 days when kept): sign in again */
+  expired() {
+    if (this._expiring) return;
+    this._expiring = true;
+    setTimeout(async () => {
+      try {
+        await this.signOut();
+        UI.gateError('You were signed out to keep your account safe. Sign in again.');
+      } catch (e) { /* the sign-in screen is up either way */ }
+      this._expiring = false;
+    }, 0);
+  },
+  /** "keep me signed in": asked of the server right after the password (it refuses later) */
+  async keep(on) {
+    try { await this.rpc('keep_session', { p_keep: !!on }); } catch (e) { /* an older server: the sign-in just lasts as it did */ }
   },
   /** a query builder's result, or a thrown cloudError */
   async q(builder) {
@@ -5379,12 +5481,13 @@ const Cloud = {
       // Reported during a sign-up/sign-in flow: that flow reports its own
       // outcome (a wrong invite code signs the new login out again, and
       // that report arriving late used to wipe the error message).
-      if (this.busy) return;
+      // (Nor while the gate is asking for a new password: see UI.gateNewPass.)
+      if (this.busy || UI.newPass) return;
       // Supabase calls this while holding its session lock: anything that
       // talks to the server from inside it would wait forever, so the work
       // happens on the next turn instead.
       setTimeout(async () => {
-        if (this.busy) return;
+        if (this.busy || UI.newPass) return;
         // token refreshes and profile edits are not a change of player
         if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
         const user = this.wrapUser(session && session.user);
@@ -5438,8 +5541,10 @@ const Cloud = {
     // this device only: the player stays signed in anywhere else
     try { await this.sb.auth.signOut({ scope: 'local' }); } catch (e) { /* already signed out */ }
     this.user = null; this.profile = null;
-    // and nothing of theirs is left in the sign-in form for the next person
-    try { document.getElementById('gPass').value = ''; } catch (e) { /* no form */ }
+    // and nothing of theirs is left on this computer for the next person
+    AuthStore.removeItem(AuthStore.key());
+    AuthStore.setKeep(false);
+    try { document.getElementById('gPass').value = ''; document.getElementById('gKeep').checked = false; } catch (e) { /* no form */ }
     // A player clicking "Sign out" is deliberate: it takes effect at once
     // from any screen, unlike a passive auth report, which waits for the
     // player to get back to a safe screen.
@@ -5456,7 +5561,8 @@ const Cloud = {
   },
   async changePassword(oldPass, newPass) {
     if (!this.user) throw new Error('Not signed in.');
-    if (newPass.length < 6) throw new Error('Pick a new password of at least 6 characters.');
+    const weak = weakPassword(this.profile && this.profile.displayName, newPass);
+    if (weak) throw new Error(weak);
     await this.checkPassword(oldPass);
     const { error } = await this.sb.auth.updateUser({ password: newPass });
     if (error) {
@@ -5549,6 +5655,8 @@ const Cloud = {
     if (!validUsername(username)) {
       throw new Error('Usernames are 3-14 characters: letters, numbers, _ and - only.');
     }
+    const weak = weakPassword(username, pass);
+    if (weak) throw new Error(weak);
     // nothing is made for a blocked computer or a name Coach won't allow
     if (await this.deviceCheck(true)) throw this.blockedError();
     if (this.signupsPaused) throw new Error('New accounts are paused right now. Try again later, or sign in to an account you already have.');
@@ -14730,7 +14838,8 @@ const Preview = {
   on: false, best: {},
   async check() {
     let token = '';
-    try { token = localStorage.getItem('aipolytrack-admin-token') || ''; } catch (e) { /* storage blocked */ }
+    // (the admin page keeps it for its own tab and the tabs it opens; an old copy in localStorage is removed)
+    try { token = sessionStorage.getItem('aipolytrack-admin-token') || ''; localStorage.removeItem('aipolytrack-admin-token'); } catch (e) { /* storage blocked */ }
     if (!token || !SUPABASE.enabled) return false;
     try {
       const r = await fetch(SUPABASE.url + '/rest/v1/rpc/is_admin', { method: 'POST', body: '{}',
@@ -16923,10 +17032,12 @@ const Shop = {
   MONEY: [['holo', 'Holo paint', 2, 'A holographic rainbow that shifts as you move and as the light catches it.', 'finish:holo'],
     ['goldrush', 'Gold Rush paint', 2, 'Liquid gold with light running over it.', 'finish:goldrush'],
     ['podium', 'Podium Pass', 3, 'For 14 days: 1 credit every minute for each season map you\'re top 3 on.', null]],
+  STRIPE: /^https:\/\/buy\.stripe\.com\/[A-Za-z0-9_]+$/,
   buyMoney(code) {
     const m = this.MONEY.find((x) => x[0] === code), link = this.money[code];
     if (!m || !link || !Cloud.user) return;
     if (!this.allowed(m[2])) { UI.toast('That would go over today\'s spending limit of $' + this.limit + '. Try again tomorrow.'); return; }
+    if (!this.STRIPE.test(link)) return;          // (only ever a Stripe Payment Link)
     location.href = link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid + '--' + code);
   },
   async load() {
@@ -16982,7 +17093,7 @@ const Shop = {
   },
   go() {
     const link = this.pack === 5 ? this.link5 : this.pack === 1 ? this.link : '';
-    if (!link || !Cloud.user || !this.allowed(this.pack)) return;
+    if (!link || !Cloud.user || !this.allowed(this.pack) || !this.STRIPE.test(link)) return;
     location.href = link + '?client_reference_id=' + encodeURIComponent(Cloud.user.uid);
   },
   /** back from Stripe */
@@ -18413,8 +18524,9 @@ const COACH_ICON = '<svg class="coachIc" viewBox="0 0 24 24" aria-hidden="true">
 const WhatsNew = {
   // EDITION: raise it (3.1, 3.2, ...) when the list grows mid-season, so
   // everyone who saw an earlier list sees it again
-  SEASON: 4, EDITION: 4, KEY: 'whatsNew',
+  SEASON: 4, EDITION: 5, KEY: 'whatsNew',
   ITEMS: [
+    ['key', 'Safer accounts', 'You are signed out when you close the tab, unless you tick "Keep me signed in" on your own computer. Passwords that are easy to guess have to be replaced. Selling and auctions need a sign-in from today on a computer you have used before, new accounts wait 3 days to use auctions, and an auction starts at no less than what the game pays for the item.'],
     ['map', 'Four cities, sixteen maps', 'Section A is New York, B Paris, C London, D Tokyo. Up Fifth Avenue, over the Brooklyn Bridge, round the Arc de Triomphe, under the Eiffel Tower, over Tower Bridge\'s open bascules, along the Shuto Expressway.'],
     ['photo', 'Real landmarks', 'The Empire State, Liberty, the Louvre, Sacré-Cœur, Big Ben, the London Eye, Piccadilly Circus, the Shibuya crossing, Senso-ji, Tokyo Tower and Mount Fuji, with whole streets round them.'],
     ['flag', 'A new finish line', 'Every map now ends under a chequered arch.'],
@@ -23563,7 +23675,27 @@ const UI = {
   },
   gateError(msg) { $('gErr').textContent = msg || ''; },
   creating: false,
+  /** the gate asking for a new password (o = {user}), or back to normal (null) */
+  gateNewPass(o) {
+    this.newPass = o || null;
+    const on = !!o;
+    $('gUser').readOnly = on;
+    $('gPass').autocomplete = on ? 'new-password' : 'current-password';
+    document.querySelector('label[for="gPass"]').textContent = on ? 'New password' : 'Password';
+    $('gKeepRow').hidden = on; $('gSwitch').hidden = on;
+    if (on) {
+      $('gNewFields').hidden = true;
+      $('gateTitle').textContent = 'Choose a new password';
+      $('gateNote').textContent = 'Your password is too easy to guess, and accounts with easy passwords have been broken into. ' +
+        'Pick a new one of at least 8 characters before you play.';
+      $('gGo').textContent = 'Save and play';
+      this.gateError('');
+      $('gPass').value = '';
+      $('gPass').focus();
+    }
+  },
   gateMode(creating) {
+    if (this.newPass) this.gateNewPass(null);
     // arriving from a friend's link opens on "Create an account"
     if (Referral.from && Referral.auto) creating = true;
     this.creating = creating;
@@ -25961,6 +26093,27 @@ const Game = {
     });
     $('gGo').addEventListener('click', async () => {
       const user = $('gUser').value.trim(), pw = $('gPass').value;
+      // signed in with a password that is too easy to guess: this click saves the new one
+      if (UI.newPass) {
+        const weak = weakPassword(UI.newPass.user, pw);
+        if (weak) { UI.gateError(weak); return; }
+        $('gGo').disabled = true;
+        UI.gateError('Working…');
+        Cloud.busy = true;
+        try {
+          const { error } = await Cloud.sb.auth.updateUser({ password: pw });
+          if (error) throw (error.code === 'same_password' ? new Error('That is your old password. Pick a new one.') : cloudError(error));
+          try { sessionStorage.removeItem(AuthStore.WEAK); } catch (e) { /* storage blocked */ }
+          $('gPass').value = '';
+          UI.gateNewPass(null);
+          UI.gateError('');
+          await this.onAuth(Cloud.user, Cloud.profile);
+          UI.toast('New password saved.');
+        } catch (e) { UI.gateError(this.authMessage(e)); }
+        Cloud.busy = false;
+        $('gGo').disabled = false;
+        return;
+      }
       if (!validUsername(user)) {
         UI.gateError('Username: 3-14 letters, numbers, _ or -.');
         return;
@@ -25978,12 +26131,24 @@ const Game = {
         // (Cloud reporting a signed-out state) without the user re-clicking
         // the toggle — reading a stale local flag would then silently keep
         // calling signUp() even though the button now reads "Sign in".
+        // where this sign-in is kept: this tab only, unless asked to stay
+        const keep = $('gKeep').checked;
+        AuthStore.setKeep(keep);
         if (UI.creating) await Cloud.signUp(user, pw, Referral.from && !$('gCode').value.trim() ? 'ref:' + Referral.from : $('gCode').value);
         else await Cloud.signIn(user, pw);
         UI.gateError('');
         // signed in: the password leaves the form, so the next person at a
         // shared computer can't sign in with it after this player signs out
         $('gPass').value = '';
+        if (Cloud.user && keep) await Cloud.keep(true);
+        // an old password that is too easy to guess is replaced before playing
+        if (Cloud.user && !UI.creating && weakPassword(user, pw)) {
+          try { sessionStorage.setItem(AuthStore.WEAK, '1'); } catch (e) { /* storage blocked */ }
+          UI.gateNewPass({ user });
+          Cloud.busy = false;
+          $('gGo').disabled = false;
+          return;
+        }
         // The auth-state listener sits out while Cloud.busy is set, so this
         // flow reports its own outcome once sign-up/sign-in has actually
         // finished writing (or loading) the profile.

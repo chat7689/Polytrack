@@ -14,6 +14,12 @@ create table if not exists auth.users (
   encrypted_password text,
   updated_at timestamptz default now()
 );
+-- sign-ins (the game reads when each one started: schema.sql _session_at)
+create table if not exists auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid,
+  created_at timestamptz default now()
+);
 create or replace function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;

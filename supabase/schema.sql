@@ -882,6 +882,19 @@ insert into public.course_rules (course_id, sx, sy, sz, fx, fy, fz, gate_r, floo
 on conflict (course_id) do update set sx = excluded.sx, sy = excluded.sy, sz = excluded.sz, fx = excluded.fx, fy = excluded.fy, fz = excluded.fz,
   gate_r = excluded.gate_r, floor_ms = excluded.floor_ms, ref_ms = excluded.ref_ms, len_m = excluded.len_m, cps = excluded.cps;
 
+-- ------------------------------------------------------- sign-in sessions
+-- What the game knows about each sign-in (a row of Supabase's
+-- auth.sessions): the computer it is on, and whether the player asked to
+-- stay signed in there. Only the functions below touch it.
+create table if not exists public.session_info (
+  session_id uuid primary key,
+  uid uuid not null,
+  device_id text,
+  keep_until timestamptz,
+  at timestamptz not null default now()
+);
+create index if not exists session_info_uid on public.session_info (uid);
+
 -- ----------------------------------------------------------------- helpers
 
 -- the address a username signs in with (must match the game's USERNAME_DOMAIN)
@@ -917,11 +930,15 @@ language plpgsql volatile security definer set search_path = public, pg_temp as 
 declare tok text; u text := lower(btrim(coalesce(p_user, ''))); h text; v_ip text := public._client_ip();
 begin
   delete from public.admin_login_fails where at < now() - interval '15 minutes';
-  if (select count(*) from public.admin_login_fails where ip = v_ip) >= 10
-     or (select count(*) from public.admin_login_fails) >= 100 then
+  -- (per network only: a lock on everyone let anybody keep the real admin out)
+  if (select count(*) from public.admin_login_fails where ip = v_ip) >= 10 then
     return jsonb_build_object('error', 'Too many wrong tries. Wait 15 minutes and try again.');
   end if;
   select a.hash into h from public.admin_accounts a where a.username = u;
+  -- (an unknown username costs the same time as a wrong password)
+  if h is null then
+    perform extensions.crypt(coalesce(p_password, ''), extensions.gen_salt('bf', 12));
+  end if;
   if h is null or extensions.crypt(coalesce(p_password, ''), h) <> h then
     insert into public.admin_login_fails (ip, username) values (v_ip, left(u, 64));
     return jsonb_build_object('error', 'That username and password do not match.');
@@ -929,6 +946,7 @@ begin
   delete from public.admin_sessions where expires_at < now();
   tok := encode(extensions.gen_random_bytes(32), 'hex');
   insert into public.admin_sessions (token_hash, expires_at, username) values (public._token_hash(tok), now() + interval '12 hours', u);
+  insert into public.admin_log (action, target, detail) values ('admin sign-in', u, 'from ' || coalesce(nullif(v_ip, ''), 'an unknown network'));
   return jsonb_build_object('token', tok, 'user', u);
 end $$;
 
@@ -1003,11 +1021,98 @@ $$;
 
 -- the calling player's profile; refuses anyone not signed in, without a
 -- profile, or banned
+-- Nov 2026: two accounts were emptied through sign-ins nobody was watching
+-- (one left open on a school computer for five weeks, one behind the
+-- password 123456). So a sign-in now ends by itself:
+--   * 12 hours after the password was typed, or 30 days where the player
+--     ticked "keep me signed in" (keep_session);
+--   * at once when its auth.sessions row is gone (signed out everywhere, or
+--     the admin set a new password).
+-- _session_at(): when this sign-in's password was typed; null when the
+-- token names no session (nothing to check), '-infinity' when it has ended.
+-- Switch it all off with: settings 'sessions' = {"on": false}.
+create or replace function public._session_at() returns timestamptz
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare sid uuid; t timestamptz;
+begin
+  begin sid := nullif(auth.jwt() ->> 'session_id', '')::uuid; exception when others then sid := null; end;
+  if sid is null or auth.uid() is null then return null; end if;
+  if coalesce((select value ->> 'on' from public.settings where key = 'sessions'), 'true') = 'false' then return null; end if;
+  select s.created_at into t from auth.sessions s where s.id = sid and s.user_id = auth.uid();
+  if not found then return '-infinity'::timestamptz; end if;
+  return t;
+end $$;
+create or replace function public._session_ok() returns void
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare t timestamptz := public._session_at();
+begin
+  if t is null or t > now() - interval '12 hours' then return; end if;
+  if t > '-infinity'::timestamptz and exists (select 1 from public.session_info
+      where session_id = (auth.jwt() ->> 'session_id')::uuid and uid = auth.uid() and keep_until > now()) then return; end if;
+  raise exception 'session expired' using errcode = '28000';
+end $$;
+-- Before anything that moves or destroys what a player owns (selling,
+-- auctions, resetting scores): the password was typed in the last 12 hours
+-- (a kept sign-in has to sign in again), and not on a computer that is new
+-- to the account (24 hours: settings 'trade_hold' = {"hours": n}, 0 = off).
+create or replace function public._trusted(p public.profiles) returns void
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare t timestamptz := public._session_at(); dev text; seen timestamptz;
+  hrs integer := coalesce((select (value ->> 'hours')::integer from public.settings where key = 'trade_hold'), 24);
+begin
+  if t is null then return; end if;
+  if t < now() - interval '12 hours' then
+    raise exception 'To keep your items safe, this needs a fresh sign-in: sign out, sign in again, then try once more.' using errcode = 'P0001';
+  end if;
+  if hrs <= 0 then return; end if;
+  select device_id into dev from public.session_info where session_id = (auth.jwt() ->> 'session_id')::uuid and uid = p.id;
+  if dev is not null then select first_seen into seen from public.device_accounts where device_id = dev and uid = p.id; end if;
+  if dev is null or seen is null then raise exception 'Reload the game, then try again.' using errcode = 'P0001'; end if;
+  if seen > now() - make_interval(hours => hrs)
+     and exists (select 1 from public.device_accounts where uid = p.id and device_id <> dev
+                 and first_seen <= now() - make_interval(hours => hrs)) then
+    raise exception 'This computer is new to your account. To keep your items safe, selling, auctions and resets unlock on it % hours after your first sign-in here.', hrs using errcode = 'P0001';
+  end if;
+end $$;
+-- Auctions are for settled accounts: 3 days old with 30 finished runs
+-- (settings 'auction_rules' = {"days": n, "runs": n}). An account made a
+-- minute ago to catch someone else's items can't bid.
+create or replace function public._trader(p public.profiles) returns void
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare v jsonb := coalesce((select value from public.settings where key = 'auction_rules'), '{}'::jsonb);
+  d integer := coalesce((v ->> 'days')::integer, 3); n integer := coalesce((v ->> 'runs')::integer, 30);
+begin
+  if p.created_at > now() - make_interval(days => d) or coalesce((select total from public.garage where uid = p.id), 0) < n then
+    raise exception 'Auctions open once your account is % days old and has % finished runs.', d, n using errcode = 'P0001';
+  end if;
+end $$;
+/** "keep me signed in on this computer": only in the ten minutes after the password was typed */
+create or replace function public.keep_session(p_keep boolean) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare t timestamptz; sid uuid;
+begin
+  if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  t := public._session_at();
+  if t is null or t = '-infinity'::timestamptz then return jsonb_build_object('ok', false); end if;
+  sid := (auth.jwt() ->> 'session_id')::uuid;
+  if not coalesce(p_keep, false) then
+    update public.session_info set keep_until = null where session_id = sid and uid = auth.uid();
+    return jsonb_build_object('ok', true, 'keep', false);
+  end if;
+  if t < now() - interval '10 minutes' then
+    raise exception 'Sign in again to stay signed in on this computer.' using errcode = 'P0001';
+  end if;
+  insert into public.session_info (session_id, uid, keep_until) values (sid, auth.uid(), t + interval '30 days')
+    on conflict (session_id) do update set keep_until = excluded.keep_until where public.session_info.uid = excluded.uid;
+  return jsonb_build_object('ok', true, 'keep', true);
+end $$;
+
 create or replace function public._player() returns public.profiles
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 declare p public.profiles;
 begin
   if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  perform public._session_ok();
   select * into p from public.profiles where id = auth.uid();
   if not found then raise exception 'no profile' using errcode = '28000'; end if;
   if p.banned and not exists (select 1 from public.account_bans b where b.uid = p.id and b.until is not null and b.until <= now()) then
@@ -1064,19 +1169,28 @@ end $$;
 -- Whether a name belongs to a player from before the move who has not
 -- signed up again yet, so the sign-in page can tell them to (their old
 -- password is not here). Asked before anyone is signed in.
+-- (Only while the owner allows it: settings 'legacy_claims' = {"on": true}.
+-- Anyone who knew an old player's name could otherwise take their times,
+-- credits and trophies by signing up as them.)
 create or replace function public.returning_player(p_name text) returns boolean
 language sql stable security definer set search_path = public, pg_temp as $$
-  select exists (select 1 from public.profiles where legacy and lower(display_name) = lower(trim(coalesce(p_name, ''))))
+  select coalesce((select value ->> 'on' from public.settings where key = 'legacy_claims'), 'false') = 'true'
+    and exists (select 1 from public.profiles where legacy and lower(display_name) = lower(trim(coalesce(p_name, ''))))
 $$;
 
 -- ------------------------------------------------------------- times
 
 create or replace function public.reset_my_scores() returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
+declare p public.profiles := public._player();
 begin
-  if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
-  delete from public.bests where uid = auth.uid();
-  delete from public.ghosts where uid = auth.uid();
+  perform public._trusted(p);
+  -- (podiums are about to change: Podium Pass holders are paid up to now first)
+  if exists (select 1 from public.bests where uid = p.id and course_id = any(public._season_maps())) then
+    perform public._podium_pay(null);
+  end if;
+  delete from public.bests where uid = p.id;
+  delete from public.ghosts where uid = p.id;
 end $$;
 
 -- ------------------------------------------------------------- credits
@@ -1138,6 +1252,15 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare w record; r public.daily_results; hold boolean;
 begin
   if coalesce(p_day, '') !~ '^[0-9]{8}$' then raise exception 'bad day' using errcode = '22023'; end if;
+  if auth.uid() is null or not exists (select 1 from public.profiles where id = auth.uid()) then
+    raise exception 'not signed in' using errcode = '28000';
+  end if;
+  select * into r from public.daily_results where day = p_day;
+  if found then return to_jsonb(r) || jsonb_build_object('settled', true); end if;
+  -- only a real, recent day is ever settled (no rows for made-up dates)
+  begin
+    if to_date(p_day, 'YYYYMMDD') < (public._daily_now())::date - 14 then return jsonb_build_object('settled', false); end if;
+  exception when others then return jsonb_build_object('settled', false); end;
   if public._daily_now() < to_date(p_day, 'YYYYMMDD')::timestamp + interval '12 hours 5 minutes' then
     return jsonb_build_object('settled', false);
   end if;
@@ -1184,11 +1307,19 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare v_ip text := public._client_ip(); v_fp text := left(coalesce(p_fp, ''), 64);
 begin
   if coalesce(p_device, '') !~ '^[a-f0-9]{32}$' then return public._blocked(null, v_fp, v_ip); end if;
+  -- (an account with no profile, or one naming a dozen new computers a day, isn't remembered)
+  if auth.uid() is not null and (not exists (select 1 from public.profiles where id = auth.uid())
+       or (not exists (select 1 from public.device_accounts where device_id = p_device and uid = auth.uid())
+           and (select count(*) from public.device_accounts where uid = auth.uid() and first_seen > now() - interval '1 day') >= 12)) then
+    return public._blocked(p_device, v_fp, v_ip);
+  end if;
   insert into public.devices (id, fp, first_ip, last_ip) values (p_device, v_fp, v_ip, v_ip)
     on conflict (id) do update set fp = excluded.fp, last_ip = excluded.last_ip, last_seen = now();
   if auth.uid() is not null then
+    -- (a computer not used for a month counts as new again: see _trusted)
     insert into public.device_accounts (device_id, uid) values (p_device, auth.uid())
-      on conflict (device_id, uid) do update set last_seen = now();
+      on conflict (device_id, uid) do update set last_seen = now(),
+        first_seen = case when public.device_accounts.last_seen < now() - interval '30 days' then now() else public.device_accounts.first_seen end;
   end if;
   return public._blocked(p_device, v_fp, v_ip);
 end $$;
@@ -1196,9 +1327,17 @@ end $$;
 -- the game says which computer a signed-in player is on
 create or replace function public.touch_device(p_device text, p_fp text) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare v_fp text := left(coalesce(p_fp, ''), 64); v_ip text := public._client_ip(); fresh boolean; r jsonb; nm text;
+declare v_fp text := left(coalesce(p_fp, ''), 64); v_ip text := public._client_ip(); fresh boolean; r jsonb; nm text; sid uuid;
 begin
   if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  -- which computer this sign-in is on: the first one it names (see _trusted)
+  begin sid := nullif(auth.jwt() ->> 'session_id', '')::uuid; exception when others then sid := null; end;
+  if sid is not null and coalesce(p_device, '') ~ '^[a-f0-9]{32}$' and exists (select 1 from public.profiles where id = auth.uid()) then
+    insert into public.session_info (session_id, uid, device_id) values (sid, auth.uid(), p_device)
+      on conflict (session_id) do update set device_id = coalesce(public.session_info.device_id, excluded.device_id)
+      where public.session_info.uid = excluded.uid;
+    delete from public.session_info where session_id in (select session_id from public.session_info where at < now() - interval '40 days' limit 200);
+  end if;
   if exists (select 1 from public.account_bans where uid = auth.uid() and until is not null and until <= now()) then
     update public.profiles set banned = false where id = auth.uid();
     update public.bests set banned = false where uid = auth.uid();
@@ -1299,11 +1438,15 @@ declare p public.profiles := public._player(); r public.runs; el numeric; fl int
   v_total integer := 0; v_streak integer := 0; g_day text; streak_bonus integer := 0; streak_box boolean := false;
   v_ref public.referrals; ref_box boolean := false; ref_name text; v_pass integer := 0; v_xp integer := 0;
 begin
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
   select * into r from public.runs where id = p_run and uid = p.id for update;
   if not found then return jsonb_build_object('ok', false, 'message', 'This run wasn''t registered with the server, so the time stays on this device only.'); end if;
   if r.status <> 'open' then return jsonb_build_object('ok', false, 'message', 'This run was replaced by a newer one.'); end if;
   el := extract(epoch from (now() - r.started_at)) * 1000;
-  if p_time_ms is null or p_time_ms <= 0 or p_time_ms >= 600000 or p_time_ms > el + 6000 or el > p_time_ms + 120000 then
+  -- (the slack for a slow connection is at most half the time itself, so a
+  -- very short map can't be "finished" the instant it starts)
+  if p_time_ms is null or p_time_ms <= 0 or p_time_ms >= 600000
+     or p_time_ms > el + least(6000, greatest(3000, p_time_ms / 2)) or el > p_time_ms + 120000 then
     update public.runs set status = 'void', ended_at = now(), time_ms = p_time_ms where id = r.id;
     return jsonb_build_object('ok', false, 'message', 'That time doesn''t match how long the run really took.');
   end if;
@@ -1321,6 +1464,17 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Not counted: the game window wasn''t in focus for the run.');
   end if;
   update public.runs set status = 'done', counted = true, ended_at = now(), time_ms = p_time_ms, focus = p_focus where id = r.id;
+  -- The time counts, but nothing is earned (boxes, pass, XP, streak) for a
+  -- player-built road shorter than 15 seconds, or past 300 finishes in an
+  -- hour: both are what a script farming rewards looks like.
+  if (r.course_id ~ '^u[0-9]+$' and p_time_ms < 15000)
+     or (select count(*) from public.runs where uid = p.id and counted and ended_at > now() - interval '1 hour') > 300 then
+    return jsonb_build_object('ok', true, 'credited', false, 'bonus', 0, 'day_runs', public._day_runs(p.id), 'day_bonus', 0,
+      'balance', public._balance(p.id), 'box_runs', coalesce((select runs from public.garage where uid = p.id), 0), 'free_box', false,
+      'streak', coalesce((select streak from public.garage where uid = p.id), 0), 'streak_bonus', 0, 'streak_box', false,
+      'ref_box', false, 'ref_name', null, 'pass_runs', coalesce((select pass_runs from public.garage where uid = p.id), 0),
+      'xp', coalesce((select xp from public.garage where uid = p.id), 0));
+  end if;
   insert into public.garage (uid, runs, total) values (p.id, 1, 1)
     on conflict (uid) do update set runs = public.garage.runs + 1, total = public.garage.total + 1
     returning runs, total, streak, streak_day into box_runs, v_total, v_streak, g_day;
@@ -1370,7 +1524,9 @@ begin
   end if;
   -- driver XP: 10 a counted finish
   v_xp := public._add_xp(p.id, 10);
-  if r.course_id !~ '^d[0-9]{8}$' and r.course_id !~ '^u[0-9]+$' and r.course_id !~ '^p[0-9]{8}$' then
+  -- (this season's maps only: old seasons' maps aren't in the game any more,
+  -- so only a script could be "finishing" them for the bonus)
+  if r.course_id = any(public._season_maps()) then
     perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
     if not exists (select 1 from public.credit_events where uid = p.id and kind = 'grind' and created_at > now() - interval '10 seconds') then
       insert into public.credit_events (uid, delta, kind, note) values (p.id, 1, 'grind', 'run ' || r.id::text);
@@ -1396,6 +1552,36 @@ begin
     'balance', public._balance(p.id), 'box_runs', box_runs, 'free_box', free_box,
     'streak', v_streak, 'streak_bonus', streak_bonus, 'streak_box', streak_box, 'ref_box', ref_box, 'ref_name', ref_name,
     'pass_runs', v_pass, 'xp', v_xp);
+end $$;
+
+-- Is this recording another player's, stretched or squeezed? Forty points
+-- along it are compared with the same points of each of the map's ten
+-- fastest other recordings: two drivers never stay within 25 cm of each
+-- other for a whole run.
+create or replace function public._ghost_like(p_course text, p_uid uuid, p_samples text) returns boolean
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare a float8[]; b float8[]; n integer; m integer; j integer; ia integer; ib integer; tot float8; o record;
+  fa float8; fb float8; ax float8; az float8; bx float8; bz float8;
+begin
+  begin a := string_to_array(p_samples, ',')::float8[]; exception when others then return false; end;
+  n := coalesce(array_length(a, 1), 0) / 8;
+  if n < 40 then return false; end if;
+  for o in select g.samples from public.ghosts g where g.course_id = p_course and g.uid <> p_uid order by g.time_ms limit 10 loop
+    begin b := string_to_array(o.samples, ',')::float8[]; exception when others then continue; end;
+    m := coalesce(array_length(b, 1), 0) / 8;
+    if m < 40 then continue; end if;
+    tot := 0;
+    for j in 0..39 loop
+      -- the same fraction of the way through each recording, between its two nearest samples
+      fa := j * (n - 1) / 39.0; ia := least(floor(fa)::integer, n - 2); fa := fa - ia; ia := ia * 8;
+      fb := j * (m - 1) / 39.0; ib := least(floor(fb)::integer, m - 2); fb := fb - ib; ib := ib * 8;
+      ax := a[ia + 1] + (a[ia + 9] - a[ia + 1]) * fa; az := a[ia + 3] + (a[ia + 11] - a[ia + 3]) * fa;
+      bx := b[ib + 1] + (b[ib + 9] - b[ib + 1]) * fb; bz := b[ib + 3] + (b[ib + 11] - b[ib + 3]) * fb;
+      tot := tot + sqrt((ax - bx) ^ 2 + (az - bz) ^ 2);
+    end loop;
+    if tot / 40 < 0.25 then return true; end if;
+  end loop;
+  return false;
 end $$;
 
 -- A run's recording against the map: the right number of samples for the
@@ -1510,8 +1696,16 @@ begin
   if p_course ~ '^p[0-9]{8}$' and not public._pot_accepts(substr(p_course, 2)) then
     raise exception 'That Pot map has closed.' using errcode = 'P0001';
   end if;
+  if length(coalesce(p_samples, '')) > 400000 then raise exception 'That recording is too long.' using errcode = 'P0001'; end if;
   g := public._ghost_check(p_course, p_time_ms, p_samples);
   if not (g ->> 'ok')::boolean then raise exception '%', g ->> 'error' using errcode = 'P0001'; end if;
+  -- someone else's recording sent back in as one's own
+  if exists (select 1 from public.ghosts o where o.course_id = p_course and o.uid <> p.id and md5(o.samples) = md5(p_samples))
+     or public._ghost_like(p_course, p.id, p_samples) then
+    perform public._sec_event('copied run', p.display_name, r.device_id, '', public._client_ip(), 'Sent another player''s recording on ' || p_course || ' as their own; it was refused.');
+    update public.runs set best_used = true where id = r.id;
+    return jsonb_build_object('improved', false, 'copied', true);
+  end if;
   flags := array(select jsonb_array_elements_text(g -> 'flags'));
   if p_course ~ '^u[0-9]+$' then flags := '{}'; end if;
   update public.runs set best_used = true where id = r.id;
@@ -1521,7 +1715,7 @@ begin
   end if;
   -- a new record by a wide margin is worth a look (not on dailies: the
   -- first good time of the day beats nothing)
-  if p_course !~ '^d[0-9]{8}$' and p_course !~ '^u[0-9]+$' then
+  if p_course !~ '^d[0-9]{8}$' and p_course !~ '^u[0-9]+$' and p_course !~ '^p[0-9]{8}$' then
     select min(time_ms) into top from public.bests where course_id = p_course and uid <> p.id and not banned;
     if top is not null and p_time_ms < top * 0.98 then flags := array_append(flags, 'record'); end if;
   end if;
@@ -1536,12 +1730,12 @@ begin
   if cardinality(flags) > 0 then
     insert into public.best_flags (uid, course_id, time_ms, flags, run_id) values (p.id, p_course, p_time_ms, flags, r.id)
       on conflict (uid, course_id) do update set time_ms = excluded.time_ms, flags = excluded.flags, run_id = excluded.run_id, at = now();
-  else
-    delete from public.best_flags where uid = p.id and course_id = p_course;
   end if;
+  -- (a flag stays until the admin clears it: a later, unflagged time used to wash it off)
   -- rival alerts: everyone this time just passed (they were ahead of or level
   -- with the old best, and are behind the new one)
-  if p_course !~ '^u[0-9]+$' then
+  if p_course !~ '^u[0-9]+$' and not (cur is null and exists (select 1 from public.runs o
+        where o.uid = p.id and o.course_id = p_course and o.best_used and o.id <> r.id)) then
     insert into public.rival_events (uid, by_uid, by_name, course_id, by_ms, their_ms)
       select b.uid, p.id, p.display_name, p_course, p_time_ms, b.time_ms from public.bests b
       where b.course_id = p_course and b.uid <> p.id and not b.banned and b.time_ms > p_time_ms and (cur is null or b.time_ms <= cur)
@@ -1574,6 +1768,9 @@ begin
   if exists (select 1 from public.profiles where id = me) then
     return jsonb_build_object('ok', true, 'existing', true);
   end if;
+  -- a login that was removed (a wrong invite code) is finished: its token
+  -- can't keep guessing
+  if not exists (select 1 from auth.users where id = me) then raise exception 'not signed in' using errcode = '28000'; end if;
   if coalesce(p_name, '') !~ '^[A-Za-z0-9_-]{3,14}$' or email <> public.login_email(p_name) then
     return jsonb_build_object('ok', false, 'error', 'name');
   end if;
@@ -1595,10 +1792,14 @@ begin
   end if;
   if why is null then
     select * into leg from public.profiles where legacy and lower(display_name) = lower(p_name) for update;
-    if found then
+    if found and coalesce((select value ->> 'on' from public.settings where key = 'legacy_claims'), 'false') = 'true' then
       perform public._adopt(leg.id, me, leg.display_name);          -- their name as it always was
       perform public._see_device(p_device, v_fp);
+      insert into public.signup_log (uid, device_id, fp, ip, flag) values (me, p_device, v_fp, v_ip, 'Took over an old (pre-move) profile');
       return jsonb_build_object('ok', true, 'adopted', true);
+    elsif found then
+      begin delete from auth.users where id = me; exception when others then null; end;
+      return jsonb_build_object('ok', false, 'error', 'taken');
     end if;
     if exists (select 1 from public.profiles where lower(display_name) = lower(p_name)) then
       return jsonb_build_object('ok', false, 'error', 'taken');
@@ -2091,7 +2292,8 @@ begin
   if coalesce(current_setting('app.garage', true), '') = 'on' then return new; end if;
   if tg_op = 'INSERT' then
     new.loadout := '{}'::jsonb;
-    if jsonb_typeof(new.unlocked) <> 'array' or jsonb_array_length(new.unlocked) > 2 then
+    if jsonb_typeof(new.unlocked) <> 'array' or jsonb_array_length(new.unlocked) > 2 or length(new.unlocked::text) > 16
+       or exists (select 1 from jsonb_array_elements(new.unlocked) e where jsonb_typeof(e) <> 'number') then
       new.unlocked := jsonb_build_array(public._hue_cell(new.primary_color), public._hue_cell(new.secondary_color));
     end if;
     return new;
@@ -2206,8 +2408,11 @@ create or replace function public.sell_item(p_item text, p_count integer) return
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); it public.items; have integer; n integer := greatest(coalesce(p_count, 1), 1); slot text;
 begin
+  perform public._trusted(p);
   select * into it from public.items where id = p_item;
   if not found then raise exception 'That can''t be sold.' using errcode = 'P0001'; end if;
+  -- (bought with money: selling it and then refunding the payment kept the credits)
+  if it.source = 'money' then raise exception 'Items bought in the shop can''t be sold.' using errcode = 'P0001'; end if;
   perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
   select count into have from public.inventory where uid = p.id and item = p_item for update;
   if coalesce(have, 0) < n then raise exception 'You don''t have that many to sell.' using errcode = 'P0001'; end if;
@@ -2228,6 +2433,7 @@ create or replace function public.set_loadout(p_loadout jsonb) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); v jsonb := '{}'::jsonb; slot text; val text; kinds text[]; num integer;
 begin
+  perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
   for slot, kinds in select * from (values ('car', array['car']), ('decal', array['decal', 'anim']), ('cel', array['cel']), ('boost', array['boost']),
                                           ('wheel', array['wheel']), ('title', array['title']), ('icon', array['icon']), ('finish', array['finish'])) s(a, b) loop
     val := p_loadout ->> slot;
@@ -2405,12 +2611,23 @@ begin
     update public.inventory set count = count - 1 where uid = r.uid and count > 0
       and item in (select jsonb_array_elements_text(coalesce(public._money_item(r.item) -> 'items', '[]'::jsonb)));
     delete from public.inventory where uid = r.uid and count <= 0;
+    -- and off the car, when none is left
+    update public.car_customization c set loadout = c.loadout - public._loadout_slot(i.kind)
+      from public.items i
+      where c.uid = r.uid and i.id in (select jsonb_array_elements_text(coalesce(public._money_item(r.item) -> 'items', '[]'::jsonb)))
+        and c.loadout ->> public._loadout_slot(i.kind) = i.id
+        and not exists (select 1 from public.inventory v where v.uid = r.uid and v.item = i.id);
     if coalesce((public._money_item(r.item) ->> 'plus')::boolean, false) then
       update public.pass_claims set plus = false where uid = r.uid and season = public._pass_season();
     end if;
     if coalesce((public._money_item(r.item) ->> 'podium_days')::int, 0) > 0 then
       perform public._podium_end(r.uid);
     end if;
+  end if;
+  -- credits already spent or passed on leave the balance below zero: the admin hears about it
+  if r.uid is not null and public._balance(r.uid) < 0 then
+    perform public._sec_event('refund in debt', (select display_name from public.profiles where id = r.uid), '', '', '',
+      'A refunded purchase left this account at ' || public._balance(r.uid) || ' credits: the credits were spent or passed on before the refund.');
   end if;
   return jsonb_build_object('ok', true, 'found', true, 'credits', r.credits, 'boxes', r.boxes);
 end $$;
@@ -2794,6 +3011,7 @@ language sql stable security definer set search_path = public, pg_temp as $$
   select coalesce(array_agg(course_id order by course_id), '{}') from (
     select b.course_id, b.uid, row_number() over (partition by b.course_id order by b.time_ms, b.updated_ms, b.uid) as rk
     from public.bests b where b.course_id = any(public._season_maps()) and not b.banned
+      and not exists (select 1 from public.best_flags f where f.uid = b.uid and f.course_id = b.course_id)
   ) x where x.uid = p_uid and x.rk <= 3
 $$;
 /** pay running passes up to now (one player's, or everyone's): whole minutes x podiums held */
@@ -2808,6 +3026,7 @@ begin
       select x.uid, count(*)::int as n from (
         select b.uid, row_number() over (partition by b.course_id order by b.time_ms, b.updated_ms, b.uid) as rk
         from public.bests b where b.course_id = any(public._season_maps()) and not b.banned
+          and not exists (select 1 from public.best_flags f where f.uid = b.uid and f.course_id = b.course_id)
       ) x where x.rk <= 3 group by x.uid
     ) pc on pc.uid = pp.uid
     where pp.paid_to < pp.expires_at and (p_uid is null or pp.uid = p_uid)
@@ -3196,7 +3415,7 @@ create or replace function public.pot_today() returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); d text := public._daily_today(); e public.pot_entries; y text; dd text;
 begin
-  for dd in select distinct day from public.pot_entries where day < d and day >= to_char(public._daily_now() - interval '7 days', 'YYYYMMDD')
+  for dd in select distinct day from public.pot_entries where day < d
             and not exists (select 1 from public.pot_results r where r.day = pot_entries.day) loop
     perform public._pot_settle(dd);
   end loop;
@@ -3217,6 +3436,7 @@ create or replace function public.enter_pot(p_stake integer) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); d text := public._daily_today();
 begin
+  perform public._trusted(p);
   if p_stake is null or p_stake < 100 or p_stake > 5000 then raise exception 'Put in 100 to 5 000 credits.' using errcode = 'P0001'; end if;
   perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
   if exists (select 1 from public.pot_entries where day = d and uid = p.id) then
@@ -3266,6 +3486,8 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Take a break: that''s a lot of runs this hour.');
   end if;
   delete from public.escape_runs where id in (select id from public.escape_runs where started_at < now() - interval '2 days' limit 200);
+  -- one run at a time: a new one ends any other still open
+  update public.escape_runs set done = true where uid = p.id and not done;
   insert into public.escape_runs (uid) values (p.id) returning id into rid;
   return jsonb_build_object('ok', true, 'run', rid);
 end $$;
@@ -3277,7 +3499,7 @@ begin
   if not found or r.done then return jsonb_build_object('ok', false, 'message', 'That run wasn''t registered.'); end if;
   update public.escape_runs set done = true where id = r.id;
   el := extract(epoch from (now() - r.started_at));
-  if p_meters is null or p_meters < 0 or p_meters > el * 75 + 100 or el > 1800 or p_meters > 26000 then
+  if p_meters is null or p_meters < 0 or p_meters > el * 75 + 100 or el > 1800 or p_meters > 25000 then
     return jsonb_build_object('ok', false, 'message', 'That distance doesn''t fit the time the run took.');
   end if;
   xp := least(p_meters / 100, 50);
@@ -3382,11 +3604,20 @@ end $$;
 /** put an item up for auction */
 create or replace function public.list_auction(p_item text, p_start integer, p_buyout integer, p_hours integer) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare p public.profiles := public._player(); have integer; it public.items; slot text; aid bigint;
+declare p public.profiles := public._player(); have integer; it public.items; slot text; aid bigint; low integer;
 begin
+  perform public._trusted(p);
+  perform public._trader(p);
   select * into it from public.items where id = p_item;
-  if not found then raise exception 'That can''t be auctioned.' using errcode = 'P0001'; end if;
+  if not found or it.source = 'money' then raise exception 'That can''t be auctioned.' using errcode = 'P0001'; end if;
   if p_start is null or p_start < 1 or p_start > 100000000 then raise exception 'Pick a starting price.' using errcode = 'P0001'; end if;
+  -- Never below what the game itself pays for the item: a 1-credit auction
+  -- was only ever a way to hand items to another account.
+  -- (settings 'auction_rules' = {"floor": false} switches it off)
+  low := greatest(coalesce(it.sell, 0), 1);
+  if p_start < low and coalesce((select value ->> 'floor' from public.settings where key = 'auction_rules'), 'true') <> 'false' then
+    raise exception 'The lowest starting price for this is % credits (what the game pays for it).', low using errcode = 'P0001';
+  end if;
   if p_buyout is not null and p_buyout < p_start then raise exception 'The buy-now price can''t be below the starting price.' using errcode = 'P0001'; end if;
   if p_hours is null or p_hours not in (1, 6, 12, 24, 48) then raise exception 'An auction runs 1, 6, 12, 24 or 48 hours.' using errcode = 'P0001'; end if;
   perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
@@ -3413,12 +3644,14 @@ create or replace function public.bid_auction(p_id bigint, p_amount integer) ret
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); a public.auctions; need integer; amt integer := p_amount; bought boolean := false;
 begin
+  perform public._trusted(p);
+  perform public._trader(p);
   perform public._auction_settle_due();
   select * into a from public.auctions where id = p_id for update;
   if not found or a.status <> 'open' or a.ends_at <= now() then raise exception 'That auction has ended.' using errcode = 'P0001'; end if;
   if a.seller = p.id then raise exception 'You can''t bid on your own auction.' using errcode = 'P0001'; end if;
   need := case when a.bid is null then a.start_price else a.bid + greatest(10, ceil(a.bid * 0.05)::int) end;
-  if a.buyout is not null and amt >= a.buyout then amt := greatest(a.buyout, need); bought := true; end if;
+  if a.buyout is not null and amt >= greatest(a.buyout, need) then amt := greatest(a.buyout, need); bought := true; end if;
   if amt is null or amt < need then raise exception 'The next bid is at least % credits.', need using errcode = 'P0001'; end if;
   perform pg_advisory_xact_lock(hashtext('credits:' || p.id::text));
   -- raising your own bid: only the difference is held
@@ -3797,6 +4030,7 @@ create or replace function public.hide_run(p_course text, p_days integer) return
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare p public.profiles := public._player(); cost integer; cur timestamptz; t timestamptz;
 begin
+  perform public._trusted(p);
   if p_days is null or p_days not between 1 and 30 then
     return jsonb_build_object('ok', false, 'error', 'Pick 1 to 30 days.');
   end if;
@@ -4056,6 +4290,7 @@ begin
   delete from public.bests where uid = p_uid and course_id = p_course;
   delete from public.ghosts where uid = p_uid and course_id = p_course;
   delete from public.best_flags where uid = p_uid and course_id = p_course;
+  perform public._log('remove time', (select display_name from public.profiles where id = p_uid), p_course);
 end $$;
 -- a held daily: pay the winner, or refuse (the time is removed and nobody
 -- is paid for that day)
@@ -4072,8 +4307,11 @@ begin
   else
     delete from public.bests where uid = r.uid and course_id = 'd' || p_day;
     delete from public.ghosts where uid = r.uid and course_id = 'd' || p_day;
-    update public.daily_results set held = false, paid = false where day = p_day;
+    delete from public.best_flags where uid = r.uid and course_id = 'd' || p_day;
+    -- the day is settled again, so the next fastest driver is paid
+    delete from public.daily_results where day = p_day;
   end if;
+  perform public._log(case when p_pay then 'daily paid' else 'daily refused' end, r.display_name, p_day);
 end $$;
 -- the Cloudflare Turnstile site key the game shows on sign-up and sign-in
 create or replace function public.admin_set_captcha(p_site text) returns jsonb
@@ -4089,9 +4327,21 @@ end $$;
 
 -- the run history fills at most 40 rows a minute per player (a script
 -- can't flood it)
+-- A player's own row only: under their real name, dated and numbered by
+-- the server (a back-dated row used to slip past the limit), and small.
 create or replace function public._run_log_limit() returns trigger
 language plpgsql security definer set search_path = public, pg_temp as $$
+declare nm text;
 begin
+  if auth.uid() is not null and not public.is_admin() then
+    select display_name into nm from public.profiles where id = auth.uid();
+    if nm is null or new.uid is distinct from auth.uid() then return null; end if;
+    if length(new.data::text) > 4000 or length(coalesce(new.course_id, '')) > 24 then return null; end if;
+    new.display_name := nm;
+    new.created_at := now();
+    new.legacy_id := null;
+    new.id := nextval(pg_get_serial_sequence('public.run_log', 'id'));
+  end if;
   if (select count(*) from public.run_log where uid = new.uid and created_at > now() - interval '1 minute') >= 40 then return null; end if;
   return new;
 end $$;
@@ -4140,6 +4390,7 @@ begin
   select coalesce(sum(delta), 0) into live from public.credit_events where uid = p_uid;
   if live <> p_target then
     insert into public.credit_events (uid, delta, kind, note) values (p_uid, p_target - live, 'adjust', 'admin set to ' || p_target);
+    perform public._log('credits', (select display_name from public.profiles where id = p_uid), floor(live)::text || ' -> ' || p_target);
   end if;
   return public._balance(p_uid);
 end $$;
@@ -4166,11 +4417,15 @@ language plpgsql security definer set search_path = public, extensions, pg_temp 
 begin
   perform public._require_admin();
   if length(coalesce(p_password, '')) < 6 then raise exception 'Use at least 6 characters.' using errcode = 'P0001'; end if;
-  update auth.users set encrypted_password = extensions.crypt(p_password, extensions.gen_salt('bf')), updated_at = now()
+  update auth.users set encrypted_password = extensions.crypt(p_password, extensions.gen_salt('bf', 10)), updated_at = now()
     where id = p_uid;
   if not found then
     raise exception 'That player has no login yet (they have not signed up since the move).' using errcode = 'P0001';
   end if;
+  -- whoever was signed in as them, anywhere, is signed out
+  delete from auth.sessions where user_id = p_uid;
+  delete from public.session_info where uid = p_uid;
+  perform public._log('password', (select display_name from public.profiles where id = p_uid), 'new password set; signed out everywhere');
 end $$;
 
 -- removes a player completely, login included
@@ -4418,7 +4673,7 @@ begin
   -- admins may read and change everything directly
   foreach t in array array['admins', 'settings', 'profiles', 'bests', 'ghosts', 'credit_events', 'car_customization',
                           'run_log', 'season_awards', 'admin_notes', 'races', 'race_entries', 'legacy_ids', 'referrals',
-                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims', 'rival_events', 'pot_entries', 'pot_results', 'escape_runs', 'escape_best', 'auctions',
+                          'access_codes', 'access_grants', 'access_tries', 'user_tracks', 'track_limits', 'run_hides', 'account_bans', 'admin_log', 'security_events', 'items', 'inventory', 'garage', 'box_log', 'unbox_news', 'purchases', 'pass_claims', 'rival_events', 'pot_entries', 'pot_results', 'escape_runs', 'escape_best', 'auctions', 'session_info',
                           'daily_entries', 'daily_results', 'course_rules', 'devices', 'device_accounts', 'signup_log',
                           'bans', 'runs', 'best_flags'] loop
     execute format('drop policy if exists admin_all on public.%I', t);
@@ -4434,7 +4689,12 @@ end $$;
 -- recordings: everyone's, except a run someone paid to hide (its owner still sees it)
 drop policy if exists player_read on public.ghosts;
 create policy player_read on public.ghosts for select to authenticated
-  using (uid = auth.uid() or not exists (select 1 from public.run_hides h where h.uid = ghosts.uid and h.course_id = ghosts.course_id and h.until > now()));
+  using (uid = auth.uid() or (
+    not exists (select 1 from public.run_hides h where h.uid = ghosts.uid and h.course_id = ghosts.course_id and h.until > now())
+    -- today's daily and Pot map pay credits to the fastest: their recordings
+    -- stay private until the day is over, so nobody can send one back in
+    and course_id not in ('d' || to_char(now() at time zone 'America/Los_Angeles', 'YYYYMMDD'),
+                          'p' || to_char(now() at time zone 'America/Los_Angeles', 'YYYYMMDD'))));
 
 -- a banned player may read why, and until when
 drop policy if exists own_ban on public.account_bans;
@@ -4546,6 +4806,64 @@ begin
            where n.nspname = 'public' and p.proname like '\_%' loop
     execute format('revoke execute on function %s from public, anon, authenticated', f);
   end loop;
+end $$;
+
+-- The pay links the game sends players to are Stripe Payment Links and
+-- nothing else, whoever writes the row (a stolen admin login could
+-- otherwise point every buyer at another site).
+create or replace function public._settings_guard() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare v text;
+begin
+  if new.key in ('shop', 'money_links') then
+    if jsonb_typeof(new.value) <> 'object' then raise exception 'bad links' using errcode = '22023'; end if;
+    for v in select value from jsonb_each_text(new.value) loop
+      if coalesce(v, '') <> '' and v !~ '^https://buy\.stripe\.com/[A-Za-z0-9_]+$' then
+        raise exception 'That isn''t a Stripe Payment Link (they start https://buy.stripe.com/).' using errcode = 'P0001';
+      end if;
+    end loop;
+  end if;
+  return new;
+end $$;
+drop trigger if exists settings_guard on public.settings;
+create trigger settings_guard before insert or update on public.settings for each row execute function public._settings_guard();
+
+-- Logins: only the game's own (username@chat7689.github.io), and a login's
+-- name never changes (a hijacked sign-in could otherwise rename the login
+-- and lock its owner out). The owner can still do either in the SQL Editor
+-- after: select set_config('app.auth_admin', 'on', false);
+create or replace function public._auth_guard() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if coalesce(current_setting('app.auth_admin', true), '') = 'on' then return new; end if;
+  if tg_op = 'INSERT' then
+    if coalesce(new.email, '') !~ '^[a-z0-9_-]{3,14}@chat7689\.github\.io$' then
+      raise exception 'Accounts are made in the game.' using errcode = 'P0001';
+    end if;
+  elsif new.email is distinct from old.email then
+    raise exception 'A login''s name can''t be changed.' using errcode = 'P0001';
+  end if;
+  return new;
+end $$;
+do $$
+begin
+  drop trigger if exists aipolytrack_auth_ins on auth.users;
+  create trigger aipolytrack_auth_ins before insert on auth.users for each row execute function public._auth_guard();
+  drop trigger if exists aipolytrack_auth_upd on auth.users;
+  create trigger aipolytrack_auth_upd before update of email on auth.users for each row execute function public._auth_guard();
+exception when others then
+  raise notice 'The login guard was not installed: %', sqlerrm;
+end $$;
+revoke execute on function public._settings_guard(), public._auth_guard() from public, anon, authenticated;
+
+-- Sign-ins that are over (see _session_ok) are removed, so nothing is left
+-- of them on any computer.
+do $$
+begin
+  delete from auth.sessions s where s.created_at < now() - interval '12 hours'
+    and not exists (select 1 from public.session_info i where i.session_id = s.id and i.keep_until > now());
+exception when others then
+  raise notice 'Old sign-ins were not removed: %', sqlerrm;
 end $$;
 
 -- ------------------------------------------------------------- season 1, closed

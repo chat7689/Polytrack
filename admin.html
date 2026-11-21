@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' data: blob: https://tkjiivodmmjeruhxspcz.supabase.co wss://tkjiivodmmjeruhxspcz.supabase.co https://cdn.jsdelivr.net; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="same-origin">
 <script>
 /* Keeps the browser's inspect tools out of casual reach: no right-click
    menu (except in text boxes, for paste), and the developer-tools,
@@ -186,7 +188,7 @@ button.primary{background:var(--ink);color:#121417}
     <h1>ai<span>Polytrack</span> admin</h1>
     <div class="row" id="whoRow" style="align-items:center">
       <span class="who" id="whoami"></span>
-      <a class="small hide" id="lnkPreview" href="./#preview" target="_blank" rel="noopener" style="color:var(--dim);font-size:12.5px;text-decoration:none;border:1px solid var(--rule);border-radius:6px;padding:4px 9px">Next season preview</a>
+      <a class="small hide" id="lnkPreview" href="./#preview" target="_blank" rel="opener" style="color:var(--dim);font-size:12.5px;text-decoration:none;border:1px solid var(--rule);border-radius:6px;padding:4px 9px">Next season preview</a>
       <button class="small hide" id="btnOut">Sign out</button>
     </div>
   </div>
@@ -823,8 +825,12 @@ const outcomeOf = (r) => r.outcome || 'finished';
 const kmhOf = (r) => r.topKmh != null ? r.topKmh : (r.topMph != null ? Math.round(r.topMph * 1.609344) : null);
 
 /* ---------------------------------------------------------------- auth */
-const storedToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
-const storeToken = (t) => { try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch (e) { /* this visit only */ } };
+// The admin session lives in this tab only (sessionStorage): it is gone
+// when the tab closes, and no other page on this site can read it later.
+// (It used to sit in localStorage for 12 hours.)
+try { localStorage.removeItem(TOKEN_KEY); } catch (e) { /* nothing kept */ }
+const storedToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
+const storeToken = (t) => { try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* this visit only */ } };
 function showSignIn(msg) {
   $('panel').classList.add('hide'); $('cardAuth').classList.remove('hide');
   $('btnOut').classList.add('hide'); $('whoami').textContent = ''; $('lnkPreview').classList.add('hide');
@@ -1472,7 +1478,8 @@ function showRun(r) {
 $('btnRunCsv').addEventListener('click', () => {
   const cols = ['when', 'driver', 'realName', 'uid', 'map', 'courseId', 'kind', 'outcome', 'reason', 'timeMs', 'progress', 'topKmh',
     'boostUsed', 'grassSec', 'airSec', 'attempt', 'vs', 'raceId', 'fps'];
-  const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  // (a cell starting = + - @ would run as a formula in a spreadsheet: it gets a leading ')
+  const q = (v) => { const t = String(v == null ? '' : v); return '"' + (/^[=+\-@\t\r]/.test(t) ? "'" + t : t).replace(/"/g, '""') + '"'; };
   const lines = [cols.join(',')].concat(filteredRuns().map((r) => [fmtWhen(r.ms), r.displayName, realOf(r.uid), r.uid, courseName(r.courseId),
     r.courseId, r.kind, outcomeOf(r), r.reason, r.timeMs, r.progress, kmhOf(r), r.boostUsed, r.grassSec, r.airSec, r.attempt,
     r.vs, r.raceId, r.fps].map(q).join(',')));

@@ -15,13 +15,32 @@ export async function makeDb() {
   const schema = fs.readFileSync(new URL('supabase/schema.sql', ROOT), 'utf8');
   await db.exec(schema);
   await db.exec(schema);
-  const users = {};
+  // The suites written before Nov 2026 test the game's rules, not the
+  // account-safety limits added then, so those start switched off here;
+  // security.test.mjs switches them back on (rules(true)) to test them.
+  const rules = async (on) => {
+    await db.query("insert into public.settings (key, value) values ('auction_rules', $1), ('trade_hold', $2), ('legacy_claims', $3) " +
+      'on conflict (key) do update set value = excluded.value',
+      [on ? '{}' : '{"days":0,"runs":0,"floor":false}', on ? '{"hours":24}' : '{"hours":0}', on ? '{"on":false}' : '{"on":true}']);
+  };
+  await rules(false);
+  const users = {}, sessions = {};
   const owner = (sql, p) => db.query(sql, p || []);
   async function mkUser(name) {
+    // (test names can be shorter or longer than a real username: made as the owner would)
+    await db.query("select set_config('app.auth_admin', 'on', false)");
     const r = await db.query('insert into auth.users (email) values ($1) returning id', [name.toLowerCase() + '@chat7689.github.io']);
+    await db.query("select set_config('app.auth_admin', '', false)");
     users[name] = r.rows[0].id;
+    await signIn(name);
     await db.query('insert into public.profiles (id, display_name) values ($1, $2) on conflict do nothing', [users[name], name]);
     return users[name];
+  }
+  // a fresh sign-in for a player (its session id rides in the token, as Supabase's does)
+  async function signIn(name, ago = '0 seconds') {
+    const r = await db.query("insert into auth.sessions (user_id, created_at) values ($1, now() - $2::interval) returning id", [users[name], ago]);
+    sessions[name] = r.rows[0].id;
+    return sessions[name];
   }
   async function as(name, sql, params = [], hdr = {}) {
     return db.transaction(async (tx) => {
@@ -29,7 +48,8 @@ export async function makeDb() {
       if (hdr.token) h['x-admin-token'] = hdr.token;
       await tx.query("select set_config('request.headers', $1, true)", [JSON.stringify(h)]);
       if (name) {
-        const claims = JSON.stringify({ sub: users[name], email: name.toLowerCase() + '@chat7689.github.io', role: 'authenticated' });
+        const claims = JSON.stringify({ sub: users[name], email: name.toLowerCase() + '@chat7689.github.io', role: 'authenticated',
+          ...(sessions[name] ? { session_id: sessions[name] } : {}) });
         await tx.query("select set_config('request.jwt.claims', $1, true), set_config('request.jwt.claim.sub', $2, true)", [claims, users[name]]);
         await tx.exec('set local role authenticated');
       } else await tx.exec('set local role anon');
@@ -49,7 +69,7 @@ export async function makeDb() {
   const admin = async (sql, params) => as(null, sql, params, { token: await adminToken() });
   const one = async (name, sql, params, hdr) => (await as(name, sql, params, hdr)).rows[0];
   const err = async (name, sql, params, hdr) => { try { await as(name, sql, params, hdr); return null; } catch (e) { return e.message; } };
-  return { db, owner, as, admin, one, err, mkUser, users };
+  return { db, owner, as, admin, one, err, mkUser, users, sessions, signIn, rules };
 }
 
 let fails = 0, passes = 0;
