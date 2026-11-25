@@ -19,9 +19,11 @@ export async function makeDb() {
   // account-safety limits added then, so those start switched off here;
   // security.test.mjs switches them back on (rules(true)) to test them.
   const rules = async (on) => {
-    await db.query("insert into public.settings (key, value) values ('auction_rules', $1), ('trade_hold', $2), ('legacy_claims', $3) " +
+    // (bot_lines: the older suites send the test driver's own recordings as stand-ins for a player's)
+    await db.query("insert into public.settings (key, value) values ('auction_rules', $1), ('trade_hold', $2), ('legacy_claims', $3), ('bot_lines', $4) " +
       'on conflict (key) do update set value = excluded.value',
-      [on ? '{}' : '{"days":0,"runs":0,"floor":false}', on ? '{"hours":24}' : '{"hours":0}', on ? '{"on":false}' : '{"on":true}']);
+      [on ? '{}' : '{"days":0,"runs":0,"floor":false}', on ? '{"hours":24}' : '{"hours":0}', on ? '{"on":false}' : '{"on":true}',
+        on ? '{"on":true}' : '{"on":false}']);
   };
   await rules(false);
   const users = {}, sessions = {};

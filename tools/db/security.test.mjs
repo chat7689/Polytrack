@@ -232,7 +232,8 @@ const drive = async (clockMs, realSecs) => {
   return (await t.one('Slomo', 'select public.finish_run($1, $2, 100, false) as j', [s.run, clockMs])).j;
 };
 ok((await drive(20000, 20.3)).ok, 'a 20 s run that took 20.3 s counts');
-ok((await drive(20000, 22.2)).ok, 'and one that took 22.2 s (a slow connection, a stutter)');
+ok((await drive(20000, 21.4)).ok, 'and one that took 21.4 s (a slow connection, a stutter)');
+ok(!(await drive(20000, 22.2)).ok, 'but not one that took 22.2 s (the game at 0.9x)');
 const half = await drive(20000, 40);
 ok(!half.ok && half.slow, 'a 20 s run that took 40 s (the game at half speed) is refused: ' + half.message);
 const tenth = await drive(15000, 150);
@@ -255,4 +256,29 @@ const esc = async (meters, realSecs) => {
 };
 ok((await esc(2500, 85)).ok, 'Escape: 2 500 m after 85 s (when the storm gets there) counts');
 ok(!(await esc(4000, 600)).ok, 'Escape: 4 000 m after ten minutes (the game slowed down) does not');
+
+// ---- the game's own test driver is not a player
+import fs from 'fs';
+const recs = JSON.parse(fs.readFileSync(new URL('recs.json', import.meta.url), 'utf8'));
+const bot = recs.find((x) => x.id === 's5c1');
+const send = async (samples, ms) => {
+  const s = (await t.one('Slomo', "select public.start_run('s5c1', $1, 'fp', false) as j", [slowDev])).j;
+  await own('update public.runs set started_at = now() - make_interval(secs => $2) where id = $1', [s.run, ms / 1000]);
+  const f = (await t.one('Slomo', 'select public.finish_run($1, $2, 100, false) as j', [s.run, ms])).j;
+  if (!f.ok) throw new Error(JSON.stringify(f));
+  return (await t.one('Slomo', 'select public.submit_best($1, $2, $3, 2::smallint, $4) as j', ['s5c1', ms, samples, s.run])).j;
+};
+const asBot = await send(bot.samples, bot.ms);
+ok(asBot.improved === false && asBot.copied === true, 'the test driver\'s own recording is refused as a player\'s time: ' + JSON.stringify(asBot));
+ok((await own('select count(*)::int n from public.bests where uid = $1', [t.users.Slomo])).rows[0].n === 0, 'and nothing reaches the board');
+// a real player's line is a different one: the same recording moved 1.5 m sideways passes
+const shifted = bot.samples.split(',').map((v, i) => (i % 8 === 0 ? (Number(v) + 1.5).toFixed(2) : v)).join(',');
+ok((await send(shifted, bot.ms)).improved === true, 'a recording on a different line is accepted');
+
+// ---- the game reports a tampered clock
+await useComputer('Slomo', slowDev);
+await t.as('Slomo', "select public.client_flag('clock', 'raf=1.5 perf=1.5 tl=15.0 <script>')");
+await t.as('Slomo', "select public.client_flag('nonsense', 'x')");
+const cf = (await own("select kind, detail from public.security_events where name = 'Slomo' and kind like 'client %'")).rows;
+ok(cf.length === 1 && cf[0].kind === 'client clock' && /raf=1.5 perf=1.5 tl=15.0 script/.test(cf[0].detail), 'a tampered clock reaches the security feed, cleaned: ' + JSON.stringify(cf));
 done();

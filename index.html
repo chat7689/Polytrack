@@ -5422,6 +5422,51 @@ function weakPassword(username, pw) {
   return '';
 }
 
+/**
+ * The page's clocks, watched during a run. The game runs on the screen's
+ * frame clock; a browser extension that slows a page down changes that
+ * clock (and usually performance.now and Date.now with it) so the game
+ * runs in slow motion while its own timer shows a fast lap. The clocks a
+ * page has should all agree; when they don't over a run, the time is not
+ * sent and the server is told (the admin sees it). The server also checks
+ * every run against its own clock (schema.sql: _run_slack), which no
+ * extension can touch: this is the early, visible half of that.
+ */
+const Clocks = {
+  raf: 0, t0: null, told: false,
+  read() {
+    const o = { raf: this.raf, perf: performance.now(), date: Date.now() };
+    try { const t = document.timeline && document.timeline.currentTime; if (typeof t === 'number') o.tl = t; } catch (e) { /* no timeline */ }
+    return o;
+  },
+  begin() { this.t0 = this.read(); },
+  /** seconds each clock says have passed since begin(), and whether they disagree */
+  check() {
+    if (!this.t0) return null;
+    const now = this.read(), d = {};
+    for (const k in now) if (k in this.t0) d[k] = (now[k] - this.t0[k]) / 1000;
+    const v = Object.values(d), hi = Math.max(...v), lo = Math.min(...v);
+    return { d, bad: v.length > 1 && hi - lo > Math.max(0.75, hi * 0.05),
+      text: Object.keys(d).map((k) => k + '=' + d[k].toFixed(1)).join(' ') };
+  },
+  /** timing functions that are no longer the browser's own (told to the server once a visit) */
+  patched() {
+    const own = (f) => { try { return /\[native code\]/.test(Function.prototype.toString.call(f)); } catch (e) { return false; } };
+    const out = [];
+    if (!own(window.requestAnimationFrame)) out.push('requestAnimationFrame');
+    if (!own(performance.now)) out.push('performance.now');
+    if (!own(Date.now)) out.push('Date.now');
+    return out;
+  },
+  report() {
+    if (this.told) return;
+    const p = this.patched();
+    if (!p.length) return;
+    this.told = true;
+    Cloud.flag('patched', p.join(' '));
+  }
+};
+
 const Cloud = {
   ready: false, on: false, user: null, profile: null, credits: 0,
   sb: null, error: '',
@@ -5475,6 +5520,11 @@ const Cloud = {
       } catch (e) { /* the sign-in screen is up either way */ }
       this._expiring = false;
     }, 0);
+  },
+  /** tells the server the page is being tampered with (see Clocks); it reaches the admin's security feed */
+  flag(kind, detail) {
+    if (!this.on || !this.user) return;
+    this.rpc('client_flag', { p_kind: kind, p_detail: String(detail || '').slice(0, 120) }).catch(() => { /* an older server */ });
   },
   /** "keep me signed in": asked of the server right after the password (it refuses later) */
   async keep(on) {
@@ -27748,9 +27798,15 @@ const Game = {
     this.logAttempt('finished');
     // The server checks the finish against the run's ticket (and pays the
     // +1 credit); only then does a new best go up, with its recording.
-    const time = this.time, rec = this.rec, ticket = this.ticket;
+    const time = this.time, rec = this.rec;
+    let ticket = this.ticket;
     const focus = Math.round(100 * (this.focusT || 0) / Math.max(this.runT || 0, 1e-3));
     this.ticket = null;
+    const clocks = Clocks.check();
+    if (ticket && clocks && clocks.bad) {
+      Cloud.flag('clock', clocks.text);
+      ticket = Promise.resolve({ ok: false, message: 'Something in this browser is changing the game\'s speed (an extension, usually). Switch it off to set times.' });
+    }
     const fin = ticket ? ticket.then((t) => (t && t.ok ? Cloud.finishRun(t.run, Math.round(time * 1000), Math.min(100, focus)).then((f) => Object.assign({ run: t.run }, f))
       : { ok: false, message: t && t.message ? 'Time not uploaded. ' + t.message : '' })) : Promise.resolve(null);
     this.finishP = fin;
@@ -28386,6 +28442,8 @@ const Game = {
       this.recPrevQuat.copy(this.car.quat);
       UI.prompt('');
       this.ticket = Cloud.on && Cloud.user && !noSave(this.levelIndex) && !Autopilot.on ? Cloud.startRun(this.id()) : null;
+      Clocks.begin();
+      if (this.ticket) Clocks.report();
       if (Escape.on) Escape.begin();
       this.runT = 0; this.focusT = 0;
     }
@@ -28643,6 +28701,7 @@ const Game = {
 let last = performance.now(), capT = 0;
 function loop(now) {
   requestAnimationFrame(loop);
+  Clocks.raf = now;
   // a frame-rate limit: skip screen refreshes until the next frame is due
   const cap = Gfx.cap();
   if (cap) {
