@@ -219,4 +219,40 @@ ok(lvlBefore.l >= 20 && afterClaim.road_upto >= 20 && hadGold === 1, '(setup) $2
 ok(afterRefund.l === 1 && afterRefund.road_upto === 1, 'after the refund the levels and the Driver Road are back where they were');
 ok((await own("select count(*)::int n from public.inventory where uid = $1 and item in ('finish:gold', 'title:road-rookie', 'icon:lvl-shield', 'title:road-warrior')", [t.users.Payer])).rows[0].n === 0, 'the level items are gone');
 ok(afterRefund.free_boxes <= Math.max(0, afterClaim.free_boxes - 8), 'and the level boxes (' + afterClaim.free_boxes + ' -> ' + afterRefund.free_boxes + ')');
+
+// ---- slow motion: a run may take only a little longer in real time than its clock says
+// (Nov 2026: first places were taken with the page slowed to a tenth of its speed)
+await own("insert into public.access_codes (code, label, expires_at) values ('SLOWSLOW', 'tests', now() + interval '1 day')");
+await t.mkUser('Slomo'); await t.one('Slomo', "select public.redeem_access('SLOWSLOW') as j");
+const slowDev = DEV(devN++);
+const drive = async (clockMs, realSecs) => {
+  const s = (await t.one('Slomo', "select public.start_run('s5c1', $1, 'fp', false) as j", [slowDev])).j;
+  if (!s.ok) throw new Error(JSON.stringify(s));
+  await own('update public.runs set started_at = now() - make_interval(secs => $2) where id = $1', [s.run, realSecs]);
+  return (await t.one('Slomo', 'select public.finish_run($1, $2, 100, false) as j', [s.run, clockMs])).j;
+};
+ok((await drive(20000, 20.3)).ok, 'a 20 s run that took 20.3 s counts');
+ok((await drive(20000, 22.2)).ok, 'and one that took 22.2 s (a slow connection, a stutter)');
+const half = await drive(20000, 40);
+ok(!half.ok && half.slow, 'a 20 s run that took 40 s (the game at half speed) is refused: ' + half.message);
+const tenth = await drive(15000, 150);
+ok(!tenth.ok && tenth.slow, 'a 15 s run that took 150 s (a tenth of the speed) is refused');
+ok(!(await drive(13000, 130)).ok, 'and a 13 s one that took 130 s (this one used to get through)');
+const paused = await drive(20000, 26);
+ok(!paused.ok && paused.slow, 'a run paused for 6 seconds in the middle is refused too');
+const slowEv = (await own("select count(*)::int n, max(detail) as d from public.security_events where kind = 'slow motion' and name = 'Slomo'")).rows[0];
+ok(slowEv.n === 1 && /0\.[0-9]+x speed/.test(slowEv.d), 'and the admin\'s security feed says who tried: ' + slowEv.d);
+ok((await own("select count(*)::int n from public.bests where uid = $1", [t.users.Slomo])).rows[0].n === 0, 'no time reached the board from a slowed run');
+// the owner can widen or tighten it without a new schema
+await own(`insert into public.settings (key, value) values ('run_clock', '{"pct": 50, "ms": 0}') on conflict (key) do update set value = excluded.value`);
+ok((await drive(20000, 29)).ok, 'settings run_clock widens the limit');
+await own("delete from public.settings where key = 'run_clock'");
+// Escape: the storm is on the game's clock, so the distance says how long the run can have lasted
+const esc = async (meters, realSecs) => {
+  const s = (await t.one('Slomo', 'select public.start_escape() as j')).j;
+  await own('update public.escape_runs set started_at = now() - make_interval(secs => $2) where id = $1', [s.run, realSecs]);
+  return (await t.one('Slomo', 'select public.finish_escape($1, $2) as j', [s.run, meters])).j;
+};
+ok((await esc(2500, 85)).ok, 'Escape: 2 500 m after 85 s (when the storm gets there) counts');
+ok(!(await esc(4000, 600)).ok, 'Escape: 4 000 m after ten minutes (the game slowed down) does not');
 done();

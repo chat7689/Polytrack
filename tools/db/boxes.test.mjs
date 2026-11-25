@@ -134,7 +134,7 @@ await t.owner('insert into public.garage (uid, runs) values ($1, 48)', [t.users.
 let last = null;
 for (let k = 0; k < 2; k++) {
   const s = (await t.one('Grinder', "select public.start_run('s4c1', $1, 'fp', false) as j", ['d'.repeat(32)])).j;
-  await t.owner("update public.runs set started_at = now() - interval '30 seconds' where id = $1", [s.run]);
+  await t.owner("update public.runs set started_at = now() - interval '20 seconds' where id = $1", [s.run]);
   last = (await t.one('Grinder', 'select public.finish_run($1, 20000, 100, false) as j', [s.run])).j;
 }
 ok(last.ok && last.free_box === true && last.box_runs === 0, 'the 50th finish earns a free box ' + JSON.stringify(last));

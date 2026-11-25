@@ -14,7 +14,7 @@ const DEV = (k) => String(k).repeat(32).slice(0, 32);
 async function finish(n, dev, course) {
   const s = (await t.one(n, 'select public.start_run($1, $2, \'fp\', false) as j', [course || 's4c1', dev])).j;
   if (!s.ok) return s;
-  await t.owner("update public.runs set started_at = now() - interval '30 seconds' where id = $1", [s.run]);
+  await t.owner("update public.runs set started_at = now() - interval '20 seconds' where id = $1", [s.run]);
   return (await t.one(n, 'select public.finish_run($1, 20000, 100, false) as j', [s.run])).j;
 }
 
@@ -53,7 +53,7 @@ await best('Ria', 30000); await best('Lev', 31000);
 const since = (await t.one('Ria', 'select public.my_rivals(null) as j')).j.last;
 // Rob drives 29 000: passes Ria and Lev
 const s = (await t.one('Rob', "select public.start_run('s4c1', $1, 'fp', false) as j", [DEV(3)])).j;
-await t.owner("update public.runs set started_at = now() - interval '40 seconds' where id = $1", [s.run]);
+await t.owner("update public.runs set started_at = now() - interval '29 seconds' where id = $1", [s.run]);
 await t.one('Rob', 'select public.finish_run($1, 29000, 100, false) as j', [s.run]);
 await t.owner("update public.runs set time_ms = 29000 where id = $1", [s.run]);
 // (the ghost check is the ghost tests' business: put the best in as submit_best would, then the alert step)
@@ -87,7 +87,7 @@ await t.one('Pat', 'select public.enter_pot(500) as j'); await t.one('Peg', 'sel
 ok((await t.one('Pam', 'select public.pot_today() as j')).j.pot === 3600, 'the pot is everyone\'s stakes together');
 const st1 = (await t.one('Pam', "select public.start_run($1, $2, 'fp', false) as j", ['p' + day, DEV(4)])).j;
 ok(st1.ok, 'with a stake, the map takes runs');
-await t.owner('update public.runs set started_at = now() - interval \'40 seconds\' where id = $1', [st1.run]);
+await t.owner('update public.runs set started_at = now() - interval \'30 seconds\' where id = $1', [st1.run]);
 const fp = (await t.one('Pam', 'select public.finish_run($1, 30000, 100, false) as j', [st1.run])).j;
 ok(fp.ok && !fp.credited && !fp.bonus, 'a Pot map finish pays no run credit');
 // times: Pat 1st, Pam 2nd, Peg 3rd, Pip doesn't finish

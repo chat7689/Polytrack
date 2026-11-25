@@ -17,7 +17,7 @@ async function signup(name, code, device) {
 async function finish(name, device) {
   const s = (await t.one(name, "select public.start_run('s4c1', $1, 'fp', false) as j", [device])).j;
   if (!s.ok) throw new Error(JSON.stringify(s));
-  await t.owner("update public.runs set started_at = now() - interval '30 seconds' where id = $1", [s.run]);
+  await t.owner("update public.runs set started_at = now() - interval '20 seconds' where id = $1", [s.run]);
   return (await t.one(name, 'select public.finish_run($1, 20000, 100, false) as j', [s.run])).j;
 }
 const boxes = async (name) => (await t.owner('select coalesce((select free_boxes from public.garage where uid = $1), 0) as n', [t.users[name]])).rows[0].n;

@@ -62,7 +62,7 @@ ok(pass.rewards[4].free.boxes === 1 && pass.rewards[3].free.credits === 100 && p
 // 3 finishes count
 for (let k = 0; k < 3; k++) {
   const s = (await t.one('Pia', "select public.start_run('s4c1', $1, 'fp', false) as j", ['e'.repeat(32)])).j;
-  await t.owner("update public.runs set started_at = now() - interval '30 seconds' where id = $1", [s.run]);
+  await t.owner("update public.runs set started_at = now() - interval '20 seconds' where id = $1", [s.run]);
   const f = (await t.one('Pia', 'select public.finish_run($1, 20000, 100, false) as j', [s.run])).j;
   if (k === 2) ok(f.pass_runs === 3, 'finishes count toward the pass ' + f.pass_runs);
 }
@@ -106,7 +106,7 @@ await t.owner("insert into public.season_awards (season, data) values ('final:Te
 pass = (await t.one('Pia', 'select public.my_pass() as j')).j;
 ok(pass.tier === 0 && !pass.plus && pass.free_upto === 0, 'a season closes: a fresh pass, Pass+ to buy again');
 const s = (await t.one('Pia', "select public.start_run('s4c1', $1, 'fp', false) as j", ['e'.repeat(32)])).j;
-await t.owner("update public.runs set started_at = now() - interval '30 seconds' where id = $1", [s.run]);
+await t.owner("update public.runs set started_at = now() - interval '20 seconds' where id = $1", [s.run]);
 ok((await t.one('Pia', 'select public.finish_run($1, 20000, 100, false) as j', [s.run])).j.pass_runs === 1, 'and counts from 1');
 const st = (await t.admin('select public.admin_shop_stats() as j')).rows[0].j;
 ok(st.shopCredits === 18000 && st.plus === 0, 'the admin sees shop takings ' + JSON.stringify(st));

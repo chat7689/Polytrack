@@ -64,7 +64,7 @@ const r2 = (await t.one('Other', 'select public.start_run($1, $2, $3, false) as 
 ok(!r2.ok, 'but not someone else\'s private one ' + JSON.stringify(r2));
 const r3 = (await t.one('Builder', 'select public.start_run($1, $2, $3, false) as j', ['u' + b.id, 'c'.repeat(32), 'fp'])).j;
 ok(r3.ok, 'the builder can drive their own private track');
-await t.owner("update public.runs set started_at = now() - interval '30 seconds' where id = $1", [r1.run]);
+await t.owner("update public.runs set started_at = now() - interval '20 seconds' where id = $1", [r1.run]);
 const f1 = (await t.one('Other', 'select public.finish_run($1, $2, 100, false) as j', [r1.run, 20000])).j;
 ok(f1.ok && !f1.credited && !f1.bonus, 'a finish on a player track pays no credits ' + JSON.stringify(f1));
 await t.owner("insert into public.bests (uid, course_id, display_name, time_ms) select id, $1, display_name, 20000 from public.profiles where display_name = 'Other'", [a.course]);

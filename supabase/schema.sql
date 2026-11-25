@@ -1477,6 +1477,21 @@ begin
   return true;
 end $$;
 
+-- A run's clock is the game's own (it counts physics steps), so a game made
+-- to run slowly (a browser extension that slows the page down, or a
+-- computer that can't keep up) still showed a fast time: at a tenth of the
+-- speed anyone can drive a perfect lap. The server's clock is real, so a
+-- run may take only a little longer in real time than its clock says:
+-- 5% and 1.5 seconds, for a slow connection and the odd stutter
+-- (settings 'run_clock' = {"pct": n, "ms": n}). Nov 2026: several first
+-- places were taken at 0.1x speed, back when 120 seconds were allowed.
+create or replace function public._run_slack(p_time_ms numeric) returns numeric
+language sql stable security definer set search_path = public, pg_temp as $$
+  select p_time_ms * coalesce((select (value ->> 'pct')::numeric from public.settings where key = 'run_clock'), 5) / 100.0
+       + coalesce((select (value ->> 'ms')::numeric from public.settings where key = 'run_clock'), 1500)
+$$;
+alter table public.runs add column if not exists wall_ms integer;   -- the real time the run took
+
 -- The finish: the time has to fit the real time since the ticket, be no
 -- faster than the map allows, and come from a game window that was in
 -- focus. A season run then pays its +1 credit (at most one every 10 s),
@@ -1502,9 +1517,20 @@ begin
   -- (the slack for a slow connection is at most half the time itself, so a
   -- very short map can't be "finished" the instant it starts)
   if p_time_ms is null or p_time_ms <= 0 or p_time_ms >= 600000
-     or p_time_ms > el + least(6000, greatest(3000, p_time_ms / 2)) or el > p_time_ms + 120000 then
-    update public.runs set status = 'void', ended_at = now(), time_ms = p_time_ms where id = r.id;
+     or p_time_ms > el + least(6000, greatest(3000, p_time_ms / 2)) then
+    update public.runs set status = 'void', ended_at = now(), time_ms = p_time_ms, wall_ms = least(el, 2000000000)::integer where id = r.id;
     return jsonb_build_object('ok', false, 'message', 'That time doesn''t match how long the run really took.');
+  end if;
+  -- slow motion (see _run_slack): the run took longer than its clock says
+  if el > p_time_ms + public._run_slack(p_time_ms) then
+    update public.runs set status = 'void', ended_at = now(), time_ms = p_time_ms, wall_ms = least(el, 2000000000)::integer where id = r.id;
+    if el > p_time_ms * 1.5 + 3000 and el < 900000 then
+      perform public._sec_event('slow motion', p.display_name, r.device_id, '', coalesce(r.ip, ''),
+        'A run on ' || r.course_id || ' showed ' || round(p_time_ms / 1000.0, 2) || ' s but took ' || round(el / 1000.0, 1) || ' s of real time (' ||
+        round(p_time_ms / el, 2) || 'x speed). It was refused.');
+    end if;
+    return jsonb_build_object('ok', false, 'slow', true, 'message',
+      'Not counted: the run took longer in real time than its clock shows, so the game was running slow. If it stutters on this computer, lower the graphics in Settings.');
   end if;
   select floor_ms into fl from public.course_rules where course_id = r.course_id;
   if p_time_ms < coalesce(fl, 12000) then
@@ -1519,7 +1545,7 @@ begin
     update public.runs set status = 'done', counted = false, ended_at = now(), time_ms = p_time_ms, focus = p_focus where id = r.id;
     return jsonb_build_object('ok', false, 'message', 'Not counted: the game window wasn''t in focus for the run.');
   end if;
-  update public.runs set status = 'done', counted = true, ended_at = now(), time_ms = p_time_ms, focus = p_focus where id = r.id;
+  update public.runs set status = 'done', counted = true, ended_at = now(), time_ms = p_time_ms, focus = p_focus, wall_ms = el::integer where id = r.id;
   -- The time counts, but nothing is earned (boxes, pass, XP, streak) for a
   -- player-built road shorter than 15 seconds, or past 300 finishes in an
   -- hour: both are what a script farming rewards looks like.
@@ -3574,7 +3600,7 @@ begin
 end $$;
 create or replace function public.finish_escape(p_run uuid, p_meters integer) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare p public.profiles := public._player(); r public.escape_runs; el numeric; old integer; xp integer := 0;
+declare p public.profiles := public._player(); r public.escape_runs; el numeric; old integer; xp integer := 0; ts numeric;
 begin
   select * into r from public.escape_runs where id = p_run and uid = p.id for update;
   if not found or r.done then return jsonb_build_object('ok', false, 'message', 'That run wasn''t registered.'); end if;
@@ -3582,6 +3608,15 @@ begin
   el := extract(epoch from (now() - r.started_at));
   if p_meters is null or p_meters < 0 or p_meters > el * 75 + 100 or el > 1800 or p_meters > 25000 then
     return jsonb_build_object('ok', false, 'message', 'That distance doesn''t fit the time the run took.');
+  end if;
+  -- The storm reaches p_meters a known time after the launch (the game's
+  -- ESC numbers: 300 m behind, 10.4 m/s, +0.57 m/s a second, at most 160),
+  -- so a run that lasted much longer than that in real time was slowed down.
+  ts := case when p_meters + 400 <= 22065 then (-10.4 + sqrt(108.16 + 1.14 * (p_meters + 700))) / 0.57
+             else 262.5 + (p_meters + 400 - 22065) / 160.0 end;
+  if el > ts + public._run_slack(ts * 1000) / 1000.0 + 3 then
+    return jsonb_build_object('ok', false, 'message',
+      'Not counted: the run took longer in real time than the storm allows, so the game was running slow.');
   end if;
   xp := least(p_meters / 100, 50);
   if xp > 0 then perform public._add_xp(p.id, xp); end if;
