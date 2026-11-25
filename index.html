@@ -6236,8 +6236,22 @@ class PhysicsWorld {
     // triangles along the same diagonal, just as it is drawn. It stands in
     // for the flat ground plane; no course map has one.
     this.field = null;
+    // A city's tree trunks: upright round posts { x, z, r, y0, y1 }, found
+    // through posts.cells (a Map of 'i:j' -> posts, 16 m cells). The car meets
+    // them with its whole body (Vehicle._postContacts), not through the
+    // triangle tests here. No course map has posts.
+    this.posts = null;
   }
-  clear() { this.tris.length = 0; this.grid.clear(); this.field = null; }
+  clear() { this.tris.length = 0; this.grid.clear(); this.field = null; this.posts = null; }
+  setPosts(list) {
+    const cells = new Map();
+    for (const p of list) {
+      for (let i = Math.floor((p.x - p.r) / 16); i <= Math.floor((p.x + p.r) / 16); i++) for (let j = Math.floor((p.z - p.r) / 16); j <= Math.floor((p.z + p.r) / 16); j++) {
+        const k = i + ':' + j; let a = cells.get(k); if (!a) { a = []; cells.set(k, a); } a.push(p);
+      }
+    }
+    this.posts = { cells, list };
+  }
   /** the field's height at (x, z) */
   fieldY(x, z) {
     const f = this.field, mx = f.nx - 1.0001, mz = f.nz - 1.0001;
@@ -8188,6 +8202,7 @@ class Vehicle {
 
   /** one fixed physics substep */
   step(dt, world, input) {
+    this._lawn = world.field && world.field.roll !== undefined ? world.field : null;
     const g = CAR.gravity;
     this.invQuat.copy(this.quat).conjugate();
     this.up.set(0, 1, 0).applyQuaternion(this.quat);
@@ -8513,7 +8528,13 @@ class Vehicle {
       const cancel = -vLong * mLong;
       if (brakeF > 0) jLong += clamp(cancel, -brakeF * dt, brakeF * dt);
       // rolling resistance of the surface under this tyre, always acting
-      const crr = w.onTrack ? (input.throttle ? 0 : CAR.rollTrack) : CAR.rollGrass + CAR.rollGrassSpeed * Math.abs(vLong);
+      // (A course's grass is a penalty: it stops a car dead and nothing can
+      // reverse on it. A city's ground is somewhere to drive: its own, lighter
+      // figures come with its height field, so a car on a lawn can back away
+      // from what it hit. No course map has a field.)
+      const crr = w.onTrack ? (input.throttle ? 0 : CAR.rollTrack)
+        : this._lawn ? this._lawn.roll + this._lawn.rollSpeed * Math.abs(vLong)
+          : CAR.rollGrass + CAR.rollGrassSpeed * Math.abs(vLong);
       const rr = crr * w.load * dt;
       if (rr > 0) jLong += clamp(cancel - clamp(cancel, -brakeF * dt, brakeF * dt), -rr, rr);
       const latWant = -vLat * mLat;
@@ -8684,6 +8705,70 @@ class Vehicle {
       // Move the body so this corner sits just outside the face. Bounded by
       // one substep of travel, so it can never teleport.
       if (depth > 0.002) {
+        this.pos.addScaledVector(n, Math.min(depth + 0.004, 0.35));
+      }
+    }
+    if (world.posts) this._postContacts(world, dt);
+  }
+
+  /**
+   * A city's tree trunks, met by the whole body. The corner points above are
+   * most of a metre apart and a trunk is thinner than that: tested point by
+   * point, a trunk slid between two of them into the car, and then held it
+   * like a hook when it tried to back away. So each post near the car is
+   * tested against the body's own rectangle (seen from above, in the car's
+   * frame): where the post overlaps it, the car is pushed straight off the
+   * post, and a post whose middle is already inside goes out by the nearest
+   * side. Round and exact, so a glancing hit slides off. Only a world with
+   * posts (the open-world city) comes here.
+   */
+  _postContacts(world, dt) {
+    let B = this._body;
+    if (!B) {
+      B = this._body = { x1: 0, z0: 0, z1: 0, y0: 0, y1: 0 };
+      for (const c of this.corners) { B.x1 = Math.max(B.x1, Math.abs(c.x)); B.z0 = Math.min(B.z0, c.z); B.z1 = Math.max(B.z1, c.z); B.y0 = Math.min(B.y0, c.y); B.y1 = Math.max(B.y1, c.y); }
+    }
+    const cells = world.posts.cells, jMax = CAR.hullMaxG * 9.81 * this.mass * dt;
+    const ci = Math.floor(this.pos.x / 16), cj = Math.floor(this.pos.z / 16);
+    for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) {
+      const L = cells.get(i + ':' + j);
+      if (!L) continue;
+      for (let q = 0; q < L.length; q++) {
+        const p = L[q], dx = p.x - this.pos.x, dz = p.z - this.pos.z;
+        if (dx * dx + dz * dz > 20 || this.pos.y + B.y0 - 0.3 > p.y1 || this.pos.y + B.y1 + 0.3 < p.y0) continue;
+        // the post's middle in the car's frame (x left, z ahead), then the body's nearest point to it
+        const l = this._v1.set(dx, 0, dz).applyQuaternion(this.invQuat);
+        const cx = l.x < -B.x1 ? -B.x1 : l.x > B.x1 ? B.x1 : l.x, cz = l.z < B.z0 ? B.z0 : l.z > B.z1 ? B.z1 : l.z;
+        const ox = l.x - cx, oz = l.z - cz, d2 = ox * ox + oz * oz;
+        if (d2 >= p.r * p.r) continue;
+        let nx, nz, depth, px = cx, pz = cz;
+        if (d2 > 1e-8) { const d = Math.sqrt(d2); nx = -ox / d; nz = -oz / d; depth = p.r - d; }
+        else {
+          const ex = B.x1 - Math.abs(l.x), ef = B.z1 - l.z, eb = l.z - B.z0;
+          if (ef <= ex && ef <= eb) { nx = 0; nz = -1; depth = ef + p.r; pz = B.z1; }
+          else if (eb <= ex) { nx = 0; nz = 1; depth = eb + p.r; pz = B.z0; }
+          else { nx = l.x > 0 ? -1 : 1; nz = 0; depth = ex + p.r; px = l.x > 0 ? B.x1 : -B.x1; }
+        }
+        // back to the world, kept level (a post only ever pushes sideways)
+        const n = this._v2.set(nx, 0, nz).applyQuaternion(this.quat);
+        n.y = 0;
+        if (n.lengthSq() < 1e-6) continue;
+        n.normalize();
+        const rel = this._v3.set(px, 0, pz).applyQuaternion(this.quat);
+        const vp = this.pointVel(rel, this._v4), vn = vp.dot(n);
+        this.hullContact = true;
+        if (vn < 0) {
+          const m = this.effMass(rel, n);
+          const jn = Math.min(-vn * (1 + CAR.restitution) * m, jMax * 3);
+          this.addImpulseAt(this._v5.copy(n).multiplyScalar(jn), rel);
+          const vt = this._v6.copy(vp).addScaledVector(n, -vn), vtLen = vt.length();
+          if (vtLen > 0.06) {
+            vt.multiplyScalar(1 / vtLen);
+            const mt = this.effMass(rel, vt);
+            this.addImpulseAt(this._v5.copy(vt).multiplyScalar(Math.max(-vtLen * mt, -CAR.hullFriction * 0.15 * jn)), rel);
+          }
+          this.scrapeImpact = Math.max(this.scrapeImpact, clamp(-vn / 9, 0, 1));
+        }
         this.pos.addScaledVector(n, Math.min(depth + 0.004, 0.35));
       }
     }
@@ -15054,10 +15139,10 @@ const Preview = {
  * course.free, which is where a clock, checkpoints or other cars would go.
  */
 const City = {
-  VERSION: 2,
+  VERSION: 3,
   level: { id: 'free-eugene', free: true, city: 'eugene', section: -1, name: 'South Eugene', look: 8,
     blurb: 'A real part of Eugene to drive around freely: South Eugene High School and the streets round it, from Lincoln Street to Hilyard and from 18th Avenue to 27th, College Hill, Amazon Parkway and the creek, Amazon Park and the pool, Civic Park, the shops on Willamette. No clock and no finish.' },
-  kit: null, cur: null, loading: null, t: 0, street: null,
+  kit: null, cur: null, loading: null, t: 0, street: null, held: 0,
   /** the builder and the map's data: two files of this site, fetched once */
   load() {
     if (this.loading) return this.loading;
@@ -15131,8 +15216,17 @@ const City = {
   },
   /** each physics frame of free driving */
   step(dt) {
-    const c = this.cur, p = Game.car.pos, B = c.box;
+    const c = this.cur, car = Game.car, p = car.pos, B = c.box;
     if (Math.max(B.x0 - p.x, p.x - B.x1, B.z0 - p.z, p.z - B.z1) > 60) { this.respawn('edge'); return; }
+    /* Nothing here may hold the car for good. Three ways out besides R:
+       - under the ground, or inside a building's walls (it should never
+         happen; if it does, it is put right at once);
+       - the pedals held for two seconds with the car not moving (boxed in:
+         nose to one tree and tail to another, say);
+       - on its roof or resting on its belly (the game's own stuck timer). */
+    if (p.y < c.groundY(p.x, p.z) - 1.2 || c.inBuilding(p.x, p.z)) { this.respawn('stuck'); return; }
+    if (Game.started && (Input.throttle || Input.brake) && car.speed < 0.35) this.held += dt; else this.held = 0;
+    if (this.held > 2) { this.held = 0; this.respawn('stuck'); return; }
     this.t += dt;
     if (this.t < 0.12) return;
     this.t = 0;

@@ -141,6 +141,96 @@ function driveEdge(E, rev, speedCap) {
   console.log('walls:', n, 'head-on hits,', through, 'got inside');
   if (through) fail(through + ' head-on hits ended inside a building');
 }
+/* 5b. trees: the car is driven into trunks dead centre, off centre and
+       glancing, slow and fast. It must never end up inside one, never be
+       wedged (a corner buried in something), and must always be able to back
+       away; a glancing hit must not stop it. */
+{
+  let n = 0, inside = 0, wedged = 0, held = 0, stopped = 0;
+  const posts = city.posts, step = quick ? 90 : 14;
+  const halfW = Math.max.apply(null, new m.Vehicle(null).corners.map((c) => Math.abs(c.x)));
+  for (let k = 0; k < posts.length; k += step) {
+    const P = posts[k];
+    // (0: dead centre; 0.5: half way out; the last: the trunk just clips the car's side)
+    for (const v0 of [8, 22, 42]) for (const off of [0, 0.5, halfW + P.r - 0.1]) {
+      // from 14 m out, along a bearing whose whole lane (the car's width and more) is clear of walls and other trunks
+      let ok = false, ang = 0;
+      for (let tries = 0; tries < 8 && !ok; tries++) {
+        ang = (k * 0.7 + tries * 0.785) % 6.283;
+        ok = true;
+        for (let d = -4; d <= 19 && ok; d += 1) for (const w of [-2.2, -1.1, 0, 1.1, 2.2]) {
+          const x = P.x - Math.sin(ang) * d + Math.cos(ang) * w, z = P.z - Math.cos(ang) * d - Math.sin(ang) * w;
+          if (city.occAt(x, z) === 4 || city.inBuilding(x, z) || posts.some((q) => q !== P && Math.hypot(q.x - x, q.z - z) < 1.3)) { ok = false; break; }
+        }
+      }
+      if (!ok) continue;
+      const sx = P.x - Math.sin(ang) * 14 + Math.cos(ang) * off, sz = P.z - Math.cos(ang) * 14 - Math.sin(ang) * off;
+      const car = new m.Vehicle(null);
+      car.place(new THREE.Vector3(sx, city.groundY(sx, sz) + 0.2 + m.CAR.comHeight, sz), ang);
+      car.vel.set(Math.sin(ang) * v0, 0, Math.cos(ang) * v0);
+      let deep = 0, bad1 = false, wt = 0;
+      for (let t = 0; t < 2.5; t += H) {
+        if (!car.step(H, world, { throttle: 1, brake: 0, steer: 0, handbrake: 0, boost: 0 })) { bad1 = true; break; }
+        if (Math.hypot(car.pos.x - P.x, car.pos.z - P.z) < P.r * 0.6) bad1 = true;
+        // (wedged: a corner buried a quarter of a second or more, not the instant of a crash)
+        if (car.hullDepth > 0.3) { wt += H; if (wt > 0.25) deep = 1; } else wt = 0;
+      }
+      n++;
+      if (bad1) { inside++; continue; }
+      if (deep) { wedged++; if (wedged < 4) console.log('  wedged after a tree', P.x.toFixed(1), P.z.toFixed(1), 'from', v0, 'm/s, off', off.toFixed(2), 'at', car.pos.x.toFixed(1), car.pos.z.toFixed(1)); }
+      const far = Math.hypot(car.pos.x - sx, car.pos.z - sz);
+      if (off > 0.9 && far < (v0 >= 22 ? 20 : 10)) { stopped++; if (stopped < 4) console.log('  a glancing hit stopped it: tree', P.x.toFixed(1), P.z.toFixed(1), 'from', v0, 'm/s, got', far.toFixed(1), 'm'); }
+      // and away again: backwards for three seconds, or (boxed in behind) forwards with the wheel over
+      const px = car.pos.x, pz = car.pos.z;
+      if (far < 16) {
+        let free = false;
+        for (const inp of [{ throttle: 0, brake: 1, steer: 0 }, { throttle: 0, brake: 1, steer: 1 }, { throttle: 1, brake: 0, steer: -1 }, { throttle: 1, brake: 0, steer: 1 }]) {
+          for (let t = 0; t < 3; t += H) car.step(H, world, Object.assign({ handbrake: 0, boost: 0 }, inp));
+          if (Math.hypot(car.pos.x - px, car.pos.z - pz) >= 1.5) { free = true; break; }
+        }
+        if (!free) { held++; if (held < 5) console.log('  held at a tree', P.x.toFixed(1), P.z.toFixed(1), 'from', v0, 'm/s, off', off, 'moved', Math.hypot(car.pos.x - px, car.pos.z - pz).toFixed(2), 'stuckTime', car.stuckTime.toFixed(2), 'up', car.up.y.toFixed(2)); }
+      }
+    }
+  }
+  // (boxed in: after a spin, nose to one trunk and tail to another, say. Nothing is wrong with the physics there;
+  // in the game City.step puts a car back on the street once the pedals have been held two seconds without it moving)
+  console.log('trees:', n, 'hits:', inside, 'ended inside a trunk,', wedged, 'wedged,', stopped, 'glancing hits stopped the car;', held, 'left it boxed in (the game puts those back)');
+  if (inside || wedged) fail('a tree can trap the car');
+  // (a clip at speed does spin a car round, and it may then meet a wall: a few is right, many would mean trunks snag)
+  if (stopped > n * 0.04) fail('glancing hits on trees stop the car too often');
+  if (held > n * 0.03) fail('too many crashes leave the car boxed in');
+}
+
+/* 5c. anywhere: the car is driven wildly (throttle, brake and steering changed
+       at random) from spots all over the map, across gardens, car parks and the
+       creek. It must never be inside a building or under the ground, and never
+       wedged. (Rolled over or beached, the game puts it back; counted, not failed.) */
+{
+  let seed = 12345;
+  const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  let runs = 0, inB = 0, under = 0, wedge = 0, flips = 0, secs = 0;
+  const N = quick ? 12 : 90, T1 = quick ? 12 : 20;
+  for (let r = 0; r < N; r++) {
+    const s = city.spots[Math.floor(rnd() * city.spots.length)];
+    const car = new m.Vehicle(null);
+    car.place(new THREE.Vector3(s.x, city.Hs(s.x, s.z) + 0.15 + m.CAR.comHeight + 0.05, s.z), s.heading + (rnd() - 0.5) * 3);
+    let input = { throttle: 1, brake: 0, steer: 0, handbrake: 0, boost: 0 }, next = 0, t = 0, wt = 0;
+    for (; t < T1; t += H) {
+      if (t >= next) { next = t + 0.4 + rnd() * 1.4; const u = rnd(); input = { throttle: u < 0.8 ? 1 : 0, brake: u > 0.9 ? 1 : 0, steer: (rnd() - 0.5) * 2 * (rnd() < 0.5 ? 1 : 0.3), handbrake: rnd() < 0.08 ? 1 : 0, boost: rnd() < 0.3 ? 1 : 0 }; }
+      if (!car.step(H, world, input)) { wedge++; break; }
+      const B = city.box;
+      if (Math.max(B.x0 - car.pos.x, car.pos.x - B.x1, B.z0 - car.pos.z, car.pos.z - B.z1) > 55) break;       // (the game turns it back here)
+      if (city.inBuilding(car.pos.x, car.pos.z)) { inB++; if (inB < 4) console.log('  inside a building at', car.pos.x.toFixed(1), car.pos.z.toFixed(1), 'after', t.toFixed(1), 's, speed', car.speed.toFixed(1)); break; }
+      if (car.pos.y < city.groundY(car.pos.x, car.pos.z) - 1.2) { under++; if (under < 4) console.log('  under the ground at', car.pos.x.toFixed(1), car.pos.z.toFixed(1)); break; }
+      if (car.hullDepth > 0.3) { wt += H; if (wt > 0.25) { wedge++; if (wedge < 4) console.log('  wedged at', car.pos.x.toFixed(1), car.pos.y.toFixed(1), car.pos.z.toFixed(1), 'depth', car.hullDepth.toFixed(2)); break; } } else wt = 0;
+      if (car.stuckTime > 0.9) { flips++; break; }
+    }
+    runs++; secs += t;
+  }
+  console.log('anywhere:', runs, 'wild drives,', secs.toFixed(0), 's:', inB, 'inside a building,', under, 'under the ground,', wedge, 'wedged;', flips, 'ended rolled over or beached (the game puts those back)');
+  if (inB || under || wedge) fail('the car can get somewhere it cannot drive out of');
+}
+
 /* 6. nothing that would flicker: two faces of different colour, facing the
       same way, in the same plane (within 3 cm) and overlapping. Buildings,
       trees and street furniture; the flat layers are kept apart by design

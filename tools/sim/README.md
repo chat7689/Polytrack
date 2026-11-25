@@ -39,8 +39,12 @@ track builder and maps straight out of `../../index.html`.
   stands clear of the ground, every street can be reached from the start, the
   real car drives every street both ways at two speeds without falling
   through, getting stuck or ending up inside a building, head-on hits on walls
-  stay outside them, and no two differently coloured faces share a plane
-  (flicker). `quick` drives one street in six.
+  stay outside them, crashes into trees (dead centre, half way out and just
+  clipping, at three speeds) never end inside a trunk or wedged, wild drives
+  from spots all over the map never end inside a building, under the ground
+  or wedged, and no two differently coloured faces share a plane (flicker).
+  `quick` drives one street in six and far fewer crashes (about a minute; the
+  full run takes a good quarter of an hour).
 - `city_view.js` — load it into a test copy of the game in the browser (it
   needs `window.T` with `City`, `Game`, `App`, `Gfx`, `CAR`, `Input`, `THREE`):
   `await CV.open()`, then `CV.at(x, z, heading, 'name.jpg')`, `CV.over(...)`,

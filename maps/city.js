@@ -237,7 +237,9 @@ g.CityKit = function (env) {
       return tri(R[k], R[k + 1], R[k + nx], R[k + nx + 1], u - i, v - j);
     };
     city.Hs = Hs; city.smooth = smooth;
-    const field = { x0: fx0, z0: fz0, step: FS, inv: 1 / FS, nx, nz, h: fh, grip: 0.5 };
+    // (roll, rollSpeed: how much the ground holds a wheel back, at rest and per m/s. Far less than a
+    // race course's grass, which nothing can reverse on: here a car on a lawn must be able to back away.)
+    const field = { x0: fx0, z0: fz0, step: FS, inv: 1 / FS, nx, nz, h: fh, grip: 0.5, roll: 0.07, rollSpeed: 0.022 };
     /** the ground's height at (x, z), exactly as the physics and the drawn grid have it */
     const groundY = (x, z) => {
       const u = clamp((x - fx0) / FS, 0, nx - 1.0001), v = clamp((z - fz0) / FS, 0, nz - 1.0001);
@@ -283,7 +285,8 @@ g.CityKit = function (env) {
       return a;
     };
     const phys = [];                 // flat triangles a wheel can stand on: 9 positions + 9 normals each
-    const solids = [];               // walls: quads as 12 numbers + 3 (a point inside)
+    const solids = [];               // walls: quads as 12 numbers + 3 (a point inside) + how thick
+    city.posts = [];                 // tree trunks: upright round posts { x, z, r, y0, y1 }
     city.phys = phys; city.solids = solids;
     const nA = [0, 0, 0], nB = [0, 0, 0], nC = [0, 0, 0];
     let flatTris = 0, physOnly = false, noPhys = false;
@@ -404,6 +407,13 @@ g.CityKit = function (env) {
        the car, and half the streets lie under trees in it). */
     const photo = !!data.photo && opts.photo !== false;
     city.photo = photo;
+    // which of the photo's pictures (x, z) is in, and where in it (see assemble, which draws the ground with them)
+    city.photoOf = photo && typeof document !== 'undefined' ? (x, z) => {
+      const PH = data.photo.half;
+      if (opts.photoLow) return { g: 'terrAll', u0: PH, v0: -PH, k: 1 / (2 * PH) };
+      const i = x >= 0 ? 0 : 1, j = z >= 0 ? 1 : 0;
+      return { g: 'terr' + (i * 2 + j), u0: i ? 0 : PH, v0: j ? 0 : -PH, k: 1 / PH };
+    } : null;
     for (const E of edges) {
       physOnly = true;
       ribbon('walk', C.walk, E.pts, (E.hWalk - E.hw) / 2 + 0.2, { off: (E.hWalk + E.hw) / 2 - 0.2 });
@@ -573,19 +583,37 @@ g.CityKit = function (env) {
       for (const s of spots) { if (!/19th Avenue/.test(s.name)) continue; const d = Math.hypot(s.x - school.x, s.z - school.z) + (Math.sin(s.heading) < -0.5 ? 0 : 400); if (d < bd) { bd = d; best = s; } }
       city.spawn = { x: best.x, y: Hs(best.x, best.z) + LAYER.road.lift, z: best.z, heading: best.heading };
     }
-    city.stats = { flatTris, physTris: phys.length / 19, solids: solids.length / 15, tiles: tnx * tnz, strides: Array.from(stride).reduce((m, s) => { m[s] = (m[s] || 0) + 1; return m; }, {}) };
+    city.stats = { flatTris, physTris: phys.length / 19, solids: solids.length / 16, tiles: tnx * tnz, strides: Array.from(stride).reduce((m, s) => { m[s] = (m[s] || 0) + 1; return m; }, {}) };
     city.intoWorld = (world) => intoWorld(city, world);
+    // is (x, z) inside a building's walls? (buildings found through a 32 m grid)
+    {
+      const cells = new Map();
+      for (const b of city.buildings) {
+        if (b.k === 'r') continue;                    // (a roof on posts: there is no inside)
+        let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+        for (const p of b.P) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); }
+        for (let i = Math.floor(x0 / 32); i <= Math.floor(x1 / 32); i++) for (let j = Math.floor(z0 / 32); j <= Math.floor(z1 / 32); j++) { const k = i + ':' + j; if (!cells.has(k)) cells.set(k, []); cells.get(k).push(b); }
+      }
+      city.inBuilding = (x, z) => { const L = cells.get(Math.floor(x / 32) + ':' + Math.floor(z / 32)); if (L) for (const b of L) if (inPoly(x, z, b.P)) return true; return false; };
+    }
     if (vis) city.root = assemble(city);
-    city.stats.trees = city.trees.length; city.stats.solids = solids.length / 15;
+    city.stats.trees = city.trees.length; city.stats.solids = solids.length / 16;
     return city;
   }
 
   /** solid walls round an outline, from y0 up to y1 */
   function wallSolids(city, P, y0, y1) {
     const sg = wind(P);
+    // How thick each wall's face counts as solid behind it: never more than
+    // the thing itself is thick. (A post or a barrier thinner than a face's
+    // thickness had the far side's air counted as inside the near face, and a
+    // corner that had got past was pushed back in and stuck.)
+    let area = 0, per = 0;
+    for (let i = 0; i < P.length; i++) { const q = P[(i + 1) % P.length]; area += P[i].x * q.z - q.x * P[i].z; per += Math.hypot(q.x - P[i].x, q.z - P[i].z); }
+    const depth = Math.max(0.06, Math.min(0.9, 1.6 * Math.abs(area / 2) / Math.max(per, 1e-6)));
     for (let i = 0; i < P.length; i++) {
       const a = P[i], b = P[(i + 1) % P.length], I = within(P, i, sg);
-      city.solids.push(a.x, y0, a.z, b.x, y0, b.z, b.x, y1, b.z, a.x, y1, a.z, I.x, (y0 + y1) / 2, I.z);
+      city.solids.push(a.x, y0, a.z, b.x, y0, b.z, b.x, y1, b.z, a.x, y1, a.z, I.x, (y0 + y1) / 2, I.z, depth);
     }
   }
   /** which way round an outline runs, and a point just inside its i-th wall (by the outline itself: its middle
@@ -696,7 +724,15 @@ g.CityKit = function (env) {
     const bucket = (x, z, group) => U.acc(x, z, group);
     const PV = (rowV(0)[0] + rowV(0)[1]) / 2;
     const tri = (a, c, p1, p2, p3, t1, t2, t3) => {
-      a.p.push(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]); a.c.push(c[0], c[1], c[2], c[0], c[1], c[2], c[0], c[1], c[2]);
+      a.p.push(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]);
+      if (a.pq) {
+        // a roof under the aerial photo: the photo straight down onto it, uncoloured
+        const q = a.pq;
+        a.c.push(1, 1, 1, 1, 1, 1, 1, 1, 1);
+        a.u.push((q.u0 - p1[0]) * q.k, (p1[2] - q.v0) * q.k, (q.u0 - p2[0]) * q.k, (p2[2] - q.v0) * q.k, (q.u0 - p3[0]) * q.k, (p3[2] - q.v0) * q.k);
+        return;
+      }
+      a.c.push(c[0], c[1], c[2], c[0], c[1], c[2], c[0], c[1], c[2]);
       if (a.group === 'bld' || a.group === 'bldx') { if (t1) a.u.push(t1[0], t1[1], t2[0], t2[1], t3[0], t3[1]); else a.u.push(0.5, PV, 0.5, PV, 0.5, PV); }
     };
     /** a piece of wall from p to q between two heights, showing bays u0..u1 of a row of the picture */
@@ -795,7 +831,8 @@ g.CityKit = function (env) {
     };
     const flatRoof = (a, P, y, col) => { for (const t of U.triangulate(P)) triOut(a, col, [P[t[0]].x, y, P[t[0]].z], [P[t[1]].x, y, P[t[1]].z], [P[t[2]].x, y, P[t[2]].z], [P[t[0]].x, y - 5, P[t[0]].z]); };
     /** a pitched roof on a rectangle (the box's coordinates), sitting on the walls at `ye` */
-    const pitched = (a, O, r, ye, pitch, hip, roofCol, wallCol, ov, ax) => {
+    const pitched = (a, O, r, ye, pitch, hip, roofCol, wallCol, ov, ax, ar) => {
+      const R_ = ar || a;
       const W = (s, t, y) => [s * O.ux + t * O.vx, y, s * O.uz + t * O.vz];
       const alongA = r.a1 - r.a0 >= r.b1 - r.b0;
       // (p, q): p along the ridge, q across it
@@ -806,17 +843,17 @@ g.CityKit = function (env) {
       const yo = ye - sl * ov;                                     // the eave, out past the wall
       if (hip && p1 - p0 > 2 * half + 0.6) {
         const r0 = p0 + half, r1 = p1 - half;
-        quad(a, roofCol, PT(p0 - ov, q0 - ov, yo), PT(p1 + ov, q0 - ov, yo), PT(r1, qm, yr), PT(r0, qm, yr), I);
-        quad(a, roofCol, PT(p1 + ov, q1 + ov, yo), PT(p0 - ov, q1 + ov, yo), PT(r0, qm, yr), PT(r1, qm, yr), I);
-        triOut(a, roofCol, PT(p0 - ov, q1 + ov, yo), PT(p0 - ov, q0 - ov, yo), PT(r0, qm, yr), I);
-        triOut(a, roofCol, PT(p1 + ov, q0 - ov, yo), PT(p1 + ov, q1 + ov, yo), PT(r1, qm, yr), I);
+        quad(R_, roofCol, PT(p0 - ov, q0 - ov, yo), PT(p1 + ov, q0 - ov, yo), PT(r1, qm, yr), PT(r0, qm, yr), I);
+        quad(R_, roofCol, PT(p1 + ov, q1 + ov, yo), PT(p0 - ov, q1 + ov, yo), PT(r0, qm, yr), PT(r1, qm, yr), I);
+        triOut(R_, roofCol, PT(p0 - ov, q1 + ov, yo), PT(p0 - ov, q0 - ov, yo), PT(r0, qm, yr), I);
+        triOut(R_, roofCol, PT(p1 + ov, q0 - ov, yo), PT(p1 + ov, q1 + ov, yo), PT(r1, qm, yr), I);
       } else if (hip) {
         const pm = (p0 + p1) / 2, top = PT(pm, qm, yr);
-        triOut(a, roofCol, PT(p0 - ov, q0 - ov, yo), PT(p1 + ov, q0 - ov, yo), top, I); triOut(a, roofCol, PT(p1 + ov, q0 - ov, yo), PT(p1 + ov, q1 + ov, yo), top, I);
-        triOut(a, roofCol, PT(p1 + ov, q1 + ov, yo), PT(p0 - ov, q1 + ov, yo), top, I); triOut(a, roofCol, PT(p0 - ov, q1 + ov, yo), PT(p0 - ov, q0 - ov, yo), top, I);
+        triOut(R_, roofCol, PT(p0 - ov, q0 - ov, yo), PT(p1 + ov, q0 - ov, yo), top, I); triOut(R_, roofCol, PT(p1 + ov, q0 - ov, yo), PT(p1 + ov, q1 + ov, yo), top, I);
+        triOut(R_, roofCol, PT(p1 + ov, q1 + ov, yo), PT(p0 - ov, q1 + ov, yo), top, I); triOut(R_, roofCol, PT(p0 - ov, q1 + ov, yo), PT(p0 - ov, q0 - ov, yo), top, I);
       } else {
-        quad(a, roofCol, PT(p0, q0 - ov, yo), PT(p1, q0 - ov, yo), PT(p1, qm, yr), PT(p0, qm, yr), I);
-        quad(a, roofCol, PT(p1, q1 + ov, yo), PT(p0, q1 + ov, yo), PT(p0, qm, yr), PT(p1, qm, yr), I);
+        quad(R_, roofCol, PT(p0, q0 - ov, yo), PT(p1, q0 - ov, yo), PT(p1, qm, yr), PT(p0, qm, yr), I);
+        quad(R_, roofCol, PT(p1, q1 + ov, yo), PT(p0, q1 + ov, yo), PT(p0, qm, yr), PT(p1, qm, yr), I);
         // the gable ends carry the wall up to the ridge
         triOut(a, wallCol, PT(p0, q0, ye), PT(p0, q1, ye), PT(p0, qm, yr), I);
         triOut(a, wallCol, PT(p1, q1, ye), PT(p1, q0, ye), PT(p1, qm, yr), I);
@@ -1022,6 +1059,9 @@ g.CityKit = function (env) {
       wallSolids(city, P, y0 - 1.2, Math.min(ye, yf + 7), cx, cz);
       if (!vis) continue;
       const a = wallAcc(b), ax = bucket(cx, cz, 'bldx'), wc = T(wallHex), wk = WK(wallHex), rc = T(roofHex), I = [cx, (y0 + ye) / 2, cz];
+      // (its roof: the photo itself where there is one, else the roof's colour)
+      let ra = a;
+      if (city.photoOf) { const q = city.photoOf(cx, cz); ra = bucket(cx, cz, 'roof:' + q.g); ra.pq = q; }
       // the wall that faces the street carries the door
       let front = -1, fd = Infinity;
       for (let i = 0; i < P.length; i++) { const w = wallOut(P, i, cx, cz); if (w.L < 2.6) continue; const d = nearestStreetDist(w.mx + w.nx * 2, w.mz + w.nz * 2).d - w.L * 0.15; if (d < fd) { fd = d; front = i; } }
@@ -1104,22 +1144,22 @@ g.CityKit = function (env) {
       if (rise > 0 && O) { const half = (rects && rects.length ? Math.max.apply(null, rects.map((r) => Math.min(r.a1 - r.a0, r.b1 - r.b0))) : O.b1 - O.b0) / 2; pitch = Math.max(0.18, Math.min(1.3, rise / Math.max(half, 1.5))); }
       if (roof !== 'flat' && rects && Math.max.apply(null, rects.map((r) => Math.min(r.a1 - r.a0, r.b1 - r.b0))) <= 15) {
         for (const r of rects) {
-          if (Math.min(r.a1 - r.a0, r.b1 - r.b0) < 1.6) { quad(a, rc, [r.a0 * O.ux + r.b0 * O.vx, ye + 0.02, r.a0 * O.uz + r.b0 * O.vz], [r.a1 * O.ux + r.b0 * O.vx, ye + 0.02, r.a1 * O.uz + r.b0 * O.vz], [r.a1 * O.ux + r.b1 * O.vx, ye + 0.02, r.a1 * O.uz + r.b1 * O.vz], [r.a0 * O.ux + r.b1 * O.vx, ye + 0.02, r.a0 * O.uz + r.b1 * O.vz], [cx, ye - 3, cz]); continue; }
-          const R = pitched(a, O, r, ye, pitch, roof === 'hip', rc, wc, 0.4, ax);
+          if (Math.min(r.a1 - r.a0, r.b1 - r.b0) < 1.6) { quad(ra, rc, [r.a0 * O.ux + r.b0 * O.vx, ye + 0.02, r.a0 * O.uz + r.b0 * O.vz], [r.a1 * O.ux + r.b0 * O.vx, ye + 0.02, r.a1 * O.uz + r.b0 * O.vz], [r.a1 * O.ux + r.b1 * O.vx, ye + 0.02, r.a1 * O.uz + r.b1 * O.vz], [r.a0 * O.ux + r.b1 * O.vx, ye + 0.02, r.a0 * O.uz + r.b1 * O.vz], [cx, ye - 3, cz]); continue; }
+          const R = pitched(a, O, r, ye, pitch, roof === 'hip', rc, wc, 0.4, ax, ra);
           if (!ridge || (R.p1 - R.p0) > (ridge.p1 - ridge.p0)) ridge = R;
         }
       } else if (roof !== 'flat' && O && (b.area > 0.72 * O.area || (LK && LK.pitch)) && (O.b1 - O.b0 <= 15 || (LK && LK.pitch))) {
-        ridge = pitched(a, O, O, ye, LK && LK.pitch ? LK.pitch : pitch, roof === 'hip', rc, wc, LK && LK.pitch ? 0.7 : 0.4, ax);
+        ridge = pitched(a, O, O, ye, LK && LK.pitch ? LK.pitch : pitch, roof === 'hip', rc, wc, LK && LK.pitch ? 0.7 : 0.4, ax, ra);
         flatRoof(a, P, ye + 0.01, rc);
       } else {
         // a flat roof behind a low parapet
         walls(a, P, ye, ye + (LK && LK.cap ? 0.75 : 0.5), LK && LK.cap ? T(LK.cap) : wc, I);
-        flatRoof(a, P, ye + 0.12, T(b.rc !== undefined ? b.rc : LK && LK.roof ? LK.roof : b.k === 'c' || b.k === 'S' ? (h3 < 0.5 ? TAR : 0xb9bab6) : TAR));
+        flatRoof(ra, P, ye + 0.12, T(b.rc !== undefined ? b.rc : LK && LK.roof ? LK.roof : b.k === 'c' || b.k === 'S' ? (h3 < 0.5 ? TAR : 0xb9bab6) : TAR));
         // its taller parts (a hall, a stage, a second floor): each a box on the roof
         if (b.up) for (let k = 0; k < b.up.length; k += 5) {
           const R = [{ x: b.up[k] / 10, z: b.up[k + 1] / 10 }, { x: b.up[k + 2] / 10, z: b.up[k + 1] / 10 }, { x: b.up[k + 2] / 10, z: b.up[k + 3] / 10 }, { x: b.up[k] / 10, z: b.up[k + 3] / 10 }], top = y1 + b.up[k + 4] / 10;
           if (top < ye + 1.2) continue;
-          walls(a, R, ye + 0.1, top, wc); flatRoof(a, R, top, rc);
+          walls(a, R, ye + 0.1, top, wc); flatRoof(ra, R, top, rc);
         }
         if ((b.k === 'c' || b.k === 'S' || b.k === 'a') && b.area > 160 && O) {
           const n = b.area > 900 ? 3 : b.area > 350 ? 2 : 1;
@@ -1213,8 +1253,9 @@ g.CityKit = function (env) {
     /** a tree's colour from the photo, drawn part of the way to a plain leaf green (the photo has each crown's own shadow in it) */
     const leaf = (hex, keep) => { const a = T(hex), g0 = T(0x5a9a48); return [a[0] * keep + g0[0] * (1 - keep), a[1] * keep + g0[1] * (1 - keep), a[2] * keep + g0[2] * (1 - keep)]; };
     for (const t of trees) {
-      const y = city.groundY(t.x, t.z), r = t.fir ? 0.3 : 0.26;
-      { const a0 = hash2(t.x * 9, t.z * 9) * 2, R3 = r * 1.3; wallSolids(city, [0, 1, 2].map((k) => ({ x: t.x + Math.cos(a0 + k * 2.0944) * R3, z: t.z + Math.sin(a0 + k * 2.0944) * R3 })), y - 1, y + 4); }
+      // (the trunk: as thick as a tree that tall has, and round for the physics, so a car slides off it)
+      const y = city.groundY(t.x, t.z), r = Math.max(0.2, Math.min(0.55, 0.14 + t.h * 0.013));
+      city.posts.push({ x: t.x, z: t.z, r: r + 0.04, y0: y - 1.5, y1: y + 4.5 });
       if (!vis) continue;
       const h = t.h, hh = hash2(Math.round(t.x * 5), Math.round(t.z * 5)), yaw = hh * 6.28;
       const tk = T(TRUNK);
@@ -1222,10 +1263,11 @@ g.CityKit = function (env) {
       for (const far of [false, true]) {
         const a = bucket(t.x, t.z, far ? 'treef' : 'tree');
         const sides = far ? 4 : detail >= 2 ? 6 : 5;
-        const ring = (yy, rad, tw) => { const o = []; for (let k = 0; k < sides; k++) { const an = yaw + tw + k / sides * 6.2832; o.push([t.x + Math.cos(an) * rad, yy, t.z + Math.sin(an) * rad]); } return o; };
+        const ring = (yy, rad, tw, jit) => { const o = []; for (let k = 0; k < sides; k++) { const an = yaw + tw + k / sides * 6.2832, rr = rad * (jit ? 0.82 + 0.36 * hash2(Math.round(t.x * 7) + k * 13, Math.round(t.z * 7) + Math.round(yy * 3)) : 1); o.push([t.x + Math.cos(an) * rr, yy + (jit ? (hash2(k * 5 + 1, Math.round(t.x * 11)) - 0.5) * h * 0.05 : 0), t.z + Math.sin(an) * rr]); } return o; };
         const cone = (col, b0, top) => { for (let k = 0; k < sides; k++) triOut(a, col, b0[k], b0[(k + 1) % sides], top, [t.x, b0[0][1], t.z]); };
         const band = (col, b0, b1) => { for (let k = 0; k < sides; k++) quad(a, col, b0[k], b0[(k + 1) % sides], b1[(k + 1) % sides], b1[k], [t.x, (b0[0][1] + b1[0][1]) / 2, t.z]); };
-        if (!far) { const b0 = [], b1 = [], th = t.fir ? h * 0.22 : h * 0.36; for (let k = 0; k < 3; k++) { const an = yaw + k * 2.0944; b0.push([t.x + Math.cos(an) * r * 1.2, y - 0.3, t.z + Math.sin(an) * r * 1.2]); b1.push([t.x + Math.cos(an) * r * 0.8, y + th, t.z + Math.sin(an) * r * 0.8]); } for (let k = 0; k < 3; k++) quad(a, tk, b0[k], b0[(k + 1) % 3], b1[(k + 1) % 3], b1[k], [t.x, y + 1, t.z]); }
+        // the trunk: five sides, as thick as the post the car meets
+        if (!far) { const b0 = [], b1 = [], th = t.fir ? h * 0.22 : h * 0.36; for (let k = 0; k < 5; k++) { const an = yaw + k * 1.2566; b0.push([t.x + Math.cos(an) * r * 1.05, y - 0.3, t.z + Math.sin(an) * r * 1.05]); b1.push([t.x + Math.cos(an) * r * 0.78, y + th, t.z + Math.sin(an) * r * 0.78]); } for (let k = 0; k < 5; k++) quad(a, tk, b0[k], b0[(k + 1) % 5], b1[(k + 1) % 5], b1[k], [t.x, y + 1, t.z]); }
         if (t.fir) {
           const own = t.col !== undefined ? leaf(t.col, 0.55) : null;
           const col = own || T(PAL.fir[Math.floor(hh * 4) % 4]), col2 = own ? own.map((v) => v * 0.86) : T(PAL.fir[Math.floor(hh * 4 + 1) % 4]), w = t.r ? Math.min(t.r, h * 0.24) : h * 0.2;
@@ -1238,8 +1280,10 @@ g.CityKit = function (env) {
           const top = [t.x + (hh - 0.5) * 0.6, y + h, t.z];
           if (far) { const r1 = ring(y + h * 0.56, w, 0.4); cone(col, r1, top); cone(low, r1.slice().reverse(), [t.x, y + h * 0.3, t.z]); }
           else {
-            const r0 = ring(y + h * 0.32, w * 0.72, 0), r1 = ring(y + h * 0.56, w, 0.4), r2 = ring(y + h * 0.82, w * 0.66, 0.8);
-            band(low, r0, r1); band(col, r1, r2); cone(col, r2, top);
+            // four uneven rings and a cap: a rounded, lumpy crown, darker underneath, lighter on top
+            const hi = col.map((v) => Math.min(1, v * 1.12));
+            const r0 = ring(y + h * 0.30, w * 0.62, 0, 1), r1 = ring(y + h * 0.46, w, 0.4, 1), r2 = ring(y + h * 0.66, w * 0.94, 0.8, 1), r3 = ring(y + h * 0.84, w * 0.58, 1.2, 1);
+            band(low, r0, r1); band(col, r1, r2); band(hi, r2, r3); cone(hi, r3, top);
             for (let k = 0; k < sides; k++) triOut(a, low, r0[(k + 1) % sides], r0[k], [t.x, y + h * 0.3, t.z], [t.x, y + h * 0.6, t.z]);
           }
         }
@@ -1285,7 +1329,8 @@ g.CityKit = function (env) {
       let ym = -Infinity, cx = 0, cz = 0; for (const p of ar.P) { ym = Math.max(ym, Hs(p.x, p.z)); cx += p.x; cz += p.z; }
       cx /= ar.P.length; cz /= ar.P.length;
       if (occAt(cx, cz) === 4) continue;                               // an indoor pool: under a roof already
-      wallSolids(city, ar.P, ym - 1, ym + 0.42, cx, cz);
+      // (solid to the height of the fence round it: a wall only as high as the coping let a car mount it and drop in, where it wedged)
+      wallSolids(city, ar.P, ym - 1, ym + 1.35);
       U.occPoly(ar.P, 5, 0.5);
       if (!vis) continue;
       const a = bucket(cx, cz, 'bld'), aw = bucket(cx, cz, 'water');
@@ -1294,6 +1339,13 @@ g.CityKit = function (env) {
       // (the coping's top: a rim just outside the water)
       const grown = ar.P.map((p) => { const dx = p.x - cx, dz = p.z - cz, L = Math.hypot(dx, dz) || 1; return { x: p.x + dx / L * 0.45, z: p.z + dz / L * 0.45 }; });
       walls(a, grown, ym - 0.6, ym + 0.36, T(0xd6d6d0), [cx, ym, cz]);
+      // the fence a pool has round it: a rail at waist height and one above, on a post at each corner
+      { const fc = T(0x3f444a), af = bucket(cx, cz, 'bldx');
+        for (let i = 0; i < grown.length; i++) {
+          const p = grown[i], q = grown[(i + 1) % grown.length];
+          for (const [h0, h1] of [[0.62, 0.68], [1.2, 1.27]]) for (const side of [3, -3]) quad(af, fc, [p.x, ym + h0, p.z], [q.x, ym + h0, q.z], [q.x, ym + h1, q.z], [p.x, ym + h1, p.z], [cx, ym + side, cz].map((v, k) => (k === 1 ? ym + 1 : v + (side > 0 ? 0 : (k === 0 ? (p.x + q.x) / 2 - cx : (p.z + q.z) / 2 - cz) * 3))));
+          box(af, fc, p.x, ym + 0.82, p.z, 0.035, 0.46, 0.035, 0, true);
+        } }
       for (let i = 0; i < ar.P.length; i++) { const p = ar.P[i], q = ar.P[(i + 1) % ar.P.length], gp = grown[i], gq = grown[(i + 1) % ar.P.length]; quad(a, T(0xe2e2dc), [p.x, ym + 0.42, p.z], [q.x, ym + 0.42, q.z], [gq.x, ym + 0.36, gq.z], [gp.x, ym + 0.36, gp.z], [cx, ym - 3, cz]); }
     }
 
@@ -1456,6 +1508,18 @@ g.CityKit = function (env) {
         attr(geo, 'position', cat(parts.map((a) => a.p)), 3); attr(geo, 'color', cat(parts.map((a) => a.c)), 3); attr(geo, 'uv', cat(parts.map((a) => a.u)), 2);
         mesh(ck, 'bld', geo, 2, false);
       }
+      for (const k of Object.keys(G)) {
+        if (k.indexOf('roof:') !== 0 || !G[k].p.length || !mats[k.slice(5)]) continue;
+        const P3 = new Float32Array(G[k].p), N3 = new Float32Array(P3.length), geo = new THREE.BufferGeometry();
+        for (let i = 0; i < P3.length; i += 9) {
+          const ux = P3[i + 3] - P3[i], uy = P3[i + 4] - P3[i + 1], uz = P3[i + 5] - P3[i + 2], vx = P3[i + 6] - P3[i], vy = P3[i + 7] - P3[i + 1], vz = P3[i + 8] - P3[i + 2];
+          let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+          for (let q = 0; q < 9; q += 3) { N3[i + q] = nx; N3[i + q + 1] = ny; N3[i + q + 2] = nz; }
+        }
+        attr(geo, 'position', P3, 3); attr(geo, 'normal', N3, 3); attr(geo, 'color', new Float32Array(G[k].c), 3); attr(geo, 'uv', new Float32Array(G[k].u), 2);
+        const m = mesh(ck, k.slice(5), geo, 2, false);
+        m.userData.group = 'roof';
+      }
       for (const [k, mat, far] of [['tree', 'tree', false], ['treef', 'tree', true], ['bldf', 'bldf', true], ['water', 'water', undefined]]) {
         if (!G[k] || !G[k].p.length) continue;
         const geo = new THREE.BufferGeometry();
@@ -1567,13 +1631,14 @@ g.CityKit = function (env) {
         V(P[k + 9], P[k + 10], P[k + 11]), V(P[k + 12], P[k + 13], P[k + 14]), V(P[k + 15], P[k + 16], P[k + 17]), true, 0);
     }
     const S = city.solids, inside = V(0, 0, 0);
-    for (let k = 0; k < S.length; k += 15) {
+    for (let k = 0; k < S.length; k += 16) {
       const a = V(S[k], S[k + 1], S[k + 2]), b = V(S[k + 3], S[k + 4], S[k + 5]), c = V(S[k + 6], S[k + 7], S[k + 8]), d = V(S[k + 9], S[k + 10], S[k + 11]);
       inside.set(S[k + 12], S[k + 13], S[k + 14]);
       const n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
-      if (n.dot(new THREE.Vector3().subVectors(a, inside)) >= 0) world.addQuad(a, b, c, d, 1, 0.9, false, null, false);
-      else world.addQuad(a, d, c, b, 1, 0.9, false, null, false);
+      if (n.dot(new THREE.Vector3().subVectors(a, inside)) >= 0) world.addQuad(a, b, c, d, 1, S[k + 15], false, null, false);
+      else world.addQuad(a, d, c, b, 1, S[k + 15], false, null, false);
     }
+    if (world.setPosts) world.setPosts(city.posts);
     world.index();
     world.fullHull = true;
   }
