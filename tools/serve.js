@@ -6,7 +6,7 @@
 const http = require('http'), fs = require('fs'), path = require('path');
 const root = process.argv[2] || process.cwd(), port = +(process.argv[3] || 8935);
 const shots = path.join(__dirname, 'shots');
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
 http.createServer((req, res) => {
   if (req.method === 'POST' && req.url.startsWith('/shot')) {
     const name = (new URL(req.url, 'http://x').searchParams.get('name') || 'shot.jpg').replace(/[^a-z0-9_.-]/gi, '');

@@ -15054,7 +15054,7 @@ const Preview = {
  * course.free, which is where a clock, checkpoints or other cars would go.
  */
 const City = {
-  VERSION: 1,
+  VERSION: 2,
   level: { id: 'free-eugene', free: true, city: 'eugene', section: -1, name: 'South Eugene', look: 8,
     blurb: 'A real part of Eugene to drive around freely: South Eugene High School and the streets round it, from Lincoln Street to Hilyard and from 18th Avenue to 27th, College Hill, Amazon Parkway and the creek, Amazon Park and the pool, Civic Park, the shops on Willamette. No clock and no finish.' },
   kit: null, cur: null, loading: null, t: 0, street: null,
@@ -15067,7 +15067,7 @@ const City = {
       el.onload = ok; el.onerror = () => no(new Error('could not load ' + src));
       document.head.appendChild(el);
     });
-    this.loading = Promise.all([one('maps/city.js'), one('maps/eugene.js')]).then(() => { this.kit = CityKit({ THREE, GROUND_Y }); });
+    this.loading = Promise.all([one('maps/city.js'), one('maps/eugene.js')]).then(() => { this.kit = CityKit({ THREE, GROUND_Y, base: 'maps/' }); });
     this.loading.catch(() => { this.loading = null; });
     return this.loading;
   },
@@ -15088,7 +15088,8 @@ const City = {
   },
   /** builds the city into the scene and the physics world; returns it as a course */
   build(scene, world) {
-    const c = this.kit.build(CityData[this.level.city], { detail: Gfx.get('detail') });
+    // (the ground's aerial photo: the small copy on the lightest scenery setting)
+    const c = this.kit.build(CityData[this.level.city], { detail: Gfx.get('detail'), photoLow: Gfx.get('detail') === 0 });
     c.intoWorld(world);
     c.shadows(Gfx.get('shadows') > 0);
     scene.add(c.root);

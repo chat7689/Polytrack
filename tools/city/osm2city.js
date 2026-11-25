@@ -22,14 +22,20 @@ const { readTiff } = require('./tiff.js');
 // (the extract stops at 44.0290 N: the box's south edge is just inside it, so no strip is left bare)
 const BOX = { s: 44.02893, n: 44.04095, w: -123.0979, e: -123.0806 };
 const ORIGIN = { lat: 44.0347, lon: -123.0890 };
-// what the height picture covers (the request's bbox)
-const DEM_BOX = { s: 44.0275, n: 44.0419, w: -123.0996, e: -123.0796 };
 const M_LAT = 111132, M_LON = 111320 * Math.cos(ORIGIN.lat * Math.PI / 180);
 const X = (lon) => (ORIGIN.lon - lon) * M_LON, Z = (lat) => (lat - ORIGIN.lat) * M_LAT;
 const B = { x0: X(BOX.e), x1: X(BOX.w), z0: Z(BOX.s), z1: Z(BOX.n) };   // x0 east edge (most negative)
 
-const [, , osmFile, demFile, outFile] = process.argv;
-if (!osmFile || !demFile) { console.error('usage: node osm2city.js <osm.json> <dem.tif> [out.js]'); process.exit(1); }
+const [, , osmFile, demFile, chmFile, rgbFile, outFile] = process.argv;
+if (!osmFile || !demFile) { console.error('usage: node osm2city.js <osm.json> <dem.tif> [<chm.tif> <photo_1m.rgb>] [out.js]'); process.exit(1); }
+/* What really stands there, when the two extra files are given:
+   chm.tif        the state lidar's height above the ground (feet), covering
+                  BOX: how tall each building is, and every tree;
+   photo_1m.rgb   the aerial photo over BOX at 1 m a pixel (tools/city/photo.py
+                  writes it): the colour of each roof and each tree. */
+const chm = chmFile && fs.existsSync(chmFile) ? readTiff(chmFile) : null;
+const rgb = rgbFile && fs.existsSync(rgbFile) ? fs.readFileSync(rgbFile) : null;
+const FT = 0.3048;
 const raw = JSON.parse(fs.readFileSync(osmFile, 'utf8'));
 const nodes = new Map(), ways = [], rels = [], wayById = new Map();
 for (const e of raw.elements) {
@@ -299,6 +305,23 @@ function buildingKind(t, area) {
   if (area < 380) return 'h';
   return 'c';
 }
+/** the lidar's height above the ground at (x, z), metres */
+const chmAt = (x, z) => {
+  const u = Math.floor(((ORIGIN.lon - x / M_LON) - chm.geo.w) / chm.geo.px), v = Math.floor((chm.geo.n - (ORIGIN.lat + z / M_LAT)) / chm.geo.py);
+  if (u < 0 || v < 0 || u >= chm.w || v >= chm.h) return 0;
+  const h = chm.data[v * chm.w + u];
+  return h > 0 && h < 400 ? h * FT : 0;
+};
+const RW = Math.round(B.x1 - B.x0), RH = Math.round(B.z1 - B.z0);
+/** the photo's colour at (x, z): [r, g, b] or null */
+const rgbAt = (x, z) => {
+  const i = Math.floor(B.x1 - x), j = Math.floor(B.z1 - z);
+  if (i < 0 || j < 0 || i >= RW || j >= RH) return null;
+  const k = (j * RW + i) * 3;
+  return [rgb[k], rgb[k + 1], rgb[k + 2]];
+};
+const pointInPoly = (x, z, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a.z > z) !== (b.z > z) && x < (b.x - a.x) * (z - a.z) / (b.z - a.z) + a.x) c = !c; } return c; };
+const outlines = [];
 const addBuilding = (t, pts) => {
   if (pts.length < 3) return;
   const c = centroid(pts);
@@ -315,6 +338,45 @@ const addBuilding = (t, pts) => {
   if (t.name && b.k !== 'h' && b.k !== 'a' && b.k !== 'g' && b.k !== 's') b.n = t.name;
   const tag = t.amenity || t.shop || t.leisure || '';
   if (tag && b.k !== 'h') b.t = tag;
+  outlines.push(s);
+  // its real height (the walls' and the roof's top) and the colour of its roof
+  if (chm || rgb) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of s) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); }
+    const hs = [], cr = [], cg = [], cb = [], step = Math.max(0.9, Math.sqrt(area) / 14);
+    for (let z = z0 + 0.5; z < z1; z += step) for (let x = x0 + 0.5; x < x1; x += step) {
+      // (well inside the outline: the survey's edge cells are half roof, half ground)
+      if (![[0, 0], [0.8, 0], [-0.8, 0], [0, 0.8], [0, -0.8]].every(([dx, dz]) => pointInPoly(x + dx, z + dz, s))) continue;
+      if (chm) hs.push(chmAt(x, z));
+      if (rgb) { const c2 = rgbAt(x, z); if (c2) { cr.push(c2[0]); cg.push(c2[1]); cb.push(c2[2]); } }
+    }
+    const pct = (a, f) => { const q = a.slice().sort((m, n) => m - n); return q[Math.min(q.length - 1, Math.floor(q.length * f))]; };
+    if (hs.length >= 6) { const e = pct(hs, 0.25), top = pct(hs, 0.9); if (top > 1.8) b.h = [Math.round(e * 10), Math.round(top * 10)]; }
+    // A big building is rarely one height (a school's halls stand over its
+    // wings): the parts well above the rest, as boxes [x0, z0, x1, z1, height].
+    if (chm && b.h && area > 700 && b.h[1] - b.h[0] > 22 && !/^[hgs]$/.test(b.k)) {
+      const G2 = 3, low = b.h[0] / 10, cols = Math.ceil((x1 - x0) / G2), rows = Math.ceil((z1 - z0) / G2), tall = new Float32Array(cols * rows);
+      for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+        const cx = x0 + (i + 0.5) * G2, cz = z0 + (j + 0.5) * G2;
+        if (![[-2, -2], [2, -2], [2, 2], [-2, 2], [0, 0]].every(([dx, dz]) => pointInPoly(cx + dx, cz + dz, s))) continue;
+        let t = 0, n = 0; for (const [dx, dz] of [[0, 0], [1, 1], [-1, 1], [1, -1], [-1, -1]]) { t += chmAt(cx + dx, cz + dz); n++; }
+        if (t / n > low + 2) tall[j * cols + i] = t / n;
+      }
+      // runs along x, then runs of the same span and much the same height joined along z
+      const runs = [];
+      for (let j = 0; j < rows; j++) for (let i = 0; i < cols;) {
+        if (!tall[j * cols + i]) { i++; continue; }
+        let k = i, sum = 0; const h0 = tall[j * cols + i];
+        while (k < cols && tall[j * cols + k] && Math.abs(tall[j * cols + k] - h0) < 1.5) { sum += tall[j * cols + k]; k++; }
+        runs.push({ i0: i, i1: k, j0: j, j1: j + 1, h: sum / (k - i) }); i = k;
+      }
+      const out2 = [];
+      for (const r of runs) { const m = out2.find((o) => o.i0 === r.i0 && o.i1 === r.i1 && o.j1 === r.j0 && Math.abs(o.h - r.h) < 1.5); if (m) { m.h = (m.h * (m.j1 - m.j0) + r.h) / (m.j1 - m.j0 + 1); m.j1 = r.j1; } else out2.push(Object.assign({}, r)); }
+      const big = out2.filter((o) => (o.i1 - o.i0) * (o.j1 - o.j0) >= 4).sort((p, q) => (q.i1 - q.i0) * (q.j1 - q.j0) - (p.i1 - p.i0) * (p.j1 - p.j0)).slice(0, 40);
+      if (big.length) b.up = [].concat(...big.map((o) => [r1(x0 + o.i0 * G2), r1(z0 + o.j0 * G2), r1(x0 + o.i1 * G2), r1(z0 + o.j1 * G2), Math.round(o.h * 10)]));
+    }
+    if (cr.length >= 4) b.c = (pct(cr, 0.5) << 16) | (pct(cg, 0.5) << 8) | pct(cb, 0.5);
+  }
   buildings.push(b);
 };
 for (const w of ways) { const t = T(w); if (t.building && w.nodes[0] === w.nodes[w.nodes.length - 1]) addBuilding(t, ring(w)); }
@@ -365,10 +427,12 @@ for (const n of nodes.values()) {
 
 /* ------------------------------------------------------------------ heights */
 const dem = readTiff(demFile);
+if (!dem.geo) throw new Error('the height picture does not say where it lies');
+if (dem.geo.w > BOX.w || dem.geo.e < BOX.e || dem.geo.s > BOX.s || dem.geo.n < BOX.n) console.warn('WARNING: the height picture does not cover the whole box');
 const demAt = (x, z) => {
   // (x west-positive) -> lon, lat -> the picture's pixel, bilinear
   const lon = ORIGIN.lon - x / M_LON, lat = ORIGIN.lat + z / M_LAT;
-  let u = (lon - DEM_BOX.w) / (DEM_BOX.e - DEM_BOX.w) * dem.w - 0.5, v = (DEM_BOX.n - lat) / (DEM_BOX.n - DEM_BOX.s) * dem.h - 0.5;
+  let u = (lon - dem.geo.w) / dem.geo.px - 0.5, v = (dem.geo.n - lat) / dem.geo.py - 0.5;
   u = Math.max(0, Math.min(dem.w - 1.001, u)); v = Math.max(0, Math.min(dem.h - 1.001, v));
   const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
   const d = dem.data, w = dem.w;
@@ -438,6 +502,61 @@ for (let j = 1; j < hnz - 1; j++) for (let i = 1; i < hnx - 1; i++) {
   maxCurv = Math.max(maxCurv, Math.abs(H[k - 1] + H[k + 1] - 2 * H[k]) / (HS * HS), Math.abs(H[k - hnx] + H[k + hnx] - 2 * H[k]) / (HS * HS));
 }
 
+/* ---------------------------------------------------------------- the trees
+   Every real tree: the tops in the lidar's canopy (a cell higher than all
+   round it), tallest first, each keeping others its own crown's width away. */
+let treeBuf = null, treeN = 0;
+if (chm) {
+  const W = RW, Hh = RH, C = new Float32Array(W * Hh);
+  for (let j = 0; j < Hh; j++) for (let i = 0; i < W; i++) C[j * W + i] = chmAt(B.x1 - i - 0.5, B.z1 - j - 0.5);
+  // not the buildings (nor the metre round them, where the survey smears a roof's edge)
+  for (const P of outlines) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of P) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); }
+    for (let j = Math.max(0, Math.floor(B.z1 - z1 - 2)); j <= Math.min(Hh - 1, Math.ceil(B.z1 - z0 + 2)); j++) for (let i = Math.max(0, Math.floor(B.x1 - x1 - 2)); i <= Math.min(W - 1, Math.ceil(B.x1 - x0 + 2)); i++) {
+      const x = B.x1 - i - 0.5, z = B.z1 - j - 0.5;
+      if ([[0, 0], [1.3, 0], [-1.3, 0], [0, 1.3], [0, -1.3]].some(([dx, dz]) => pointInPoly(x + dx, z + dz, P))) C[j * W + i] = 0;
+    }
+  }
+  const S2 = new Float32Array(W * Hh);
+  for (let j = 1; j < Hh - 1; j++) for (let i = 1; i < W - 1; i++) { let t = 0; for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) t += C[(j + b) * W + i + a]; S2[j * W + i] = t / 9; }
+  const tops = [];
+  for (let j = 3; j < Hh - 3; j++) for (let i = 3; i < W - 3; i++) {
+    const h = S2[j * W + i];
+    if (h < 4.5) continue;
+    let top = true;
+    for (let b = -2; b <= 2 && top; b++) for (let a = -2; a <= 2; a++) if ((a || b) && S2[(j + b) * W + i + a] > h) { top = false; break; }
+    if (top) tops.push({ i, j, h: Math.max(h, C[j * W + i]) });
+  }
+  tops.sort((a, b) => b.h - a.h);
+  const cell = new Map(), kept = [];
+  const near = (t, fn) => { for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) { const L = cell.get((Math.floor(t.i / 10) + a) + ':' + (Math.floor(t.j / 10) + b)); if (L) for (const o of L) fn(o); } };
+  for (const t of tops) {
+    const need = Math.max(3.5, Math.min(9, 0.22 * t.h + 2.2));
+    let ok = true;
+    near(t, (o) => { if (Math.hypot(o.i - t.i, o.j - t.j) < Math.max(need, o.need * 0.8)) ok = false; });
+    if (!ok) continue;
+    t.need = need;
+    const k = Math.floor(t.i / 10) + ':' + Math.floor(t.j / 10);
+    if (!cell.has(k)) cell.set(k, []);
+    cell.get(k).push(t); kept.push(t);
+  }
+  treeBuf = Buffer.alloc(kept.length * 10);
+  kept.forEach((t, n) => {
+    let d = 30; near(t, (o) => { if (o !== t) d = Math.min(d, Math.hypot(o.i - t.i, o.j - t.j)); });
+    const r = Math.max(1.5, Math.min(8, Math.min(0.6 * d, 0.2 * t.h + 1.6)));
+    const x = B.x1 - t.i - 0.5, z = B.z1 - t.j - 0.5;
+    let cr = 70, cg = 105, cb = 55;
+    if (rgb) { let a = 0, b = 0, c = 0, m = 0; for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const q = rgbAt(x + dx, z + dz); if (q) { a += q[0]; b += q[1]; c += q[2]; m++; } } if (m) { cr = a / m; cg = b / m; cb = c / m; } }
+    const lum = 0.3 * cr + 0.59 * cg + 0.11 * cb;
+    const fir = t.h >= 21 || (t.h >= 12 && lum < 66);
+    treeBuf.writeInt16LE(Math.round(x * 10), n * 10); treeBuf.writeInt16LE(Math.round(z * 10), n * 10 + 2);
+    treeBuf[n * 10 + 4] = Math.min(255, Math.round(t.h * 5)); treeBuf[n * 10 + 5] = Math.round(r * 10);
+    treeBuf[n * 10 + 6] = Math.round(cr); treeBuf[n * 10 + 7] = Math.round(cg); treeBuf[n * 10 + 8] = Math.round(cb); treeBuf[n * 10 + 9] = fir ? 1 : 0;
+  });
+  treeN = kept.length;
+}
+
 /* ------------------------------------------------------------------- output */
 const out = {
   name: 'South Eugene',
@@ -447,6 +566,12 @@ const out = {
   dem: { x0: hx0, z0: hz0, step: HS, nx: hnx, nz: hnz, base: BASE, q: q.toString('base64') },
   names, nodes: jn.map((j) => [r1(j.x), r1(j.z), j.cut ? 1 : 0]), edges, lanes, areas, buildings, streams, points, places
 };
+if (rgb) {
+  // the aerial photo, as textures (tools/city/photo.py): four quarters of the 1536 m square round the origin, and the whole of it small
+  out.photo = { dir: 'eugene/', half: 768, quarters: ['q00.jpg', 'q01.jpg', 'q10.jpg', 'q11.jpg'], all: 'all.jpg' };
+  out.credit = 'Map data \u00a9 OpenStreetMap contributors (ODbL). Aerial photo: Oregon Statewide Imagery Program, 2022. Heights: USGS 3DEP and Oregon DOGAMI lidar.';
+}
+if (treeBuf) out.trees = { n: treeN, q: treeBuf.toString('base64') };
 const js = '/* aiPolytrack city data: South Eugene. Made by tools/city/osm2city.js: edit that, not this.\n' +
   '   Map data (c) OpenStreetMap contributors, Open Database License (openstreetmap.org/copyright).\n' +
   '   Heights: U.S. Geological Survey 3D Elevation Program (public domain). */\n' +
@@ -461,4 +586,5 @@ console.log('junctions', jn.length, 'street stretches', edges.length, 'street km
 console.log('lanes', lanes.length, 'areas', JSON.stringify(ak), 'buildings', buildings.length, JSON.stringify(kinds));
 console.log('streams', streams.length, 'points', Object.entries(points).map(([k, v]) => k + ':' + v.length / 2).join(' '), 'places', places.length);
 console.log('heights', hnx, 'x', hnz, 'range', (lo - BASE).toFixed(1), '..', (hi - BASE).toFixed(1), 'm above', BASE, 'max curvature', maxCurv.toFixed(4), '/m');
+console.log('lidar: buildings with a real height', buildings.filter((b) => b.h).length, 'of', buildings.length, '| real trees', treeN, '| roofs with a real colour', buildings.filter((b) => b.c !== undefined).length);
 console.log('wrote', dest, (js.length / 1024).toFixed(0), 'KB');

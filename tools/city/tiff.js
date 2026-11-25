@@ -40,7 +40,12 @@ function readTiff(file) {
       for (let y = 0; y < rows && s * rows + y < h; y++) for (let x = 0; x < w; x++) data[(s * rows + y) * w + x] = b.readFloatLE(o + (y * w + x) * 4);
     });
   }
-  return { w, h, data, tags: tag };
+  // Where it lies, from the file itself. NEVER assume it is the box that was
+  // asked for: asked for a size whose shape is not the box's (in degrees), the
+  // server widens the box to fit, about its middle.
+  const sc = tag[33550], tp = tag[33922];
+  const geo = sc && tp ? { w: tp[3], n: tp[4], px: sc[0], py: sc[1], e: tp[3] + sc[0] * w, s: tp[4] - sc[1] * h } : null;
+  return { w, h, data, tags: tag, geo };
 }
 module.exports = { readTiff };
 
@@ -48,7 +53,7 @@ if (require.main === module) {
   const t = readTiff(process.argv[2]);
   let lo = Infinity, hi = -Infinity;
   for (const v of t.data) { if (v < -1000) continue; lo = Math.min(lo, v); hi = Math.max(hi, v); }
-  console.log(t.w, t.h, 'min', lo.toFixed(2), 'max', hi.toFixed(2), 'tiled', !!t.tags[322]);
+  console.log(t.w, t.h, 'min', lo.toFixed(2), 'max', hi.toFixed(2), 'tiled', !!t.tags[322], 'lies at', JSON.stringify(t.geo));
   // a coarse picture: 20 columns x 16 rows of heights (m)
   for (let r = 0; r < 16; r++) {
     let line = '';

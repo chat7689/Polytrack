@@ -96,7 +96,7 @@ g.CityKit = function (env) {
     opts = opts || {};
     const detail = opts.detail === undefined ? 2 : opts.detail;        // the scenery setting: 0 light, 1 medium, 2 full
     const BOX = data.box;
-    const city = { name: data.name, credit: data.credit, box: BOX, places: [], data };
+    const city = { name: data.name, credit: data.credit, box: BOX, places: [], data, opts };
 
     /* ---------------------------------------------------------------- heights */
     const D = data.dem, raw = b64(D.q), H = new Float32Array(D.nx * D.nz);
@@ -397,14 +397,25 @@ g.CityKit = function (env) {
 
     /* ----------------------------------------------------- streets as layers */
     const C = {}; for (const k in COL) C[k] = rgb(COL[k]);
+    /* With the aerial photo on the ground, the photo IS the verges, drives,
+       car parks, paths and pitches: those layers are still there for the
+       wheels but are not drawn. The streets keep their own clean tarmac, kerb,
+       paint and a strip of pavement (a photo at 40 cm a pixel is a blur under
+       the car, and half the streets lie under trees in it). */
+    const photo = !!data.photo && opts.photo !== false;
+    city.photo = photo;
     for (const E of edges) {
       physOnly = true;
       ribbon('walk', C.walk, E.pts, (E.hWalk - E.hw) / 2 + 0.2, { off: (E.hWalk + E.hw) / 2 - 0.2 });
       ribbon('walk', C.walk, E.pts, (E.hWalk - E.hw) / 2 + 0.2, { off: -(E.hWalk + E.hw) / 2 + 0.2 });
       physOnly = false; noPhys = true;
-      ribbon('walk', C.walk, E.pts, E.hWalk);
+      if (!photo) ribbon('walk', C.walk, E.pts, E.hWalk);
+      else for (const sd of [1, -1]) {
+        if (E.verge) ribbon('walk', C.walk, E.pts, 0.8, { off: sd * (E.hVerge + 0.8) });
+        else ribbon('walk', C.walk, E.pts, (E.hWalk - E.hKerb) / 2 + 0.1, { off: sd * (E.hWalk + E.hKerb) / 2 });
+      }
       noPhys = false;
-      if (E.verge) ribbon('verge', C.verge, E.pts, E.hVerge);
+      if (E.verge && !photo) ribbon('verge', C.verge, E.pts, E.hVerge);
       ribbon('kerb', C.kerb, E.pts, E.hKerb);
       const S = ribbon('road', C.road, E.pts, E.hw);
       occLine(E.pts, E.hWalk, 2, true);
@@ -423,9 +434,9 @@ g.CityKit = function (env) {
       n.rRoad = Math.max.apply(null, n.edges.map((E) => E.hw));
       if (straight || (n.cut && n.edges.length === 1)) continue;
       noPhys = true;
-      flatDisc('walk', C.walk, n.x, n.z, Math.max.apply(null, n.edges.map((E) => E.hWalk)));
+      if (!photo) flatDisc('walk', C.walk, n.x, n.z, Math.max.apply(null, n.edges.map((E) => E.hWalk)));
       noPhys = false;
-      if (n.edges.some((E) => E.verge)) flatDisc('verge', C.verge, n.x, n.z, Math.max.apply(null, n.edges.map((E) => (E.verge ? E.hVerge : 0))));
+      if (!photo && n.edges.some((E) => E.verge)) flatDisc('verge', C.verge, n.x, n.z, Math.max.apply(null, n.edges.map((E) => (E.verge ? E.hVerge : 0))));
       flatDisc('kerb', C.kerb, n.x, n.z, Math.max.apply(null, n.edges.map((E) => E.hKerb)));
       flatDisc('road', C.road, n.x, n.z, n.rRoad);
     }
@@ -460,6 +471,7 @@ g.CityKit = function (env) {
     }
 
     /* ------------------------------------------------ lanes, paths, car parks */
+    physOnly = photo;
     for (const l of lanes) {
       if (l.k === 'f') { ribbon('walk', C.walk, l.pts, l.w / 2, { gap: 12 }); occLine(l.pts, l.w / 2, 2, true); }
       else { ribbon('lot', C.lot, l.pts, l.w / 2, { gap: 12 }); occLine(l.pts, l.w / 2, 3, true); }
@@ -501,6 +513,7 @@ g.CityKit = function (env) {
       else if (a.k === 'water' && !a.channel) occPoly(a.P, 5, 1);
     }
     for (const s of streams) if (!s.culvert) occLine(s.pts, CREEK.top, 5, true);
+    physOnly = false;
     // marked crossings: white bars along the road, side by side across it
     {
       const cr = (data.points && data.points.crossing) || [];
@@ -523,7 +536,8 @@ g.CityKit = function (env) {
     city._ = { acc, accs, drape, flatQuad, flatPoly, flatDisc, ribbon, stations, occ, occLine, occPoly, onx, onz, OS, C, rgb, Hs, HsN, smooth, groundY, R, tnx, tnz, stride, nx, nz, fx0, fz0, fh, triangulate, inPoly, polyArea, distSeg, hash2, rng, pairs, detail, LAYER, COL, exact };
 
     /* -------------------------------------------------------------- buildings */
-    city.buildings = data.buildings.map((b, i) => ({ i, k: b.k, lv: b.l || 0, name: b.n || '', tag: b.t || '', P: pairs(b.p) }));
+    city.buildings = data.buildings.map((b, i) => ({ i, k: b.k, lv: b.l || 0, name: b.n || '', tag: b.t || '', P: pairs(b.p),
+      hh: b.h ? [b.h[0] / 10, b.h[1] / 10] : null, rc: b.c, up: b.up || null }));
     const vis = opts.visual !== false;
     if (opts.special) city.special = opts.special;
     dress(city, vis);
@@ -971,13 +985,30 @@ g.CityKit = function (env) {
       else { levels = levels || 1; wallHex = pick(PAL.shop, h1); roof = 'flat'; }
       const LK = b.k === 'c' || b.k === 'S' || b.k === 'w' ? lookFor(b) : null;
       if (LK) { levels = LK.levels || levels; st = LK.st || st; wallHex = LK.wall || wallHex; if (LK.pitch) roof = 'gable'; else if (b.k !== 'w') roof = 'flat'; if (LK.roof) roofHex = LK.roof; }
+      /* How tall it really is (the lidar: the height of the lower quarter of
+         its roof, and of the top tenth). A pitched roof's eaves and ridge
+         follow from those two; a flat-roofed building's walls stand to the
+         lower figure, and its taller parts are boxes on top (b.up). Trees
+         overhang houses, so a house's figures are kept within reason. */
+      let rise = -1;
+      if (b.hh && b.k !== 'r') {
+        const small = b.k === 'h' || b.k === 'g' || b.k === 's' || b.k === 'w' || (b.k === 'a' && roof !== 'flat');
+        let eave;
+        if (small) { rise = Math.min((b.hh[1] - b.hh[0]) / 0.65, b.k === 'w' ? 9 : 4.6); eave = Math.max(2.2, Math.min(b.k === 'w' ? 12 : 7.5, b.hh[0] - 0.25 * rise)); if (rise < 1) { eave += rise * 0.5; rise = 0; } }
+        else { eave = Math.max(2.6, Math.min(40, b.hh[0])); rise = LK && LK.pitch ? Math.min(6, (b.hh[1] - b.hh[0]) / 0.65) : 0; if (LK && LK.pitch) eave = Math.max(3, b.hh[0] - 0.25 * rise); }
+        const nominal = b.k === 'c' || b.k === 'S' ? 4.2 : b.k === 'w' ? 9 : b.k === 'g' || b.k === 's' ? 9 : 2.9;
+        levels = LK && LK.levels && b.k === 'S' ? LK.levels : Math.max(1, Math.round((eave - floorUp) / nominal));
+        st = (eave - floorUp) / levels;
+        if (rise === 0 && b.k !== 'w') roof = 'flat'; else if (roof === 'flat' && small) roof = h3 < 0.3 ? 'hip' : 'gable';
+      }
+      if (b.rc !== undefined) roofHex = b.rc;
       const yf = y1 + floorUp, ye = yf + levels * st;
       b.yf = yf; b.ye = ye; b.levels = levels; b.storey = st; b.top = ye;
       U.occPoly(P, b.k === 'r' ? 7 : 4, 0.6);
       b.wallHex = wallHex; b.roofHex = roofHex; b.roof = roof; b.h = [h1, h2, h3];
       // a named public building can have its own look (city.special); it says what it built
       if (city.special) { const sp = city.special(b, vis); if (sp) { specials.push(b); continue; } }
-      if (vis) shell(b, wallHex, roof === 'flat' || roof === 'canopy' ? (LK && LK.roof ? LK.roof : b.k === 'h' || b.k === 'a' ? TAR : 0xb9bab6) : roofHex, roof !== 'flat' && roof !== 'canopy' && O && O.b1 - O.b0 <= 15 ? (b.k === 'w' ? 0.95 : 0.5) : 0, roof === 'canopy' ? ye - 0.1 : y0 - 0.4);
+      if (vis) shell(b, wallHex, b.rc !== undefined ? b.rc : roof === 'flat' || roof === 'canopy' ? (LK && LK.roof ? LK.roof : b.k === 'h' || b.k === 'a' ? TAR : 0xb9bab6) : roofHex, roof !== 'flat' && roof !== 'canopy' && O && O.b1 - O.b0 <= 15 ? (b.k === 'w' ? 0.95 : 0.5) : 0, roof === 'canopy' ? ye - 0.1 : y0 - 0.4);
       if (roof === 'canopy') {
         // a roof on posts (a filling station's canopy, a car port): only the posts are solid
         if (O) for (const [s, t] of [[O.a0 + 0.6, O.b0 + 0.6], [O.a1 - 0.6, O.b0 + 0.6], [O.a1 - 0.6, O.b1 - 0.6], [O.a0 + 0.6, O.b1 - 0.6]]) {
@@ -1069,7 +1100,8 @@ g.CityKit = function (env) {
       // the roof
       let ridge = null;
       const rects = O && roof !== 'flat' ? rectsOf(P, O) : null;
-      const pitch = b.k === 'w' ? 0.95 : b.k === 'g' || b.k === 's' ? 0.38 : 0.42 + h2 * 0.22;
+      let pitch = b.k === 'w' ? 0.95 : b.k === 'g' || b.k === 's' ? 0.38 : 0.42 + h2 * 0.22;
+      if (rise > 0 && O) { const half = (rects && rects.length ? Math.max.apply(null, rects.map((r) => Math.min(r.a1 - r.a0, r.b1 - r.b0))) : O.b1 - O.b0) / 2; pitch = Math.max(0.18, Math.min(1.3, rise / Math.max(half, 1.5))); }
       if (roof !== 'flat' && rects && Math.max.apply(null, rects.map((r) => Math.min(r.a1 - r.a0, r.b1 - r.b0))) <= 15) {
         for (const r of rects) {
           if (Math.min(r.a1 - r.a0, r.b1 - r.b0) < 1.6) { quad(a, rc, [r.a0 * O.ux + r.b0 * O.vx, ye + 0.02, r.a0 * O.uz + r.b0 * O.vz], [r.a1 * O.ux + r.b0 * O.vx, ye + 0.02, r.a1 * O.uz + r.b0 * O.vz], [r.a1 * O.ux + r.b1 * O.vx, ye + 0.02, r.a1 * O.uz + r.b1 * O.vz], [r.a0 * O.ux + r.b1 * O.vx, ye + 0.02, r.a0 * O.uz + r.b1 * O.vz], [cx, ye - 3, cz]); continue; }
@@ -1082,7 +1114,13 @@ g.CityKit = function (env) {
       } else {
         // a flat roof behind a low parapet
         walls(a, P, ye, ye + (LK && LK.cap ? 0.75 : 0.5), LK && LK.cap ? T(LK.cap) : wc, I);
-        flatRoof(a, P, ye + 0.12, T(LK && LK.roof ? LK.roof : b.k === 'c' || b.k === 'S' ? (h3 < 0.5 ? TAR : 0xb9bab6) : TAR));
+        flatRoof(a, P, ye + 0.12, T(b.rc !== undefined ? b.rc : LK && LK.roof ? LK.roof : b.k === 'c' || b.k === 'S' ? (h3 < 0.5 ? TAR : 0xb9bab6) : TAR));
+        // its taller parts (a hall, a stage, a second floor): each a box on the roof
+        if (b.up) for (let k = 0; k < b.up.length; k += 5) {
+          const R = [{ x: b.up[k] / 10, z: b.up[k + 1] / 10 }, { x: b.up[k + 2] / 10, z: b.up[k + 1] / 10 }, { x: b.up[k + 2] / 10, z: b.up[k + 3] / 10 }, { x: b.up[k] / 10, z: b.up[k + 3] / 10 }], top = y1 + b.up[k + 4] / 10;
+          if (top < ye + 1.2) continue;
+          walls(a, R, ye + 0.1, top, wc); flatRoof(a, R, top, rc);
+        }
         if ((b.k === 'c' || b.k === 'S' || b.k === 'a') && b.area > 160 && O) {
           const n = b.area > 900 ? 3 : b.area > 350 ? 2 : 1;
           for (let k = 0; k < n; k++) { const s = O.a0 + (O.a1 - O.a0) * (0.25 + 0.5 * hash2(b.i, k * 3 + 1)), t = O.b0 + (O.b1 - O.b0) * (0.3 + 0.4 * hash2(b.i, k * 3 + 2)), x = s * O.ux + t * O.vx, z = s * O.uz + t * O.vz; if ([[0, 0], [2.2, 0], [-2.2, 0], [0, 2.2], [0, -2.2], [1.8, 1.8], [-1.8, 1.8], [1.8, -1.8], [-1.8, -1.8]].every(([dx, dz]) => U.inPoly(x + dx, z + dz, P))) box(ax, T(0x8f9396), x, ye + 0.12 + 0.55, z, 1.1, 0.55, 0.8, Math.atan2(O.ux, O.uz), true); }
@@ -1112,9 +1150,24 @@ g.CityKit = function (env) {
       return true;
     };
     const R0 = U.rng(20261121);
+    const real = city.data.trees;
+    if (real) {
+      // every real tree, from the lidar: where it stands, how tall, how wide, and its colour in the photo
+      // (the 2 m grid of what stands where is too coarse for a trunk at a kerb: the streets themselves are asked)
+      const segs = []; for (const E of edges) for (let k = 0; k < E.pts.length - 1; k++) segs.push([E.pts[k], E.pts[k + 1], E.hw + 0.7]);
+      const onRoad = (x, z) => { for (const g of segs) { if (Math.abs(g[0].x - x) > 90 && Math.abs(g[1].x - x) > 90) continue; if (U.distSeg(x, z, g[0], g[1]) < g[2]) return true; } for (const n of city.nodes) if (n.rRoad && Math.hypot(n.x - x, n.z - z) < n.rRoad + 0.7) return true; return false; };
+      const q = b64(real.q), free = (x, z) => { const o = occAt(x, z); return (o === 0 || o === 2 || o === 6) && !onRoad(x, z); };
+      for (let n = 0; n < real.n; n++) {
+        const k = n * 10, i16 = (o) => { const v = q[o] | (q[o + 1] << 8); return v > 32767 ? v - 65536 : v; };
+        let x = i16(k) / 10, z = i16(k + 2) / 10;
+        // (its top is not always over its foot: a trunk never stands in a road, a car park or a wall)
+        if (!free(x, z)) { let moved = false; for (const d of [1.6, 3.2, 4.8]) { for (let a = 0; a < 8 && !moved; a++) { const nx2 = x + Math.cos(a * 0.785) * d, nz2 = z + Math.sin(a * 0.785) * d; if (free(nx2, nz2)) { x = nx2; z = nz2; moved = true; } } if (moved) break; } if (!moved) continue; }
+        trees.push({ x, z, h: q[k + 4] / 5, r: q[k + 5] / 10, col: (q[k + 6] << 16) | (q[k + 7] << 8) | q[k + 8], fir: !!q[k + 9] });
+      }
+    }
     // along the streets, in the verge
     for (const E of edges) {
-      if (!E.verge || E.len < 40) continue;
+      if (real || !E.verge || E.len < 40) continue;
       const S = U.stations(E.pts, 4);
       for (const side of [1, -1]) {
         let next = 12 + R0() * 8;
@@ -1142,11 +1195,11 @@ g.CityKit = function (env) {
         trees.push({ x: jx, z: jz, fir: f < firShare, h: (big ? 13 : 8) + hh * (big ? 12 : 8) });
       }
     };
-    for (const a of city.areas) {
+    if (!real) for (const a of city.areas) {
       if (a.k === 'wood') scatter(a.P, 8, 0.8, 0.6, true);
       else if (a.k === 'park' || a.k === 'grass') scatter(a.P, 20, a.k === 'park' ? 0.5 : 0.25, 0.3, true);
     }
-    {
+    if (!real) {
       const B = city.box, step = 13;
       for (let z = B.z0 + 6; z < B.z1 - 6; z += step) for (let x = B.x0 + 6; x < B.x1 - 6; x += step) {
         const jx = x + (R0() - 0.5) * step * 0.8, jz = z + (R0() - 0.5) * step * 0.8, c = R0(), f = R0(), hh = R0();
@@ -1157,9 +1210,11 @@ g.CityKit = function (env) {
       const pts = city.data.points.tree || [];
       for (let k = 0; k < pts.length; k += 2) if (treeOK(pts[k] / 10, pts[k + 1] / 10, 1)) trees.push({ x: pts[k] / 10, z: pts[k + 1] / 10, fir: false, h: 11 });
     }
+    /** a tree's colour from the photo, drawn part of the way to a plain leaf green (the photo has each crown's own shadow in it) */
+    const leaf = (hex, keep) => { const a = T(hex), g0 = T(0x5a9a48); return [a[0] * keep + g0[0] * (1 - keep), a[1] * keep + g0[1] * (1 - keep), a[2] * keep + g0[2] * (1 - keep)]; };
     for (const t of trees) {
       const y = city.groundY(t.x, t.z), r = t.fir ? 0.3 : 0.26;
-      solidBox(t.x, y - 1, y + 4, t.z, r, r, hash2(t.x * 9, t.z * 9) * 1.5);
+      { const a0 = hash2(t.x * 9, t.z * 9) * 2, R3 = r * 1.3; wallSolids(city, [0, 1, 2].map((k) => ({ x: t.x + Math.cos(a0 + k * 2.0944) * R3, z: t.z + Math.sin(a0 + k * 2.0944) * R3 })), y - 1, y + 4); }
       if (!vis) continue;
       const h = t.h, hh = hash2(Math.round(t.x * 5), Math.round(t.z * 5)), yaw = hh * 6.28;
       const tk = T(TRUNK);
@@ -1172,13 +1227,14 @@ g.CityKit = function (env) {
         const band = (col, b0, b1) => { for (let k = 0; k < sides; k++) quad(a, col, b0[k], b0[(k + 1) % sides], b1[(k + 1) % sides], b1[k], [t.x, (b0[0][1] + b1[0][1]) / 2, t.z]); };
         if (!far) { const b0 = [], b1 = [], th = t.fir ? h * 0.22 : h * 0.36; for (let k = 0; k < 3; k++) { const an = yaw + k * 2.0944; b0.push([t.x + Math.cos(an) * r * 1.2, y - 0.3, t.z + Math.sin(an) * r * 1.2]); b1.push([t.x + Math.cos(an) * r * 0.8, y + th, t.z + Math.sin(an) * r * 0.8]); } for (let k = 0; k < 3; k++) quad(a, tk, b0[k], b0[(k + 1) % 3], b1[(k + 1) % 3], b1[k], [t.x, y + 1, t.z]); }
         if (t.fir) {
-          const col = T(PAL.fir[Math.floor(hh * 4) % 4]), col2 = T(PAL.fir[Math.floor(hh * 4 + 1) % 4]), w = h * 0.2;
+          const own = t.col !== undefined ? leaf(t.col, 0.55) : null;
+          const col = own || T(PAL.fir[Math.floor(hh * 4) % 4]), col2 = own ? own.map((v) => v * 0.86) : T(PAL.fir[Math.floor(hh * 4 + 1) % 4]), w = t.r ? Math.min(t.r, h * 0.24) : h * 0.2;
           if (far) cone(col, ring(y + h * 0.18, w, 0), [t.x, y + h, t.z]);
           else { cone(col, ring(y + h * 0.18, w, 0), [t.x, y + h * 0.62, t.z]); cone(col2, ring(y + h * 0.45, w * 0.7, 0.5), [t.x, y + h, t.z]); }
         } else {
           // an autumn tree here and there (it is November)
           const au = hash2(Math.round(t.x * 3) + 7, Math.round(t.z * 3)) < 0.3;
-          const col = T((au ? PAL.autumn : PAL.leaf)[Math.floor(hh * 5) % 5]), low = col.map((v) => v * 0.9), w = h * (0.27 + hh * 0.09);
+          const col = t.col !== undefined ? leaf(t.col, 0.4) : T((au ? PAL.autumn : PAL.leaf)[Math.floor(hh * 5) % 5]), low = col.map((v) => v * 0.9), w = t.r ? Math.min(t.r, h * 0.6) : h * (0.27 + hh * 0.09);
           const top = [t.x + (hh - 0.5) * 0.6, y + h, t.z];
           if (far) { const r1 = ring(y + h * 0.56, w, 0.4); cone(col, r1, top); cone(low, r1.slice().reverse(), [t.x, y + h * 0.3, t.z]); }
           else {
@@ -1334,13 +1390,30 @@ g.CityKit = function (env) {
     const U = city._, nx = U.nx, fx0 = U.fx0, fz0 = U.fz0, fh = U.fh, rgb = U.rgb;
     const root = new THREE.Group();
     const std = (o) => new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: 0.92, metalness: 0 }, o));
-    const mats = { terrain: std({ roughness: 1 }), bld: std({ flatShading: true, roughness: 0.86, map: facades() }), bldf: std({ flatShading: true, roughness: 0.86 }), tree: std({ flatShading: true, roughness: 1 }),
+    const mats = { terrain: std({ roughness: 1 }), bld: std({ flatShading: true, roughness: 0.86, map: facades() }), bldf: std({ flatShading: true, roughness: 0.86 }), tree: std({ flatShading: true, roughness: 1, emissive: 0x010402 }),
       water: std({ flatShading: true, roughness: 0.18, metalness: 0.3 }), flat: std({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
     // (a wall's colour tints only the picture's wall: its alpha says where that is)
     mats.bld.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', 'diffuseColor.rgb *= mix(vec3(1.0), vColor, diffuseColor.a); diffuseColor.a = 1.0;'); };
     mats.flat.onBeforeCompile = (sh) => {
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aLayer;')
         .replace('#include <project_vertex>', '#include <project_vertex>\n\tgl_Position.z -= aLayer * 2.4e-7 * gl_Position.w;');
+    };
+    /* The aerial photo on the ground: four quarters of the 1536 m square round
+       the origin (or the whole square in one small picture, for slow
+       computers). Until a picture has loaded its ground is plain green. */
+    const ph = city.photo && typeof document !== 'undefined' ? city.data.photo : null, PH = ph ? ph.half : 0, lowPhoto = !!(city.opts && city.opts.photoLow);
+    const terrMat = (file) => {
+      const m = std({ roughness: 1 });
+      m.color.setRGB.apply(m.color, rgb(0x5a8f45));
+      new THREE.TextureLoader().load((env.base || 'maps/') + ph.dir + file, (t) => { t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; m.map = t; m.color.setRGB(1, 1, 1); m.needsUpdate = true; });
+      return m;
+    };
+    if (ph) { if (lowPhoto) mats.terrAll = terrMat(ph.all); else ph.quarters.forEach((f, k) => { mats['terr' + k] = terrMat(f); }); }
+    /** which picture (x, z) is in, and where in it */
+    const photoOf = (x, z) => {
+      if (lowPhoto) return { g: 'terrAll', u0: PH, v0: -PH, k: 1 / (2 * PH) };
+      const i = x >= 0 ? 0 : 1, j = z >= 0 ? 1 : 0;
+      return { g: 'terr' + (i * 2 + j), u0: i ? 0 : PH, v0: j ? 0 : -PH, k: 1 / PH };
     };
     city.mats = mats;
     const chunks = new Map();
@@ -1358,7 +1431,7 @@ g.CityKit = function (env) {
       m.castShadow = (group === 'bld' || group === 'tree') && !far;
       m.visible = !far;
       if (far !== undefined) chunkOf(key)[far ? 'far' : 'near'].push(m);
-      m.userData.group = group;
+      m.userData.group = /^terr/.test(group) ? 'terrain' : group;
       chunkOf(key).g.add(m);
       tris += (geo.index ? geo.index.count : geo.attributes.position.count) / 3;
       return m;
@@ -1405,9 +1478,11 @@ g.CityKit = function (env) {
     for (const a of city.areas) { if (a.k === 'wood') paintArea(a.P, 2); }
     const CV = [rgb(COL.yard), rgb(COL.park), rgb(COL.wood), rgb(COL.grass), rgb(0x6b8048)], MUD = rgb(COL.mud), FAR = rgb(0x5a8f45);
     const B = city.box;
+    let PQ = null, uvA = null;
     const vertex = (i, j, s, drop, pos, col, nrm, o) => {
       const k = j * nx + i, x = fx0 + i * FS, z = fz0 + j * FS;
       pos[o] = x; pos[o + 1] = fh[k] - drop; pos[o + 2] = z;
+      if (PQ) { uvA[o / 3 * 2] = (PQ.u0 - x) * PQ.k; uvA[o / 3 * 2 + 1] = (z - PQ.v0) * PQ.k; }
       const hl = fh[j * nx + Math.max(0, i - s)], hr = fh[j * nx + Math.min(nx - 1, i + s)], hd = fh[Math.max(0, j - s) * nx + i], hu = fh[Math.min(U.nz - 1, j + s) * nx + i];
       const gx = (hr - hl) / (2 * s * FS), gz = (hu - hd) / (2 * s * FS), l = Math.hypot(gx, 1, gz);
       nrm[o] = -gx / l; nrm[o + 1] = 1 / l; nrm[o + 2] = -gz / l;
@@ -1415,6 +1490,7 @@ g.CityKit = function (env) {
       if (city.carve[k] > 0.5) c = MUD;
       if (Math.max(B.x0 - x, x - B.x1, B.z0 - z, z - B.z1) > 10) c = FAR;
       const v = 0.92 + 0.16 * U.hash2(i * 3 + 1, j * 3 + 2);
+      if (PQ) { col[o] = col[o + 1] = col[o + 2] = 1; return; }
       col[o] = c[0] * v; col[o + 1] = c[1] * v; col[o + 2] = c[2] * v;
     };
     const grid = (n, base, idx, q) => {
@@ -1430,6 +1506,9 @@ g.CityKit = function (env) {
       let nv = 0, ni = 0;
       for (const [tx, tz] of tiles) { const n = TN / U.stride[tz * U.tnx + tx] + 1; nv += n * n; ni += (n - 1) * (n - 1) * 6; }
       const pos = new Float32Array(nv * 3), col = new Float32Array(nv * 3), nrm = new Float32Array(nv * 3), idx = new Uint32Array(ni);
+      PQ = ph ? photoOf((cx + 0.5) * CHUNK, (cz + 0.5) * CHUNK) : null;
+      const tg = PQ ? PQ.g : 'terrain', uv1 = PQ ? new Float32Array(nv * 2) : null;
+      uvA = uv1;
       let o = 0, q = 0, allFar = true;
       for (const [tx, tz] of tiles) {
         const s = U.stride[tz * U.tnx + tx], n = TN / s + 1, base = o / 3;
@@ -1439,11 +1518,14 @@ g.CityKit = function (env) {
       }
       const ck = cx + ':' + cz, geo = new THREE.BufferGeometry();
       attr(geo, 'position', pos, 3); attr(geo, 'color', col, 3); attr(geo, 'normal', nrm, 3); geo.setIndex(new THREE.BufferAttribute(idx, 1));
-      if (allFar) { mesh(ck, 'terrain', geo, 4); continue; }
-      mesh(ck, 'terrain', geo, 4, false);                            // (already as coarse as the far one would be)
+      if (uv1) attr(geo, 'uv', uv1, 2);
+      if (allFar) { mesh(ck, tg, geo, 4); continue; }
+      mesh(ck, tg, geo, 4, false);                            // (already as coarse as the far one would be)
       // the far version: 16 m squares, a little lower
       const FSTR = 4, fn = TN / FSTR + 1;
       const fp = new Float32Array(tiles.length * fn * fn * 3), fc = new Float32Array(fp.length), fnm = new Float32Array(fp.length), fi = new Uint32Array(tiles.length * (fn - 1) * (fn - 1) * 6);
+      const uv2 = PQ ? new Float32Array(fp.length / 3 * 2) : null;
+      uvA = uv2;
       o = 0; q = 0;
       for (const [tx, tz] of tiles) {
         const base = o / 3;
@@ -1452,7 +1534,8 @@ g.CityKit = function (env) {
       }
       const fgeo = new THREE.BufferGeometry();
       attr(fgeo, 'position', fp, 3); attr(fgeo, 'color', fc, 3); attr(fgeo, 'normal', fnm, 3); fgeo.setIndex(new THREE.BufferAttribute(fi, 1));
-      mesh(ck, 'terrain', fgeo, 4, true);
+      if (uv2) attr(fgeo, 'uv', uv2, 2);
+      mesh(ck, tg, fgeo, 4, true);
       tris -= fi.length / 3;
     }
     city.chunks = Array.from(chunks.values());
